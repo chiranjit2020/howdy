@@ -1,0 +1,25 @@
+# deps / build
+node_modules/
+.next/
+out/
+coverage/
+*.tsbuildinfo
+next-env.d.ts
+
+# secrets — never commit
+.env
+.env.*
+!.env.example
+neon-connection.txt
+
+# local dev infra (Postgres data dir, Redis, logs)
+.dev/
+
+# test artefacts
+playwright-report/
+test-results/
+
+# os / editor
+.DS_Store
+Thumbs.db
+.idea/

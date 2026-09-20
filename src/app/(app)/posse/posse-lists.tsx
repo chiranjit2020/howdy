@@ -1,0 +1,149 @@
+'use client';
+
+import { useRouter } from 'next/navigation';
+import { useState, type ReactNode } from 'react';
+import type { PersonEntry, RelationshipLists } from '@/app/_lib/social';
+import type { RelationshipAction } from '@/shared/validation/relationships';
+import { apiRequest } from '@/ui/auth/api';
+import { FormMessage } from '@/ui/auth/form-parts';
+import { PersonRow } from '@/ui/howdy';
+import { Button, Chip, ClayCard, EmptyState } from '@/ui/primitives';
+
+/** The signed-in person's Posse, requests and scouting. Each button sends one action; the page then reloads from the server. */
+export function PosseLists({ lists }: { lists: RelationshipLists }) {
+  const router = useRouter();
+  const [busy, setBusy] = useState<string | undefined>();
+  const [error, setError] = useState<string | undefined>();
+
+  async function run(handle: string, action: RelationshipAction) {
+    setBusy(`${handle}:${action}`);
+    setError(undefined);
+    const res = await apiRequest('POST', `/api/relationships/${handle}`, { action });
+    setBusy(undefined);
+    if (res.ok) router.refresh();
+    else setError(res.error?.message ?? 'That did not work. Try again.');
+  }
+
+  const btn = (
+    p: PersonEntry,
+    action: RelationshipAction,
+    label: string,
+    variant: 'primary' | 'secondary' | 'ghost' = 'secondary',
+  ) => (
+    <Button
+      key={action}
+      size="sm"
+      variant={variant}
+      loading={busy === `${p.handle}:${action}`}
+      onClick={() => run(p.handle, action)}
+      aria-label={`${label} ${p.displayName}`}
+    >
+      {label}
+    </Button>
+  );
+
+  const section = (
+    id: string,
+    title: string,
+    people: PersonEntry[],
+    empty: string,
+    row: (p: PersonEntry) => ReactNode,
+  ) => (
+    <section aria-labelledby={id} className="flex flex-col gap-3">
+      <h2 id={id} className="text-title text-text-primary">
+        {title}
+      </h2>
+      {people.length === 0 ? (
+        <p className="text-caption text-text-secondary">{empty}</p>
+      ) : (
+        <ul className="flex flex-col gap-2">{people.map(row)}</ul>
+      )}
+    </section>
+  );
+
+  return (
+    <div className="flex flex-col gap-6">
+      {error && <FormMessage tone="error">{error}</FormMessage>}
+      {lists.truncated && <FormMessage tone="info">Showing the first 100 in each list.</FormMessage>}
+
+      {lists.incoming.length > 0 && (
+        <ClayCard>
+          {section('requests', `Requests for you (${lists.incoming.length})`, lists.incoming, '', (p) => (
+            <PersonRow
+              key={p.handle}
+              {...p}
+              note="asked to join your Posse"
+              actions={
+                <>
+                  {btn(p, 'accept', 'Accept', 'primary')}
+                  {btn(p, 'decline', 'Decline')}
+                </>
+              }
+            />
+          ))}
+        </ClayCard>
+      )}
+
+      <ClayCard>
+        {lists.posse.length === 0 && lists.incoming.length === 0 ? (
+          <EmptyState
+            as="h2"
+            icon="🤝"
+            title="No Posse yet"
+            description="Visit a Ranch and ask to join their Posse. Requests are private until they say yes."
+          />
+        ) : (
+          section(
+            'posse',
+            `Posse (${lists.posse.length})`,
+            lists.posse,
+            'Nobody yet. Accept a request or ask someone.',
+            (p) => (
+              <PersonRow
+                key={p.handle}
+                {...p}
+                actions={
+                  <>
+                    <Chip
+                      selected={Boolean(p.closeByMe)}
+                      onSelect={() => run(p.handle, p.closeByMe ? 'unclose' : 'close')}
+                      aria-label={`Close Posse: ${p.displayName}`}
+                    >
+                      Close
+                    </Chip>
+                    {btn(p, 'leave', 'Leave', 'ghost')}
+                  </>
+                }
+              />
+            ),
+          )
+        )}
+      </ClayCard>
+
+      {lists.outgoing.length > 0 && (
+        <ClayCard>
+          {section('waiting', 'Waiting on', lists.outgoing, '', (p) => (
+            <PersonRow
+              key={p.handle}
+              {...p}
+              note="request sent"
+              actions={btn(p, 'cancel', 'Cancel', 'ghost')}
+            />
+          ))}
+        </ClayCard>
+      )}
+
+      {lists.scouting.length > 0 && (
+        <ClayCard>
+          {section('scouting', 'Scouting', lists.scouting, '', (p) => (
+            <PersonRow key={p.handle} {...p} actions={btn(p, 'unscout', 'Stop scouting', 'ghost')} />
+          ))}
+        </ClayCard>
+      )}
+
+      <p className="text-metadata text-text-muted">
+        Close Posse and Scouting are private: nobody else can see them.
+      </p>
+    </div>
+  );
+}

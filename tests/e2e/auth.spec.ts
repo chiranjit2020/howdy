@@ -1,0 +1,300 @@
+import { expect, test } from '@playwright/test';
+import {
+  axeSource,
+  confirmEmailVia,
+  linkFrom,
+  newContext,
+  pathOf,
+  signUpVia,
+  stepInsideVia,
+  uniqueAccount,
+  waitForMail,
+  watchProblems,
+} from './helpers';
+
+test.describe('authentication journey (production build, real CSP, real cookies)', () => {
+  test('sign up → confirm email → step inside → stay signed in → hit the trail', async ({ browser }) => {
+    const ctx = await newContext(browser);
+    const page = await ctx.newPage();
+    const problems = await watchProblems(page);
+    const a = uniqueAccount('walker');
+
+    await page.goto('/');
+    await expect(page).toHaveURL(/\/gate$/);
+    await expect(page.getByRole('link', { name: 'Stake a Claim' })).toBeVisible();
+
+    await signUpVia(page, a);
+
+    // Not confirmed yet: the door stays shut, with a clear (and non-leaky) reason.
+    await stepInsideVia(page, a.email, a.password);
+    await expect(page.locator('main [role="alert"]')).toContainText(/confirm your email/i);
+    await expect(page).toHaveURL(/\/step-inside$/);
+
+    await confirmEmailVia(page, a.email);
+    await stepInsideVia(page, a.handle, a.password); // by call sign this time
+    await expect(page).toHaveURL(/\/home$/);
+    // Home greets by display name (which defaults to the call sign) and still names the call sign.
+    await expect(page.getByRole('heading', { name: `Howdy, ${a.handle}` })).toBeVisible();
+    await expect(page.getByText(`Deed granted, @${a.handle}`)).toBeVisible();
+
+    // The session cookie: HttpOnly, Secure, __Host- prefixed, SameSite=Lax, site-wide, and invisible to page scripts.
+    const session = (await ctx.cookies()).find((c) => c.name === '__Host-howdy_session');
+    expect(session, 'session cookie').toBeDefined();
+    expect(session).toMatchObject({ httpOnly: true, secure: true, sameSite: 'Lax', path: '/' });
+    expect(session!.value).toMatch(/^[A-Za-z0-9_-]{43}$/);
+    expect(await page.evaluate(() => document.cookie)).not.toContain('howdy_session');
+
+    // Persistence: a reload, and visiting signed-out pages, keep you inside.
+    await page.reload();
+    await expect(page.getByRole('heading', { name: /^Howdy, / })).toBeVisible();
+    await page.goto('/step-inside');
+    await expect(page).toHaveURL(/\/home$/);
+
+    await page.getByRole('button', { name: 'Hit the Trail', exact: true }).click();
+    await expect(page).toHaveURL(/\/gate$/);
+    expect((await ctx.cookies()).find((c) => c.name === '__Host-howdy_session')).toBeUndefined();
+    await page.goto('/home');
+    await expect(page).toHaveURL(/\/step-inside$/);
+
+    expect(problems).toEqual([]);
+    await ctx.close();
+  });
+
+  test('a wrong password and an unknown account look exactly the same, and the error is announced', async ({
+    browser,
+  }) => {
+    const ctx = await newContext(browser);
+    const page = await ctx.newPage();
+    const a = uniqueAccount('sameerr');
+    await signUpVia(page, a);
+    await confirmEmailVia(page, a.email);
+
+    await stepInsideVia(page, a.email, 'not the right password');
+    const wrong = page.locator('main [role="alert"]');
+    await expect(wrong).toBeVisible();
+    await expect(wrong).toBeFocused();
+    const wrongText = await wrong.innerText();
+
+    await stepInsideVia(page, 'nobody.here@example.com', 'not the right password');
+    const unknown = page.locator('main [role="alert"]');
+    await expect(unknown).toBeVisible();
+    expect(await unknown.innerText()).toBe(wrongText);
+    expect(wrongText).toMatch(/isn.t right/);
+    await ctx.close();
+  });
+
+  test('client-side validation guides the user, and the server still enforces the same rules', async ({
+    browser,
+  }) => {
+    const ctx = await newContext(browser);
+    const page = await ctx.newPage();
+    await page.goto('/stake-a-claim');
+    await page.getByRole('button', { name: 'Stake your claim' }).click();
+    await expect(page.getByLabel('Call sign')).toBeFocused();
+    await expect(page.getByLabel('Call sign')).toHaveAttribute('aria-invalid', 'true');
+    await page.getByLabel('Call sign').fill('admin');
+    await page.getByLabel('Email').fill('x@example.com');
+    await page.getByLabel('Secret Knock').fill('short');
+    await page.getByRole('button', { name: 'Stake your claim' }).click();
+    await expect(page.getByText('That call sign is reserved.')).toBeVisible();
+    await expect(page.getByText(/at least 10 characters/i).first()).toBeVisible();
+
+    // Bypass the browser entirely: the API rejects the same input with the same reasons.
+    const res = await ctx.request.post('/api/auth/signup', {
+      data: { email: 'x@example.com', handle: 'admin', password: 'short' },
+      headers: { origin: 'http://localhost:3300' },
+    });
+    expect(res.status()).toBe(422);
+    await ctx.close();
+  });
+
+  test('protected pages and APIs refuse signed-out visitors', async ({ browser }) => {
+    const ctx = await newContext(browser);
+    const page = await ctx.newPage();
+    await page.goto('/home');
+    await expect(page).toHaveURL(/\/step-inside$/);
+    expect((await ctx.request.get('/api/auth/me')).status()).toBe(401);
+    expect((await ctx.request.get('/api/auth/sessions')).status()).toBe(401);
+    // Cross-site state changes are refused even before authentication is considered.
+    const forged = await ctx.request.post('/api/auth/logout-all', {
+      headers: { origin: 'https://evil.example' },
+      data: {},
+    });
+    expect(forged.status()).toBe(403);
+    await ctx.close();
+  });
+
+  test('lost key: request a link, choose a new knock, old knock stops working, every device is signed out', async ({
+    browser,
+  }) => {
+    const a = uniqueAccount('lostkey');
+    const other = await newContext(browser);
+    const otherPage = await other.newPage();
+    await signUpVia(otherPage, a);
+    await confirmEmailVia(otherPage, a.email);
+    await stepInsideVia(otherPage, a.email, a.password);
+    await expect(otherPage).toHaveURL(/\/home$/);
+
+    const ctx = await newContext(browser);
+    const page = await ctx.newPage();
+    const problems = await watchProblems(page);
+    await page.goto('/lost-your-key');
+    await page.getByLabel('Email').fill(a.email);
+    await page.getByRole('button', { name: 'Send the link' }).click();
+    await expect(page.getByRole('heading', { name: 'Check your email' })).toBeVisible();
+
+    const mail = await waitForMail(a.email);
+    expect(mail.subject).toMatch(/reset/i);
+    await page.goto(pathOf(linkFrom(mail.text)));
+    // Weak knock is refused without burning the link.
+    await page.getByLabel('New secret knock').fill('short');
+    await page.getByRole('button', { name: 'Save new knock' }).click();
+    await expect(page.getByText(/at least 10 characters/i).first()).toBeVisible();
+    const newPassword = 'a brand new passphrase 42';
+    await page.getByLabel('New secret knock').fill(newPassword);
+    await page.getByRole('button', { name: 'Save new knock' }).click();
+    await expect(page.getByRole('heading', { name: 'New knock set' })).toBeVisible();
+
+    // The link is single-use.
+    await page.goto(pathOf(linkFrom(mail.text)));
+    await page.getByLabel('New secret knock').fill('yet another passphrase 43');
+    await page.getByRole('button', { name: 'Save new knock' }).click();
+    await expect(page.locator('main [role="alert"]')).toContainText(/invalid or has expired/i);
+
+    // The session on the other device is gone; the old knock no longer works; the new one does.
+    await otherPage.reload();
+    await expect(otherPage).toHaveURL(/\/step-inside$/);
+    await stepInsideVia(page, a.email, a.password);
+    await expect(page.locator('main [role="alert"]')).toBeVisible();
+    await stepInsideVia(page, a.email, newPassword);
+    await expect(page).toHaveURL(/\/home$/);
+    expect(problems).toEqual([]);
+    await ctx.close();
+    await other.close();
+  });
+
+  test('Open Gates: close another device from this one', async ({ browser }) => {
+    const a = uniqueAccount('gates');
+    const first = await newContext(browser);
+    const p1 = await first.newPage();
+    await signUpVia(p1, a);
+    await confirmEmailVia(p1, a.email);
+    await stepInsideVia(p1, a.email, a.password);
+    await expect(p1).toHaveURL(/\/home$/);
+
+    const second = await newContext(browser);
+    const p2 = await second.newPage();
+    await stepInsideVia(p2, a.email, a.password);
+    await expect(p2).toHaveURL(/\/home$/);
+
+    await p1.reload();
+    const gates = p1.getByRole('region', { name: 'Open Gates' });
+    await expect(gates.getByRole('listitem')).toHaveCount(2);
+    await expect(gates.getByText('This device')).toHaveCount(1);
+    await gates.getByRole('button', { name: /Close gate on/ }).click();
+    await expect(gates.getByRole('listitem')).toHaveCount(1);
+
+    await p2.reload();
+    await expect(p2).toHaveURL(/\/step-inside$/);
+    await p1.reload();
+    await expect(p1.getByRole('heading', { name: /^Howdy, / })).toBeVisible(); // this device stays inside
+    await first.close();
+    await second.close();
+  });
+
+  test('"sign out everywhere" asks first, then signs out this device', async ({ browser }) => {
+    const a = uniqueAccount('everywhere');
+    const ctx = await newContext(browser);
+    const page = await ctx.newPage();
+    await signUpVia(page, a);
+    await confirmEmailVia(page, a.email);
+    await stepInsideVia(page, a.email, a.password);
+    await page.getByRole('button', { name: 'Hit the Trail everywhere' }).click();
+    const dialog = page.getByRole('alertdialog', { name: 'Sign out of every device?' });
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByRole('button', { name: 'Cancel' })).toBeFocused(); // the safe choice is the default
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeHidden();
+    await expect(page).toHaveURL(/\/home$/); // cancelling changed nothing
+    await page.getByRole('button', { name: 'Hit the Trail everywhere' }).click();
+    await dialog.getByRole('button', { name: 'Sign out everywhere' }).click();
+    await expect(page).toHaveURL(/\/gate$/);
+    await ctx.close();
+  });
+});
+
+test.describe('signed-out pages: accessibility and layout in a real browser', () => {
+  const pages = [
+    '/gate',
+    '/stake-a-claim',
+    '/step-inside',
+    '/lost-your-key',
+    '/verify',
+    '/lost-your-key/reset',
+  ];
+
+  for (const scheme of ['light', 'dark'] as const) {
+    test(`axe finds no violations, including real colour contrast (${scheme})`, async ({ browser }) => {
+      // bypassCSP only so axe can be injected; the CSP itself is exercised by every other test in this file.
+      const ctx = await newContext(browser, { colorScheme: scheme, bypassCSP: true });
+      const page = await ctx.newPage();
+      const source = axeSource();
+      for (const path of pages) {
+        await page.goto(path);
+        await page.evaluate(() => document.fonts.ready);
+        await page.addScriptTag({ content: source });
+        const violations = await page.evaluate(async () => {
+          const axe = (
+            window as unknown as {
+              axe: {
+                run: () => Promise<{
+                  violations: { id: string; help: string; nodes: { target: string[] }[] }[];
+                }>;
+              };
+            }
+          ).axe;
+          return (await axe.run()).violations.map(
+            (v) => `${v.id}: ${v.help} (${v.nodes.map((n) => n.target.join(' ')).join(', ')})`,
+          );
+        });
+        expect(violations, `${path} (${scheme})`).toEqual([]);
+      }
+      await ctx.close();
+    });
+  }
+
+  test('no horizontal scroll at 320px, and every control is at least 44px tall on touch', async ({
+    browser,
+  }) => {
+    const ctx = await newContext(browser, {
+      hasTouch: true,
+      isMobile: true,
+      viewport: { width: 320, height: 700 },
+    });
+    const page = await ctx.newPage();
+    for (const path of pages) {
+      await page.goto(path);
+      expect(
+        await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth),
+        `${path} overflow`,
+      ).toBeLessThanOrEqual(0);
+      const small = await page.evaluate(() => {
+        const out: string[] = [];
+        for (const el of document.querySelectorAll<HTMLElement>('button, a[href], input, select, textarea')) {
+          const r = el.getBoundingClientRect();
+          if (r.width === 0 || r.height === 0) continue;
+          if (el.classList.contains('sr-only') || el.closest('.sr-only')) continue;
+          // In-sentence text links are exempt (WCAG 2.5.8 inline exception); standalone controls are not.
+          const inline = el.tagName === 'A' && getComputedStyle(el).display === 'inline';
+          if (!inline && r.height < 43.5)
+            out.push(
+              `${el.tagName} "${(el.textContent || el.getAttribute('aria-label') || '').trim().slice(0, 24)}" ${Math.round(r.height)}px`,
+            );
+        }
+        return out;
+      });
+      expect(small, `${path} small targets`).toEqual([]);
+    }
+    await ctx.close();
+  });
+});

@@ -1,0 +1,9 @@
+node_modules
+.next
+.dev
+coverage
+pnpm-lock.yaml
+db/migrations
+*.md
+neon-connection.txt
+github-repo.txt
