@@ -6,5 +6,9 @@ export const metadata = { title: 'Lost your key?' };
 
 export default async function LostYourKeyPage() {
   if (await getCurrentUser()) redirect('/home');
-  return <ForgotForm />;
+  return (
+    <main id="main" className="mx-auto flex w-full max-w-md flex-col gap-6 px-4 py-8">
+      <ForgotForm />
+    </main>
+  );
 }

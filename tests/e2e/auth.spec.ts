@@ -21,7 +21,8 @@ test.describe('authentication journey (production build, real CSP, real cookies)
 
     await page.goto('/');
     await expect(page).toHaveURL(/\/gate$/);
-    await expect(page.getByRole('link', { name: 'Stake a Claim' })).toBeVisible();
+    // The top bar (shared with every signed-in page) carries its own "Stake a Claim" link too; scope to the page's own content.
+    await expect(page.locator('#main').getByRole('link', { name: 'Stake a Claim' })).toBeVisible();
 
     await signUpVia(page, a);
 

@@ -2,8 +2,8 @@ import Link from 'next/link';
 import type { ReactNode } from 'react';
 import type { PortraitTint } from '@/shared/validation/profile';
 import { Art } from '../art/glyph';
-import { HowdyLogo } from '../auth/auth-card';
 import { BellIcon } from '../icons';
+import { HowdyLogo } from '../logo';
 import { Avatar } from '../primitives/avatar';
 import { buttonClasses } from '../primitives/button';
 import { ShellBottomNav, ShellSidebarNav, type ShellNavItem } from './nav';
@@ -85,7 +85,7 @@ export function AppShell({
               <Link href="/step-inside" className={buttonClasses({ variant: 'secondary', size: 'sm' })}>
                 Step Inside
               </Link>
-              <Link href="/stake-a-claim" className={buttonClasses({ variant: 'cta', size: 'sm' })}>
+              <Link href="/stake-a-claim" className={buttonClasses({ size: 'sm' })}>
                 Stake a Claim
               </Link>
             </div>

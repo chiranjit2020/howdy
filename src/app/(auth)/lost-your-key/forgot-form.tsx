@@ -4,11 +4,8 @@ import Link from 'next/link';
 import { useState, type FormEvent } from 'react';
 import { emailOnlySchema } from '@/shared/validation/auth';
 import { postJson } from '@/ui/auth/api';
-import { AuthCard } from '@/ui/auth/auth-card';
-import { AuthField } from '@/ui/auth/auth-field';
 import { FormMessage } from '@/ui/auth/form-parts';
-import { MailIcon } from '@/ui/icons';
-import { Button } from '@/ui/primitives';
+import { Button, ClayCard, Input } from '@/ui/primitives';
 
 export function ForgotForm() {
   const [email, setEmail] = useState('');
@@ -38,35 +35,33 @@ export function ForgotForm() {
 
   if (done) {
     return (
-      <AuthCard className="gap-4">
-        <h1 className="font-display text-headline text-brand-ink">Check your email</h1>
-        <p className="text-body text-auth-text">
+      <ClayCard className="flex flex-col gap-4 p-8">
+        <h1 className="text-heading text-text-primary">Check your email</h1>
+        <p className="text-body text-text-secondary">
           If there is a Howdy account for that address, a link to choose a new secret knock is on its way. It
           works once and expires in 1 hour.
         </p>
-        <Link href="/step-inside" className="inline-flex min-h-11 items-center text-auth-link">
+        <Link href="/step-inside" className="inline-flex min-h-11 items-center">
           Back to Step Inside
         </Link>
-      </AuthCard>
+      </ClayCard>
     );
   }
 
   return (
-    <AuthCard>
+    <ClayCard className="p-8">
       <form onSubmit={onSubmit} noValidate className="flex flex-col gap-5">
-        <div className="flex flex-col gap-1">
-          <h1 className="font-display text-headline text-brand-ink">Lost your key?</h1>
-          <p className="text-body text-auth-text">Misplaced it? We will send a link to your email.</p>
+        <div>
+          <h1 className="text-heading text-text-primary">Lost your key?</h1>
+          <p className="text-body text-text-secondary">Misplaced it? We will send a link to your email.</p>
         </div>
         {error && (
           <FormMessage tone="error" focusKey={attempt}>
             {error}
           </FormMessage>
         )}
-        <AuthField
+        <Input
           label="Email address"
-          placeholder="Email address"
-          icon={<MailIcon />}
           name="email"
           type="email"
           autoComplete="email"
@@ -74,16 +69,13 @@ export function ForgotForm() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
         />
-        <Button type="submit" variant="cta" size="lg" fullWidth loading={busy} className="min-h-14">
+        <Button type="submit" size="lg" fullWidth loading={busy}>
           Send the link
         </Button>
-        <Link
-          href="/step-inside"
-          className="inline-flex min-h-11 items-center justify-center text-caption text-auth-link"
-        >
+        <Link href="/step-inside" className="inline-flex min-h-11 items-center justify-center text-caption">
           Back to Step Inside
         </Link>
       </form>
-    </AuthCard>
+    </ClayCard>
   );
 }

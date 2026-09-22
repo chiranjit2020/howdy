@@ -5,12 +5,8 @@ import { useRef, useState, type FormEvent } from 'react';
 import { signUpSchema } from '@/shared/validation/auth';
 import { LIMITS } from '@/shared/limits';
 import { postJson } from '@/ui/auth/api';
-import { AuthCard } from '@/ui/auth/auth-card';
-import { AuthField } from '@/ui/auth/auth-field';
 import { FormMessage, focusFirstInvalid } from '@/ui/auth/form-parts';
-import { RanchArt } from '@/ui/auth/illustrations';
-import { ArrowRightIcon, LockIcon, MailIcon, UserIcon } from '@/ui/icons';
-import { Button } from '@/ui/primitives';
+import { Button, ClayCard, Input } from '@/ui/primitives';
 
 type Fields = { handle: string; displayName: string; email: string; password: string };
 
@@ -69,34 +65,32 @@ export function ClaimForm() {
 
   if (sentTo) {
     return (
-      <AuthCard scene="ranch" art={<RanchArt />} className="gap-4">
-        <h1 className="mt-10 font-display text-headline text-brand-ink sm:mt-16">Check your email</h1>
-        <p className="text-body text-auth-text">
+      <ClayCard className="flex flex-col gap-4 p-8">
+        <h1 className="text-heading text-text-primary">Check your email</h1>
+        <p className="text-body text-text-secondary">
           If <strong className="text-text-primary">{sentTo}</strong> can be used for a new Howdy account, a
           confirmation link is on its way. It works once and expires in 24 hours.
         </p>
         {resent && <FormMessage tone="success">Sent again, if there is anything to send.</FormMessage>}
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap gap-3">
           <Button variant="secondary" onClick={resend}>
             Send it again
           </Button>
-          <Link href="/step-inside" className="inline-flex min-h-11 items-center text-body text-auth-link">
+          <Link href="/step-inside" className="inline-flex min-h-11 items-center text-body">
             Step Inside
           </Link>
         </div>
-      </AuthCard>
+      </ClayCard>
     );
   }
 
   return (
-    <AuthCard scene="ranch" art={<RanchArt />}>
+    <ClayCard className="p-8">
       <form ref={formRef} onSubmit={onSubmit} noValidate className="flex flex-col gap-5">
-        <div className="mt-10 flex flex-col gap-1 sm:mt-16">
-          <h1 className="font-display text-headline text-brand-ink">Stake a Claim</h1>
-          <p className="text-body text-auth-text">
-            Join Howdy and start your journey.
-            <br />
-            It only takes a minute.
+        <div>
+          <h1 className="text-heading text-text-primary">Stake a Claim</h1>
+          <p className="text-body text-text-secondary">
+            Join Howdy and start your journey. It only takes a minute.
           </p>
         </div>
         {formError && (
@@ -104,11 +98,8 @@ export function ClaimForm() {
             {formError}
           </FormMessage>
         )}
-        <AuthField
+        <Input
           label="Choose a handle"
-          placeholder="Choose a handle"
-          suffix="@yourname"
-          icon={<UserIcon />}
           name="handle"
           autoComplete="username"
           autoCapitalize="none"
@@ -117,21 +108,19 @@ export function ClaimForm() {
           value={values.handle}
           onChange={set('handle')}
           error={errors.handle}
+          hint={`${LIMITS.HANDLE_MIN}–${LIMITS.HANDLE_MAX} letters, numbers or underscores.`}
         />
-        <AuthField
+        <Input
           label="Display name (optional)"
-          placeholder="Display name"
-          icon={<UserIcon />}
           name="displayName"
           autoComplete="name"
           value={values.displayName}
           onChange={set('displayName')}
           error={errors.displayName}
+          hint="Shown on your Ranch. Leave blank to use your handle."
         />
-        <AuthField
+        <Input
           label="Email address"
-          placeholder="Email address"
-          icon={<MailIcon />}
           name="email"
           type="email"
           autoComplete="email"
@@ -140,31 +129,26 @@ export function ClaimForm() {
           onChange={set('email')}
           error={errors.email}
         />
-        <AuthField
+        <Input
           label="Secret knock (at least 10 characters)"
-          placeholder="Secret knock"
-          icon={<LockIcon />}
           name="password"
           type="password"
           autoComplete="new-password"
           value={values.password}
           onChange={set('password')}
           error={errors.password}
+          hint="A short phrase works well."
         />
-        <Button type="submit" variant="cta-success" size="lg" fullWidth loading={busy} className="min-h-14">
-          Create My Account <ArrowRightIcon />
+        <Button type="submit" size="lg" fullWidth loading={busy}>
+          Create My Account
         </Button>
-        <p className="text-center text-caption text-auth-text">
-          By continuing, you agree to our Terms of Service
-          <br className="hidden sm:block" /> and Privacy Policy.
+        <p className="text-center text-caption text-text-secondary">
+          By continuing, you agree to our Terms of Service and Privacy Policy.
         </p>
-        <div className="flex flex-wrap items-center justify-center gap-x-3 border-t border-field-border pt-4 text-caption text-auth-text">
-          <span>Already have an account?</span>
-          <Link href="/step-inside" className="inline-flex min-h-11 items-center gap-1.5 text-auth-link">
-            Step Inside <ArrowRightIcon />
-          </Link>
-        </div>
+        <p className="text-center text-caption text-text-secondary">
+          Already have a patch of ground? <Link href="/step-inside">Step Inside</Link>
+        </p>
       </form>
-    </AuthCard>
+    </ClayCard>
   );
 }

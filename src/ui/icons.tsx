@@ -50,31 +50,6 @@ export const UsersIcon = (p: IconProps) => (
   />
 );
 export const SpinnerIcon = (p: IconProps) => <Svg d="M12 3a9 9 0 1 0 9 9" {...p} />;
-export const UserIcon = (p: IconProps) => (
-  <Svg d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4.5 21a7.5 7.5 0 0 1 15 0" {...p} />
-);
-export const LockIcon = (p: IconProps) => (
-  <Svg
-    d="M6 11h12a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1zM8 11V8a4 4 0 0 1 8 0v3"
-    {...p}
-  />
-);
-export const MailIcon = (p: IconProps) => (
-  <Svg
-    d="M4 5.5h16a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-11a1 1 0 0 1 1-1zM3.5 7l8.5 6 8.5-6"
-    {...p}
-  />
-);
-export const EyeIcon = (p: IconProps) => (
-  <Svg d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" {...p} />
-);
-export const EyeOffIcon = (p: IconProps) => (
-  <Svg
-    d="M3 3l18 18M10.6 6.1A10 10 0 0 1 12 5c6.5 0 10 7 10 7a17 17 0 0 1-3.2 4.1M6.6 6.7C3.8 8.4 2 12 2 12s3.5 7 10 7c1.7 0 3.2-.4 4.5-1M9.9 9.9a3 3 0 0 0 4.2 4.2"
-    {...p}
-  />
-);
-export const ArrowRightIcon = (p: IconProps) => <Svg d="M5 12h14M13 6l6 6-6 6" {...p} />;
 export const BoltIcon = (p: IconProps) => <Svg d="M13 2 4 14h7l-1 8 9-12h-7z" {...p} />;
 export const ToolsIcon = (p: IconProps) => (
   <Svg d="M14.7 6.3a4 4 0 0 0-5.2 5.2L3 18l3 3 6.5-6.5a4 4 0 0 0 5.2-5.2L15 12l-3-3z" {...p} />
