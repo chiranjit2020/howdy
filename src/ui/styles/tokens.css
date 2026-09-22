@@ -25,6 +25,22 @@
   --palette-deep-charcoal: #2b2d42;
   /* Muted Slate is 2.6:1 on cream - decoration only, never body/meta text. */
   --palette-muted-slate: #8d99aa;
+  /*
+   * Supporting shades (Soft Pastel Clay System). Foundation = cream + white + charcoal; personality = peach, mint, lavender,
+   * butter, sky; the rest is for illustrations and soft backgrounds, not primary UI colour. Use sparingly.
+   */
+  --palette-soft-peach: #ffd0c2;
+  --palette-soft-mint: #d8f0df;
+  --palette-soft-butter: #fff3c7;
+  --palette-soft-lavender: #e8d8ef;
+  --palette-powder-blue: #dceff2;
+  --palette-coral-clay: #f6a898;
+  --palette-sage-green: #afcfb9;
+  --palette-warm-sand: #e8d2aa;
+  --palette-clay-sand: #ebc6a5;
+  --palette-soft-terracotta: #d99a7a;
+  --palette-soft-slate: #aab4c3;
+  --palette-deep-navy-blue: #344b70;
 
   /* -- Semantic colors: light-dark(Daylight, Dusk) -- */
   --color-background: light-dark(#f8f5ee, #1e1b2e);
@@ -40,7 +56,7 @@
   --color-text-secondary: light-dark(#475169, #b9b3d0);
   --color-text-muted: light-dark(#586378, #a29cbd);
   --color-link: light-dark(#1b6a80, #9ad7e6);
-  --color-focus: light-dark(#5b41c4, #c9b6ff);
+  --color-focus: light-dark(#6a83a6, #9ad7e6);
 
   --color-accent: #ffb4a2;
   --color-accent-hover: light-dark(#ffa48f, #ffc3b5);
@@ -59,6 +75,34 @@
   --color-on-info: #2b2d42;
   --color-mystery: #d8b4e2;
   --color-on-mystery: #2b2d42;
+
+  /* -- Sign-in surfaces (Step Inside / Stake a Claim): card, pill fields, wordmark ink -- */
+  --color-auth-page-from: light-dark(#f6ede3, #1e1b2e);
+  --color-auth-page-to: light-dark(#f5ede5, #1a1a2c);
+  --color-auth-card: light-dark(#fcf6ef, #2a2640);
+  --color-auth-text: light-dark(#3d4a6b, #b9b3d0);
+  --color-auth-link: light-dark(#2e3e62, #9ad7e6);
+  --color-field: light-dark(#fcf8f3, #1f1b30);
+  --color-field-border: light-dark(#eadfd2, #4a4468);
+  --color-brand-ink: light-dark(#344b70, #f3effa);
+  --color-brand-google-blue: #4285f4;
+  --color-brand-google-green: #34a853;
+  --color-brand-google-yellow: #fbbc05;
+  --color-brand-google-red: #ea4335;
+
+  /* Call-to-action pills: peach (Step Inside) and mint (Create My Account). */
+  --color-cta: light-dark(#fbc8b0, #ffb4a2);
+  --color-cta-hover: light-dark(#f8bb9f, #ffc3b5);
+  --color-cta-success: light-dark(#b7dabd, #b7e4c7);
+  --color-cta-success-hover: light-dark(#a8d0b0, #c6ecd3);
+  --color-on-cta: #2b2d42;
+
+  /* Soft colour shapes behind the sign-in card and inside its corners (Dusk variants are dimmed). */
+  --color-auth-blob-peach: light-dark(#fee8dd, #3a2c3f);
+  --color-auth-blob-mint: light-dark(#e0edea, #24373a);
+  --color-auth-blob-sky: light-dark(#e4eced, #253049);
+  --color-auth-blob-lilac: light-dark(#ecdeec, #33294d);
+  --color-auth-blob-seafoam: light-dark(#e1eeea, #24373a);
 
   /* -- Typography (fonts are wired in `@theme inline` below) -- */
   --text-display: clamp(2rem, 1.5rem + 2.5vw, 3rem);
@@ -83,12 +127,18 @@
   --text-metadata--letter-spacing: 0.02em;
   --text-code: 0.875rem;
   --text-code--line-height: 1.5;
+  /* Sign-in page headline. */
+  --text-headline: 2.25rem;
+  --text-headline--line-height: 1.15;
+  --text-headline--font-weight: 600;
+  --text-headline--letter-spacing: -0.01em;
 
   /* -- Shape -- */
   --radius-sm: 0.5rem;
   --radius-md: 0.875rem;
   --radius-lg: 1.25rem;
   --radius-xl: 1.75rem;
+  --radius-2xl: 2.25rem;
   --radius-pill: 9999px;
 
   /* Clay: soft outer drop + top-left inner light + bottom-right inner shade. */
@@ -104,6 +154,13 @@
     inset 3px 3px 8px light-dark(rgb(43 45 66 / 0.14), rgb(0 0 0 / 0.5)),
     inset -2px -2px 5px light-dark(rgb(255 255 255 / 0.7), rgb(255 255 255 / 0.05));
   --shadow-float: 0 12px 32px light-dark(rgb(43 45 66 / 0.18), rgb(0 0 0 / 0.55));
+  /*
+   * Soft clay shadows for the sign-in pages (always Daylight). The look depends on VERY low opacity: a dark drop to the
+   * bottom-right and a white highlight to the top-left. Never use a generic `0 10px 30px rgba(0,0,0,.2)` here.
+   */
+  --shadow-auth-card: 14px 14px 32px rgb(43 45 66 / 0.08), -8px -8px 20px rgb(255 255 255 / 0.9);
+  --shadow-field: inset 2px 2px 6px rgb(43 45 66 / 0.04), inset -2px -2px 6px rgb(255 255 255 / 0.8);
+  --shadow-cta: 4px 5px 10px rgb(43 45 66 / 0.1), -3px -3px 7px rgb(255 255 255 / 0.65);
 
   /* -- Motion -- */
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -112,6 +169,29 @@
   --animate-flip-in: flip-in 0.35s ease-out;
   --animate-shimmer: shimmer 1.6s ease-in-out infinite;
   --animate-spin-slow: spin 0.9s linear infinite;
+  --animate-bird-hop: bird-hop 4.5s ease-in-out infinite;
+  --animate-loader-spin: spin 1.8s linear infinite;
+
+  /* The little blue bird in the top bar: two quick hops, then a rest. */
+  @keyframes bird-hop {
+    0%,
+    45%,
+    100% {
+      transform: translateY(0) rotate(0);
+    }
+    8% {
+      transform: translateY(-7px) rotate(-7deg);
+    }
+    16% {
+      transform: translateY(0) rotate(0);
+    }
+    24% {
+      transform: translateY(-5px) rotate(6deg);
+    }
+    32% {
+      transform: translateY(0) rotate(0);
+    }
+  }
 
   @keyframes yo-pop {
     0% {
@@ -177,6 +257,16 @@
 :root[data-theme='dusk'] {
   color-scheme: dark;
 }
+/*
+ * Pages that carry `.daylight-only` (the sign-in pages, the signed-in app shell and the 404) are always Daylight: their
+ * design is a light, warm one, whatever the system or Dusk setting. Dusk still exists for pages that do not opt out (the
+ * design kit) and is what the theme toggle switches.
+ * It has to be the root that switches: every semantic token is resolved there, so a wrapper element cannot override it.
+ * Listed after the rules above on purpose: equal specificity, so this one wins.
+ */
+:root:has(.daylight-only) {
+  color-scheme: light;
+}
 
 /* -- Base -- */
 @layer base {
@@ -206,7 +296,7 @@
     text-decoration-thickness: 2px;
   }
   :focus-visible {
-    outline: 3px solid var(--color-focus);
+    outline: 2px solid var(--color-focus);
     outline-offset: 2px;
     border-radius: var(--radius-sm);
   }

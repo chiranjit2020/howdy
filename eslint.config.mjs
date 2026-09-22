@@ -44,6 +44,8 @@ const MODULE_DEPENDENCIES = {
   notifications: ['authz', 'profiles', 'relationships'],
   whispers: ['authz', 'profiles', 'relationships'],
   tracks: ['profiles', 'relationships'],
+  // Owns files and nothing else; who may SEE a file is decided in the app layer.
+  media: [],
 };
 const moduleRules = Object.entries(MODULE_DEPENDENCIES).map(([name, allowed]) => {
   const forbidden = Object.keys(MODULE_DEPENDENCIES).filter((m) => m !== name && !allowed.includes(m));

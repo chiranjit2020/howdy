@@ -86,7 +86,7 @@ export function TendForm({
           <legend className="mb-1 text-caption font-semibold text-text-primary">Portrait colour</legend>
           <div className="mb-2 flex items-center gap-3">
             <Avatar name={displayName || handle} tint={tint} size="lg" />
-            <span className="text-caption text-text-secondary">Photo portraits arrive later.</span>
+            <span className="text-caption text-text-secondary">Shown whenever you have no photo.</span>
           </div>
           {PORTRAIT_TINTS.map((t) => (
             <Radio

@@ -1,11 +1,14 @@
 // @vitest-environment jsdom
-import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { render, screen, within } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
 import { PORTRAIT_TINTS } from '@/shared/validation/profile';
 import { RanchHeader } from '@/ui/howdy';
 import { Avatar } from '@/ui/primitives';
-import { SiteHeader } from '@/ui/site-header';
+import { AppShell } from '@/ui/shell/app-shell';
 import { axeViolations } from './setup';
+
+// The navigation marks the current page from the URL; there is no router in a unit test.
+vi.mock('next/navigation', () => ({ usePathname: () => '/workshop' }));
 
 const XSS = '<img src=x onerror=alert(1)><script>alert(2)</script>';
 
@@ -71,17 +74,37 @@ describe('Avatar portrait tint', () => {
   });
 });
 
-describe('SiteHeader', () => {
-  it('signed in: Home / My Ranch / Posse / Workshop with the current page marked', () => {
-    render(<SiteHeader handle="chiru" current="workshop" />);
-    expect(screen.getByRole('link', { name: 'My Ranch' })).toHaveAttribute('href', '/ranch/chiru');
-    expect(screen.getByRole('link', { name: 'Posse' })).toHaveAttribute('href', '/posse');
-    expect(screen.getByRole('link', { name: 'Workshop' })).toHaveAttribute('aria-current', 'page');
-    expect(screen.getByRole('link', { name: 'Home' })).not.toHaveAttribute('aria-current');
+describe('AppShell', () => {
+  it('signed in: Home / My Ranch / Posse / Workshop with the current page marked, and unread counts as text', () => {
+    render(
+      <AppShell me={{ handle: 'chiru', displayName: 'Chiru' }} unread={3} unreadWhispers={2}>
+        <main>page</main>
+      </AppShell>,
+    );
+    // Both forms of the navigation exist in the DOM (CSS decides which one shows); the sidebar comes first.
+    const navs = screen.getAllByRole('navigation', { name: 'Primary' });
+    expect(navs).toHaveLength(2);
+    const nav = within(navs[0]!);
+    expect(nav.getByRole('link', { name: 'My Ranch' })).toHaveAttribute('href', '/ranch/chiru');
+    expect(nav.getByRole('link', { name: 'Posse' })).toHaveAttribute('href', '/posse');
+    expect(nav.getByRole('link', { name: 'Workshop' })).toHaveAttribute('aria-current', 'page');
+    expect(nav.getByRole('link', { name: 'Home' })).not.toHaveAttribute('aria-current');
+    // The count is text (not only a coloured pill), and the link still starts with its label.
+    expect(nav.getByRole('link', { name: /^Chimes/ })).toHaveTextContent(/3\s*unread/);
+    expect(nav.getByRole('link', { name: /^Whispers/ })).toHaveTextContent(/2\s*unread/);
+    // The top bar: a bell that says how many are unread, and the way to your own Ranch.
+    expect(screen.getByRole('link', { name: 'Notifications, 3 unread' })).toHaveAttribute('href', '/chimes');
+    expect(screen.getByRole('link', { name: 'Your Ranch' })).toHaveAttribute('href', '/ranch/chiru');
   });
   it('signed out: only a way in, and no handle-based links', () => {
-    render(<SiteHeader />);
+    render(
+      <AppShell>
+        <main>page</main>
+      </AppShell>,
+    );
     expect(screen.getByRole('link', { name: 'Step Inside' })).toHaveAttribute('href', '/step-inside');
+    expect(screen.getByRole('link', { name: 'Stake a Claim' })).toHaveAttribute('href', '/stake-a-claim');
     expect(screen.queryByRole('link', { name: 'My Ranch' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('navigation', { name: 'Primary' })).not.toBeInTheDocument();
   });
 });

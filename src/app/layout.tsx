@@ -9,7 +9,6 @@ import './globals.css';
 const jakarta = Plus_Jakarta_Sans({ subsets: ['latin'], variable: '--font-jakarta', display: 'swap' });
 const jetbrains = JetBrains_Mono({ subsets: ['latin'], variable: '--font-jetbrains', display: 'swap' });
 const fraunces = Fraunces({ subsets: ['latin'], variable: '--font-fraunces', display: 'swap' });
-
 export const metadata: Metadata = {
   title: { default: 'Howdy', template: '%s · Howdy' },
   description: 'A small-circle social world.',

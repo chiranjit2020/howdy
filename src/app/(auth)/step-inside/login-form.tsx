@@ -5,8 +5,13 @@ import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 import { loginSchema } from '@/shared/validation/auth';
 import { postJson } from '@/ui/auth/api';
+import { AuthCard } from '@/ui/auth/auth-card';
+import { AuthField } from '@/ui/auth/auth-field';
 import { FormMessage } from '@/ui/auth/form-parts';
-import { Button, ClayCard, Input } from '@/ui/primitives';
+import { TrailArt } from '@/ui/auth/illustrations';
+import { SocialButtons } from '@/ui/auth/social-buttons';
+import { ArrowRightIcon, LockIcon, MailIcon, UserIcon } from '@/ui/icons';
+import { Button } from '@/ui/primitives';
 
 export function LoginForm() {
   const router = useRouter();
@@ -54,11 +59,16 @@ export function LoginForm() {
   }
 
   return (
-    <ClayCard className="p-8">
+    <AuthCard scene="trail" art={<TrailArt />} logo="lg" className="gap-8 pb-28 sm:pb-24">
+      <p className="text-title font-normal text-auth-text">
+        Real people. Small circles.
+        <br />
+        Big moments.
+      </p>
       <form onSubmit={onSubmit} noValidate className="flex flex-col gap-5">
-        <div>
-          <h1 className="text-heading text-text-primary">Step Inside</h1>
-          <p className="text-body text-text-secondary">Log in to your Howdy account.</p>
+        <div className="flex flex-col gap-1">
+          <h1 className="font-display text-headline text-brand-ink">Step Inside</h1>
+          <p className="text-body text-auth-text">Welcome back! Log in to your Howdy account.</p>
         </div>
         {error && (
           <FormMessage tone="error" focusKey={attempt}>
@@ -66,9 +76,11 @@ export function LoginForm() {
           </FormMessage>
         )}
         {needsVerify && (
-          <div className="flex flex-col gap-3 rounded-md bg-surface-sunken p-4">
-            <Input
+          <div className="flex flex-col gap-3 rounded-lg bg-surface-sunken p-4">
+            <AuthField
               label="Email to send the link to"
+              placeholder="Email address"
+              icon={<MailIcon />}
               type="email"
               autoComplete="email"
               value={verifyEmail}
@@ -84,8 +96,10 @@ export function LoginForm() {
             )}
           </div>
         )}
-        <Input
-          label="Email or call sign"
+        <AuthField
+          label="Handle or email"
+          placeholder="Handle or email"
+          icon={<UserIcon />}
           name="identifier"
           autoComplete="username"
           autoCapitalize="none"
@@ -93,26 +107,29 @@ export function LoginForm() {
           value={identifier}
           onChange={(e) => setIdentifier(e.target.value)}
         />
-        <Input
-          label="Secret Knock"
+        <AuthField
+          label="Secret knock"
+          placeholder="Secret knock"
+          icon={<LockIcon />}
           name="password"
           type="password"
           autoComplete="current-password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
-        <Button type="submit" size="lg" fullWidth loading={busy}>
-          Step Inside
+        <Button type="submit" variant="cta" size="lg" fullWidth loading={busy} className="min-h-14">
+          Step Inside <ArrowRightIcon />
         </Button>
-        <div className="flex flex-col items-center gap-1 text-caption text-text-secondary">
-          <Link href="/lost-your-key" className="inline-flex min-h-11 items-center">
+        <SocialButtons />
+        <div className="flex items-center justify-between gap-4 text-caption text-auth-text sm:pl-40">
+          <Link href="/lost-your-key" className="inline-flex min-h-11 items-center text-auth-link">
             Lost your key?
           </Link>
-          <span>
-            New here? <Link href="/stake-a-claim">Stake a Claim</Link>
-          </span>
+          <Link href="/stake-a-claim" className="inline-flex min-h-11 items-center gap-1.5 text-auth-link">
+            Stake a claim <ArrowRightIcon />
+          </Link>
         </div>
       </form>
-    </ClayCard>
+    </AuthCard>
   );
 }

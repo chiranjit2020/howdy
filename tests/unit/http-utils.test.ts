@@ -54,6 +54,8 @@ describe('session cookie (development vs https deployment)', () => {
   });
   it('every production build uses the Secure __Host- cookie, even when served from loopback over http', () => {
     vi.stubEnv('NODE_ENV', 'production');
+    // Production also insists on real object storage; this test is about cookies, so declare the end-to-end test build.
+    vi.stubEnv('ENABLE_TEST_STORAGE', '1');
     resetEnvCache();
     expect(isSecureDeployment()).toBe(true);
     const c = sessionCookie('T'.repeat(43), 100);

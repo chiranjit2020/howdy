@@ -9,7 +9,10 @@ export const metadata = { title: 'Not found' };
  */
 export default function NotFound() {
   return (
-    <main id="main" className="mx-auto flex min-h-dvh max-w-md flex-col justify-center px-4 py-10">
+    <main
+      id="main"
+      className="daylight-only mx-auto flex min-h-dvh max-w-md flex-col justify-center px-4 py-10"
+    >
       <ClayCard>
         <EmptyState
           as="h1"

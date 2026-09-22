@@ -1,6 +1,7 @@
 'use client';
 
 import type { ComponentProps } from 'react';
+import { Glyph } from '../art/glyph';
 import { cn } from '../cn';
 
 export interface YoButtonProps extends Omit<ComponentProps<'button'>, 'onClick' | 'children'> {
@@ -22,13 +23,13 @@ export function YoButton({ count, active, onToggle, className, ...rest }: YoButt
         'active:translate-y-0.5 motion-reduce:active:translate-y-0',
         active
           ? 'border-accent bg-warning text-on-warning shadow-clay-pressed'
-          : 'border-border-strong bg-surface text-text-primary shadow-clay-sm',
+          : 'border-border bg-surface text-text-primary shadow-clay-sm',
         className,
       )}
       {...rest}
     >
-      <span aria-hidden="true" className={cn(active && 'animate-yo-pop')}>
-        🤘
+      <span aria-hidden="true" className={cn('inline-flex', active && 'animate-yo-pop')}>
+        <Glyph emoji="🤘" />
       </span>
       <span>Yo</span>
       <span className="font-mono text-metadata" aria-label={`${count} ${count === 1 ? 'Yo' : 'Yos'}`}>

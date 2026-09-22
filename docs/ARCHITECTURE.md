@@ -35,7 +35,7 @@ src/
       infrastructure/  repositories (Drizzle), external adapters
       http/            request schemas (zod), handlers
       index.ts         public surface of the module; other modules import ONLY from here
-  platform/            cross-cutting: config/env, db, redis, logger, errors, rate-limit, mailer, http helpers
+  platform/            cross-cutting: config/env, db, redis, logger, errors, rate-limit, mailer, storage (object store: local folder or R2), http helpers
   ui/                  design system: tokens, primitives, howdy components
 db/
   migrations/          generated SQL migrations (committed)
@@ -49,7 +49,7 @@ Rules:
   `tests/unit/lint-boundaries.test.ts`): `app → modules → platform/shared`; `ui` imports only `shared`; `platform`/`shared` never
   import upward; and modules depend on each other one way only — `auth → profiles → (authz, relationships)`. HTTP routes that
   need two modules (e.g. `/api/me/*`: auth for *who*, profiles for *what*) live in the app layer. See ADR-009.
-- Modules today: `auth`, `profiles` (the Ranch), `authz` (the single `can()` policy), `relationships` (Posse / Scouting / Block / Mute / Restrict, ids only), `moderation` (reports), `fence` (Post Cards, replies, Yo), `whispers` (private threads; ADR-013), `tracks` (profile visits, Shadow Walk; listens to `ranch.visited`, ADR-014), `notifications` (Chimes; listens to domain events from `relationships` and `fence`, wired in `src/app/_lib/wire-events.ts`, ADR-012). Dependency chain `auth → profiles → relationships → authz`, with `fence`, `notifications` and `whispers` → `(profiles, relationships, authz)` and `tracks` → `(profiles, relationships)`; `moderation` stands alone; the app layer composes them (`src/app/_lib/social.ts`). See ADR-009, ADR-010, ADR-011, ADR-012, ADR-013, ADR-014.
+- Modules today: `auth`, `profiles` (the Ranch), `authz` (the single `can()` policy), `relationships` (Posse / Scouting / Block / Mute / Restrict, ids only), `moderation` (reports), `fence` (Post Cards, replies, Yo), `whispers` (private threads; ADR-013), `tracks` (profile visits, Shadow Walk; listens to `ranch.visited`, ADR-014), `media` (Portraits / profile photos: signed upload, decode + re-encode, object storage; who may SEE a photo is decided in the app layer with `mayViewRanch`, ADR-015), `notifications` (Chimes; listens to domain events from `relationships` and `fence`, wired in `src/app/_lib/wire-events.ts`, ADR-012). Dependency chain `auth → profiles → relationships → authz`, with `fence`, `notifications` and `whispers` → `(profiles, relationships, authz)` and `tracks` → `(profiles, relationships)`; `moderation` and `media` stand alone; the app layer composes them (`src/app/_lib/social.ts`). See ADR-009, ADR-010, ADR-011, ADR-012, ADR-013, ADR-014, ADR-015.
 - No business logic in route handlers or React components.
 - Layers only depend downward: `http → application → domain`, `application → infrastructure` via interfaces where a
   test seam is genuinely useful (not for everything).
@@ -144,5 +144,5 @@ encoded in `TrackItem`), and Post Card / reply / Whisper limits come from `src/s
 ## 8. Deferred (explicitly not now)
 
 Neo4j, Elasticsearch, Kafka, microservices, event sourcing, CQRS, ML recommendations, video, livestreaming,
-passkeys/MFA (schema stays open for them), object storage choice (R2 vs S3 vs Cloudinary is decided at Media time;
-signed-upload pattern is fixed).
+passkeys/MFA (schema stays open for them). (Object storage was decided in Phase 9: Cloudflare R2 through the S3
+protocol, ADR-015. Still deferred: photos on Post Cards, image moderation, a CDN.)

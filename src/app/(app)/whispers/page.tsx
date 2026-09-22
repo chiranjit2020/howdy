@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import { AppHeader } from '@/app/_lib/app-header';
 import { requireUser } from '@/modules/auth';
 import { listThreads } from '@/modules/whispers';
 import { formatRelative } from '@/ui/howdy';
@@ -13,7 +12,6 @@ export default async function WhispersPage() {
   const threads = await listThreads(user.id);
   return (
     <>
-      <AppHeader current="whispers" />
       <main id="main" className="mx-auto flex w-full max-w-xl flex-col gap-6 px-4 py-8">
         <h1 className="text-heading text-text-primary">Whispers</h1>
         {threads.length === 0 ? (

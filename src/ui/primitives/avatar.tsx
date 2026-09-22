@@ -1,5 +1,5 @@
-import Image from 'next/image';
 import type { PortraitTint } from '@/shared/validation/profile';
+import { Img } from '../art/img';
 import { cn } from '../cn';
 
 const SIZE = {
@@ -65,14 +65,7 @@ export function Avatar({ name, src, size = 'md', online, tint, className }: Avat
         )}
       >
         {src ? (
-          <Image
-            src={src}
-            alt={name}
-            width={PX[size]}
-            height={PX[size]}
-            unoptimized
-            className="size-full object-cover"
-          />
+          <Img src={src} alt={name} width={PX[size]} height={PX[size]} className="size-full object-cover" />
         ) : (
           <span role="img" aria-label={name}>
             {initials(name)}

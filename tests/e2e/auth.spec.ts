@@ -89,13 +89,13 @@ test.describe('authentication journey (production build, real CSP, real cookies)
     const ctx = await newContext(browser);
     const page = await ctx.newPage();
     await page.goto('/stake-a-claim');
-    await page.getByRole('button', { name: 'Stake your claim' }).click();
-    await expect(page.getByLabel('Call sign')).toBeFocused();
-    await expect(page.getByLabel('Call sign')).toHaveAttribute('aria-invalid', 'true');
-    await page.getByLabel('Call sign').fill('admin');
-    await page.getByLabel('Email').fill('x@example.com');
-    await page.getByLabel('Secret Knock').fill('short');
-    await page.getByRole('button', { name: 'Stake your claim' }).click();
+    await page.getByRole('button', { name: 'Create My Account' }).click();
+    await expect(page.getByLabel('Choose a handle')).toBeFocused();
+    await expect(page.getByLabel('Choose a handle')).toHaveAttribute('aria-invalid', 'true');
+    await page.getByLabel('Choose a handle').fill('admin');
+    await page.getByLabel('Email address').fill('x@example.com');
+    await page.getByLabel('Secret knock').fill('short');
+    await page.getByRole('button', { name: 'Create My Account' }).click();
     await expect(page.getByText('That call sign is reserved.')).toBeVisible();
     await expect(page.getByText(/at least 10 characters/i).first()).toBeVisible();
 

@@ -2,15 +2,17 @@ import type { ComponentProps } from 'react';
 import { cn } from '../cn';
 import { SpinnerIcon } from '../icons';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
+export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'cta' | 'cta-success';
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
 const VARIANT: Record<ButtonVariant, string> = {
   primary: 'bg-accent text-on-accent shadow-clay-sm hover:bg-accent-hover',
-  secondary:
-    'bg-surface text-text-primary border border-border-strong shadow-clay-sm hover:bg-surface-sunken',
+  secondary: 'bg-surface text-text-primary border border-border shadow-clay-sm hover:bg-surface-sunken',
   ghost: 'bg-transparent text-text-primary hover:bg-surface-sunken',
   danger: 'bg-danger text-on-danger shadow-clay-sm hover:opacity-90',
+  // The sign-in pills: peach for "Step Inside", mint for "Create My Account".
+  cta: 'bg-cta text-on-cta shadow-cta hover:bg-cta-hover',
+  'cta-success': 'bg-cta-success text-on-cta shadow-cta hover:bg-cta-success-hover',
 };
 
 // Every size keeps a >=44px touch target on touch devices (min-h-11); `sm` shrinks only with a fine pointer.

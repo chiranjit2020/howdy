@@ -4,17 +4,20 @@ import { notFound } from 'next/navigation';
 import { getCurrentUser } from '@/modules/auth';
 import type { Actor } from '@/modules/authz';
 import { listFence, listWaiting, type FencePage, type Waiting } from '@/modules/fence';
+import { getPortraitVersion } from '@/modules/media';
 import { getRanchForViewer, resolveHandle, type RanchView } from '@/modules/profiles';
-import { getRelationshipView } from '@/modules/relationships';
+import { getRelationshipView, listMyRelationships } from '@/modules/relationships';
+import { withCards } from '@/app/_lib/social';
 import { getEnv } from '@/platform/config/env';
 import { AppError } from '@/platform/errors';
 import { clientIp } from '@/platform/http/client-ip';
-import { RanchHeader } from '@/ui/howdy';
+import { portraitUrl } from '@/shared/portrait';
+import { RanchCover, RanchHeader } from '@/ui/howdy';
 import { buttonClasses, ClayCard, EmptyState } from '@/ui/primitives';
-import { AppHeader } from '@/app/_lib/app-header';
 import { RelationshipBar } from './relationship-bar';
 import { FenceSection } from './fence-section';
 import { SignalEditor } from './signal-editor';
+import { PosseCard, SignalCard } from './side-cards';
 import { WaitingQueue } from './waiting-queue';
 
 // Ranches are private by default and never belong in a search index.
@@ -58,7 +61,6 @@ export default async function RanchPage({ params }: { params: Promise<{ handle: 
     if (user) notFound();
     return (
       <>
-        <AppHeader />
         <main id="main" className="mx-auto max-w-md px-4 py-16">
           <ClayCard className="flex flex-col items-center gap-3 p-8 text-center">
             <h1 className="text-heading text-text-primary">Step inside to visit this Ranch</h1>
@@ -78,6 +80,10 @@ export default async function RanchPage({ params }: { params: Promise<{ handle: 
   // A signed-in visitor also sees how they relate to this person (and can act on it).
   const person = user && !ranch.isOwner ? await resolveHandle(ranch.handle) : null;
   const rel = user && person ? await getRelationshipView(user.id, person.userId) : null;
+  // The photo is offered only to signed-in viewers (the picture itself needs a session), and only on a Ranch they may open, which
+  // this page has already established. Best-effort: a problem finding it just means the initials show.
+  const ownerId = ranch.isOwner ? user?.id : person?.userId;
+  const photo = user && ownerId ? await getPortraitVersion(ownerId).catch(() => null) : null;
   const badge = !rel
     ? undefined
     : rel.posse === 'member'
@@ -101,19 +107,23 @@ export default async function RanchPage({ params }: { params: Promise<{ handle: 
   }
   const waiting: Waiting | null = user && ranch.isOwner ? await listWaiting(user.id) : null;
 
+  // Only the owner sees their own Posse here; nobody else's list is ever shown on a Ranch.
+  const posse = user && ranch.isOwner ? (await withCards(await listMyRelationships(user.id))).posse : null;
+
+  // Two columns from `lg` up: the profile, relationship controls and Fence on the left, the Signal and owner cards on the
+  // right (which spans the left column's rows). On a phone everything stacks in reading order.
   return (
-    <>
-      <AppHeader current={ranch.isOwner ? 'ranch' : undefined} />
-      <main id="main" className="mx-auto flex max-w-xl flex-col gap-6 px-4 py-8">
-        <ClayCard className="p-8">
+    <main id="main" className="grid items-start gap-6 py-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
+      <div className="clay overflow-hidden lg:col-start-1">
+        <RanchCover />
+        <div className="px-5 pb-6 sm:px-7">
           <RanchHeader
+            overlap
             displayName={ranch.displayName}
             handle={ranch.handle}
             portraitTint={ranch.portraitTint}
+            {...(photo ? { portraitUrl: portraitUrl(ranch.handle, photo) } : {})}
             {...(badge ? { relationship: badge } : {})}
-            {...(ranch.signal
-              ? { signal: ranch.signal.text, signalExpiresLabel: hoursLeft(ranch.signal.expiresAt) }
-              : {})}
             actions={
               ranch.isOwner ? (
                 <Link href="/workshop" className={buttonClasses({ variant: 'secondary' })}>
@@ -122,10 +132,28 @@ export default async function RanchPage({ params }: { params: Promise<{ handle: 
               ) : undefined
             }
           />
-        </ClayCard>
+        </div>
+      </div>
+
+      {rel && (
+        <div className="lg:col-start-1">
+          <RelationshipBar handle={ranch.handle} displayName={ranch.displayName} initial={rel} />
+        </div>
+      )}
+
+      <aside
+        aria-label="Signal and Posse"
+        className="flex flex-col gap-6 lg:col-start-2 lg:row-span-3 lg:row-start-1"
+      >
+        {ranch.signal && (
+          <SignalCard text={ranch.signal.text} expiresLabel={hoursLeft(ranch.signal.expiresAt)} />
+        )}
         {ranch.isOwner && <SignalEditor current={ranch.signal?.text} />}
-        {rel && <RelationshipBar handle={ranch.handle} displayName={ranch.displayName} initial={rel} />}
         {waiting && <WaitingQueue waiting={waiting} />}
+        {posse && <PosseCard members={posse} />}
+      </aside>
+
+      <div className="min-w-0 lg:col-start-1">
         {fence ? (
           <FenceSection
             // Server data changed (e.g. the owner approved a card): start from it instead of the old client copy.
@@ -147,7 +175,7 @@ export default async function RanchPage({ params }: { params: Promise<{ handle: 
             />
           </ClayCard>
         )}
-      </main>
-    </>
+      </div>
+    </main>
   );
 }

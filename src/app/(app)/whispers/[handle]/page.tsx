@@ -1,5 +1,4 @@
 import { notFound } from 'next/navigation';
-import { AppHeader } from '@/app/_lib/app-header';
 import { requireUser } from '@/modules/auth';
 import { getThread } from '@/modules/whispers';
 import { getEnv } from '@/platform/config/env';
@@ -20,7 +19,6 @@ export default async function ThreadPage({ params }: { params: Promise<{ handle:
     if (err instanceof AppError && err.code === 'RATE_LIMITED') {
       return (
         <>
-          <AppHeader current="whispers" />
           <main id="main" className="mx-auto max-w-md px-4 py-16">
             <ClayCard>
               <EmptyState
@@ -39,7 +37,6 @@ export default async function ThreadPage({ params }: { params: Promise<{ handle:
   if (!page) notFound();
   return (
     <>
-      <AppHeader current="whispers" />
       <main id="main" className="mx-auto flex w-full max-w-xl flex-col gap-4 px-4 py-6">
         <ThreadView
           handle={page.person.handle}

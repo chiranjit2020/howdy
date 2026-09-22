@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { LIMITS } from '@/shared/limits';
 import type { PortraitTint } from '@/shared/validation/profile';
+import { Glyph } from '../art/glyph';
 import { cn } from '../cn';
 import { FlipIcon } from '../icons';
 import { Avatar } from '../primitives/avatar';
@@ -205,7 +206,7 @@ export function PostCard({
               <YoButton count={yoCount} active={yoActive} onToggle={onYo} />
             ) : (
               <p className="text-caption text-text-secondary">
-                <span aria-hidden="true">🤘 </span>
+                <Glyph emoji="🤘" className="mr-1" />
                 {yoCount} {yoCount === 1 ? 'Yo' : 'Yos'}
               </p>
             )}

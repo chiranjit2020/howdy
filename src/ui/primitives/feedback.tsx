@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
+import { Art, Glyph } from '../art/glyph';
 import { cn } from '../cn';
-import { SpinnerIcon } from '../icons';
 import { Button } from './button';
 
 export type HeadingTag = 'h1' | 'h2' | 'h3' | 'h4';
@@ -16,7 +16,8 @@ export function LoadingState({ label = 'Loading', className }: { label?: string;
       role="status"
       className={cn('flex flex-col items-center justify-center gap-3 p-8 text-text-secondary', className)}
     >
-      <SpinnerIcon className="animate-spin-slow text-heading" />
+      {/* The brand loader: a ring of pastel dots, turning. Decorative; the label below is what is announced. */}
+      <Art name="loader" size="free" className="w-14 animate-loader-spin" />
       <span className="text-caption">{label}…</span>
     </div>
   );
@@ -42,7 +43,7 @@ export function EmptyState({
     <div className={cn('flex flex-col items-center gap-2 p-8 text-center', className)}>
       {icon && (
         <div aria-hidden="true" className="text-display">
-          {icon}
+          {typeof icon === 'string' ? <Glyph emoji={icon} size="hero" /> : icon}
         </div>
       )}
       <Heading className="text-title text-text-primary">{title}</Heading>

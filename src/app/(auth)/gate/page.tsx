@@ -1,7 +1,9 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/modules/auth';
-import { buttonClasses, ClayCard } from '@/ui/primitives';
+import { AuthCard } from '@/ui/auth/auth-card';
+import { TrailArt } from '@/ui/auth/illustrations';
+import { buttonClasses } from '@/ui/primitives';
 
 export const metadata = { title: 'The Gate' };
 
@@ -9,16 +11,16 @@ export const metadata = { title: 'The Gate' };
 export default async function GatePage() {
   if (await getCurrentUser()) redirect('/home');
   return (
-    <ClayCard className="flex flex-col items-center gap-4 p-8 text-center">
-      <p aria-hidden="true" className="text-display">
-        🤠
-      </p>
-      <h1 className="text-heading text-text-primary">Howdy, partner.</h1>
-      <p className="text-body text-text-secondary">
+    <AuthCard scene="trail" art={<TrailArt />} logo="lg" className="gap-4 pb-32">
+      <h1 className="font-display text-headline text-brand-ink">Howdy, partner.</h1>
+      <p className="text-body text-auth-text">
         A small-circle social world. Post cards, quiet visits and private whispers — no endless feed.
       </p>
       <div className="mt-2 flex w-full flex-col gap-3">
-        <Link href="/stake-a-claim" className={buttonClasses({ size: 'lg', fullWidth: true })}>
+        <Link
+          href="/stake-a-claim"
+          className={buttonClasses({ variant: 'cta', size: 'lg', fullWidth: true })}
+        >
           Stake a Claim
         </Link>
         <Link
@@ -28,6 +30,6 @@ export default async function GatePage() {
           Step Inside
         </Link>
       </div>
-    </ClayCard>
+    </AuthCard>
   );
 }

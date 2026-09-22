@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Glyph } from '../art/glyph';
 import { cn } from '../cn';
 import { RelativeTime } from './time';
 
@@ -54,7 +55,7 @@ export function ChimeItem({
         aria-hidden="true"
         className="inline-flex size-11 shrink-0 items-center justify-center rounded-pill bg-surface-sunken text-title"
       >
-        {ICON[type]}
+        <Glyph emoji={ICON[type]} size="badge" />
       </span>
       <span className="min-w-0 flex-1">
         <span className="block text-body text-text-primary">

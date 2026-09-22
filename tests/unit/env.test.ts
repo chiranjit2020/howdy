@@ -8,6 +8,15 @@ const base = {
   AUTH_SECRET: 'x'.repeat(32),
 };
 
+/** Production must use real object storage; these are the settings for it. */
+const r2 = {
+  STORAGE_DRIVER: 'r2',
+  R2_ACCOUNT_ID: '0123456789abcdef0123456789abcdef',
+  R2_ACCESS_KEY_ID: 'AKIAEXAMPLEKEY00',
+  R2_SECRET_ACCESS_KEY: 'example-secret-access-key-0000',
+  R2_BUCKET: 'howdy-media',
+};
+
 describe('parseEnv', () => {
   it('accepts a valid development config and applies defaults', () => {
     const env = parseEnv(base);
@@ -29,7 +38,7 @@ describe('parseEnv', () => {
   });
 
   it('requires https and Redis in production', () => {
-    const prod = { ...base, NODE_ENV: 'production' };
+    const prod = { ...base, ...r2, NODE_ENV: 'production' };
     expect(() => parseEnv({ ...prod, APP_URL: 'http://howdy.example', REDIS_URL: 'redis://r' })).toThrow(
       /https/,
     );
@@ -40,7 +49,7 @@ describe('parseEnv', () => {
   });
 
   it('allows plain http in production only for loopback (local production runs), never for a real host', () => {
-    const prod = { ...base, NODE_ENV: 'production', REDIS_URL: 'redis://r' };
+    const prod = { ...base, ...r2, NODE_ENV: 'production', REDIS_URL: 'redis://r' };
     for (const ok of ['http://localhost:3300', 'http://127.0.0.1:3000', 'http://[::1]:3000']) {
       expect(parseEnv({ ...prod, APP_URL: ok }).APP_URL).toBe(ok);
     }
@@ -56,9 +65,48 @@ describe('parseEnv', () => {
     expect(env.ENABLE_TEST_MAILER).toBe('0');
   });
 
+  describe('storage settings', () => {
+    const prod = {
+      ...base,
+      NODE_ENV: 'production',
+      APP_URL: 'https://howdy.example',
+      REDIS_URL: 'redis://r',
+    };
+
+    it('default to local files, which is fine for development', () => {
+      const env = parseEnv(base);
+      expect(env.STORAGE_DRIVER).toBe('local');
+      expect(env.STORAGE_LOCAL_DIR).toBe('.dev/media');
+      expect(env.ENABLE_TEST_STORAGE).toBe('0');
+    });
+
+    it('r2 needs all four R2 settings, and names the missing ones without printing any value', () => {
+      expect(parseEnv({ ...base, ...r2 }).R2_BUCKET).toBe('howdy-media');
+      try {
+        parseEnv({ ...base, STORAGE_DRIVER: 'r2', R2_ACCOUNT_ID: r2.R2_ACCOUNT_ID });
+        expect.unreachable();
+      } catch (e) {
+        expect(String(e)).toMatch(/R2_ACCESS_KEY_ID.*R2_SECRET_ACCESS_KEY.*R2_BUCKET/);
+        expect(String(e)).not.toContain(r2.R2_ACCOUNT_ID);
+      }
+    });
+
+    it('rejects a malformed account id or bucket name', () => {
+      expect(() => parseEnv({ ...base, ...r2, R2_ACCOUNT_ID: 'not-an-account-id' })).toThrow(/R2_ACCOUNT_ID/);
+      expect(() => parseEnv({ ...base, ...r2, R2_BUCKET: 'Bad Bucket/../x' })).toThrow(/R2_BUCKET/);
+    });
+
+    it('production refuses local files (they would not survive a redeploy) unless it is an end-to-end test build', () => {
+      expect(() => parseEnv(prod)).toThrow(/STORAGE_DRIVER must be r2/);
+      expect(parseEnv({ ...prod, ENABLE_TEST_STORAGE: '1' }).STORAGE_DRIVER).toBe('local');
+      expect(parseEnv({ ...prod, ...r2 }).STORAGE_DRIVER).toBe('r2');
+    });
+  });
+
   describe('WebSocket settings', () => {
     const prod = {
       ...base,
+      ...r2,
       NODE_ENV: 'production',
       APP_URL: 'https://howdy.example',
       REDIS_URL: 'redis://localhost:6379',

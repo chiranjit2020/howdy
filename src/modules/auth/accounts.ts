@@ -67,7 +67,7 @@ async function issueEmailToken(
  * separate the two cases, and mail is sent after the response.
  */
 export async function signUp(
-  input: { email: string; handle: string; password: string },
+  input: { email: string; handle: string; password: string; displayName?: string | undefined },
   ctx: RequestContext,
 ): Promise<void> {
   await enforceRateLimit(`auth:signup:ip:${ctx.ip}`, RATE.signupIp);
@@ -96,7 +96,7 @@ export async function signUp(
         .returning({ id: users.id });
       await tx.insert(credentials).values({ userId: u!.id, passwordHash });
       // Every account has a Ranch from the first moment (same transaction: no user without a profile, ever).
-      await createProfile(tx, u!.id, input.handle);
+      await createProfile(tx, u!.id, input.displayName ?? input.handle);
       const token = await issueEmailToken(tx, u!.id, 'verify_email', VERIFY_EMAIL_TTL_MS);
       return { userId: u!.id, token };
     });

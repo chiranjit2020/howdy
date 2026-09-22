@@ -147,6 +147,42 @@ describe('architecture boundaries are enforced by lint', () => {
       expect(
         await violations(`src/modules/${lower}/x.ts`, "import { listTracks } from '@/modules/tracks';"),
       ).toHaveLength(1);
+    // media owns files and nothing else: it imports no other module, and no other module imports it. Who may SEE a photo is
+    // decided in the app layer (the route), which composes media with the profile rules.
+    for (const bad of [
+      'auth',
+      'profiles',
+      'relationships',
+      'authz',
+      'moderation',
+      'fence',
+      'notifications',
+      'whispers',
+      'tracks',
+    ])
+      expect(
+        await violations('src/modules/media/x.ts', `import { a } from '@/modules/${bad}';`),
+      ).toHaveLength(1);
+    for (const other of [
+      'auth',
+      'profiles',
+      'relationships',
+      'authz',
+      'moderation',
+      'fence',
+      'notifications',
+      'whispers',
+      'tracks',
+    ])
+      expect(
+        await violations(`src/modules/${other}/x.ts`, "import { readPortrait } from '@/modules/media';"),
+      ).toHaveLength(1);
+    expect(
+      await violations('src/app/x/page.tsx', "import { readPortrait } from '@/modules/media/service';"),
+    ).toHaveLength(1);
+    expect(await violations('src/app/x/page.tsx', "import { readPortrait } from '@/modules/media';")).toEqual(
+      [],
+    );
     // auth must not reach the pure modules directly either (it goes through profiles)
     expect(await violations('src/modules/auth/x.ts', "import { can } from '@/modules/authz';")).toHaveLength(
       1,

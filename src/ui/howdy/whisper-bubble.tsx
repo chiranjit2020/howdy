@@ -1,3 +1,4 @@
+import { Glyph } from '../art/glyph';
 import { cn } from '../cn';
 
 export type WhisperStatus = 'sending' | 'sent' | 'delivered' | 'seen' | 'failed';
@@ -48,7 +49,7 @@ export function WhisperBubble({
           <span>{time}</span>
           {out && status && (
             <span>
-              {status === 'seen' && <span aria-hidden="true">🤘 </span>}
+              {status === 'seen' && <Glyph emoji="🤘" className="mr-1" />}
               {STATUS_LABEL[status]}
             </span>
           )}

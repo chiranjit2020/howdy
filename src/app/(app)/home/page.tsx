@@ -1,10 +1,10 @@
 import Link from 'next/link';
 import { withCards } from '@/app/_lib/social';
+import { Glyph } from '@/ui/art/glyph';
 import { listMySessions, requireUser } from '@/modules/auth';
 import { getOwnRanch } from '@/modules/profiles';
 import { listMyRelationships } from '@/modules/relationships';
 import { Badge, buttonClasses, ClayCard } from '@/ui/primitives';
-import { AppHeader } from '@/app/_lib/app-header';
 import { HitTheTrail, OpenGates } from './home-actions';
 
 export const metadata = { title: 'Home' };
@@ -24,12 +24,9 @@ export default async function HomePage() {
 
   return (
     <>
-      <AppHeader current="home" />
       <main id="main" className="mx-auto flex w-full max-w-xl flex-col gap-6 px-4 py-8">
         <ClayCard className="flex flex-col gap-3 p-8">
-          <p aria-hidden="true" className="text-display">
-            📜
-          </p>
+          <Glyph emoji="📜" size="hero" />
           <h1 className="text-heading text-text-primary">Howdy, {ranch.displayName}</h1>
           <p className="text-body text-text-secondary">
             Deed granted, @{user.handle}. <Badge tone="success">Email confirmed</Badge>

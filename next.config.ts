@@ -13,7 +13,16 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
-  serverExternalPackages: ['pg', 'pino', '@node-rs/argon2', 'ioredis'],
+  // Native or heavy server-only libraries are loaded from node_modules at runtime, never bundled (sharp is native code).
+  serverExternalPackages: [
+    'pg',
+    'pino',
+    '@node-rs/argon2',
+    'ioredis',
+    'sharp',
+    '@aws-sdk/client-s3',
+    '@aws-sdk/s3-request-presigner',
+  ],
   async headers() {
     return [{ source: '/:path*', headers: securityHeaders }];
   },

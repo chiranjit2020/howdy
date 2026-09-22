@@ -16,9 +16,11 @@ export interface RanchHeaderProps {
   relationship?: RelationshipState;
   /** Action row: Tip Hat / Yo / Whisper for visitors, Tend the Ranch for the owner. */
   actions?: ReactNode;
+  /** Lift the portrait up over whatever sits above the header (a cover picture). */
+  overlap?: boolean;
 }
 
-/** Top of a Ranch (profile): portrait, name, handle, relationship, Signal, actions. */
+/** Top of a Ranch (profile): portrait, name, handle, relationship, actions (and the Signal, when shown here). */
 export function RanchHeader({
   displayName,
   handle,
@@ -29,17 +31,31 @@ export function RanchHeader({
   signalExpiresLabel,
   relationship,
   actions,
+  overlap,
 }: RanchHeaderProps) {
   return (
-    <header className="flex flex-col items-center gap-3 text-center">
-      <Avatar name={displayName} src={portraitUrl} tint={portraitTint} size="xl" online={online} />
-      <div>
-        <h1 className="text-heading text-text-primary">{displayName}</h1>
-        <p className="font-mono text-code text-text-secondary">@{handle}</p>
+    <header className="flex flex-col gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:gap-5">
+        <Avatar
+          name={displayName}
+          src={portraitUrl}
+          tint={portraitTint}
+          size="xl"
+          online={online}
+          className={overlap ? '-mt-14 self-start' : 'self-start'}
+        />
+        <div className="min-w-0 flex-1">
+          <h1 className="font-display text-heading break-words text-brand-ink">{displayName}</h1>
+          <p className="font-mono text-code text-text-secondary">@{handle}</p>
+          {relationship && (
+            <div className="mt-2">
+              <PosseBadge state={relationship} />
+            </div>
+          )}
+        </div>
+        {actions && <div className="flex flex-wrap gap-3 sm:self-center">{actions}</div>}
       </div>
-      {relationship && <PosseBadge state={relationship} />}
       {signal && <Signal text={signal} expiresLabel={signalExpiresLabel} />}
-      {actions && <div className="mt-1 flex flex-wrap justify-center gap-3">{actions}</div>}
     </header>
   );
 }

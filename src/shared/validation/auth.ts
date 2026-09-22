@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { LIMITS } from '../limits';
+import { displayNameSchema } from './profile';
 import './zod-setup'; // jitless Zod (no eval probe under our CSP)
 
 /**
@@ -115,8 +116,14 @@ export function passwordMatchesIdentity(password: string, email: string, handle?
 
 export const IDENTITY_PASSWORD_MESSAGE = 'Your knock should not contain your email or call sign.';
 
+/** `displayName` is optional: left out, the Ranch is named after the call sign (the same as before this field existed). */
 export const signUpSchema = z
-  .object({ email: emailSchema, handle: handleSchema, password: passwordSchema })
+  .object({
+    email: emailSchema,
+    handle: handleSchema,
+    password: passwordSchema,
+    displayName: displayNameSchema.optional(),
+  })
   .superRefine((v, ctx) => {
     if (passwordMatchesIdentity(v.password, v.email, v.handle)) {
       ctx.addIssue({ code: 'custom', path: ['password'], message: IDENTITY_PASSWORD_MESSAGE });

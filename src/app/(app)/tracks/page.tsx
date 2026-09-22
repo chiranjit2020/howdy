@@ -1,4 +1,3 @@
-import { AppHeader } from '@/app/_lib/app-header';
 import { requireUser } from '@/modules/auth';
 import { getOwnRanch } from '@/modules/profiles';
 import { listTracks } from '@/modules/tracks';
@@ -17,7 +16,6 @@ export default async function TracksPage() {
   const hiddenTotal = ORDER.reduce((n, w) => n + tracks.hidden[w], 0);
   return (
     <>
-      <AppHeader current="tracks" />
       <main id="main" className="mx-auto flex w-full max-w-xl flex-col gap-6 px-4 py-8">
         <h1 className="text-heading text-text-primary">Tracks</h1>
         <ShadowWalk initial={ranch.shadowWalk} />

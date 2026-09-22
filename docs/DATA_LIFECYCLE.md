@@ -19,6 +19,7 @@ users ──┬─< credentials      ON DELETE CASCADE   (1:1, password hash)
         ├─< notifications    ON DELETE CASCADE   (recipient and actor; also with the post card it is about)
         ├─< notification_prefs ON DELETE CASCADE (1:1, which kinds of Chime)
         ├─< tracks           ON DELETE CASCADE   (both owner_id and visitor_id; one row per pair, a UTC date only)
+        ├─< media            ON DELETE CASCADE   (the row only: the FILE is not removed by the database, see below)
         ├─< conversations    ON DELETE CASCADE   (both user_low and user_high; one row per pair)
         │     └─< messages   ON DELETE CASCADE   (with the thread; also with the sender)
         ├─< audit_log        ON DELETE SET NULL  (trail survives, anonymised)
@@ -42,7 +43,14 @@ Planned (each must declare its deletion behaviour when created):
 | `tips` | giver | delete |
 | `tributes` | author + recipient | delete when either side is deleted |
 | `moderation_actions` (Phase 11) | subject / moderator | keep for safety with identifiers removed; never cascade-delete evidence |
-| `media` | owner | delete objects from storage first, then rows |
+
+**Media (Phase 9): rows cascade, files do not.** A `media` row (a Portrait) points at a file in object storage; deleting the `users`
+row removes the row but the database cannot remove the file. **Account deletion must therefore call `deleteAllMediaFor(userId)`
+(objects first, then rows) BEFORE it deletes the `users` row**, or the files are orphaned with nothing left to find them. The deletion
+flow itself is not built yet; this is the step it must include (tested: the function removes a person's objects and rows and nobody else's).
+A Portrait has three states: `pending` (a signed upload URL was issued, nothing is trusted), `ready` (decoded, cropped, re-encoded, served;
+at most one per person, enforced by the database) and `retired` (replaced or removed, its file being deleted). The raw upload is
+recorded as a `retired` row in the same transaction that makes the new photo live, so even a failed delete leaves a row to retry from.
 
 ## 2. Account deletion ("Burn the Deed") — design, not yet built
 
@@ -53,7 +61,7 @@ Planned (each must declare its deletion behaviour when created):
 2. **Grace period** (proposed 14 days): the owner can sign in only to cancel. A daily job finds expired grace periods.
 3. **Purge**, in one transaction per user, in this order: revoke/delete sessions and tokens → remove authored content per the table
    above (anonymise vs delete) → delete `profiles`, `credentials` → delete the `users` row (audit rows keep `user_id = NULL`).
-4. **Objects** in storage are deleted *before* the rows that reference them, so a failure leaves rows to retry from.
+4. **Objects** in storage (Portraits, via `deleteAllMediaFor`) are deleted *before* the rows that reference them, so a failure leaves rows to retry from.
 5. Confirmation email; the handle becomes available again after a cooling-off period (proposed 90 days) to prevent impersonation.
 
 ## 3. Retention (master prompt §54) — what is kept, how long, who removes it
@@ -68,13 +76,14 @@ Planned (each must declare its deletion behaviour when created):
 | **Tracks** (`tracks`) | **7 days**: a row holds only the UTC date of the latest visit; reads ignore older rows at once | `purgeOldTracks()` (in `pnpm jobs:purge`); also deleted with either person |
 | **Whispers** (`messages`) | **7 days** from being sent, or at once by "Burn Thread" (either person, both sides) | `purgeOldWhispers()` (in `pnpm jobs:purge`); threads left empty are dropped with them |
 | Chimes (`notifications`) | read: 30 days after being read; unread: 90 days after being rung | `purgeOldChimes()` (in `pnpm jobs:purge`) |
+| **Portrait files** (`media`) | a live Portrait until replaced/removed or the account is deleted; an **unfinished upload 60 minutes**; a replaced/removed file is deleted at once and, if storage failed, retried by the job | `purgeStaleMedia()` (in `pnpm jobs:purge`); removal deletes the object first, then the row |
 | Waiting cards / replies (`status` pending or held) | 30 days from being written, then dropped if the owner never answered | `purgeStaleWaiting()` (in `pnpm jobs:purge`) |
 | Published cards, replies, Yos | until removed by their writer / the Fence owner, or an account is deleted | people; account deletion |
 | Report evidence snapshot (`reports.evidence_text`) | with the report (Phase 11 decides the period) | — |
 | Tracks / typing / presence (future) | seconds → days, per ADR-006 | their own jobs |
 | Logs | no passwords, tokens, cookies or message/Signal bodies (redacted) | log platform retention |
 
-**Running the jobs:** `pnpm jobs:purge` runs both purges and prints a JSON summary; it is idempotent. **Scheduling it is a
+**Running the jobs:** `pnpm jobs:purge` runs every purge and prints a JSON summary; it is idempotent. **Scheduling it is a
 deployment task that is not done** — choose cron / the platform scheduler / a worker before going live, otherwise expired rows
 accumulate (reads are already correct without it; this is about not keeping data forever).
 
@@ -130,3 +139,12 @@ accumulate (reads are already correct without it; this is about not keeping data
 - Ranch pages are `noindex`; nothing about a Ranch is exposed to signed-out visitors unless the owner chose "everyone".
 - A hidden Ranch is indistinguishable from a missing one (API 404; signed-out page shows the same prompt for both).
 - Opening Ranches is rate limited per viewer to make bulk scraping expensive.
+
+## 4f. Portrait privacy rules (Phase 9)
+
+- A photo is stored only as our own re-encoded 512×512 WebP: no EXIF (location, camera, copyright), nothing the upload claimed to be.
+  The object key is random and says nothing about the owner. The bucket is private; photos are read back and served by the app.
+- Who may see a photo is decided **when it is requested**, with the same rule as opening that Ranch (`mayViewRanch`): a block, a
+  Posse-only Ranch, a suspended account or being signed out removes it at once, even from a browser that cached it (`no-cache` + ETag;
+  a 304 is only answered after access is re-checked). Missing person, hidden Ranch, blocked visitor and "no photo" are the same 404.
+- Portraits are shown only to signed-in people. Lists, Post Cards, Chimes and Whispers still show the coloured initials.

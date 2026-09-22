@@ -16,6 +16,8 @@ interface FieldShellProps {
   error?: ReactNode;
   /** Extra element ids to list in aria-describedby (e.g. a character counter). */
   extraDescribedBy?: string | undefined;
+  /** Keep the label for assistive tech but do not paint it (the control's placeholder or icon says the same thing). */
+  hideLabel?: boolean | undefined;
   children: (control: ControlProps) => ReactNode;
   className?: string | undefined;
 }
@@ -27,6 +29,7 @@ export function FieldShell({
   hint,
   error,
   extraDescribedBy,
+  hideLabel,
   children,
   className,
 }: FieldShellProps) {
@@ -37,7 +40,10 @@ export function FieldShell({
   const describedBy = [hintId, errorId, extraDescribedBy].filter(Boolean).join(' ') || undefined;
   return (
     <div className={cn('flex flex-col gap-1.5', className)}>
-      <label htmlFor={fieldId} className="text-caption font-semibold text-text-primary">
+      <label
+        htmlFor={fieldId}
+        className={hideLabel ? 'sr-only' : 'text-caption font-semibold text-text-primary'}
+      >
         {label}
       </label>
       {children({ id: fieldId, 'aria-describedby': describedBy, 'aria-invalid': error ? true : undefined })}
@@ -56,7 +62,7 @@ export function FieldShell({
 }
 
 const CONTROL =
-  'w-full rounded-md border border-border-strong bg-surface-sunken px-4 py-2.5 text-body text-text-primary ' +
+  'w-full rounded-md border border-border bg-surface-sunken px-4 py-2.5 text-body text-text-primary ' +
   'placeholder:text-text-muted shadow-clay-pressed transition-colors disabled:cursor-not-allowed disabled:opacity-60 ' +
   'aria-invalid:border-danger aria-invalid:border-2';
 

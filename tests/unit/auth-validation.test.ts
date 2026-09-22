@@ -85,6 +85,14 @@ describe('signUpSchema', () => {
       password: 'correct horse battery staple',
     });
   });
+  it('the Display name is optional, and screened like any name when given', () => {
+    const base = { email: 'a@example.com', handle: 'cool_cat', password: 'correct horse battery staple' };
+    expect(signUpSchema.parse({ ...base, displayName: '  Cool   Cat ' }).displayName).toBe('Cool Cat');
+    expect(ok(signUpSchema, base)).toBe(true); // left out: the Ranch takes the call sign as its name
+    for (const bad of ['', 'x'.repeat(200), 'see https://spam.example']) {
+      expect(ok(signUpSchema, { ...base, displayName: bad }), bad).toBe(false);
+    }
+  });
 });
 
 describe('loginSchema / tokenSchema / resetPasswordSchema', () => {

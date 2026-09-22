@@ -14,6 +14,7 @@ import {
 import { LIMITS } from '@/shared/limits';
 import type { PortraitTint } from '@/shared/validation/profile';
 import type { WhisperMessage } from '@/shared/ws';
+import { Art } from '@/ui/art/glyph';
 import { apiRequest, postJson } from '@/ui/auth/api';
 import { FormMessage } from '@/ui/auth/form-parts';
 import { WhisperBubble } from '@/ui/howdy';
@@ -371,7 +372,7 @@ export function ThreadView({
           placeholder="Just between the two of you…"
         />
         <Button type="submit" disabled={!text.trim()} className="self-end">
-          Send
+          Send <Art name="plane" />
         </Button>
       </form>
 

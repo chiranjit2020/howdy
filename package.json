@@ -29,6 +29,8 @@
     "jobs:purge": "tsx scripts/purge.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1137.0",
+    "@aws-sdk/s3-request-presigner": "^3.1137.0",
     "@node-rs/argon2": "^2.2.1",
     "drizzle-orm": "^0.45.2",
     "ioredis": "^6.0.0",
@@ -37,6 +39,7 @@
     "pino": "^10.3.1",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
+    "sharp": "^0.35.4",
     "ws": "^8.21.3",
     "zod": "^4.6.5"
   },

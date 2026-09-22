@@ -5,6 +5,7 @@
 import { config } from 'dotenv';
 import { purgeExpiredAuthData } from '@/modules/auth';
 import { purgeStaleWaiting } from '@/modules/fence';
+import { purgeStaleMedia } from '@/modules/media';
 import { purgeOldChimes } from '@/modules/notifications';
 import { purgeOldTracks } from '@/modules/tracks';
 import { purgeOldWhispers } from '@/modules/whispers';
@@ -21,8 +22,9 @@ async function main(): Promise<void> {
   const chimes = await purgeOldChimes();
   const whispers = await purgeOldWhispers();
   const trackRows = await purgeOldTracks();
+  const files = await purgeStaleMedia();
   process.stdout.write(
-    `${JSON.stringify({ event: 'jobs.purge', ...auth, signals, waiting, ...chimes, whispers, ...trackRows, durationMs: Date.now() - started })}\n`,
+    `${JSON.stringify({ event: 'jobs.purge', ...auth, signals, waiting, ...chimes, whispers, ...trackRows, ...files, durationMs: Date.now() - started })}\n`,
   );
 }
 

@@ -1,4 +1,3 @@
-import { AppHeader } from '@/app/_lib/app-header';
 import { requireUser } from '@/modules/auth';
 import { listChimes } from '@/modules/notifications';
 import { ChimeList } from './chime-list';
@@ -11,7 +10,6 @@ export default async function ChimesPage() {
   const page = await listChimes(user.id, {});
   return (
     <>
-      <AppHeader current="chimes" />
       <main id="main" className="mx-auto flex w-full max-w-xl flex-col gap-6 px-4 py-8">
         <h1 className="text-heading text-text-primary">Chimes</h1>
         <ChimeList

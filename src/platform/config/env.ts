@@ -16,6 +16,21 @@ const schema = z.object({
   MAIL_FROM: z.string().min(3).default('Howdy <no-reply@howdy.test>'),
   /** Lets a production build use the dev mail transports. For end-to-end tests only; never set on a real deployment. */
   ENABLE_TEST_MAILER: z.enum(['0', '1']).default('0'),
+  /** local = files in STORAGE_LOCAL_DIR (dev/e2e only). r2 = Cloudflare R2 through the S3 protocol (any S3-compatible store works). */
+  STORAGE_DRIVER: z.enum(['local', 'r2']).default('local'),
+  STORAGE_LOCAL_DIR: z.string().min(1).default('.dev/media'),
+  /** Lets a production build use the local driver. For end-to-end tests only; never set on a real deployment. */
+  ENABLE_TEST_STORAGE: z.enum(['0', '1']).default('0'),
+  R2_ACCOUNT_ID: z
+    .string()
+    .regex(/^[0-9a-f]{32}$/, 'R2_ACCOUNT_ID must be the 32-character Cloudflare account id')
+    .optional(),
+  R2_ACCESS_KEY_ID: z.string().min(8).optional(),
+  R2_SECRET_ACCESS_KEY: z.string().min(16).optional(),
+  R2_BUCKET: z
+    .string()
+    .regex(/^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$/, 'R2_BUCKET must be a valid bucket name')
+    .optional(),
   /** Port of the separate WebSocket process (`pnpm ws`). */
   WS_PORT: z.coerce.number().int().min(1).max(65535).default(3301),
   /** How often an open socket re-checks that its session is still valid (logout, "log out everywhere", suspension end it). */
@@ -50,7 +65,17 @@ export function parseEnv(source: Record<string, string | undefined>): Env {
     throw new Error(`Invalid environment configuration. Check: ${keys.join(', ')}`);
   }
   const env = result.data;
+  if (env.STORAGE_DRIVER === 'r2') {
+    const missing = (
+      ['R2_ACCOUNT_ID', 'R2_ACCESS_KEY_ID', 'R2_SECRET_ACCESS_KEY', 'R2_BUCKET'] as const
+    ).filter((k) => !env[k]);
+    if (missing.length) throw new Error(`STORAGE_DRIVER=r2 needs: ${missing.join(', ')}`);
+  }
   if (env.NODE_ENV === 'production') {
+    // Files on a local disk do not survive a redeploy or a second server: production must use real object storage.
+    if (env.STORAGE_DRIVER === 'local' && env.ENABLE_TEST_STORAGE !== '1') {
+      throw new Error('STORAGE_DRIVER must be r2 in production');
+    }
     // Loopback is allowed so a production build can be exercised locally (browsers treat it as a secure context).
     if (!env.APP_URL.startsWith('https://') && !isLoopbackUrl(env.APP_URL)) {
       throw new Error('APP_URL must be https in production');

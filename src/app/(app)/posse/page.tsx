@@ -1,7 +1,6 @@
 import { withCards } from '@/app/_lib/social';
 import { requireUser } from '@/modules/auth';
 import { listMyRelationships } from '@/modules/relationships';
-import { AppHeader } from '@/app/_lib/app-header';
 import { AskForm } from './ask-form';
 import { PosseLists } from './posse-lists';
 
@@ -13,7 +12,6 @@ export default async function PossePage() {
   const lists = await withCards(await listMyRelationships(user.id));
   return (
     <>
-      <AppHeader current="posse" />
       <main id="main" className="mx-auto flex max-w-xl flex-col gap-6 px-4 py-8">
         <h1 className="text-heading text-text-primary">Your Posse</h1>
         <AskForm />

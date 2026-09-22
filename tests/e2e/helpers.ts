@@ -64,10 +64,10 @@ export const pathOf = (link: string): string => {
 
 export async function signUpVia(page: Page, a: { handle: string; email: string; password: string }) {
   await page.goto('/stake-a-claim');
-  await page.getByLabel('Call sign').fill(a.handle);
-  await page.getByLabel('Email').fill(a.email);
-  await page.getByLabel('Secret Knock').fill(a.password);
-  await page.getByRole('button', { name: 'Stake your claim' }).click();
+  await page.getByLabel('Choose a handle').fill(a.handle);
+  await page.getByLabel('Email address').fill(a.email);
+  await page.getByLabel('Secret knock').fill(a.password);
+  await page.getByRole('button', { name: 'Create My Account' }).click();
   await page.getByRole('heading', { name: 'Check your email' }).waitFor();
 }
 
@@ -80,8 +80,8 @@ export async function confirmEmailVia(page: Page, email: string) {
 
 export async function stepInsideVia(page: Page, identifier: string, password: string) {
   await page.goto('/step-inside');
-  await page.getByLabel('Email or call sign').fill(identifier);
-  await page.getByLabel('Secret Knock').fill(password);
+  await page.getByLabel('Handle or email').fill(identifier);
+  await page.getByLabel('Secret knock').fill(password);
   await page.getByRole('button', { name: 'Step Inside' }).click();
 }
 

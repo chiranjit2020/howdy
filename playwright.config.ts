@@ -34,6 +34,9 @@ export default defineConfig({
         ENABLE_TEST_MAILER: '1',
         MAIL_TRANSPORT: 'file',
         MAIL_OUTBOX_DIR: '.dev/e2e-outbox',
+        // Test-only storage: Portraits go to a folder instead of Cloudflare R2 (production refuses this without the flag).
+        ENABLE_TEST_STORAGE: '1',
+        STORAGE_LOCAL_DIR: '.dev/e2e-media',
         // The spec gives every browser context its own X-Forwarded-For, so per-IP rate limits never bleed between runs.
         TRUST_PROXY_HOPS: '1',
         // Where pages connect for live Whispers. Also the only socket origin the CSP allows.
@@ -49,6 +52,8 @@ export default defineConfig({
       env: {
         NODE_ENV: 'production',
         APP_URL: `http://localhost:${PORT}`,
+        // The realtime process reads the same config (it never touches files, but production still validates it).
+        ENABLE_TEST_STORAGE: '1',
         WS_PORT: String(WS_PORT),
         WS_REVALIDATE_SECONDS: '2',
         TRUST_PROXY_HOPS: '1',

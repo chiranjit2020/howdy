@@ -7,3 +7,4 @@ export * from './fence';
 export * from './notifications';
 export * from './whispers';
 export * from './tracks';
+export * from './media';

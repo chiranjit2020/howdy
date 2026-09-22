@@ -27,6 +27,19 @@ describe('Content-Security-Policy', () => {
     expect(csp).not.toMatch(/connect-src[^;]*\swss?:(?!\/\/)/); // no scheme-wide wildcard
   });
 
+  it('photo uploads may go to the one configured bucket origin, and nowhere else', () => {
+    const bucket = 'https://0123456789abcdef0123456789abcdef.r2.cloudflarestorage.com';
+    expect(buildCsp('n', false, undefined, bucket)).toContain(`connect-src 'self' ${bucket};`);
+    expect(buildCsp('n', false, 'wss://ws.howdy.example', bucket)).toContain(
+      `connect-src 'self' wss://ws.howdy.example ${bucket};`,
+    );
+    // Not configured (local files): nothing is added, and never a wildcard.
+    expect(buildCsp('n', false)).not.toMatch(/connect-src[^;]*(r2|cloudflare|\*)/);
+    expect(buildCsp('n', false, undefined, bucket)).not.toMatch(/connect-src[^;]*\*/);
+    // Images and everything else stay same-origin: photos are served by the app, never straight from the bucket.
+    expect(buildCsp('n', false, undefined, bucket)).toContain("img-src 'self' blob: data:;");
+  });
+
   it('proxy issues a fresh nonce per request and ignores client-supplied request ids', () => {
     const mk = () => new NextRequest('http://localhost:3000/', { headers: { 'x-request-id': 'attacker' } });
     const a = proxy(mk());
