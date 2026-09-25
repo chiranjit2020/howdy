@@ -297,17 +297,41 @@ test.describe('signed-out pages: accessibility and layout in a real browser', ()
     await ctx.close();
   });
 
+  test('the sign-in pages’ top bar is just the logo, centred', async ({ browser }) => {
+    const ctx = await newContext(browser, {
+      hasTouch: true,
+      isMobile: true,
+      viewport: { width: 360, height: 700 },
+    });
+    const page = await ctx.newPage();
+    for (const path of pages) {
+      await page.goto(path);
+      const bar = page.getByRole('banner');
+      await expect(bar.getByRole('link')).toHaveCount(1);
+      const logo = (await bar.getByRole('link', { name: 'Howdy' }).boundingBox())!;
+      expect(Math.abs(logo.x + logo.width / 2 - 180), `${path} logo centred`).toBeLessThanOrEqual(2);
+    }
+    await ctx.close();
+  });
+
   for (const width of [320, 360]) {
-    test(`the top bar's two ways in are equal, on one line each, and fit at ${width}px`, async ({
+    test(`elsewhere signed out, the top bar's two ways in are equal, on one line each, and fit at ${width}px`, async ({
       browser,
     }) => {
+      // A Ranch opened without an account still offers the way in (only the sign-in pages drop it).
+      const owner = await newContext(browser);
+      const ownerPage = await owner.newPage();
+      const a = uniqueAccount('pillfit');
+      await signUpVia(ownerPage, a);
+      await confirmEmailVia(ownerPage, a.email);
+      await owner.close();
       const ctx = await newContext(browser, {
         hasTouch: true,
         isMobile: true,
         viewport: { width, height: 700 },
       });
       const page = await ctx.newPage();
-      await page.goto('/gate');
+      await page.goto(`/ranch/${a.handle}`);
       const bar = page.getByRole('banner');
       const pills = [
         bar.getByRole('link', { name: /Step Inside/ }),

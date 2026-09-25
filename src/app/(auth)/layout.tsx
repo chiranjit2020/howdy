@@ -3,9 +3,9 @@ import { AppFrame } from '@/app/_lib/app-shell';
 
 /**
  * Signed-out pages (Gate, Step Inside, Stake a Claim, verify, lost-your-key) share the exact same shell as every signed-in
- * page: the top bar with the Howdy logo and a way in, on the same flat Daylight background. There is no separate "before
- * you sign in" look — see AppShell for the shell itself.
+ * page, on the same flat Daylight background. Their top bar is just the logo, centred: the page itself is the way in, so
+ * the bar's Step Inside / Stake a Claim buttons would only repeat it. See AppShell for the shell itself.
  */
 export default function AuthLayout({ children }: { children: ReactNode }) {
-  return <AppFrame>{children}</AppFrame>;
+  return <AppFrame waysIn={false}>{children}</AppFrame>;
 }

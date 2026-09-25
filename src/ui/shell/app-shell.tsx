@@ -38,14 +38,18 @@ export function AppShell({
   unread = 0,
   unreadWhispers = 0,
   townHallInvites = 0,
+  waysIn = true,
   children,
 }: {
   me?: ShellMe | undefined;
   unread?: number;
   unreadWhispers?: number;
   townHallInvites?: number;
+  /** Signed out: offer Step Inside / Stake a Claim in the top bar. Off on the sign-in pages: just the logo, centred. */
+  waysIn?: boolean;
   children: ReactNode;
 }) {
+  const logoOnly = !me && !waysIn;
   const items: ShellNavItem[] = me
     ? [
         { key: 'home', href: '/home', label: 'Home' },
@@ -69,9 +73,14 @@ export function AppShell({
   return (
     <div className="daylight-only min-h-dvh">
       <header className="sticky top-0 z-30 border-b border-border/60 bg-background/90 backdrop-blur">
-        <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-2 px-4 min-[360px]:gap-4 md:px-6">
-          <HowdyLogo size={me ? 'xs' : 'bar'} href={me ? '/home' : '/gate'} />
-          {me ? (
+        <div
+          className={cn(
+            'mx-auto flex h-16 w-full max-w-7xl items-center gap-2 px-4 min-[360px]:gap-4 md:px-6',
+            logoOnly ? 'justify-center' : 'justify-between',
+          )}
+        >
+          <HowdyLogo size={me || logoOnly ? 'xs' : 'bar'} href={me ? '/home' : '/gate'} />
+          {logoOnly ? null : me ? (
             <div className="flex items-center gap-3">
               {/* Decorative: a little bird that hops beside the bell. */}
               <span aria-hidden="true" className="pointer-events-none select-none">
@@ -129,7 +138,8 @@ export function AppShell({
             </div>
           </aside>
         )}
-        <div className="min-w-0 flex-1 pb-24 md:pb-8">{children}</div>
+        {/* Room for the phone tab bar, which only exists when signed in. */}
+        <div className={cn('min-w-0 flex-1', me && 'pb-24 md:pb-8')}>{children}</div>
       </div>
       {me && <ShellBottomNav items={items} />}
     </div>

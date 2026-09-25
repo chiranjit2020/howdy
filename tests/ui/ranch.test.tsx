@@ -107,4 +107,15 @@ describe('AppShell', () => {
     expect(screen.queryByRole('link', { name: 'My Ranch' })).not.toBeInTheDocument();
     expect(screen.queryByRole('navigation', { name: 'Primary' })).not.toBeInTheDocument();
   });
+  it('signed out on the sign-in pages: just the logo (the page itself is the way in)', () => {
+    render(
+      <AppShell waysIn={false}>
+        <main>page</main>
+      </AppShell>,
+    );
+    const bar = screen.getByRole('banner');
+    expect(within(bar).getAllByRole('link')).toHaveLength(1);
+    expect(within(bar).getByRole('link', { name: 'Howdy' })).toHaveAttribute('href', '/gate');
+    expect(screen.queryByRole('link', { name: /^Step Inside/ })).not.toBeInTheDocument();
+  });
 });

@@ -13,7 +13,8 @@ export default async function GatePage() {
   return (
     <main
       id="main"
-      className="mx-auto flex w-full max-w-md flex-col px-4 py-6 sm:min-h-[70dvh] sm:justify-center sm:py-8"
+      // Centred in the space under the top bar (4rem + its 1px border), at every screen size.
+      className="mx-auto flex min-h-[calc(100dvh-4rem-1px)] w-full max-w-md flex-col justify-center px-4 py-6"
     >
       <ClayCard className="flex flex-col items-center gap-4 p-6 text-center sm:p-7">
         <Glyph emoji="🤠" size="hero" />
@@ -25,20 +26,20 @@ export default async function GatePage() {
         <div className="mt-1 flex w-full flex-col gap-3">
           <Link
             href="/stake-a-claim"
-            className={cn(buttonClasses({ size: 'lg', fullWidth: true }), 'flex-col gap-0.5 py-2.5')}
+            className={cn(buttonClasses({ size: 'lg', fullWidth: true }), 'flex-col gap-1 py-3')}
           >
-            <span className="leading-tight">Stake a Claim</span>
-            <span className="text-caption leading-tight font-medium">Create your account</span>
+            <span className="leading-none">Stake a Claim</span>
+            <span className="text-caption leading-none font-medium">Create your account</span>
           </Link>
           <Link
             href="/step-inside"
             className={cn(
               buttonClasses({ variant: 'secondary', size: 'lg', fullWidth: true }),
-              'flex-col gap-0.5 py-2.5',
+              'flex-col gap-1 py-3',
             )}
           >
-            <span className="leading-tight">Step Inside</span>
-            <span className="text-caption leading-tight font-medium text-text-secondary">
+            <span className="leading-none">Step Inside</span>
+            <span className="text-caption leading-none font-medium text-text-secondary">
               Sign in to continue
             </span>
           </Link>

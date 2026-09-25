@@ -13,9 +13,16 @@ import { AppShell } from '@/ui/shell/app-shell';
  * and Whisper threads they can see. Everything beyond "who" is best-effort: a problem counting or reading must never take a
  * page down (the counts fall back to zero and the name to the handle).
  */
-export async function AppFrame({ children }: { children: ReactNode }) {
+export async function AppFrame({
+  children,
+  waysIn = true,
+}: {
+  children: ReactNode;
+  /** Signed out: show the Step Inside / Stake a Claim buttons in the top bar. The sign-in pages turn them off. */
+  waysIn?: boolean;
+}) {
   const user = await getCurrentUser();
-  if (!user) return <AppShell>{children}</AppShell>;
+  if (!user) return <AppShell waysIn={waysIn}>{children}</AppShell>;
   const [unread, unreadWhispers, invites, ranch, photo] = await Promise.all([
     unreadCount(user.id).catch(() => 0),
     unreadThreads(user.id).catch(() => 0),
