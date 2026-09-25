@@ -25,11 +25,13 @@ export function AppShell({
   me,
   unread = 0,
   unreadWhispers = 0,
+  townHallInvites = 0,
   children,
 }: {
   me?: ShellMe | undefined;
   unread?: number;
   unreadWhispers?: number;
+  townHallInvites?: number;
   children: ReactNode;
 }) {
   const items: ShellNavItem[] = me
@@ -42,6 +44,13 @@ export function AppShell({
         { key: 'chimes', href: '/chimes', label: 'Chimes', badge: unread },
         // Phones reach the Workshop from "Tend the Ranch" on their own Ranch; the tab bar only has room for six.
         { key: 'workshop', href: '/workshop', label: 'Workshop', sidebarOnly: true },
+        {
+          key: 'town-halls',
+          href: '/town-halls',
+          label: 'Town Halls',
+          badge: townHallInvites,
+          sidebarOnly: true,
+        },
       ]
     : [];
 

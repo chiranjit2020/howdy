@@ -27,7 +27,15 @@ export type DomainEvent =
     }
   /** A signed-in person opened someone else's Ranch (only ever emitted after the policy allowed the view). */
   | { type: 'ranch.visited'; viewerId: string; ownerId: string }
-  | { type: 'yo.given'; cardId: string; ownerId: string; cardAuthorId: string; actorId: string };
+  | { type: 'yo.given'; cardId: string; ownerId: string; cardAuthorId: string; actorId: string }
+  /** A Tribute always waits for the owner's approval — there is no fast path, so this alone tells nobody anything. */
+  | { type: 'tribute.given'; tributeId: string; ownerId: string; authorId: string }
+  | { type: 'tribute.approved'; tributeId: string; ownerId: string; authorId: string }
+  /** Who gave it and which kind are never broadcast beyond the target (the Ranch shows only the aggregate breakdown). */
+  | { type: 'mark.given'; raterId: string; targetId: string }
+  /** The owner invited someone; they are not a member until they accept. */
+  | { type: 'townhall.invited'; townHallId: string; ownerId: string; inviteeId: string }
+  | { type: 'townhall.invite_accepted'; townHallId: string; ownerId: string; inviteeId: string };
 
 export type EventHandler = (event: DomainEvent) => Promise<void>;
 

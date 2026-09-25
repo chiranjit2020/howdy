@@ -52,8 +52,9 @@ export default defineConfig({
       env: {
         NODE_ENV: 'production',
         APP_URL: `http://localhost:${PORT}`,
-        // The realtime process reads the same config (it never touches files, but production still validates it).
+        // The realtime process reads the same config (it never touches files or mail, but production still validates it).
         ENABLE_TEST_STORAGE: '1',
+        ENABLE_TEST_MAILER: '1',
         WS_PORT: String(WS_PORT),
         WS_REVALIDATE_SECONDS: '2',
         TRUST_PROXY_HOPS: '1',

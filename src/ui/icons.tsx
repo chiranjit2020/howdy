@@ -54,3 +54,7 @@ export const BoltIcon = (p: IconProps) => <Svg d="M13 2 4 14h7l-1 8 9-12h-7z" {.
 export const ToolsIcon = (p: IconProps) => (
   <Svg d="M14.7 6.3a4 4 0 0 0-5.2 5.2L3 18l3 3 6.5-6.5a4 4 0 0 0 5.2-5.2L15 12l-3-3z" {...p} />
 );
+// A simple columned building: pediment, four columns, base — reads as "Town Hall" at nav-icon size.
+export const TownHallIcon = (p: IconProps) => (
+  <Svg d="M4 10L12 4L20 10M6 10v9M10 10v9M14 10v9M18 10v9M3 21h18" {...p} />
+);

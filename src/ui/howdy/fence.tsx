@@ -1,6 +1,7 @@
 import { Children, isValidElement, useId, type ReactNode } from 'react';
 import { Button } from '../primitives/button';
 import { EmptyState } from '../primitives/feedback';
+import { GlossaryHint } from './glossary-hint';
 
 /**
  * The Fence: the public wall on a Ranch. A list of Post Cards, newest first, with cursor-style
@@ -25,9 +26,12 @@ export function Fence({
   const cards = Children.toArray(children);
   return (
     <section aria-labelledby={headingId} className="flex flex-col gap-4">
-      <h2 id={headingId} className="font-display text-heading text-text-primary">
-        The Fence
-      </h2>
+      <div className="flex items-center">
+        <h2 id={headingId} className="font-display text-heading text-text-primary">
+          The Fence
+        </h2>
+        <GlossaryHint term="fence" />
+      </div>
       {composer}
       {cards.length === 0 ? (
         <EmptyState icon="🪵" title="Nothing nailed up yet" description={emptyHint} />

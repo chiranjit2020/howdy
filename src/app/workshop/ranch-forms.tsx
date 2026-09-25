@@ -260,7 +260,7 @@ export function FenceRulesForm({
 export function ChimePrefsForm({
   initial,
 }: {
-  initial: Record<'posse' | 'fence' | 'replies' | 'yo' | 'whispers', boolean>;
+  initial: Record<'posse' | 'fence' | 'replies' | 'yo' | 'whispers' | 'tributes' | 'townhalls', boolean>;
 }) {
   const toast = useToast();
   const [prefs, setPrefs] = useState(initial);
@@ -313,6 +313,18 @@ export function ChimePrefsForm({
         hint="Private messages from your Posse."
         checked={prefs.whispers}
         onCheckedChange={(v) => set('whispers', v)}
+      />
+      <Switch
+        label="Tributes & Marks"
+        hint="A Tribute waiting for you, one that was approved, or a new Mark."
+        checked={prefs.tributes}
+        onCheckedChange={(v) => set('tributes', v)}
+      />
+      <Switch
+        label="Town Halls"
+        hint="An invite, or someone accepting yours."
+        checked={prefs.townhalls}
+        onCheckedChange={(v) => set('townhalls', v)}
       />
     </ClayCard>
   );

@@ -10,10 +10,14 @@ const schema = z.object({
   AUTH_SECRET: z.string().min(32, 'AUTH_SECRET must be at least 32 characters'),
   /** How many trusted reverse-proxy hops append to X-Forwarded-For. 0 = do not trust the header at all. */
   TRUST_PROXY_HOPS: z.coerce.number().int().min(0).max(5).default(0),
-  /** console = log to stdout (dev). file = write JSON to MAIL_OUTBOX_DIR (dev/e2e). No production provider exists yet. */
-  MAIL_TRANSPORT: z.enum(['console', 'file']).default('console'),
+  /** console = log to stdout (dev). file = write JSON to MAIL_OUTBOX_DIR (dev/e2e). resend = the Resend HTTP API (production). */
+  MAIL_TRANSPORT: z.enum(['console', 'file', 'resend']).default('console'),
   MAIL_OUTBOX_DIR: z.string().min(1).default('.dev/outbox'),
   MAIL_FROM: z.string().min(3).default('Howdy <no-reply@howdy.test>'),
+  RESEND_API_KEY: z
+    .string()
+    .regex(/^re_\S{8,}$/, 'RESEND_API_KEY must be a Resend API key (re_...)')
+    .optional(),
   /** Lets a production build use the dev mail transports. For end-to-end tests only; never set on a real deployment. */
   ENABLE_TEST_MAILER: z.enum(['0', '1']).default('0'),
   /** local = files in STORAGE_LOCAL_DIR (dev/e2e only). r2 = Cloudflare R2 through the S3 protocol (any S3-compatible store works). */
@@ -71,6 +75,9 @@ export function parseEnv(source: Record<string, string | undefined>): Env {
     ).filter((k) => !env[k]);
     if (missing.length) throw new Error(`STORAGE_DRIVER=r2 needs: ${missing.join(', ')}`);
   }
+  if (env.MAIL_TRANSPORT === 'resend' && !env.RESEND_API_KEY) {
+    throw new Error('MAIL_TRANSPORT=resend needs: RESEND_API_KEY');
+  }
   if (env.NODE_ENV === 'production') {
     // Files on a local disk do not survive a redeploy or a second server: production must use real object storage.
     if (env.STORAGE_DRIVER === 'local' && env.ENABLE_TEST_STORAGE !== '1') {
@@ -81,6 +88,10 @@ export function parseEnv(source: Record<string, string | undefined>): Env {
       throw new Error('APP_URL must be https in production');
     }
     if (!env.REDIS_URL) throw new Error('REDIS_URL is required in production (rate limiting)');
+    // Verification and reset links must reach a real inbox: console/file would leak them into logs or a disk.
+    if (env.MAIL_TRANSPORT !== 'resend' && env.ENABLE_TEST_MAILER !== '1') {
+      throw new Error('MAIL_TRANSPORT must be resend in production');
+    }
     if (
       env.WS_PUBLIC_URL?.startsWith('ws://') &&
       !isLoopbackUrl(env.WS_PUBLIC_URL.replace(/^ws:/, 'http:'))

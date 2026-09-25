@@ -8,6 +8,7 @@ import { purgeStaleWaiting } from '@/modules/fence';
 import { purgeStaleMedia } from '@/modules/media';
 import { purgeOldChimes } from '@/modules/notifications';
 import { purgeOldTracks } from '@/modules/tracks';
+import { purgeStaleTributes } from '@/modules/tributes';
 import { purgeOldWhispers } from '@/modules/whispers';
 import { clearExpiredSignals } from '@/modules/profiles';
 import { getPool } from '@/platform/db';
@@ -23,8 +24,9 @@ async function main(): Promise<void> {
   const whispers = await purgeOldWhispers();
   const trackRows = await purgeOldTracks();
   const files = await purgeStaleMedia();
+  const tributeRows = await purgeStaleTributes();
   process.stdout.write(
-    `${JSON.stringify({ event: 'jobs.purge', ...auth, signals, waiting, ...chimes, whispers, ...trackRows, ...files, durationMs: Date.now() - started })}\n`,
+    `${JSON.stringify({ event: 'jobs.purge', ...auth, signals, waiting, ...chimes, whispers, ...trackRows, ...files, ...tributeRows, durationMs: Date.now() - started })}\n`,
   );
 }
 

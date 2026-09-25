@@ -611,9 +611,9 @@ export async function listWaiting(ownerId: string): Promise<Waiting> {
 export async function cardForReport(
   userId: string,
   cardId: string,
-): Promise<{ authorId: string; body: string } | null> {
+): Promise<{ id: string; authorId: string; body: string } | null> {
   const loaded = await loadCard(userId, cardId);
-  return loaded ? { authorId: loaded.card.authorId, body: loaded.card.body } : null;
+  return loaded ? { id: loaded.card.id, authorId: loaded.card.authorId, body: loaded.card.body } : null;
 }
 
 /** Retention: drop waiting cards and replies nobody answered for 30 days. Returns how many rows were removed. */

@@ -28,13 +28,13 @@ export const notifications = pgTable(
   (t) => [
     check(
       'notifications_type_check',
-      sql`${t.type} in ('posse_requested', 'posse_accepted', 'card_created', 'card_waiting', 'card_approved', 'reply_created', 'reply_waiting', 'yo_given', 'whisper_received')`,
+      sql`${t.type} in ('posse_requested', 'posse_accepted', 'card_created', 'card_waiting', 'card_approved', 'reply_created', 'reply_waiting', 'yo_given', 'whisper_received', 'tribute_waiting', 'tribute_approved', 'mark_given', 'townhall_invited', 'townhall_invite_accepted')`,
     ),
     check('notifications_not_self', sql`${t.recipientId} <> ${t.actorId}`),
-    // Posse Chimes are about a person; every other Chime is about a card.
+    // Posse, Whisper, Tribute, Mark and Town Hall Chimes are about a person; every card/reply/Yo Chime is about a card.
     check(
       'notifications_card_iff_card_type',
-      sql`(${t.type} in ('posse_requested', 'posse_accepted', 'whisper_received')) = (${t.cardId} is null)`,
+      sql`(${t.type} in ('posse_requested', 'posse_accepted', 'whisper_received', 'tribute_waiting', 'tribute_approved', 'mark_given', 'townhall_invited', 'townhall_invite_accepted')) = (${t.cardId} is null)`,
     ),
     // One Chime per person per thing: a repeat (switching a Yo off and on, a second reply) cannot ring the bell again.
     uniqueIndex('notifications_once_per_card')
@@ -62,5 +62,7 @@ export const notificationPrefs = pgTable('notification_prefs', {
   replies: boolean('replies').notNull().default(true),
   yo: boolean('yo').notNull().default(true),
   whispers: boolean('whispers').notNull().default(true),
+  tributes: boolean('tributes').notNull().default(true),
+  townhalls: boolean('townhalls').notNull().default(true),
   updatedAt: tstz('updated_at').notNull().defaultNow(),
 });

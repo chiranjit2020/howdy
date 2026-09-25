@@ -27,11 +27,14 @@ export const users = pgTable(
     emailVerifiedAt: tstz('email_verified_at'),
     /** active | suspended | pending_deletion. Only `active` accounts can sign in or hold a session. */
     status: text('status').notNull().default('active'),
+    /** member | moderator | admin (Phase 11). No self-service promotion yet — set by hand in the database. */
+    role: text('role').notNull().default('member'),
     createdAt: tstz('created_at').notNull().defaultNow(),
     updatedAt: tstz('updated_at').notNull().defaultNow(),
   },
   (t) => [
     check('users_status_check', sql`${t.status} in ('active', 'suspended', 'pending_deletion')`),
+    check('users_role_check', sql`${t.role} in ('member', 'moderator', 'admin')`),
     check('users_handle_format', sql`${t.handle}::text ~ '^[a-z0-9_]{3,24}$'`),
     check(
       'users_email_shape',

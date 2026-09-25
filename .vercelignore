@@ -1,0 +1,26 @@
+# `vercel deploy` uploads this folder. Keep local-only and secret files out (Vercel builds from source).
+node_modules/
+.next/
+out/
+coverage/
+*.tsbuildinfo
+
+# secrets
+.env
+.env.*
+!.env.example
+neon.txt
+neon-connection.txt
+github-repo.txt
+
+# local dev infra, test mail outboxes, local media, scratch scripts
+.dev/
+
+# test artefacts
+playwright-report/
+test-results/
+
+# tooling / editor
+.agents/
+.claude/
+.idea/

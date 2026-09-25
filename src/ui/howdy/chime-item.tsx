@@ -15,7 +15,9 @@ export type ChimeType =
   | 'POSSE_ACCEPTED'
   | 'CARD_WAITING'
   | 'REPLY_WAITING'
-  | 'CARD_APPROVED';
+  | 'CARD_APPROVED'
+  | 'TOWNHALL_INVITED'
+  | 'TOWNHALL_ACCEPTED';
 
 const ICON: Record<ChimeType, string> = {
   POST_CARD_CREATED: '📮',
@@ -30,6 +32,8 @@ const ICON: Record<ChimeType, string> = {
   CARD_WAITING: '⏳',
   REPLY_WAITING: '⏳',
   CARD_APPROVED: '✅',
+  TOWNHALL_INVITED: '🏛️',
+  TOWNHALL_ACCEPTED: '🤝',
 };
 
 /** One notification ("Chime"). Unread is conveyed with text for assistive tech, not the dot alone. */

@@ -22,8 +22,8 @@ export function HowdyLogo({
     >
       <Img
         src="/brand/howdy-logo.png"
-        width={274}
-        height={101}
+        width={640}
+        height={239}
         alt="Howdy"
         loading="eager"
         className={cn('h-auto', LOGO_WIDTH[size])}

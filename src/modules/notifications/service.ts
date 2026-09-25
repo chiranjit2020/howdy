@@ -40,7 +40,12 @@ export type ChimeType =
   | 'reply_created'
   | 'reply_waiting'
   | 'yo_given'
-  | 'whisper_received';
+  | 'whisper_received'
+  | 'tribute_waiting'
+  | 'tribute_approved'
+  | 'mark_given'
+  | 'townhall_invited'
+  | 'townhall_invite_accepted';
 
 const CATEGORY: Record<ChimeType, ChimeCategory> = {
   posse_requested: 'posse',
@@ -52,10 +57,15 @@ const CATEGORY: Record<ChimeType, ChimeCategory> = {
   reply_created: 'replies',
   yo_given: 'yo',
   whisper_received: 'whispers',
+  tribute_waiting: 'tributes',
+  tribute_approved: 'tributes',
+  mark_given: 'tributes',
+  townhall_invited: 'townhalls',
+  townhall_invite_accepted: 'townhalls',
 };
 
 /** Chimes the recipient needs in order to act (the owner decides what waits), so a restricted writer still rings them. */
-const ACTIONABLE: ReadonlySet<ChimeType> = new Set(['card_waiting', 'reply_waiting']);
+const ACTIONABLE: ReadonlySet<ChimeType> = new Set(['card_waiting', 'reply_waiting', 'tribute_waiting']);
 /** Chimes that only make sense while the card is public. */
 const NEEDS_PUBLISHED: ReadonlySet<ChimeType> = new Set([
   'card_created',
@@ -64,14 +74,30 @@ const NEEDS_PUBLISHED: ReadonlySet<ChimeType> = new Set([
   'yo_given',
 ]);
 
-const DEFAULT_PREFS: ChimePrefs = { posse: true, fence: true, replies: true, yo: true, whispers: true };
+const DEFAULT_PREFS: ChimePrefs = {
+  posse: true,
+  fence: true,
+  replies: true,
+  yo: true,
+  whispers: true,
+  tributes: true,
+  townhalls: true,
+};
 
 // ─── writing Chimes (from domain events) ─────────────────────────────────────────────────────────────────────────────
 
 async function prefsOf(userId: string): Promise<ChimePrefs> {
   const [row] = await getDb().select().from(notificationPrefs).where(eq(notificationPrefs.userId, userId));
   return row
-    ? { posse: row.posse, fence: row.fence, replies: row.replies, yo: row.yo, whispers: row.whispers }
+    ? {
+        posse: row.posse,
+        fence: row.fence,
+        replies: row.replies,
+        yo: row.yo,
+        whispers: row.whispers,
+        tributes: row.tributes,
+        townhalls: row.townhalls,
+      }
     : DEFAULT_PREFS;
 }
 
@@ -145,6 +171,18 @@ export async function handleEvent(event: DomainEvent): Promise<void> {
       if (!event.held)
         await deliver(event.recipientId, event.senderId, 'whisper_received', null, { bump: true });
       return;
+    case 'tribute.given':
+      // Actionable like a waiting card: the owner must be told even if they have Restricted this Posse member.
+      return deliver(event.ownerId, event.authorId, 'tribute_waiting', null, { bump: true });
+    case 'tribute.approved':
+      return deliver(event.authorId, event.ownerId, 'tribute_approved', null, { bump: true });
+    case 'mark.given':
+      // Which kind is never in the Chime text: the Ranch's aggregate breakdown is the only place a kind is shown.
+      return deliver(event.targetId, event.raterId, 'mark_given', null, { bump: true });
+    case 'townhall.invited':
+      return deliver(event.inviteeId, event.ownerId, 'townhall_invited', null, { bump: true });
+    case 'townhall.invite_accepted':
+      return deliver(event.ownerId, event.inviteeId, 'townhall_invite_accepted', null, { bump: true });
   }
 }
 
@@ -265,6 +303,20 @@ function describe(userId: string, s: Shown, myHandle: string): { text: string; h
       return { text: `${name} gave your card a Yo.`, href: fence };
     case 'whisper_received':
       return { text: `${name} whispered to you.`, href: `/whispers/${s.actor.handle}` };
+    case 'tribute_waiting':
+      return { text: `A Tribute from ${name} is waiting for your approval.`, href: `/ranch/${myHandle}` };
+    case 'tribute_approved':
+      // The actor here is the owner who approved it — always the right Ranch to link to.
+      return {
+        text: `${name} approved your Tribute. It is on their Ranch now.`,
+        href: `/ranch/${s.actor.handle}`,
+      };
+    case 'mark_given':
+      return { text: `${name} gave you a Mark.`, href: `/ranch/${myHandle}` };
+    case 'townhall_invited':
+      return { text: `${name} invited you to a Town Hall.`, href: '/town-halls' };
+    case 'townhall_invite_accepted':
+      return { text: `${name} accepted your Town Hall invite.`, href: '/town-halls' };
   }
 }
 

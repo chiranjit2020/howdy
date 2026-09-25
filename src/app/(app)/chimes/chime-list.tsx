@@ -25,6 +25,11 @@ const ITEM: Record<ChimeType, ItemType> = {
   reply_waiting: 'REPLY_WAITING',
   yo_given: 'YO_DROPPED',
   whisper_received: 'WHISPER_RECEIVED',
+  tribute_waiting: 'CARD_WAITING',
+  tribute_approved: 'TRIBUTE_CREATED',
+  mark_given: 'MARK_AWARDED',
+  townhall_invited: 'TOWNHALL_INVITED',
+  townhall_invite_accepted: 'TOWNHALL_ACCEPTED',
 };
 
 /** The Chimes page. Opening a Chime marks it read; "Mark all read" clears the rest. The server decides what is shown. */
@@ -81,7 +86,7 @@ export function ChimeList({ initial }: { initial: Page }) {
         <EmptyState
           icon="🔔"
           title="All quiet on the range"
-          description="When someone asks to join your Posse, nails a card to your Fence or gives you a Yo, it rings here."
+          description="When someone asks to join your Posse, nails a card to your Fence, gives you a Yo, leaves a Tribute or a Mark, or invites you to a Town Hall, it rings here."
         />
       </ClayCard>
     );

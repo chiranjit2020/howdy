@@ -1,7 +1,7 @@
 import { requireUser } from '@/modules/auth';
 import { getOwnRanch } from '@/modules/profiles';
 import { listTracks } from '@/modules/tracks';
-import { TrackItem, type CoarseWhen } from '@/ui/howdy';
+import { GlossaryHint, TrackItem, type CoarseWhen } from '@/ui/howdy';
 import { ClayCard, EmptyState } from '@/ui/primitives';
 import { ShadowWalk } from './shadow-walk';
 
@@ -17,7 +17,10 @@ export default async function TracksPage() {
   return (
     <>
       <main id="main" className="mx-auto flex w-full max-w-xl flex-col gap-6 px-4 py-8">
-        <h1 className="text-heading text-text-primary">Tracks</h1>
+        <div className="flex items-center">
+          <h1 className="text-heading text-text-primary">Tracks</h1>
+          <GlossaryHint term="tracks" />
+        </div>
         <ShadowWalk initial={ranch.shadowWalk} />
 
         {tracks.frozen ? (

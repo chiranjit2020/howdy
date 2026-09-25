@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { requireUser } from '@/modules/auth';
 import { listThreads } from '@/modules/whispers';
-import { formatRelative } from '@/ui/howdy';
+import { formatRelative, GlossaryHint } from '@/ui/howdy';
 import { Avatar, Badge, ClayCard, EmptyState } from '@/ui/primitives';
 
 export const metadata = { title: 'Whispers' };
@@ -13,7 +13,10 @@ export default async function WhispersPage() {
   return (
     <>
       <main id="main" className="mx-auto flex w-full max-w-xl flex-col gap-6 px-4 py-8">
-        <h1 className="text-heading text-text-primary">Whispers</h1>
+        <div className="flex items-center">
+          <h1 className="text-heading text-text-primary">Whispers</h1>
+          <GlossaryHint term="whispers" />
+        </div>
         {threads.length === 0 ? (
           <ClayCard>
             <EmptyState

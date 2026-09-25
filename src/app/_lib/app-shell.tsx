@@ -3,6 +3,7 @@ import { getCurrentUser } from '@/modules/auth';
 import { getPortraitVersion } from '@/modules/media';
 import { unreadCount } from '@/modules/notifications';
 import { getOwnRanch } from '@/modules/profiles';
+import { countMyInvites } from '@/modules/town-halls';
 import { unreadThreads } from '@/modules/whispers';
 import { portraitUrl } from '@/shared/portrait';
 import { AppShell } from '@/ui/shell/app-shell';
@@ -15,9 +16,10 @@ import { AppShell } from '@/ui/shell/app-shell';
 export async function AppFrame({ children }: { children: ReactNode }) {
   const user = await getCurrentUser();
   if (!user) return <AppShell>{children}</AppShell>;
-  const [unread, unreadWhispers, ranch, photo] = await Promise.all([
+  const [unread, unreadWhispers, invites, ranch, photo] = await Promise.all([
     unreadCount(user.id).catch(() => 0),
     unreadThreads(user.id).catch(() => 0),
+    countMyInvites(user.id).catch(() => 0),
     getOwnRanch(user.id).catch(() => null),
     getPortraitVersion(user.id).catch(() => null),
   ]);
@@ -31,6 +33,7 @@ export async function AppFrame({ children }: { children: ReactNode }) {
       }}
       unread={unread}
       unreadWhispers={unreadWhispers}
+      townHallInvites={invites}
     >
       {children}
     </AppShell>

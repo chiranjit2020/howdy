@@ -23,3 +23,10 @@ test-results/
 .DS_Store
 Thumbs.db
 .idea/
+
+.vercel
+.env*
+
+# local notes
+neon.txt
+github-repo.txt

@@ -4,10 +4,20 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { cn } from '../cn';
-import { BellIcon, FenceIcon, HomeIcon, ToolsIcon, TracksIcon, UsersIcon, WhisperIcon } from '../icons';
+import {
+  BellIcon,
+  FenceIcon,
+  HomeIcon,
+  ToolsIcon,
+  TownHallIcon,
+  TracksIcon,
+  UsersIcon,
+  WhisperIcon,
+} from '../icons';
 import { BottomNavigation, type NavItem } from '../primitives/navigation';
 
-export type ShellNavKey = 'home' | 'ranch' | 'posse' | 'tracks' | 'whispers' | 'chimes' | 'workshop';
+export type ShellNavKey =
+  'home' | 'ranch' | 'posse' | 'tracks' | 'whispers' | 'chimes' | 'workshop' | 'town-halls';
 
 export interface ShellNavItem {
   key: ShellNavKey;
@@ -27,6 +37,7 @@ const ICON: Record<ShellNavKey, ReactNode> = {
   whispers: <WhisperIcon />,
   chimes: <BellIcon />,
   workshop: <ToolsIcon />,
+  'town-halls': <TownHallIcon />,
 };
 
 const isCurrent = (pathname: string, href: string) => pathname === href || pathname.startsWith(`${href}/`);

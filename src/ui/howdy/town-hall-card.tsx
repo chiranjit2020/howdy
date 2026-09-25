@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react';
+import type { TownHallVisibility } from '@/shared/validation/town-halls';
 import { Badge, type Tone } from '../primitives/badge';
 
-export type TownHallVisibility = 'open' | 'members' | 'invite';
+export type { TownHallVisibility } from '@/shared/validation/town-halls';
 
 const VIS: Record<TownHallVisibility, { label: string; tone: Tone }> = {
   open: { label: 'Open to all', tone: 'success' },

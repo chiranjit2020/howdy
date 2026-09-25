@@ -22,6 +22,10 @@ users ──┬─< credentials      ON DELETE CASCADE   (1:1, password hash)
         ├─< media            ON DELETE CASCADE   (the row only: the FILE is not removed by the database, see below)
         ├─< conversations    ON DELETE CASCADE   (both user_low and user_high; one row per pair)
         │     └─< messages   ON DELETE CASCADE   (with the thread; also with the sender)
+        ├─< tributes         ON DELETE CASCADE   (both owner_id and author_id)
+        ├─< marks            ON DELETE CASCADE   (both rater_id and target_id; an append-only log)
+        ├─< town_halls       ON DELETE CASCADE   (owner_id only — deleting the owner deletes the whole Town Hall)
+        ├─< town_hall_members ON DELETE CASCADE  (user_id; also cascades from town_halls.id)
         ├─< audit_log        ON DELETE SET NULL  (trail survives, anonymised)
         └─< reports          ON DELETE SET NULL  (reporter and target; evidence survives, identifiers go)
 ```
@@ -36,12 +40,20 @@ cards. (The earlier plan to anonymise cards others replied to was dropped: a car
 privacy-preserving default and avoids "Former neighbour" placeholders.) Reports keep `evidence_text`, a snapshot of a reported card's
 words, after the card is gone. Tested: deleting a user removes their cards, replies and Yos and the cards left on their Fence.
 
+**Tributes and Marks (Phase 9): both delete when either side is deleted.** A Tribute (testimonial) is removed with its
+author or the Ranch it was on; a Mark (deep-vibe award) is removed with the rater or the target. Neither anonymises —
+there is no reason to keep a testimonial or an award once one of the two people involved is gone.
+
+**Town Halls (Phase 10): the Town Hall belongs to its owner, not to any one member.** Deleting the *owner's* account
+cascades to `town_halls` and removes the whole Town Hall (and, from there, every `town_hall_members` row in it — there
+is no ownership transfer, ADR-017). Deleting a *regular member's* account only removes their own membership row; the
+Town Hall and everyone else in it are unaffected.
+
 Planned (each must declare its deletion behaviour when created):
 
 | Future table | Owner link | On account deletion |
 | --- | --- | --- |
 | `tips` | giver | delete |
-| `tributes` | author + recipient | delete when either side is deleted |
 | `moderation_actions` (Phase 11) | subject / moderator | keep for safety with identifiers removed; never cascade-delete evidence |
 
 **Media (Phase 9): rows cascade, files do not.** A `media` row (a Portrait) points at a file in object storage; deleting the `users`
@@ -79,6 +91,10 @@ recorded as a `retired` row in the same transaction that makes the new photo liv
 | **Portrait files** (`media`) | a live Portrait until replaced/removed or the account is deleted; an **unfinished upload 60 minutes**; a replaced/removed file is deleted at once and, if storage failed, retried by the job | `purgeStaleMedia()` (in `pnpm jobs:purge`); removal deletes the object first, then the row |
 | Waiting cards / replies (`status` pending or held) | 30 days from being written, then dropped if the owner never answered | `purgeStaleWaiting()` (in `pnpm jobs:purge`) |
 | Published cards, replies, Yos | until removed by their writer / the Fence owner, or an account is deleted | people; account deletion |
+| Waiting Tributes (`status` pending) | 30 days from being written, then dropped if the owner never answered | `purgeStaleTributes()` (in `pnpm jobs:purge`) |
+| Published Tributes | until removed by their author or the Ranch owner, or an account is deleted | people; account deletion |
+| Marks (`marks`) | **kept indefinitely** — the row is two ids, a kind and a date, and is the aggregate itself | people (deleted with either side); no retention job |
+| Town Halls and memberships (incl. unanswered invites) | **kept indefinitely** — no sensitive detail to expire (two ids, a role, a status) | people (owner deletion cascades the whole Town Hall); no retention job |
 | Report evidence snapshot (`reports.evidence_text`) | with the report (Phase 11 decides the period) | — |
 | Tracks / typing / presence (future) | seconds → days, per ADR-006 | their own jobs |
 | Logs | no passwords, tokens, cookies or message/Signal bodies (redacted) | log platform retention |
@@ -148,3 +164,36 @@ accumulate (reads are already correct without it; this is about not keeping data
   Posse-only Ranch, a suspended account or being signed out removes it at once, even from a browser that cached it (`no-cache` + ETag;
   a 304 is only answered after access is re-checked). Missing person, hidden Ranch, blocked visitor and "no photo" are the same 404.
 - Portraits are shown only to signed-in people. Lists, Post Cards, Chimes and Whispers still show the coloured initials.
+
+## 4g. Tribute and Mark privacy rules (Phase 9, ADR-016)
+
+- Both are Posse-only to give: a mutual Posse and no block either way, checked by the same authorisation policy as
+  Whispers (`tribute:give` / `mark:give`). Viewing follows the Ranch's own visibility, same as the Fence.
+- A Tribute always waits for the owner's approval — there is no fast path, so approving one can never leak how the owner
+  regards its author (contrast the Fence's `held` vs `pending`, which exists only because Post Cards have a fast path).
+  Non-published Tributes are visible only to their author and the Ranch owner.
+- At most one pinned Tribute per owner, enforced by the database; pinning a new one unpins the old one in one transaction.
+- Marks are an append-only log with no retention: the point of the row is the aggregate ("Vibe Matrix"), and it holds
+  nothing sensitive (two ids, a kind, a date). A rater may give one target only one Mark, any kind, every 30 days —
+  checked at write time (a rolling window cannot be a database constraint) with a single atomic statement so two racing
+  requests cannot both slip through.
+- **Who gave a Mark, and which kind, is never shown beyond the target.** The Ranch shows only the aggregate count per
+  kind — no per-Mark rows, no leaderboard, no cross-person comparison. The target does get a Chime naming the giver
+  (consistent with a Yo), but never the kind.
+- Muting or blocking a Tribute's author hides it from the owner's list and waiting queue at once (decided at read time,
+  like a Chime or a Fence card) without deleting anything; giving still works (mute limits what the owner is shown, not
+  who may act).
+
+## 4h. Town Hall privacy rules (Phase 10, ADR-017)
+
+- An `invite`-visibility Town Hall is hidden ≡ missing for anyone without a membership row (active or still-pending) —
+  the same 404 as a private Ranch. `open`/`members` are visible (name, description, visibility) to any active,
+  signed-in person; neither ever shows a member count.
+- **The roster is member-only**, independent of the Town Hall's own visibility: only a current active member (owner
+  included) may read who else is in it. Everyone else gets the same 404 whether the Town Hall exists, is private, or
+  they simply are not a member of a perfectly public one.
+- An invite is a membership row with `status = 'invited'`; only the owner may create one, and only the invitee's own
+  `accept`/`decline` changes it. Nobody else — not even other members — can see someone's pending invite to a Town
+  Hall they have not joined.
+- Deleting the owner's account deletes the whole Town Hall (and every membership in it); deleting anyone else's
+  account only ever removes their own membership row.

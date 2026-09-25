@@ -1,10 +1,13 @@
 # Howdy Build Status
 
-_Last updated: 2026-09-22_
+_Last updated: 2026-09-23_
 
 ## Current Phase
 
-Phase 9 — Media / Portrait (**complete**, scope: Portrait only). Next: **Tributes + Marks** (the master prompt's Phase 9; Signals already exist from the Ranch phase), then Town Halls. Photos on Post Cards, image moderation and account deletion are the open Media follow-ups.
+Phase 9 (Media / Portrait, and Tributes + Marks — the master prompt's own "Phase 9") and **Phase 10 — Town Halls** are
+all **complete**. Next: **Phase 11 — Moderation + Anti-Abuse Expansion**. Photos on Post Cards, image moderation and
+account deletion are the open Media follow-ups; a real R2 bucket and e2e coverage for Tributes/Marks/Town Halls are
+open follow-ups from recent passes (see Blockers/Known Issues).
 
 ## Status
 
@@ -20,8 +23,67 @@ Phase 9 — Media / Portrait (**complete**, scope: Portrait only). Next: **Tribu
 | 7 — Whispers + WebSockets | DONE |
 | 8 — Tracks + Shadow Walk | DONE |
 | 9 — Media / Portrait | DONE (Portrait only; not yet exercised against a real R2 bucket) |
+| 9 — Tributes + Marks | DONE (no Playwright/e2e coverage yet — see Known Issues) |
+| 10 — Town Halls | DONE (directory + membership only, no shared feed; no Playwright/e2e coverage yet — see Known Issues) |
 
-## Completed in Phase 9
+## Completed in Phase 10 — Town Halls (ADR-017)
+
+Decisions taken with you: **directory + membership only** this phase (no shared post feed yet), **any active member
+may create one**, `open`/`members` both self-serve instantly and are both listed in the directory, `invite` is never
+listed and needs the owner's invite plus the invitee's acceptance (2026-09-23).
+
+- [x] **Schema + migration `0011`:** `town_halls` (owner, name, description, visibility open/members/invite; CHECK
+      name 3–50 chars, description 1–280, visibility enum) and `town_hall_members` (one row per person: role
+      owner/member, status active/invited; CHECK an owner row is always active; a partial unique index caps a Town
+      Hall at one owner). `notifications` gained two types (`townhall_invited`, `townhall_invite_accepted`, both
+      `card_id IS NULL`) and `notification_prefs` gained a `townhalls` column.
+- [x] **`town-halls` module** (depends only on `profiles` — no relationships/authz dependency; membership is its own
+      gate): `createTownHall` (owner + active membership in one transaction), `listDirectory` (keyset, open/members
+      only, never invite-only, no member count anywhere), `listMine`, `listMyInvites`, `getTownHall` (invite-only
+      hidden ≡ missing without a membership row), `listMembers` (active members only, same hidden-≡-missing rule),
+      `act` (join / leave / accept / decline — one endpoint, one closed set of verbs, mirroring the Posse
+      request/accept shape), `invite` (owner only, by call sign, idempotent), `removeMember`, `updateTownHall`,
+      `deleteTownHall` (cascades every membership).
+- [x] **API**: `GET/POST /api/town-halls`, `GET/PATCH/DELETE/POST /api/town-halls/[id]`,
+      `GET /api/town-halls/[id]/members`, `DELETE /api/town-halls/[id]/members/[handle]`,
+      `POST /api/town-halls/[id]/invite`, `GET /api/me/town-halls`, `GET /api/me/town-halls/invites`.
+- [x] **UI**: `/town-halls` (Discover / Mine / Invites tabs, a "Start a Town Hall" form using the existing
+      `TownHallCard`), `/town-halls/[id]` (join/leave/accept/decline, roster, owner-only invite form and member
+      removal, delete with confirmation). New sidebar-only nav item (the phone tab bar stays at six) with an
+      invite-count badge; a new `VibeMatrix`-style icon (`TownHallIcon`) and two new `ChimeItem` variants.
+- [x] **Limits**: reading matches the Fence (240/min); creating 5/day; join/leave/accept/decline together 60/hour
+      (spent even on a no-op repeat); inviting 30/hour per person **and** a stricter 20/hour per Town Hall (so an
+      owner of several Town Halls cannot spend their whole budget on just one).
+
+## Completed in Phase 9 — Tributes + Marks (ADR-016)
+
+Decisions taken with you: **Posse-only** to give either one, **one Mark total per pair every 30 days** (any kind), **exactly
+one pinned Tribute** at a time (2026-09-22).
+
+- [x] **Schema + migration `0010`:** `tributes` (owner, author, body, status pending/published, pinned; CHECK not-self,
+      CHECK pinned-only-if-published, one pinned per owner via a partial unique index) and `marks` (rater, target, kind;
+      CHECK not-self, CHECK kind in the five names; an append-only log, no retention). `notifications` gained three types
+      (`tribute_waiting`, `tribute_approved`, `mark_given`, all `card_id IS NULL`) and `notification_prefs` gained a
+      `tributes` column (covers both).
+- [x] **`tributes` module**: `giveTribute` (Posse gate via `authz.can('tribute:give', …)`, always `pending` — no fast
+      path), `listTributes` (keyset, pinned leads, a stranger sees only published, the author also sees their own pending),
+      `approveTribute` / `setTributePinned` / `removeTribute` (owner and/or author only), `listWaitingTributes` (merged
+      into the existing Fence waiting queue), `purgeStaleTributes` (30 days, in `pnpm jobs:purge`).
+- [x] **`marks` module**: `getVibeMatrix` (aggregate count per kind — Chill/Pure/Cinema/Sigma/Gem — for a target; visible
+      wherever the Ranch is), `giveMark` (Posse gate; the 30-day cooldown is checked and enforced in one atomic
+      `insert … where not exists (…)` statement so two racing requests cannot both slip through).
+- [x] **`authz` policy**: `tribute:give` / `mark:give` share `whisper:exchange`'s shape (mutual Posse, no block, not
+      yourself); viewing either follows the Ranch's own `profile:view` visibility, same as the Fence.
+- [x] **API**: `GET/POST /api/ranch/[handle]/tributes`, `DELETE/PATCH /api/tributes/[id]`,
+      `POST /api/tributes/[id]/approve`, `GET /api/me/tributes/waiting`, `GET/POST /api/ranch/[handle]/marks`.
+- [x] **UI**: `TributesSection` (composer, pinned-leading list, pin/unpin, take-down, pagination) and `VibeMatrixSection`
+      (aggregate bars + a five-way "award a Mark" picker with a cooldown hint) on the Ranch page; owner's waiting queue
+      merges Tributes with Fence cards/replies; a new "Tributes & Marks" Chime toggle in the Workshop; three new
+      `ChimeItem` icon variants were already in the design kit (`TRIBUTE_CREATED`, `MARK_AWARDED`, reused `CARD_WAITING`).
+- [x] **Limits**: reading matches the Fence (240/min signed in, 60/min anonymous); giving a Tribute 20/hour per person +
+      3/hour per (author, owner) pair; giving a Mark 30/hour per person (the cooldown does the real work).
+
+## Completed in Phase 9 — Media / Portrait
 
 Decisions taken with you: **Cloudflare R2 through the S3 protocol** (AWS S3 is a config change) and **Portrait (profile photo) only**. ADR-015.
 
@@ -58,13 +120,41 @@ replacing emoji, loader / bird / palette / shadow tokens, sign-in and shell page
 
 ## Tests
 
-`pnpm vitest run` → **52 files / 822 tests ✔** (unit, UI, database and security). `pnpm e2e` → **59 Playwright tests ✔** (58 earlier + 1 Portrait), production build, real CSP,
-real WebSocket process. `pnpm lint` is clean.
+`pnpm vitest run` → **55 files / 881 tests ✔** (unit, UI, database and security). `pnpm lint` / `pnpm typecheck` /
+`pnpm format:check` clean. `pnpm e2e` was **not run this pass either** (production build; machine had ~1–1.5 GB free
+RAM throughout — see the ledger's machine constraint) — Tributes/Marks/Town Halls all have no Playwright coverage yet
+(Known Issues).
 
-Phase 9 added: 40 database / security tests (tests/security/media.test.ts), 13 storage-driver tests (R2 signing, tokens, key safety), 7 image-processing tests (orientation
+Town Halls added 27 database / security tests (`tests/security/town-halls.test.ts`): creation (validation, rate
+limit), the directory (open/members only, never invite-only, joined flag, no member count anywhere), reading one
+(invite-only hidden ≡ missing), joining/leaving (idempotent, owner cannot leave), invites (owner-only, idempotent,
+self-invite refused, two independent rate limits — per person and a stricter per-Town-Hall one — proven separately),
+the roster (active-members-only), managing members (owner-only, cannot remove self), updating/deleting (owner-only,
+cascade), "mine" (every visibility I belong to), Chimes (invited/accepted, muted inviter rings nobody), DB
+constraints (bad visibility/role/status, the owner-must-be-active check, at most one owner per Town Hall), and cascade
+delete (owner deletion removes the whole Town Hall; a regular member's deletion only drops their own row).
+
+Tributes + Marks added 32 database / security tests (`tests/security/tributes.test.ts`, `tests/security/marks.test.ts`):
+Posse gate (give and view), self-tribute/self-mark refused, always-pending with no fast path, approve/pin/remove ownership,
+mute/block hiding both the public list and the waiting queue, input screening (length/links/disguising chars), the 30-day
+cooldown (including a concurrent-race test — two simultaneous gives, only one wins), Vibe Matrix aggregation scoped to the
+right target, rate limits (per-person, proven across many owners so a tighter per-pair limit cannot mask it), DB
+constraints, retention and cascade-delete.
+
+Phase 9 Media added: 40 database / security tests (tests/security/media.test.ts), 13 storage-driver tests (R2 signing, tokens, key safety), 7 image-processing tests (orientation
 checked by pixel colour, EXIF gone, pixel-bomb refused), 4 streaming body-cap tests, env / CSP / boundary tests, and the Portrait browser test.
 
-**Mutation check** (`.dev/mutate10.mjs`): 29 protections removed one at a time; **28 caught**. The body size cap first ESCAPED (the size-mismatch check hid it), so it got its own
+**Mutation check, Town Halls** (`.dev/mutate12.mjs`): 14 protections removed one at a time; **all 14 caught**. This
+round caught a real bug before it shipped: removing the owner-active/visibility re-check inside `act()` exposed that
+`leave`/`decline` on an `invite`-only Town Hall was building its response from a re-read (`getTownHall`) that the
+action itself had just made return "not found" — turning an ordinary decline into a 500 (see Failures table).
+
+**Mutation check, Tributes + Marks** (`.dev/mutate11.mjs`): 14 protections removed one at a time; **13 caught**. The one uncaught
+mutant is equivalent: removing the explicit `BLOCKED` check inside the `tribute:give`/`mark:give` policy branch is still
+caught by `access()`'s prior `profile:view` check, which independently denies a blocked pair before the give-specific branch
+is ever reached.
+
+**Mutation check, Media** (`.dev/mutate10.mjs`): 29 protections removed one at a time; **28 caught**. The body size cap first ESCAPED (the size-mismatch check hid it), so it got its own
 test and is now caught. The one uncaught mutant is equivalent: the S3 signer signs `content-length` by itself, with or without our explicit header list.
 
 (Phase 8, for reference.) `pnpm check` then → 47 files / 749 tests ✔; `pnpm e2e` → 58 Playwright tests ✔.
@@ -83,7 +173,24 @@ accounts, dedupe, date advance, Posse gate, muted/blocked shown, freeze, arrival
 announced before the policy allows the view). **Two initially ESCAPED** (self visits, inactive accounts — the database constraint / other
 layers covered for them); direct tests of the recorder now catch both. All 15 caught.
 
-## Failures encountered and fixed (Phase 9)
+## Failures encountered and fixed (Phase 10 — Town Halls)
+
+| Failure | Cause | Fix | Verification |
+| --- | --- | --- | --- |
+| `decline` (and `leave`, on an `invite`-only Town Hall) answered 500 instead of 200 | `act()` built its response by re-reading the Town Hall through the same visibility-gated `getTownHall()` the directory uses; the action had just removed the caller's only membership row, so the gate now (correctly) hid it, and the handler mistook that for a server error | Build the response from what the action already knows, deterministically, instead of re-querying through a gate it just closed | test for declining a real pending invite |
+| The per-Town-Hall invite rate limit (50/hour) could never fire before the per-person one (30/hour) | Only the owner can invite into their own Town Hall, so for one owner the two counters always moved together — the looser one was unreachable dead weight | Made the per-hall limit *stricter* (20/hour) than the per-person one, so concentrating invites on one Town Hall trips it first | two separate rate-limit tests (per-hall vs. per-person across several halls) |
+| A rate-limit test signed up 31 real accounts inside the loop and hit signup's own limit first | Reused the full `person()` helper (real signup + login) for throwaway invite targets | Bulk-inserted rows directly (`insertUser`, or raw SQL for Town Halls themselves) to stay under the endpoint's own limit, not an unrelated one | the two invite rate-limit tests |
+
+## Failures encountered and fixed (Phase 9 — Tributes + Marks)
+
+| Failure | Cause | Fix | Verification |
+| --- | --- | --- | --- |
+| Two racing `giveMark` requests could both slip past the 30-day cooldown | Check-then-insert as two separate statements | One atomic `insert … where not exists (…)` | race test (`Promise.all`) + mutation |
+| Existing `TributeCard` UI test broke when pin/remove actions were added for published Tributes | The design-kit component only ever rendered `actions` while `status === 'pending'` (its documented contract) | Kept that contract; pin/remove render outside `TributeCard` in `TributesSection` instead | `pnpm test` (pre-existing `tests/ui/howdy.test.tsx` case) |
+| `pnpm vitest run` reformatted a test file mid-session and `source-hygiene` failed | A literal bidi override character (`U+202E`) was embedded directly in `tributes.test.ts` source while writing an input-screening test | Build the character at runtime (`String.fromCharCode(0x202e)`) instead of embedding it in source | `tests/unit/source-hygiene.test.ts` |
+| Two mutations initially ESCAPED (rate limits on giving a Tribute/Mark) | No test exercised the limit in isolation: a naive same-owner loop would have hit the tighter per-owner Tribute limit first, masking the per-person one | Tests spam **different** owners/targets (bulk-inserted) so only the per-person limiter can trip | mutation |
+
+## Failures encountered and fixed (Phase 9 — Media)
 
 | Failure | Cause | Fix | Verification |
 | --- | --- | --- | --- |
@@ -110,26 +217,35 @@ layers covered for them); direct tests of the recorder now catch both. All 15 ca
 1. **Mail provider (deploy blocker)** — unchanged.
 2. **Neon dev branch** — still none; local Postgres used. Two processes hold DB pools (site + realtime).
 3. **First commit** — not made (not requested).
-4. **Schedule `pnpm jobs:purge`** (now also drops Tracks past 7 days and abandoned uploads / leftover files) and decide the audit-log retention period.
-6. **Cloudflare R2 (deploy blocker for photos):** create a private bucket, an Object Read & Write API token for it, and a bucket CORS rule allowing `PUT` from `APP_URL`; set `STORAGE_DRIVER=r2` and the four `R2_*` variables (see `.env.example`). The R2 driver is tested against a fake client only.
-5. **Deploying `pnpm ws`** (see ADR-013): long-lived Node process, `NODE_ENV=production`, `WS_PUBLIC_URL=wss://<same host as the site>`, Redis.
+4. **Schedule `pnpm jobs:purge`** (now also drops stale Tributes, Tracks past 7 days and abandoned uploads / leftover files) and decide the audit-log retention period.
+5. **Cloudflare R2 (deploy blocker for photos):** create a private bucket, an Object Read & Write API token for it, and a bucket CORS rule allowing `PUT` from `APP_URL`; set `STORAGE_DRIVER=r2` and the four `R2_*` variables (see `.env.example`). The R2 driver is tested against a fake client only.
+6. **Deploying `pnpm ws`** (see ADR-013): long-lived Node process, `NODE_ENV=production`, `WS_PUBLIC_URL=wss://<same host as the site>`, Redis.
 
 ## Known Issues / Deferred
 
+- **Tributes/Marks/Town Halls have no Playwright (e2e) coverage yet** — `pnpm e2e` needs a production build and was
+  skipped every pass this session because the machine had very little free RAM throughout (see the ledger's machine
+  constraint); run it before trusting real-browser behaviour (axe, 320px, 44px targets, CSP) for any of the three.
+- Town Halls have no shared post feed yet (directory + membership only, ADR-017); `members` visibility is today
+  identical in effect to `open` (self-serve either way) — only the label differs, in case a real approval-gated join
+  flow is wanted later.
 - Posse members always see each other's visits unless the visitor chose Shadow Walk (disclosed on the page). A person with few non-Posse
   visitors may guess who a hidden one was from what they know.
 - No Tracks digest / push, Guess Who, reveal tokens or cohort clues; no "who I visited".
-- The header now has seven links (wraps on phones).
+- The sidebar now has eight links (Town Halls is `sidebarOnly`, so the phone tab bar stays at six; the desktop sidebar
+  wraps — already true at seven before this phase).
 - Earlier deferrals still stand (restricted Whispers tray, non-Posse Whispers, no MFA/passkeys, account deletion designed not built,
   fixed-window limiter, placeholder icons, e2e needs local Edge, no visual baselines, master prompt §49–50 items).
 
 ## Next Task
 
-**Tributes + Marks** (master prompt §61, "Phase 9": Tributes + Marks + Signals; Signals are already built), then Town Halls (§61 Phase 10). The design kit has \`TributeCard\` and
-the Mark names (Chill / Pure / Gem / Cinema) from your profile mockup, but there is no backend for either yet. Media follow-ups to schedule: photos on Post Cards (per-card media with the Fence's privacy rules), showing Portraits in lists / cards / Chimes
-(needs a per-viewer decision per row), reporting a photo (Phase 11), image moderation, and the account-deletion flow calling `deleteAllMediaFor`.
+**Moderation + Anti-Abuse Expansion** (master prompt §61 Phase 11). Media follow-ups still open: photos on Post Cards
+(per-card media with the Fence's privacy rules), showing Portraits in lists / cards / Chimes (needs a per-viewer
+decision per row), reporting a photo, image moderation, and the account-deletion flow calling `deleteAllMediaFor`.
+Tributes/Marks/Town Halls follow-ups: e2e coverage for all three; revisit whether Tribute/Mark giving should ever
+widen beyond Posse-only; a Town Hall shared feed if the need becomes real; Town Hall roles beyond owner/member.
 
 ## Architectural Decisions
 
-ADR-001 … ADR-015 in `docs/decisions/`; lifecycle and deletion design in `docs/DATA_LIFECYCLE.md`.
+ADR-001 … ADR-017 in `docs/decisions/`; lifecycle and deletion design in `docs/DATA_LIFECYCLE.md`.
 

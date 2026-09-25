@@ -17,6 +17,9 @@ const r2 = {
   R2_BUCKET: 'howdy-media',
 };
 
+/** Production must send real email; these are the settings for it. */
+const mail = { MAIL_TRANSPORT: 'resend', RESEND_API_KEY: 're_example_key_0000' };
+
 describe('parseEnv', () => {
   it('accepts a valid development config and applies defaults', () => {
     const env = parseEnv(base);
@@ -38,7 +41,7 @@ describe('parseEnv', () => {
   });
 
   it('requires https and Redis in production', () => {
-    const prod = { ...base, ...r2, NODE_ENV: 'production' };
+    const prod = { ...base, ...r2, NODE_ENV: 'production', ...mail };
     expect(() => parseEnv({ ...prod, APP_URL: 'http://howdy.example', REDIS_URL: 'redis://r' })).toThrow(
       /https/,
     );
@@ -49,7 +52,7 @@ describe('parseEnv', () => {
   });
 
   it('allows plain http in production only for loopback (local production runs), never for a real host', () => {
-    const prod = { ...base, ...r2, NODE_ENV: 'production', REDIS_URL: 'redis://r' };
+    const prod = { ...base, ...r2, NODE_ENV: 'production', REDIS_URL: 'redis://r', ...mail };
     for (const ok of ['http://localhost:3300', 'http://127.0.0.1:3000', 'http://[::1]:3000']) {
       expect(parseEnv({ ...prod, APP_URL: ok }).APP_URL).toBe(ok);
     }
@@ -65,12 +68,42 @@ describe('parseEnv', () => {
     expect(env.ENABLE_TEST_MAILER).toBe('0');
   });
 
+  describe('mail settings', () => {
+    const prod = {
+      ...base,
+      ...r2,
+      NODE_ENV: 'production',
+      APP_URL: 'https://howdy.example',
+      REDIS_URL: 'redis://r',
+    };
+
+    it('resend needs an API key, and never prints it when it is malformed', () => {
+      expect(() => parseEnv({ ...base, MAIL_TRANSPORT: 'resend' })).toThrow(/RESEND_API_KEY/);
+      try {
+        parseEnv({ ...base, ...mail, RESEND_API_KEY: 'sk_live_not_resend' });
+        expect.unreachable();
+      } catch (e) {
+        expect(String(e)).toMatch(/RESEND_API_KEY/);
+        expect(String(e)).not.toContain('sk_live_not_resend');
+      }
+      expect(parseEnv({ ...base, ...mail }).MAIL_TRANSPORT).toBe('resend');
+    });
+
+    it('production refuses console/file mail (links would land in logs or on disk) unless it is an end-to-end test build', () => {
+      expect(() => parseEnv(prod)).toThrow(/MAIL_TRANSPORT must be resend/);
+      expect(() => parseEnv({ ...prod, MAIL_TRANSPORT: 'file' })).toThrow(/MAIL_TRANSPORT must be resend/);
+      expect(parseEnv({ ...prod, ENABLE_TEST_MAILER: '1' }).MAIL_TRANSPORT).toBe('console');
+      expect(parseEnv({ ...prod, ...mail }).MAIL_TRANSPORT).toBe('resend');
+    });
+  });
+
   describe('storage settings', () => {
     const prod = {
       ...base,
       NODE_ENV: 'production',
       APP_URL: 'https://howdy.example',
       REDIS_URL: 'redis://r',
+      ...mail,
     };
 
     it('default to local files, which is fine for development', () => {
@@ -110,6 +143,7 @@ describe('parseEnv', () => {
       NODE_ENV: 'production',
       APP_URL: 'https://howdy.example',
       REDIS_URL: 'redis://localhost:6379',
+      ...mail,
     };
 
     it('are optional: live delivery is simply off when WS_PUBLIC_URL is unset', () => {

@@ -4,9 +4,11 @@ import { notFound } from 'next/navigation';
 import { getCurrentUser } from '@/modules/auth';
 import type { Actor } from '@/modules/authz';
 import { listFence, listWaiting, type FencePage, type Waiting } from '@/modules/fence';
+import { getVibeMatrix } from '@/modules/marks';
 import { getPortraitVersion } from '@/modules/media';
 import { getRanchForViewer, resolveHandle, type RanchView } from '@/modules/profiles';
 import { getRelationshipView, listMyRelationships } from '@/modules/relationships';
+import { listTributes, listWaitingTributes, type TributePage } from '@/modules/tributes';
 import { withCards } from '@/app/_lib/social';
 import { getEnv } from '@/platform/config/env';
 import { AppError } from '@/platform/errors';
@@ -18,6 +20,8 @@ import { RelationshipBar } from './relationship-bar';
 import { FenceSection } from './fence-section';
 import { SignalEditor } from './signal-editor';
 import { PosseCard, SignalCard } from './side-cards';
+import { TributesSection } from './tributes-section';
+import { VibeMatrixSection } from './vibe-matrix-section';
 import { WaitingQueue } from './waiting-queue';
 
 // Ranches are private by default and never belong in a search index.
@@ -106,9 +110,24 @@ export default async function RanchPage({ params }: { params: Promise<{ handle: 
     else throw err;
   }
   const waiting: Waiting | null = user && ranch.isOwner ? await listWaiting(user.id) : null;
+  const waitingTributes = user && ranch.isOwner ? await listWaitingTributes(user.id) : [];
 
   // Only the owner sees their own Posse here; nobody else's list is ever shown on a Ranch.
   const posse = user && ranch.isOwner ? (await withCards(await listMyRelationships(user.id))).posse : null;
+
+  // Tributes and the Vibe Matrix follow the Ranch's own visibility (the same rule as the Fence), separately from it.
+  let tributes: TributePage | null = null;
+  try {
+    tributes = await listTributes(viewer, ranch.handle, { rateKey });
+  } catch (err) {
+    if (!(err instanceof AppError && err.code === 'RATE_LIMITED')) throw err;
+  }
+  let vibe = null;
+  try {
+    vibe = await getVibeMatrix(viewer, ranch.handle, { rateKey });
+  } catch (err) {
+    if (!(err instanceof AppError && err.code === 'RATE_LIMITED')) throw err;
+  }
 
   // Two columns from `lg` up: the profile, relationship controls and Fence on the left, the Signal and owner cards on the
   // right (which spans the left column's rows). On a phone everything stacks in reading order.
@@ -149,7 +168,8 @@ export default async function RanchPage({ params }: { params: Promise<{ handle: 
           <SignalCard text={ranch.signal.text} expiresLabel={hoursLeft(ranch.signal.expiresAt)} />
         )}
         {ranch.isOwner && <SignalEditor current={ranch.signal?.text} />}
-        {waiting && <WaitingQueue waiting={waiting} />}
+        {waiting && <WaitingQueue waiting={waiting} tributes={waitingTributes} />}
+        {vibe && <VibeMatrixSection handle={ranch.handle} initial={vibe} />}
         {posse && <PosseCard members={posse} />}
       </aside>
 
@@ -176,6 +196,12 @@ export default async function RanchPage({ params }: { params: Promise<{ handle: 
           </ClayCard>
         )}
       </div>
+
+      {tributes && (
+        <div className="min-w-0 lg:col-start-1">
+          <TributesSection handle={ranch.handle} ownerName={ranch.displayName} initial={tributes} />
+        </div>
+      )}
     </main>
   );
 }

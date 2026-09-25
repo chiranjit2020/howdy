@@ -24,7 +24,11 @@ export type Action =
   | 'signal:set'
   | 'user:interact'
   /** Exchange Whispers with the person who owns the resource: needs a mutual Posse and no block either way. */
-  | 'whisper:exchange';
+  | 'whisper:exchange'
+  /** Leave a Tribute (testimonial) for the resource owner: needs a mutual Posse and no block either way. */
+  | 'tribute:give'
+  /** Award a Mark to the resource owner: same gate as a Tribute — a mutual Posse and no block either way. */
+  | 'mark:give';
 
 /** The facts about a Ranch that authorisation depends on. */
 export interface RanchResource {
@@ -73,11 +77,14 @@ export function can(actor: Actor, action: Action, resource: RanchResource, ctx: 
       return ctx.relationship === 'BLOCKED' ? deny('blocked') : ALLOW;
 
     case 'whisper:exchange':
+    case 'tribute:give':
+    case 'mark:give':
       if (actor.kind === 'anonymous') return deny('unauthenticated');
-      if (isOwner) return deny('not_visible'); // no Whispers to yourself
+      if (isOwner) return deny('not_visible'); // no Whispers, Tributes or Marks for yourself
       if (ctx.relationship === 'BLOCKED') return deny('blocked');
-      // Private conversation: only people who are in each other's Posse. Being muted or restricted does not remove the
-      // right (those change where the words go); scouting and pending requests grant nothing.
+      // Posse-only, all three: only people who are in each other's Posse. Being muted or restricted does not remove
+      // the right (those change where the words/Tribute go, or ring no bell); scouting and pending requests grant
+      // nothing.
       return IN_POSSE.has(ctx.relationship) ? ALLOW : deny('not_visible');
 
     case 'profile:view':

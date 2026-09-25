@@ -7,7 +7,15 @@ export const CHIME_MAX_PAGE_SIZE = 50;
 /** Unread counts stop here ("99+"): counting further would just be work. */
 export const UNREAD_CAP = 99;
 
-export const CHIME_CATEGORIES = ['posse', 'fence', 'replies', 'yo', 'whispers'] as const;
+export const CHIME_CATEGORIES = [
+  'posse',
+  'fence',
+  'replies',
+  'yo',
+  'whispers',
+  'tributes',
+  'townhalls',
+] as const;
 export type ChimeCategory = (typeof CHIME_CATEGORIES)[number];
 
 export const chimeQuerySchema = z.object({
@@ -28,6 +36,8 @@ export const chimePrefsSchema = z
     replies: z.boolean().optional(),
     yo: z.boolean().optional(),
     whispers: z.boolean().optional(),
+    tributes: z.boolean().optional(),
+    townhalls: z.boolean().optional(),
   })
   .refine((v) => Object.values(v).some((x) => x !== undefined), 'Nothing to change.');
 

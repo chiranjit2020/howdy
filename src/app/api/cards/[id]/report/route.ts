@@ -17,6 +17,6 @@ export const POST = route(async ({ req, params }) => {
   const body = await readJson(req, cardReportSchema);
   const card = await cardForReport(user.id, (await params).id ?? '');
   if (!card) throw new AppError('NOT_FOUND');
-  await createReport(user.id, card.authorId, body.reason, body.details, card.body);
+  await createReport(user.id, card.authorId, body.reason, body.details, card.body, card.id);
   return json({ ok: true }, { status: 202 });
 });

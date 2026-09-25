@@ -46,6 +46,33 @@ class FileMailer implements Mailer {
   }
 }
 
+/** Production: the Resend HTTP API. Throws on failure so the caller's background task logs it (never the message text). */
+export class ResendMailer implements Mailer {
+  constructor(
+    private readonly apiKey: string,
+    private readonly from: string,
+    private readonly fetchImpl: typeof fetch = fetch,
+  ) {}
+  async send(message: MailMessage): Promise<void> {
+    const res = await this.fetchImpl('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${this.apiKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        from: this.from,
+        to: [message.to],
+        subject: message.subject,
+        text: message.text,
+      }),
+      signal: AbortSignal.timeout(10_000),
+    });
+    if (!res.ok) {
+      // Resend's error body names the problem (unverified domain, bad key); it never echoes the email text.
+      const detail = (await res.text().catch(() => '')).slice(0, 300);
+      throw new Error(`Resend rejected the email: HTTP ${res.status} ${detail}`);
+    }
+  }
+}
+
 let mailer: Mailer | undefined;
 
 /** For tests. */
@@ -54,12 +81,18 @@ export function setMailer(next: Mailer | undefined): void {
 }
 
 /**
- * Returns the configured mailer. There is no production provider yet, so production refuses to send rather than
- * silently dropping (or logging) verification and reset links. Wire a real provider here before deploying.
+ * Returns the configured mailer. Production only ever sends through Resend: it refuses the console/file transports
+ * rather than logging verification and reset links (parseEnv enforces the same at startup).
  */
 export function getMailer(): Mailer {
   if (mailer) return mailer;
   const env = getEnv();
+  if (env.MAIL_TRANSPORT === 'resend') {
+    if (!env.RESEND_API_KEY)
+      throw new AppError('INTERNAL', { cause: new Error('RESEND_API_KEY is not set') });
+    mailer = new ResendMailer(env.RESEND_API_KEY, env.MAIL_FROM);
+    return mailer;
+  }
   if (env.NODE_ENV === 'production' && env.ENABLE_TEST_MAILER !== '1') {
     throw new AppError('INTERNAL', { cause: new Error('No production mail provider is configured') });
   }

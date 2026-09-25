@@ -1,21 +1,25 @@
 import Link from 'next/link';
 import type { PersonEntry } from '@/app/_lib/social';
 import { BoltIcon, UsersIcon } from '@/ui/icons';
+import { GlossaryHint } from '@/ui/howdy';
 import { Avatar, ClayCard } from '@/ui/primitives';
 
 /** The Signal, a short status that expires on its own. Mint-tinted so it reads as "live" beside the Fence. */
 export function SignalCard({ text, expiresLabel }: { text: string; expiresLabel: string }) {
   return (
     <ClayCard className="flex flex-col gap-3 bg-success/30">
-      <h2 className="flex items-center gap-3 font-display text-title text-brand-ink">
-        <span
-          aria-hidden="true"
-          className="grid size-9 place-items-center rounded-pill bg-success text-heading text-on-success"
-        >
-          <BoltIcon />
-        </span>
-        Signal
-      </h2>
+      <div className="flex items-center">
+        <h2 className="flex items-center gap-3 font-display text-title text-brand-ink">
+          <span
+            aria-hidden="true"
+            className="grid size-9 place-items-center rounded-pill bg-success text-heading text-on-success"
+          >
+            <BoltIcon />
+          </span>
+          Signal
+        </h2>
+        <GlossaryHint term="signal" />
+      </div>
       {/* One paragraph: what it says and how long it lasts belong together. */}
       <p className="text-body break-words text-text-primary">
         <span className="sr-only">Signal: </span>
@@ -33,15 +37,18 @@ export function PosseCard({ members }: { members: PersonEntry[] }) {
   return (
     <ClayCard className="flex flex-col gap-4 bg-mystery/20">
       <div className="flex items-center justify-between gap-3">
-        <h2 className="flex items-center gap-3 font-display text-title text-brand-ink">
-          <span
-            aria-hidden="true"
-            className="grid size-9 place-items-center rounded-pill bg-mystery text-heading text-on-mystery"
-          >
-            <UsersIcon />
-          </span>
-          Posse
-        </h2>
+        <div className="flex items-center">
+          <h2 className="flex items-center gap-3 font-display text-title text-brand-ink">
+            <span
+              aria-hidden="true"
+              className="grid size-9 place-items-center rounded-pill bg-mystery text-heading text-on-mystery"
+            >
+              <UsersIcon />
+            </span>
+            Posse
+          </h2>
+          <GlossaryHint term="posse" />
+        </div>
         <Link href="/posse" className="inline-flex min-h-11 items-center text-caption text-auth-link">
           View all
         </Link>

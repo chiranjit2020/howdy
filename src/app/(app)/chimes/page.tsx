@@ -1,5 +1,6 @@
 import { requireUser } from '@/modules/auth';
 import { listChimes } from '@/modules/notifications';
+import { GlossaryHint } from '@/ui/howdy';
 import { ChimeList } from './chime-list';
 
 export const metadata = { title: 'Chimes' };
@@ -11,7 +12,10 @@ export default async function ChimesPage() {
   return (
     <>
       <main id="main" className="mx-auto flex w-full max-w-xl flex-col gap-6 px-4 py-8">
-        <h1 className="text-heading text-text-primary">Chimes</h1>
+        <div className="flex items-center">
+          <h1 className="text-heading text-text-primary">Chimes</h1>
+          <GlossaryHint term="chimes" />
+        </div>
         <ChimeList
           initial={{
             chimes: page.chimes.map((c) => ({ ...c, at: c.at.toISOString() })),
