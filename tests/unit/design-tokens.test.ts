@@ -121,10 +121,10 @@ describe('design-system discipline', () => {
     const offenders: string[] = [];
     for (const f of files) {
       const src = readFileSync(f, 'utf8');
-      // layout.tsx is the one exception: <meta name="theme-color"> cannot use CSS variables. Its values are
-      // pinned to the tokens by the test below, so they cannot drift.
-      const isLayout = f.replaceAll('\\', '/') === 'src/app/layout.tsx';
-      if (!isLayout && /#[0-9a-fA-F]{3,8}\b/.test(src.replace(/&#\d+;/g, '')))
+      // layout.tsx and manifest.ts are the exceptions: <meta name="theme-color"> and the web app manifest cannot use
+      // CSS variables. Their values are pinned to the tokens by the tests below, so they cannot drift.
+      const isPinned = ['src/app/layout.tsx', 'src/app/manifest.ts'].includes(f.replaceAll('\\', '/'));
+      if (!isPinned && /#[0-9a-fA-F]{3,8}\b/.test(src.replace(/&#\d+;/g, '')))
         offenders.push(`${f}: hex colour`);
       if (/\b(?:bg|text|border|ring|fill|stroke|from|to|via)-\[(?:#|rgb|hsl|oklch)/.test(src))
         offenders.push(`${f}: arbitrary colour`);
@@ -139,5 +139,13 @@ describe('design-system discipline', () => {
     const dark = /prefers-color-scheme: dark\)',\s*color: '(#[0-9a-f]{6})'/i.exec(layout)?.[1];
     expect(light?.toLowerCase()).toBe(get('background', 'light'));
     expect(dark?.toLowerCase()).toBe(get('background', 'dark'));
+  });
+
+  it('the web app manifest colours match the Daylight background token (the installed app opens in Daylight)', () => {
+    const manifest = readFileSync('src/app/manifest.ts', 'utf8');
+    for (const key of ['background_color', 'theme_color']) {
+      const value = new RegExp(`${key}: '(#[0-9a-f]{6})'`, 'i').exec(manifest)?.[1];
+      expect(value?.toLowerCase(), key).toBe(get('background', 'light'));
+    }
   });
 });
