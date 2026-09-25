@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import {
   axeSource,
+  horizontalOverflow,
   confirmEmailVia,
   linkFrom,
   newContext,
@@ -95,7 +96,7 @@ test.describe('authentication journey (production build, real CSP, real cookies)
     await expect(page.getByLabel('Choose a handle')).toHaveAttribute('aria-invalid', 'true');
     await page.getByLabel('Choose a handle').fill('admin');
     await page.getByLabel('Email address').fill('x@example.com');
-    await page.getByLabel('Secret knock').fill('short');
+    await page.getByLabel('Password', { exact: true }).fill('short');
     await page.getByRole('button', { name: 'Create My Account' }).click();
     await expect(page.getByText('That call sign is reserved.')).toBeVisible();
     await expect(page.getByText(/at least 10 characters/i).first()).toBeVisible();
@@ -144,22 +145,22 @@ test.describe('authentication journey (production build, real CSP, real cookies)
     await page.getByRole('button', { name: 'Send the link' }).click();
     await expect(page.getByRole('heading', { name: 'Check your email' })).toBeVisible();
 
-    const mail = await waitForMail(a.email);
+    const mail = await waitForMail(a.email, /reset/i);
     expect(mail.subject).toMatch(/reset/i);
     await page.goto(pathOf(linkFrom(mail.text)));
     // Weak knock is refused without burning the link.
-    await page.getByLabel('New secret knock').fill('short');
-    await page.getByRole('button', { name: 'Save new knock' }).click();
+    await page.getByLabel('New password').fill('short');
+    await page.getByRole('button', { name: 'Save new password' }).click();
     await expect(page.getByText(/at least 10 characters/i).first()).toBeVisible();
     const newPassword = 'a brand new passphrase 42';
-    await page.getByLabel('New secret knock').fill(newPassword);
-    await page.getByRole('button', { name: 'Save new knock' }).click();
-    await expect(page.getByRole('heading', { name: 'New knock set' })).toBeVisible();
+    await page.getByLabel('New password').fill(newPassword);
+    await page.getByRole('button', { name: 'Save new password' }).click();
+    await expect(page.getByRole('heading', { name: 'Password changed' })).toBeVisible();
 
     // The link is single-use.
     await page.goto(pathOf(linkFrom(mail.text)));
-    await page.getByLabel('New secret knock').fill('yet another passphrase 43');
-    await page.getByRole('button', { name: 'Save new knock' }).click();
+    await page.getByLabel('New password').fill('yet another passphrase 43');
+    await page.getByRole('button', { name: 'Save new password' }).click();
     await expect(page.locator('main [role="alert"]')).toContainText(/invalid or has expired/i);
 
     // The session on the other device is gone; the old knock no longer works; the new one does.
@@ -275,10 +276,7 @@ test.describe('signed-out pages: accessibility and layout in a real browser', ()
     const page = await ctx.newPage();
     for (const path of pages) {
       await page.goto(path);
-      expect(
-        await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth),
-        `${path} overflow`,
-      ).toBeLessThanOrEqual(0);
+      expect(await horizontalOverflow(page), `${path} overflow`).toBeLessThanOrEqual(0);
       const small = await page.evaluate(() => {
         const out: string[] = [];
         for (const el of document.querySelectorAll<HTMLElement>('button, a[href], input, select, textarea')) {
@@ -296,6 +294,84 @@ test.describe('signed-out pages: accessibility and layout in a real browser', ()
       });
       expect(small, `${path} small targets`).toEqual([]);
     }
+    await ctx.close();
+  });
+
+  for (const width of [320, 360]) {
+    test(`the top bar's two ways in are equal, on one line each, and fit at ${width}px`, async ({
+      browser,
+    }) => {
+      const ctx = await newContext(browser, {
+        hasTouch: true,
+        isMobile: true,
+        viewport: { width, height: 700 },
+      });
+      const page = await ctx.newPage();
+      await page.goto('/gate');
+      const bar = page.getByRole('banner');
+      const pills = [
+        bar.getByRole('link', { name: /Step Inside/ }),
+        bar.getByRole('link', { name: /Stake a Claim/ }),
+      ];
+      const boxes = await Promise.all(pills.map((p) => p.boundingBox()));
+      expect(boxes[0]!.width).toBeCloseTo(boxes[1]!.width, 0);
+      for (const box of boxes) expect(box!.x + box!.width).toBeLessThanOrEqual(width);
+      for (const pill of pills) {
+        // Each line of text stays whole (no wrapping, no clipped overflow).
+        const clipped = await pill.evaluate((el) =>
+          [...el.querySelectorAll('span')].some(
+            (s) => s.scrollWidth > s.clientWidth + 1 || s.getClientRects().length > 1,
+          ),
+        );
+        expect(clipped).toBe(false);
+        // The pill holds its text (it is not squeezed narrower than its words).
+        expect(await pill.evaluate((el) => el.scrollWidth - el.clientWidth)).toBeLessThanOrEqual(0);
+      }
+      // …and the pair fits its slot beside the logo (squeezing into the bar's side padding is not fitting).
+      const pair = await pills[0]!.evaluate((el) => {
+        const box = el.parentElement!;
+        return { spill: box.scrollWidth - box.clientWidth, right: box.getBoundingClientRect().right };
+      });
+      expect(pair.spill).toBeLessThanOrEqual(0);
+      expect(pair.right).toBeLessThanOrEqual(width - 16);
+      expect(await horizontalOverflow(page)).toBeLessThanOrEqual(0);
+      await ctx.close();
+    });
+  }
+
+  test('one card, two tabs: switching forms in place, by click and by keyboard, and the address follows', async ({
+    browser,
+  }) => {
+    const ctx = await newContext(browser);
+    const page = await ctx.newPage();
+    const problems = await watchProblems(page);
+    await page.goto('/step-inside');
+    const signIn = page.getByRole('tab', { name: /Step Inside/ });
+    const signUp = page.getByRole('tab', { name: /Stake a Claim/ });
+    await expect(signIn).toHaveAttribute('aria-selected', 'true');
+    await expect(page.getByLabel('Handle or email')).toBeVisible();
+
+    await signUp.click();
+    await expect(signUp).toHaveAttribute('aria-selected', 'true');
+    await expect(page.getByLabel('Choose a handle')).toBeVisible();
+    await expect(page.getByLabel('Handle or email')).toHaveCount(0);
+    await expect(page).toHaveURL(/\/stake-a-claim$/);
+    await expect(page).toHaveTitle(/^Stake a Claim/);
+
+    // Arrow keys move between tabs (only the selected tab is in the Tab order).
+    await signUp.focus();
+    await page.keyboard.press('ArrowLeft');
+    await expect(signIn).toBeFocused();
+    await expect(signIn).toHaveAttribute('aria-selected', 'true');
+    await expect(page).toHaveURL(/\/step-inside$/);
+    await expect(signUp).toHaveAttribute('tabindex', '-1');
+
+    // A refresh opens the tab the address names.
+    await signUp.click();
+    await page.reload();
+    await expect(page.getByRole('tab', { name: /Stake a Claim/ })).toHaveAttribute('aria-selected', 'true');
+    await expect(page.getByLabel('Choose a handle')).toBeVisible();
+    expect(problems).toEqual([]);
     await ctx.close();
   });
 });

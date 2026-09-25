@@ -62,7 +62,8 @@ export function BottomNavigation({ items, label }: { items: NavItem[]; label: st
     >
       <ul className="mx-auto flex max-w-xl">
         {items.map((it) => (
-          <li key={it.href} className="flex-1">
+          // min-w-0 + a pill that shrinks: six tabs share a 320 px screen (six fixed 56 px pills did not fit).
+          <li key={it.href} className="min-w-0 flex-1">
             <Link
               href={it.href}
               aria-current={it.current ? 'page' : undefined}
@@ -74,13 +75,13 @@ export function BottomNavigation({ items, label }: { items: NavItem[]; label: st
               <span
                 aria-hidden="true"
                 className={cn(
-                  'flex h-8 w-14 items-center justify-center rounded-pill text-title',
+                  'flex h-8 w-full max-w-14 items-center justify-center rounded-pill text-title',
                   it.current && 'bg-accent text-on-accent',
                 )}
               >
                 {it.icon}
               </span>
-              {it.label}
+              <span className="max-w-full truncate px-0.5">{it.label}</span>
               {it.badge && <span className="sr-only"> ({it.badge})</span>}
             </Link>
           </li>

@@ -38,7 +38,7 @@ export function ForgotForm() {
       <ClayCard className="flex flex-col gap-4 p-8">
         <h1 className="text-heading text-text-primary">Check your email</h1>
         <p className="text-body text-text-secondary">
-          If there is a Howdy account for that address, a link to choose a new secret knock is on its way. It
+          If there is a Howdy account for that address, a link to choose a new password is on its way. It
           works once and expires in 1 hour.
         </p>
         <Link href="/step-inside" className="inline-flex min-h-11 items-center">

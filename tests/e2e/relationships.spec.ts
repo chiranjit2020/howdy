@@ -1,6 +1,7 @@
 import { expect, test, type Browser, type Page } from '@playwright/test';
 import {
   axeSource,
+  horizontalOverflow,
   confirmEmailVia,
   newContext,
   signUpVia,
@@ -25,7 +26,8 @@ type Person = Awaited<ReturnType<typeof person>>;
 async function makePosse(asker: Person, asked: Person) {
   await asker.page.goto(`/ranch/${asked.handle}`);
   await asker.page.getByRole('button', { name: 'Ask to join Posse' }).click();
-  await expect(asker.page.getByText('Requested', { exact: true })).toBeVisible();
+  // The relationship bar says so at once; after the page refreshes the Ranch header's badge says it too.
+  await expect(asker.page.getByText('Requested', { exact: true }).first()).toBeVisible();
   await asked.page.goto('/posse');
   await asked.page.getByRole('button', { name: `Accept ${asker.handle}` }).click();
   await expect(asked.page.getByRole('heading', { name: /^Posse \(1\)/ })).toBeVisible();
@@ -243,10 +245,7 @@ test.describe('Posse pages: accessibility and layout in a real browser', () => {
     await makePosse(b, a);
     for (const path of ['/posse', `/ranch/${b.handle}`, '/workshop']) {
       await a.page.goto(path);
-      expect(
-        await a.page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth),
-        `${path} overflow`,
-      ).toBeLessThanOrEqual(0);
+      expect(await horizontalOverflow(a.page), `${path} overflow`).toBeLessThanOrEqual(0);
       const small = await a.page.evaluate(() => {
         const out: string[] = [];
         for (const el of document.querySelectorAll<HTMLElement>(

@@ -14,9 +14,15 @@ export function GlossaryHint({ term }: { term: GlossaryKey }) {
           {...props}
           type="button"
           aria-label={`What is ${entry.term}?`}
-          className="ml-1.5 inline-grid size-6 shrink-0 place-items-center rounded-full align-middle text-metadata font-semibold text-text-secondary transition-colors hover:bg-surface-sunken hover:text-text-primary"
+          // A 44px touch target around a 24px circle; the negative margins keep the heading row from growing.
+          className="group -my-2.5 -mr-2.5 -ml-1 inline-grid size-11 shrink-0 place-items-center rounded-full align-middle"
         >
-          <span aria-hidden="true">?</span>
+          <span
+            aria-hidden="true"
+            className="grid size-6 place-items-center rounded-full text-metadata font-semibold text-text-secondary transition-colors group-hover:bg-surface-sunken group-hover:text-text-primary"
+          >
+            ?
+          </span>
         </button>
       )}
     >

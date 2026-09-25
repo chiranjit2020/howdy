@@ -6,7 +6,7 @@ import { useState, type FormEvent } from 'react';
 import { loginSchema } from '@/shared/validation/auth';
 import { postJson } from '@/ui/auth/api';
 import { FormMessage } from '@/ui/auth/form-parts';
-import { Button, ClayCard, Input } from '@/ui/primitives';
+import { Button, Input } from '@/ui/primitives';
 
 export function LoginForm() {
   const router = useRouter();
@@ -26,7 +26,7 @@ export function LoginForm() {
     setResent(false);
     const parsed = loginSchema.safeParse({ identifier, password });
     if (!parsed.success) {
-      setError('Enter your email or call sign and your secret knock.');
+      setError('Enter your handle or email and your password.');
       setAttempt((n) => n + 1);
       return;
     }
@@ -54,65 +54,60 @@ export function LoginForm() {
   }
 
   return (
-    <ClayCard className="p-8">
-      <form onSubmit={onSubmit} noValidate className="flex flex-col gap-5">
-        <div>
-          <h1 className="text-heading text-text-primary">Step Inside</h1>
-          <p className="text-body text-text-secondary">Welcome back! Log in to your Howdy account.</p>
+    <form onSubmit={onSubmit} noValidate className="flex flex-col gap-4">
+      <div>
+        <h1 className="text-title text-text-primary">Welcome back</h1>
+        <p className="text-body text-text-secondary">Sign in to your Howdy account.</p>
+      </div>
+      {error && (
+        <FormMessage tone="error" focusKey={attempt}>
+          {error}
+        </FormMessage>
+      )}
+      {needsVerify && (
+        <div className="flex flex-col gap-3 rounded-md bg-surface-sunken p-4">
+          <Input
+            label="Email to send the link to"
+            type="email"
+            autoComplete="email"
+            value={verifyEmail}
+            onChange={(e) => setVerifyEmail(e.target.value)}
+          />
+          <Button variant="secondary" onClick={resend}>
+            Send the link again
+          </Button>
+          {resent && (
+            <FormMessage tone="success">
+              If that account still needs confirming, a fresh link is on its way.
+            </FormMessage>
+          )}
         </div>
-        {error && (
-          <FormMessage tone="error" focusKey={attempt}>
-            {error}
-          </FormMessage>
-        )}
-        {needsVerify && (
-          <div className="flex flex-col gap-3 rounded-md bg-surface-sunken p-4">
-            <Input
-              label="Email to send the link to"
-              type="email"
-              autoComplete="email"
-              value={verifyEmail}
-              onChange={(e) => setVerifyEmail(e.target.value)}
-            />
-            <Button variant="secondary" onClick={resend}>
-              Send the link again
-            </Button>
-            {resent && (
-              <FormMessage tone="success">
-                If that account still needs confirming, a fresh link is on its way.
-              </FormMessage>
-            )}
-          </div>
-        )}
-        <Input
-          label="Handle or email"
-          name="identifier"
-          autoComplete="username"
-          autoCapitalize="none"
-          spellCheck={false}
-          value={identifier}
-          onChange={(e) => setIdentifier(e.target.value)}
-        />
-        <Input
-          label="Secret knock"
-          name="password"
-          type="password"
-          autoComplete="current-password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-        <Button type="submit" size="lg" fullWidth loading={busy}>
-          Step Inside
-        </Button>
-        <div className="flex flex-col items-center gap-1 text-caption text-text-secondary">
-          <Link href="/lost-your-key" className="inline-flex min-h-11 items-center">
-            Lost your key?
-          </Link>
-          <span>
-            New here? <Link href="/stake-a-claim">Stake a Claim</Link>
-          </span>
-        </div>
-      </form>
-    </ClayCard>
+      )}
+      <Input
+        label="Handle or email"
+        name="identifier"
+        autoComplete="username"
+        autoCapitalize="none"
+        spellCheck={false}
+        value={identifier}
+        onChange={(e) => setIdentifier(e.target.value)}
+      />
+      <Input
+        label="Password"
+        name="password"
+        type="password"
+        autoComplete="current-password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+      />
+      <Button type="submit" size="lg" fullWidth loading={busy}>
+        Step Inside
+      </Button>
+      <div className="flex justify-center text-caption">
+        <Link href="/lost-your-key" className="inline-flex min-h-11 items-center">
+          Lost your key? Reset your password
+        </Link>
+      </div>
+    </form>
   );
 }

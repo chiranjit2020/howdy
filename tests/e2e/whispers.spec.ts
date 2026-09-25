@@ -1,6 +1,7 @@
 import { expect, test, type Browser, type Page } from '@playwright/test';
 import {
   axeSource,
+  horizontalOverflow,
   confirmEmailVia,
   newContext,
   signUpVia,
@@ -239,10 +240,7 @@ test.describe('Whispers: accessibility and layout in a real browser', () => {
     });
     for (const path of ['/whispers', `/whispers/${b.handle}`]) {
       await a.page.goto(path);
-      expect(
-        await a.page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth),
-        `${path} overflow`,
-      ).toBeLessThanOrEqual(0);
+      expect(await horizontalOverflow(a.page), `${path} overflow`).toBeLessThanOrEqual(0);
       const problems = await a.page.evaluate(() => {
         const out: string[] = [];
         for (const el of document.querySelectorAll<HTMLElement>(

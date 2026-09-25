@@ -48,7 +48,7 @@ export function FieldShell({
       </label>
       {children({ id: fieldId, 'aria-describedby': describedBy, 'aria-invalid': error ? true : undefined })}
       {hint && (
-        <p id={hintId} className="text-metadata text-text-muted">
+        <p id={hintId} className="text-metadata text-text-secondary">
           {hint}
         </p>
       )}
@@ -63,7 +63,9 @@ export function FieldShell({
 
 const CONTROL =
   'w-full rounded-md border border-border bg-surface-sunken px-4 py-2.5 text-body text-text-primary ' +
-  'placeholder:text-text-muted shadow-clay-pressed transition-colors disabled:cursor-not-allowed disabled:opacity-60 ' +
+  'placeholder:text-text-muted shadow-clay-pressed transition disabled:cursor-not-allowed disabled:opacity-60 ' +
+  // A soft glow while typing, on top of the focus outline (which keyboard users still get).
+  'focus:border-focus focus:ring-4 focus:ring-focus/25 ' +
   'aria-invalid:border-danger aria-invalid:border-2';
 
 interface FieldProps {
@@ -72,10 +74,36 @@ interface FieldProps {
   error?: ReactNode;
 }
 
-export function Input({ label, hint, error, className, id, ...rest }: FieldProps & ComponentProps<'input'>) {
+export function Input({
+  label,
+  hint,
+  error,
+  className,
+  id,
+  prefix,
+  ...rest
+}: FieldProps &
+  Omit<ComponentProps<'input'>, 'prefix'> & {
+    /** Fixed text painted inside the box before what is typed (e.g. "@"). Not part of the value. */
+    prefix?: string;
+  }) {
   return (
     <FieldShell id={id} label={label} hint={hint} error={error} className={className}>
-      {(c) => <input className={cn(CONTROL, 'min-h-11')} {...c} {...rest} />}
+      {(c) =>
+        prefix ? (
+          <div className="relative">
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-y-0 left-4 flex items-center text-body text-text-secondary"
+            >
+              {prefix}
+            </span>
+            <input className={cn(CONTROL, 'min-h-11 pl-9')} {...c} {...rest} />
+          </div>
+        ) : (
+          <input className={cn(CONTROL, 'min-h-11')} {...c} {...rest} />
+        )
+      }
     </FieldShell>
   );
 }

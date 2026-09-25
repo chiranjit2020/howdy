@@ -20,6 +20,41 @@ export const MARK_EMOJI: Record<MarkKind, string> = {
 
 const ORDER: MarkKind[] = ['chill', 'pure', 'cinema', 'sigma', 'gem'];
 
+/*
+ * Bar widths in 5% steps, as whole class names so Tailwind generates them. Not style={{ width }}: the CSP blocks inline
+ * style attributes in production. Not an SVG with a viewBox either: its aspect ratio gives it a huge intrinsic width,
+ * which stretched the whole Ranch page on phones. The exact percentage is printed beside the bar.
+ */
+const BAR_WIDTHS = [
+  'w-0',
+  'w-[5%]',
+  'w-[10%]',
+  'w-[15%]',
+  'w-[20%]',
+  'w-[25%]',
+  'w-[30%]',
+  'w-[35%]',
+  'w-[40%]',
+  'w-[45%]',
+  'w-[50%]',
+  'w-[55%]',
+  'w-[60%]',
+  'w-[65%]',
+  'w-[70%]',
+  'w-[75%]',
+  'w-[80%]',
+  'w-[85%]',
+  'w-[90%]',
+  'w-[95%]',
+  'w-full',
+] as const;
+
+/** A non-zero share always shows at least a sliver, so "1 Mark" never looks like none. */
+function barWidth(pct: number): string {
+  const step = Math.round(pct / 5);
+  return BAR_WIDTHS[pct > 0 ? Math.max(step, 1) : 0]!;
+}
+
 /**
  * A Ranch's Vibe Matrix: an aggregate breakdown of Marks received, never a ranking against anyone else (see
  * PRODUCT_DISCOVERY.md C11). Giving one is a row of five picks; the caller decides what happens on a pick.
@@ -57,11 +92,11 @@ export function VibeMatrix({
                 {MARK_LABEL[kind]}
               </span>
               <span
-                className="h-2 flex-1 overflow-hidden rounded-pill bg-surface-sunken"
+                className="h-2 min-w-0 flex-1 overflow-hidden rounded-pill bg-surface-sunken"
                 role="img"
                 aria-label={`${MARK_LABEL[kind]}: ${n} ${n === 1 ? 'Mark' : 'Marks'}, ${pct}%`}
               >
-                <span className="block h-full rounded-pill bg-accent" style={{ width: `${pct}%` }} />
+                <span className={cn('block h-full rounded-pill bg-accent', barWidth(pct))} />
               </span>
               <span className="w-10 shrink-0 text-right font-mono text-metadata text-text-secondary">
                 {pct}%

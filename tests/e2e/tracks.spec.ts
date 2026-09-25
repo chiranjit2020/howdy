@@ -1,6 +1,7 @@
 import { expect, test, type Browser } from '@playwright/test';
 import {
   axeSource,
+  horizontalOverflow,
   confirmEmailVia,
   newContext,
   signUpVia,
@@ -177,9 +178,7 @@ test.describe('Tracks: accessibility and layout in a real browser', () => {
       viewport: { width: 320, height: 700 },
     });
     await a.page.goto('/tracks');
-    expect(
-      await a.page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth),
-    ).toBeLessThanOrEqual(0);
+    expect(await horizontalOverflow(a.page)).toBeLessThanOrEqual(0);
     const problems = await a.page.evaluate(() => {
       const out: string[] = [];
       for (const el of document.querySelectorAll<HTMLElement>(

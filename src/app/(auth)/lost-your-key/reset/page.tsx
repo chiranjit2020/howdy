@@ -3,7 +3,7 @@ import { ClayCard } from '@/ui/primitives';
 import { ResetForm } from './reset-form';
 
 // The link carries a secret token: never leak it through the Referer header.
-export const metadata = { title: 'New secret knock', referrer: 'no-referrer' as const };
+export const metadata = { title: 'New password', referrer: 'no-referrer' as const };
 
 export default async function ResetPage({
   searchParams,

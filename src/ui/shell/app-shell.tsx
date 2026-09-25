@@ -2,11 +2,23 @@ import Link from 'next/link';
 import type { ReactNode } from 'react';
 import type { PortraitTint } from '@/shared/validation/profile';
 import { Art } from '../art/glyph';
+import { cn } from '../cn';
 import { BellIcon } from '../icons';
 import { HowdyLogo } from '../logo';
 import { Avatar } from '../primitives/avatar';
-import { buttonClasses } from '../primitives/button';
 import { ShellBottomNav, ShellSidebarNav, type ShellNavItem } from './nav';
+
+// The signed-out top bar's two ways in: equal widths, never wrapping, sized to fit beside the logo on a 320 px phone.
+// Width comes from the text (both grid columns match the wider pill), so nothing is squeezed on a 320 px phone.
+const AUTH_PILL =
+  'flex w-full min-h-12 flex-col items-center justify-center rounded-pill px-2 py-1 leading-tight whitespace-nowrap ' +
+  'no-underline select-none transition duration-150 ease-out active:translate-y-0.5 active:shadow-clay-pressed ' +
+  'motion-reduce:active:translate-y-0 hover:no-underline sm:min-w-36';
+// The main label drops one size step on the narrowest phones (under 360 px) so both pills fit beside the logo.
+const AUTH_PILL_LABEL = 'text-metadata font-semibold min-[360px]:text-caption';
+const AUTH_PILL_SECONDARY =
+  'border border-border bg-surface text-text-primary shadow-clay-sm hover:bg-surface-sunken';
+const AUTH_PILL_PRIMARY = 'bg-accent text-on-accent shadow-clay-sm hover:bg-accent-hover';
 
 export interface ShellMe {
   handle: string;
@@ -57,8 +69,8 @@ export function AppShell({
   return (
     <div className="daylight-only min-h-dvh">
       <header className="sticky top-0 z-30 border-b border-border/60 bg-background/90 backdrop-blur">
-        <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-4 px-4 md:px-6">
-          <HowdyLogo size="xs" href={me ? '/home' : '/gate'} />
+        <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-2 px-4 min-[360px]:gap-4 md:px-6">
+          <HowdyLogo size={me ? 'xs' : 'bar'} href={me ? '/home' : '/gate'} />
           {me ? (
             <div className="flex items-center gap-3">
               {/* Decorative: a little bird that hops beside the bell. */}
@@ -90,12 +102,15 @@ export function AppShell({
               </Link>
             </div>
           ) : (
-            <div className="flex items-center gap-2">
-              <Link href="/step-inside" className={buttonClasses({ variant: 'secondary', size: 'sm' })}>
-                Step Inside
+            // Two equal pills: the Howdy name, and underneath what it plainly means.
+            <div className="grid grid-cols-2 gap-2">
+              <Link href="/step-inside" className={cn(AUTH_PILL, AUTH_PILL_SECONDARY)}>
+                <span className={AUTH_PILL_LABEL}>Step Inside</span>
+                <span className="text-metadata text-text-secondary">Sign in</span>
               </Link>
-              <Link href="/stake-a-claim" className={buttonClasses({ size: 'sm' })}>
-                Stake a Claim
+              <Link href="/stake-a-claim" className={cn(AUTH_PILL, AUTH_PILL_PRIMARY)}>
+                <span className={AUTH_PILL_LABEL}>Stake a Claim</span>
+                <span className="text-metadata">Create account</span>
               </Link>
             </div>
           )}

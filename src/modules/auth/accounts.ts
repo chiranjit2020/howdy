@@ -28,7 +28,7 @@ export interface RequestContext {
   ip: string;
 }
 
-export const INVALID_CREDENTIALS_MESSAGE = 'That email, call sign or secret knock isn’t right.';
+export const INVALID_CREDENTIALS_MESSAGE = 'That handle, email or password isn’t right.';
 const INVALID_LINK_MESSAGE = 'That link is invalid or has expired. Ask for a fresh one.';
 
 /** Name of the violated unique constraint for a Postgres 23505 error (also unwraps Drizzle's wrapper), if any. */

@@ -102,8 +102,8 @@ describe('AppShell', () => {
         <main>page</main>
       </AppShell>,
     );
-    expect(screen.getByRole('link', { name: 'Step Inside' })).toHaveAttribute('href', '/step-inside');
-    expect(screen.getByRole('link', { name: 'Stake a Claim' })).toHaveAttribute('href', '/stake-a-claim');
+    expect(screen.getByRole('link', { name: /^Step Inside/ })).toHaveAttribute('href', '/step-inside');
+    expect(screen.getByRole('link', { name: /^Stake a Claim/ })).toHaveAttribute('href', '/stake-a-claim');
     expect(screen.queryByRole('link', { name: 'My Ranch' })).not.toBeInTheDocument();
     expect(screen.queryByRole('navigation', { name: 'Primary' })).not.toBeInTheDocument();
   });

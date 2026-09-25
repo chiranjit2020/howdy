@@ -6,6 +6,51 @@ import type { Browser, BrowserContext, Page } from '@playwright/test';
 
 const OUTBOX = join(process.cwd(), '.dev', 'e2e-outbox');
 
+/**
+ * How many pixels the page is wider than the viewport the test asked for (> 0 means sideways scrolling).
+ * Not `scrollWidth - window.innerWidth`: with `isMobile` the browser widens its layout viewport to fit an over-wide
+ * page, as real phones do, so innerWidth grows with the page and that difference stays 0 however wide it gets.
+ */
+export async function horizontalOverflow(page: Page): Promise<number> {
+  const width = page.viewportSize()?.width;
+  if (!width) throw new Error('horizontalOverflow needs a fixed viewport size');
+  const { overflow, culprits } = await page.evaluate((w) => {
+    const over = document.documentElement.scrollWidth - w;
+    if (over <= 0) return { overflow: over, culprits: [] as string[] };
+    // Name what sticks out so the report says where to look. Fixed elements (the phone tab bar) are skipped: they
+    // stretch to the widened layout viewport, a symptom rather than a cause. Text that spills out of its own box
+    // (a long unbroken handle) is listed too: its box can be narrow enough while the words are not.
+    const inFixed = (el: Element): boolean => {
+      for (let n: Element | null = el; n; n = n.parentElement)
+        if (getComputedStyle(n).position === 'fixed') return true;
+      return false;
+    };
+    const describe = (el: HTMLElement, what: string) =>
+      `${what} ${el.tagName.toLowerCase()}.${String(el.className).slice(0, 50)} "${(el.textContent ?? '').trim().slice(0, 40)}"`;
+    const all = [...document.querySelectorAll<HTMLElement>('body *')].filter(
+      (el) => el.getClientRects().length > 0 && !inFixed(el),
+    );
+    const wide = all.filter((el) => el.getBoundingClientRect().right > w + 0.5);
+    const spilling = all.filter(
+      (el) => el.scrollWidth > el.clientWidth + 1 && getComputedStyle(el).overflowX === 'visible',
+    );
+    const innermost = (list: HTMLElement[]) =>
+      list.filter((el) => !list.some((other) => other !== el && el.contains(other)));
+    return {
+      overflow: over,
+      culprits: [
+        ...innermost(wide).map((el) =>
+          describe(el, `ends at ${Math.round(el.getBoundingClientRect().right)}px:`),
+        ),
+        ...innermost(spilling).map((el) => describe(el, `text spills out of`)),
+      ].slice(0, 10),
+    };
+  }, width);
+  if (overflow > 0)
+    console.log(`horizontalOverflow ${page.url()} +${overflow}px:\n  ${culprits.join('\n  ')}`);
+  return overflow;
+}
+
 /** A fresh browser context with its own client address, so rate limits never carry over between tests or runs. */
 export function newContext(
   browser: Browser,
@@ -28,8 +73,13 @@ export const uniqueAccount = (tag: string) => {
 };
 
 /** Wait for the newest mail to `to` in the file outbox and return its text. Mail is sent after the response. */
+/**
+ * The newest mail to `to` whose subject matches. Pass `subject` whenever an earlier mail to the same address may
+ * exist: mail is sent after the response, so the one you want can land a moment after the page says "sent".
+ */
 export async function waitForMail(
   to: string,
+  subject: RegExp = /./,
   timeoutMs = 10_000,
 ): Promise<{ subject: string; text: string }> {
   const deadline = Date.now() + timeoutMs;
@@ -42,7 +92,7 @@ export async function waitForMail(
           subject: string;
           text: string;
         };
-        if (msg.to === to) return msg;
+        if (msg.to === to && subject.test(msg.subject)) return msg;
       }
     }
     await new Promise((r) => setTimeout(r, 150));
@@ -66,13 +116,13 @@ export async function signUpVia(page: Page, a: { handle: string; email: string; 
   await page.goto('/stake-a-claim');
   await page.getByLabel('Choose a handle').fill(a.handle);
   await page.getByLabel('Email address').fill(a.email);
-  await page.getByLabel('Secret knock').fill(a.password);
+  await page.getByLabel('Password', { exact: true }).fill(a.password);
   await page.getByRole('button', { name: 'Create My Account' }).click();
   await page.getByRole('heading', { name: 'Check your email' }).waitFor();
 }
 
 export async function confirmEmailVia(page: Page, email: string) {
-  const mail = await waitForMail(email);
+  const mail = await waitForMail(email, /confirm/i);
   await page.goto(pathOf(linkFrom(mail.text)));
   await page.getByRole('button', { name: 'Confirm my email' }).click();
   await page.getByRole('heading', { name: 'Deed granted!' }).waitFor();
@@ -81,7 +131,7 @@ export async function confirmEmailVia(page: Page, email: string) {
 export async function stepInsideVia(page: Page, identifier: string, password: string) {
   await page.goto('/step-inside');
   await page.getByLabel('Handle or email').fill(identifier);
-  await page.getByLabel('Secret knock').fill(password);
+  await page.getByLabel('Password', { exact: true }).fill(password);
   await page.getByRole('button', { name: 'Step Inside' }).click();
 }
 

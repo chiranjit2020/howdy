@@ -1,6 +1,7 @@
 import { expect, test, type Browser, type Locator, type Page } from '@playwright/test';
 import {
   axeSource,
+  horizontalOverflow,
   confirmEmailVia,
   newContext,
   signUpVia,
@@ -89,7 +90,10 @@ test.describe('The Fence in a real browser (production build, real CSP)', () => 
     // Restrict: Bob's next card looks posted to Bob, is invisible to others, and waits for Alice.
     expect((await api(a, `/api/relationships/${b.handle}`, { action: 'restrict' })).ok()).toBe(true);
     await nailVia(b.page, 'Quiet words from Bob');
-    await expect(b.page.getByText(/waiting|approve/i)).toHaveCount(0); // Bob is never told
+    // Bob is never told. (The Tributes notice says "wait for … to approve" to every visitor, restricted or not.)
+    await expect(
+      b.page.getByText(/waiting|approve/i).filter({ hasNotText: /^Tributes always wait for/ }),
+    ).toHaveCount(0);
     await c.page.reload();
     await expect(cardWith(c.page, 'Quiet words from Bob')).toHaveCount(0);
     await a.page.reload();
@@ -160,7 +164,7 @@ test.describe('The Fence in a real browser (production build, real CSP)', () => 
     await expect(a.page.getByRole('status').filter({ hasText: 'Fence rules updated' })).toBeVisible();
 
     await b.page.goto(`/ranch/${a.handle}`);
-    await expect(b.page.getByText(/wait for .* to approve/)).toBeVisible();
+    await expect(b.page.getByText(/Cards on this Fence wait for .* to approve/)).toBeVisible();
     await nailVia(b.page, 'Please approve me');
     await expect(cardWith(b.page, 'Please approve me').getByText(/Waiting for .* to approve/)).toBeVisible();
 
@@ -246,10 +250,7 @@ test.describe('Fence: accessibility and layout in a real browser', () => {
       [a, '/workshop'],
     ] as const) {
       await who.page.goto(path);
-      expect(
-        await who.page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth),
-        `${path} overflow`,
-      ).toBeLessThanOrEqual(0);
+      expect(await horizontalOverflow(who.page), `${path} overflow`).toBeLessThanOrEqual(0);
       const problems = await who.page.evaluate(() => {
         const out: string[] = [];
         for (const el of document.querySelectorAll<HTMLElement>(
@@ -279,10 +280,7 @@ test.describe('Fence: accessibility and layout in a real browser', () => {
     // The back of a card too.
     await b.page.goto(`/ranch/${a.handle}`);
     await b.page.getByRole('button', { name: /^Flip/ }).first().click();
-    expect(
-      await b.page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth),
-      'flipped overflow',
-    ).toBeLessThanOrEqual(0);
+    expect(await horizontalOverflow(b.page), 'flipped overflow').toBeLessThanOrEqual(0);
     await Promise.all([a.ctx.close(), b.ctx.close()]);
   });
 });

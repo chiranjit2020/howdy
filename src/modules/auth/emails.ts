@@ -45,11 +45,11 @@ export function alreadyRegisteredMessage(to: string): MailMessage {
 export function passwordResetMessage(to: string, token: string): MailMessage {
   return {
     to,
-    subject: 'Reset your Howdy secret knock',
+    subject: 'Reset your Howdy password',
     text: [
       'Howdy!',
       '',
-      'Use this link to choose a new secret knock:',
+      'Use this link to choose a new password:',
       link('/lost-your-key/reset', token),
       '',
       'This link works once and expires in 1 hour.',
@@ -61,11 +61,11 @@ export function passwordResetMessage(to: string, token: string): MailMessage {
 export function passwordChangedMessage(to: string): MailMessage {
   return {
     to,
-    subject: 'Your Howdy secret knock was changed',
+    subject: 'Your Howdy password was changed',
     text: [
       'Howdy!',
       '',
-      'Your secret knock was just changed and every device was signed out.',
+      'Your password was just changed and every device was signed out.',
       `If this was not you, reset it right away: ${link('/lost-your-key')}`,
     ].join('\n'),
   };

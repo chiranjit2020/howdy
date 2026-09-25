@@ -1,4 +1,13 @@
 import { defineConfig } from '@playwright/test';
+import { existsSync, readFileSync } from 'node:fs';
+import { parse } from 'dotenv';
+
+// .env.local's DATABASE_URL may point at a remote (Neon) database; E2E_DATABASE_URL keeps the e2e server on a local one.
+// Read that one key only: loading the whole file here would leak its other values (e.g. NODE_ENV) into the servers.
+const e2eDatabaseUrl =
+  process.env.E2E_DATABASE_URL ??
+  (existsSync('.env.local') ? parse(readFileSync('.env.local')).E2E_DATABASE_URL : undefined);
+const e2eDatabase: Record<string, string> = e2eDatabaseUrl ? { DATABASE_URL: e2eDatabaseUrl } : {};
 
 const PORT = 3300;
 const WS_PORT = 3301;
@@ -29,6 +38,7 @@ export default defineConfig({
       env: {
         // Loopback http is allowed in production for local runs; the Origin the browser sends must equal APP_URL (CSRF check).
         APP_URL: `http://localhost:${PORT}`,
+        ...e2eDatabase,
         ENABLE_DESIGN_KIT: '1',
         // Test-only mail transport: one JSON file per message so the spec can read verification / reset links.
         ENABLE_TEST_MAILER: '1',
@@ -52,6 +62,7 @@ export default defineConfig({
       env: {
         NODE_ENV: 'production',
         APP_URL: `http://localhost:${PORT}`,
+        ...e2eDatabase,
         // The realtime process reads the same config (it never touches files or mail, but production still validates it).
         ENABLE_TEST_STORAGE: '1',
         ENABLE_TEST_MAILER: '1',

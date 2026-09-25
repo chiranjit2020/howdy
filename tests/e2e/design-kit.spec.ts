@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { horizontalOverflow } from './helpers';
 
 const KIT = '/workshop/kit';
 
@@ -140,7 +141,7 @@ test.describe('design kit (production build, real CSP)', () => {
   }) => {
     await page.setViewportSize({ width: 320, height: 700 });
     await page.goto(KIT);
-    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+    const overflow = await horizontalOverflow(page);
     expect(overflow).toBeLessThanOrEqual(0);
     await expect(page.getByRole('navigation', { name: 'Primary' })).toBeVisible();
     await page.setViewportSize({ width: 1100, height: 800 });

@@ -137,6 +137,30 @@
   --animate-spin-slow: spin 0.9s linear infinite;
   --animate-bird-hop: bird-hop 4.5s ease-in-out infinite;
   --animate-loader-spin: spin 1.8s linear infinite;
+  /* The sign-in card's tabs: the new form slides in from the side of the tab that was picked. */
+  --animate-slide-from-right: slide-from-right 0.25s ease-out;
+  --animate-slide-from-left: slide-from-left 0.25s ease-out;
+
+  @keyframes slide-from-right {
+    from {
+      opacity: 0;
+      transform: translateX(1.5rem);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes slide-from-left {
+    from {
+      opacity: 0;
+      transform: translateX(-1.5rem);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
 
   /* The little blue bird in the top bar: two quick hops, then a rest. */
   @keyframes bird-hop {
@@ -248,6 +272,11 @@
     font-size: var(--text-body);
     line-height: var(--text-body--line-height);
     -webkit-font-smoothing: antialiased;
+    /*
+     * Handles and display names are single unbreakable words people choose ("Howdy, averyveryveryl…"): break one only
+     * when it would otherwise run out of its box, instead of pushing a phone page sideways.
+     */
+    overflow-wrap: break-word;
   }
   /*
    * Links are recognisable without relying on colour alone (underline), and use the AA-checked link token.

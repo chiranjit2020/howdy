@@ -100,7 +100,7 @@ export const passwordSchema = z
   .max(PASSWORD_MAX, `Use at most ${PASSWORD_MAX} characters.`)
   .refine(
     (p) => !COMMON_PASSWORDS.has(p.toLowerCase()),
-    'That knock is too common. Pick something less guessable.',
+    'That password is too common. Pick something less guessable.',
   );
 
 /** Extra check that needs the account context: the password must not just be the email or handle. */
@@ -114,7 +114,7 @@ export function passwordMatchesIdentity(password: string, email: string, handle?
   );
 }
 
-export const IDENTITY_PASSWORD_MESSAGE = 'Your knock should not contain your email or call sign.';
+export const IDENTITY_PASSWORD_MESSAGE = 'Your password should not contain your email or handle.';
 
 /** `displayName` is optional: left out, the Ranch is named after the call sign (the same as before this field existed). */
 export const signUpSchema = z
@@ -136,11 +136,11 @@ export const loginSchema = z.object({
     .string()
     .trim()
     .toLowerCase()
-    .min(1, 'Enter your email or call sign.')
+    .min(1, 'Enter your handle or email.')
     .max(254)
     // Control characters (notably NUL, which Postgres refuses in text) can never be part of a real identifier.
-    .refine((s) => !/[\u0000-\u001f\u007f]/.test(s), 'Enter your email or call sign.'),
-  password: z.string().min(1, 'Enter your secret knock.').max(PASSWORD_MAX),
+    .refine((s) => !/[\u0000-\u001f\u007f]/.test(s), 'Enter your handle or email.'),
+  password: z.string().min(1, 'Enter your password.').max(PASSWORD_MAX),
 });
 
 export const emailOnlySchema = z.object({ email: emailSchema });

@@ -2,7 +2,8 @@ import Link from 'next/link';
 import { Img } from './art/img';
 import { cn } from './cn';
 
-const LOGO_WIDTH = { lg: 'w-68', sm: 'w-36', xs: 'w-24' } as const;
+// `bar`: the top bar's logo, a little smaller on the narrowest phones so the two sign-in buttons fit beside it.
+const LOGO_WIDTH = { lg: 'w-68', sm: 'w-36', xs: 'w-24', bar: 'w-20 min-[360px]:w-24' } as const;
 
 /** The Howdy wordmark (the brand artwork). Links to the Gate unless told otherwise (signed-in pages point it at Home). */
 export function HowdyLogo({
