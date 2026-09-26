@@ -1,0 +1,42 @@
+# Checks Howdy's health every 30 minutes (the daily digest comes from Vercel Cron, see vercel.json).
+#
+# The app emails its owner when something breaks or recovers. This job is the backstop for when the app cannot:
+# if the site is down, or the report says something has FAILED, the job fails and GitHub emails the repo owner.
+#
+# Needs two repository secrets (Settings -> Secrets and variables -> Actions):
+#   HEALTH_URL   https://<your production domain>/api/health/report
+#   CRON_SECRET  the same value as CRON_SECRET in Vercel
+name: Health watch
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'
+  workflow_dispatch: {}
+
+permissions: {}
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Ask Howdy for a health report
+        env:
+          HEALTH_URL: ${{ secrets.HEALTH_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -z "$HEALTH_URL" ] || [ -z "$CRON_SECRET" ]; then
+            echo "::warning::HEALTH_URL and CRON_SECRET secrets are not set; skipping."
+            exit 0
+          fi
+          code=$(curl -sS -o report.json -w '%{http_code}' --max-time 60 \
+            -H "Authorization: Bearer $CRON_SECRET" "$HEALTH_URL?mode=watch" || echo 000)
+          echo "HTTP $code"
+          if [ -s report.json ]; then
+            jq -r '"Overall: \(.status)  (\(.region), commit \(.commit), \(.durationMs) ms)",
+                   (.checks[] | "  [\(.status)] \(.label): \(.detail)")' report.json 2>/dev/null || cat report.json
+          fi
+          if [ "$code" != "200" ]; then
+            echo "::error::Howdy health check failed (HTTP $code). See the report above."
+            exit 1
+          fi

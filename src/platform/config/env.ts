@@ -35,6 +35,13 @@ const schema = z.object({
     .string()
     .regex(/^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$/, 'R2_BUCKET must be a valid bucket name')
     .optional(),
+  /**
+   * Shared secret for the scheduled health report (/api/health/report). Vercel Cron sends it automatically as
+   * "Authorization: Bearer <CRON_SECRET>"; the GitHub Actions watcher sends the same. Unset = the report is disabled.
+   */
+  CRON_SECRET: z.string().min(32, 'CRON_SECRET must be at least 32 characters').optional(),
+  /** Where health digests and alerts are emailed. Unset = reports are produced but not emailed. */
+  HEALTH_REPORT_TO: z.email().optional(),
   /** Port of the separate WebSocket process (`pnpm ws`). */
   WS_PORT: z.coerce.number().int().min(1).max(65535).default(3301),
   /** How often an open socket re-checks that its session is still valid (logout, "log out everywhere", suspension end it). */
