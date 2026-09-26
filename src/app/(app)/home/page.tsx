@@ -6,9 +6,11 @@ import { getOwnRanch } from '@/modules/profiles';
 import { listMyRelationships } from '@/modules/relationships';
 import { cn } from '@/ui/cn';
 import { Badge, buttonClasses, ClayCard } from '@/ui/primitives';
-import { HitTheTrail, OpenGates } from './home-actions';
+import { HitTheTrail, HitTheTrailEverywhere, OpenGates } from './home-actions';
 
 export const metadata = { title: 'Home' };
+
+const SMALL = buttonClasses({ variant: 'secondary', size: 'sm', compact: true });
 
 /** First protected page. The session check happens on the server: an unauthenticated request never reaches the markup. */
 export default async function HomePage() {
@@ -27,35 +29,45 @@ export default async function HomePage() {
     <>
       {/* No side padding of its own: the shell's px-4 is the gutter, so the cards use the full phone width. */}
       <main id="main" className="mx-auto flex w-full max-w-xl flex-col gap-4 py-4 sm:gap-6 sm:py-8">
-        <ClayCard className="flex flex-col gap-3 p-4 sm:p-8">
+        <ClayCard className="flex flex-col gap-3 p-4 sm:gap-4 sm:p-6">
           {/* The picture sits beside the greeting rather than above it, which saves a row on a phone. */}
           <div className="flex items-center gap-3">
-            <Glyph emoji="📜" size="free" className="size-12 shrink-0 sm:size-16" />
+            <Glyph emoji="📜" size="free" className="size-10 shrink-0 sm:size-14" />
             <div className="min-w-0">
               <h1 className="text-heading text-text-primary">Howdy, {ranch.displayName}</h1>
-              <p className="text-body text-text-secondary">
-                Deed granted, @{user.handle}. <Badge tone="success">Email confirmed</Badge>
+              <p className="flex flex-wrap items-center gap-x-2 text-caption text-text-secondary">
+                <span>Deed granted, @{user.handle}.</span>
+                <Badge tone="success">Email confirmed</Badge>
               </p>
             </div>
           </div>
-          {/* Two columns on a phone, with the Ranch across the top; one wrapping row from sm up. */}
-          <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:gap-3">
-            <Link href={`/porch/${user.handle}`} className={cn(buttonClasses(), 'col-span-2')}>
-              Visit your Porch
-            </Link>
-            <Link href="/pals" className={buttonClasses({ variant: 'secondary' })}>
+          {/* One main action, then the everyday small ones in a single row of three. */}
+          <Link href={`/porch/${user.handle}`} className={buttonClasses({ fullWidth: true })}>
+            Visit your Porch
+          </Link>
+          {/* Each takes the width its label needs, so all three fit one row even on a 320 px phone (it may wrap only
+              there, when a "new requests" count is showing). */}
+          <div className="flex flex-wrap gap-2">
+            <Link href="/pals" className={cn(SMALL, 'flex-auto')}>
               Pals{requests > 0 && <span className="sr-only">, </span>}
-              {requests > 0 && <Badge tone="accent">{requests} new</Badge>}
+              {requests > 0 && (
+                <Badge tone="accent">
+                  {requests}
+                  <span className="sr-only"> new</span>
+                </Badge>
+              )}
             </Link>
-            <Link href="/workshop" className={buttonClasses({ variant: 'secondary' })}>
+            <Link href="/workshop" className={cn(SMALL, 'flex-auto')}>
               Workshop
             </Link>
+            <HitTheTrail className="flex-auto" />
           </div>
-          <HitTheTrail />
+          <div className="-mt-2 -mb-2 flex justify-end">
+            <HitTheTrailEverywhere />
+          </div>
         </ClayCard>
-        <ClayCard className="p-4 sm:p-6">
-          <OpenGates initial={gates} />
-        </ClayCard>
+        {/* Technical, and rarely needed: a quiet folded line instead of a card of its own. */}
+        <OpenGates initial={gates} />
       </main>
     </>
   );

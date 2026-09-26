@@ -335,6 +335,20 @@
   box-shadow: var(--shadow-clay);
 }
 
+/*
+ * -- Phones: one step denser. --
+ * The type scale above reads well on a laptop but crowds a 360 px screen. Below `sm` every text role drops a notch; the
+ * utilities read these variables, so the whole app follows without per-page changes. Touch targets (min-h-11) are kept.
+ */
+@media (width < 40rem) {
+  :root {
+    --text-heading: 1.3125rem;
+    --text-title: 1.0625rem;
+    --text-body: 0.9375rem;
+    --text-caption: 0.8125rem;
+  }
+}
+
 /* -- Reduced motion: motion communicates state, so it is removed, not replaced. -- */
 @media (prefers-reduced-motion: reduce) {
   *,

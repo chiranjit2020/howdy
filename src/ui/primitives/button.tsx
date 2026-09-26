@@ -14,22 +14,31 @@ const VARIANT: Record<ButtonVariant, string> = {
 
 // Every size keeps a >=44px touch target on touch devices (min-h-11); `sm` shrinks only with a fine pointer.
 const SIZE: Record<ButtonSize, string> = {
-  sm: 'min-h-11 pointer-fine:min-h-9 px-4 text-caption',
-  md: 'min-h-11 px-5 text-body',
-  lg: 'min-h-12 px-7 text-title',
+  sm: 'min-h-11 pointer-fine:min-h-9 text-caption',
+  md: 'min-h-11 text-body',
+  lg: 'min-h-12 text-title',
 };
+// Kept apart from SIZE so `compact` can replace it (cn does not merge conflicting classes).
+const PADDING: Record<ButtonSize, string> = { sm: 'px-4', md: 'px-5', lg: 'px-7' };
 
 /** Class list shared by <Button> and link-styled-as-button (`<Link className={buttonClasses()}>`). */
 export function buttonClasses(
-  opts: { variant?: ButtonVariant; size?: ButtonSize; fullWidth?: boolean } = {},
+  opts: {
+    variant?: ButtonVariant;
+    size?: ButtonSize;
+    fullWidth?: boolean;
+    /** Tight side padding, for several buttons sharing one row on a phone. */
+    compact?: boolean;
+  } = {},
 ): string {
-  const { variant = 'primary', size = 'md', fullWidth } = opts;
+  const { variant = 'primary', size = 'md', fullWidth, compact } = opts;
   return cn(
     'inline-flex items-center justify-center gap-2 rounded-pill font-semibold select-none no-underline',
     'transition duration-150 ease-out active:translate-y-0.5 active:shadow-clay-pressed motion-reduce:active:translate-y-0',
     'disabled:cursor-not-allowed disabled:opacity-60 aria-disabled:cursor-not-allowed aria-disabled:opacity-60',
     VARIANT[variant],
     SIZE[size],
+    compact ? 'px-2.5 whitespace-nowrap' : PADDING[size],
     fullWidth && 'w-full',
   );
 }
@@ -38,6 +47,7 @@ export interface ButtonProps extends ComponentProps<'button'> {
   variant?: ButtonVariant;
   size?: ButtonSize;
   fullWidth?: boolean;
+  compact?: boolean;
   /** Shows a spinner, disables the button and sets aria-busy. */
   loading?: boolean;
 }
@@ -46,6 +56,7 @@ export function Button({
   variant,
   size,
   fullWidth,
+  compact,
   loading,
   className,
   children,
@@ -56,7 +67,7 @@ export function Button({
   return (
     <button
       type={type}
-      className={cn(buttonClasses({ variant, size, fullWidth }), className)}
+      className={cn(buttonClasses({ variant, size, fullWidth, compact }), className)}
       disabled={disabled || loading}
       aria-busy={loading || undefined}
       {...rest}
