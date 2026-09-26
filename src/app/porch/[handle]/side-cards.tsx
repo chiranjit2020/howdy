@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import type { PersonEntry } from '@/app/_lib/social';
-import { BoltIcon, UsersIcon } from '@/ui/icons';
+import { BoltIcon, TracksIcon, UsersIcon } from '@/ui/icons';
 import { GlossaryHint } from '@/ui/howdy';
 import { Avatar, ClayCard } from '@/ui/primitives';
 
@@ -26,6 +26,35 @@ export function SignalCard({ text, expiresLabel }: { text: string; expiresLabel:
         {text}
         <span className="mt-1 block font-mono text-metadata text-text-secondary">{expiresLabel}</span>
       </p>
+    </ClayCard>
+  );
+}
+
+/**
+ * Owner only: the way to your Tracks (who stopped by your Porch). Tracks has no tab on phones, so it lives here, next
+ * to the rest of what is yours.
+ */
+export function TracksCard() {
+  return (
+    <ClayCard className="flex flex-col gap-3 bg-info/25">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center">
+          <h2 className="flex items-center gap-3 font-display text-title text-brand-ink">
+            <span
+              aria-hidden="true"
+              className="grid size-9 place-items-center rounded-pill bg-info text-heading text-on-info"
+            >
+              <TracksIcon />
+            </span>
+            Tracks
+          </h2>
+          <GlossaryHint term="tracks" />
+        </div>
+        <Link href="/tracks" className="inline-flex min-h-11 items-center text-caption text-auth-link">
+          Open
+        </Link>
+      </div>
+      <p className="text-caption text-text-secondary">See who stopped by your Porch this week.</p>
     </ClayCard>
   );
 }

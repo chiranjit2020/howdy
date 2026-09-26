@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { useEffect, useRef, useState } from 'react';
 import type { CardView, FencePage, ReplyView } from '@/modules/fence';
 import { apiRequest, postJson } from '@/ui/auth/api';
 import { FormMessage } from '@/ui/auth/form-parts';
@@ -35,6 +36,15 @@ export function FenceSection({
   signedIn: boolean;
 }) {
   const toast = useToast();
+  const composerRef = useRef<HTMLDivElement>(null);
+  // The tab bar's "Nail" button opens your Porch with ?nail=1: bring the composer into view and put the cursor in it.
+  const wantsNail = useSearchParams().get('nail') === '1';
+  useEffect(() => {
+    if (!wantsNail) return;
+    const box = composerRef.current;
+    box?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    box?.querySelector('textarea')?.focus({ preventScroll: true });
+  }, [wantsNail]);
   const [cards, setCards] = useState<WireCard[]>(initial.cards);
   const [next, setNext] = useState<string | null>(initial.nextCursor);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -143,7 +153,7 @@ export function FenceSection({
   }
 
   const composer = initial.canPost ? (
-    <div className="flex flex-col gap-2">
+    <div ref={composerRef} id="nail" className="flex scroll-mt-24 flex-col gap-2">
       {initial.review && (
         <p className="text-caption text-text-secondary">
           Cards on this Fence wait for {ownerName} to approve them before others see them.

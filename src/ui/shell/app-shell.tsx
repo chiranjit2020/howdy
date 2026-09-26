@@ -59,15 +59,9 @@ export function AppShell({
         { key: 'tracks', href: '/tracks', label: 'Tracks' },
         { key: 'whispers', href: '/whispers', label: 'Whispers', badge: unreadWhispers },
         { key: 'chimes', href: '/chimes', label: 'Chimes', badge: unread },
-        // Phones reach the Workshop from "Tend your Porch" on their own Porch; the tab bar only has room for six.
-        { key: 'workshop', href: '/workshop', label: 'Workshop', sidebarOnly: true },
-        {
-          key: 'town-halls',
-          href: '/town-halls',
-          label: 'Town Halls',
-          badge: townHallInvites,
-          sidebarOnly: true,
-        },
+        // The phone tab bar shows its own short list (see ShellBottomNav); these are sidebar-only.
+        { key: 'workshop', href: '/workshop', label: 'Workshop' },
+        { key: 'town-halls', href: '/town-halls', label: 'Town Halls', badge: townHallInvites },
       ]
     : [];
 
@@ -107,11 +101,12 @@ export function AppShell({
                   </span>
                 )}
               </Link>
-              {/* A real 44 px box (an inline link around an image is shorter than its picture, and too small to tap). */}
+              {/* A real 44 px box (an inline link around an image is shorter than its picture, and too small to tap).
+                  Phones have your picture in the tab bar instead, so it shows here from md up only. */}
               <Link
                 href={`/porch/${me.handle}`}
                 aria-label="Your Porch"
-                className="inline-flex size-11 rounded-pill"
+                className="hidden size-11 rounded-pill md:inline-flex"
               >
                 <Avatar name={me.displayName} src={me.portraitUrl} tint={me.portraitTint} size="md" />
               </Link>
@@ -144,12 +139,12 @@ export function AppShell({
             </div>
           </aside>
         )}
-        {/* Room for the floating phone tab bar (and the safe-area inset under it), which only exists when signed in. */}
+        {/* Room for the phone tab bar and its raised Nail button (and the safe-area inset under it); signed in only. */}
         <div className={cn('min-w-0 flex-1', me && 'pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-8')}>
           {children}
         </div>
       </div>
-      {me && <ShellBottomNav items={items} />}
+      {me && <ShellBottomNav items={items} me={me} />}
       {me && <BirdVisitor />}
     </div>
   );

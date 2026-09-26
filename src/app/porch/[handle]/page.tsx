@@ -19,7 +19,7 @@ import { buttonClasses, ClayCard, EmptyState } from '@/ui/primitives';
 import { RelationshipBar } from './relationship-bar';
 import { FenceSection } from './fence-section';
 import { SignalEditor } from './signal-editor';
-import { PosseCard, SignalCard } from './side-cards';
+import { PosseCard, SignalCard, TracksCard } from './side-cards';
 import { TributesSection } from './tributes-section';
 import { VibeMatrixSection } from './vibe-matrix-section';
 import { WaitingQueue } from './waiting-queue';
@@ -161,7 +161,7 @@ export default async function RanchPage({ params }: { params: Promise<{ handle: 
       )}
 
       <aside
-        aria-label="Signal and Pals"
+        aria-label="Signal, Pals and Tracks"
         className="flex flex-col gap-6 lg:col-start-2 lg:row-span-3 lg:row-start-1"
       >
         {ranch.signal && (
@@ -171,6 +171,7 @@ export default async function RanchPage({ params }: { params: Promise<{ handle: 
         {waiting && <WaitingQueue waiting={waiting} tributes={waitingTributes} />}
         {vibe && <VibeMatrixSection handle={ranch.handle} initial={vibe} />}
         {posse && <PosseCard members={posse} />}
+        {ranch.isOwner && <TracksCard />}
       </aside>
 
       <div className="min-w-0 lg:col-start-1">
