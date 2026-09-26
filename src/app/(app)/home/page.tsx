@@ -4,6 +4,7 @@ import { Glyph } from '@/ui/art/glyph';
 import { listMySessions, requireUser } from '@/modules/auth';
 import { getOwnRanch } from '@/modules/profiles';
 import { listMyRelationships } from '@/modules/relationships';
+import { cn } from '@/ui/cn';
 import { Badge, buttonClasses, ClayCard } from '@/ui/primitives';
 import { HitTheTrail, OpenGates } from './home-actions';
 
@@ -24,15 +25,22 @@ export default async function HomePage() {
 
   return (
     <>
-      <main id="main" className="mx-auto flex w-full max-w-xl flex-col gap-6 px-4 py-8">
-        <ClayCard className="flex flex-col gap-3 p-8">
-          <Glyph emoji="📜" size="hero" />
-          <h1 className="text-heading text-text-primary">Howdy, {ranch.displayName}</h1>
-          <p className="text-body text-text-secondary">
-            Deed granted, @{user.handle}. <Badge tone="success">Email confirmed</Badge>
-          </p>
-          <div className="flex flex-wrap gap-3">
-            <Link href={`/ranch/${user.handle}`} className={buttonClasses()}>
+      {/* No side padding of its own: the shell's px-4 is the gutter, so the cards use the full phone width. */}
+      <main id="main" className="mx-auto flex w-full max-w-xl flex-col gap-4 py-4 sm:gap-6 sm:py-8">
+        <ClayCard className="flex flex-col gap-3 p-4 sm:p-8">
+          {/* The picture sits beside the greeting rather than above it, which saves a row on a phone. */}
+          <div className="flex items-center gap-3">
+            <Glyph emoji="📜" size="free" className="size-12 shrink-0 sm:size-16" />
+            <div className="min-w-0">
+              <h1 className="text-heading text-text-primary">Howdy, {ranch.displayName}</h1>
+              <p className="text-body text-text-secondary">
+                Deed granted, @{user.handle}. <Badge tone="success">Email confirmed</Badge>
+              </p>
+            </div>
+          </div>
+          {/* Two columns on a phone, with the Ranch across the top; one wrapping row from sm up. */}
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:gap-3">
+            <Link href={`/ranch/${user.handle}`} className={cn(buttonClasses(), 'col-span-2')}>
               Visit your Ranch
             </Link>
             <Link href="/posse" className={buttonClasses({ variant: 'secondary' })}>
@@ -45,7 +53,7 @@ export default async function HomePage() {
           </div>
           <HitTheTrail />
         </ClayCard>
-        <ClayCard className="p-6">
+        <ClayCard className="p-4 sm:p-6">
           <OpenGates initial={gates} />
         </ClayCard>
       </main>

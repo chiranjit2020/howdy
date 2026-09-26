@@ -28,11 +28,12 @@ export function HitTheTrail() {
 
   return (
     <>
-      <div className="flex flex-wrap gap-3">
-        <Button variant="secondary" loading={busy} onClick={() => leave('/api/auth/logout')}>
+      {/* Signing out is the least-used action, so it is the smaller row. */}
+      <div className="flex flex-wrap gap-x-2 gap-y-1 sm:gap-3">
+        <Button size="sm" variant="secondary" loading={busy} onClick={() => leave('/api/auth/logout')}>
           Hit the Trail
         </Button>
-        <Button variant="ghost" onClick={() => setConfirmAll(true)}>
+        <Button size="sm" variant="ghost" onClick={() => setConfirmAll(true)}>
           Hit the Trail everywhere
         </Button>
       </div>
