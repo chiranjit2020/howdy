@@ -53,35 +53,55 @@ export function Navigation({
   );
 }
 
-/** Mobile tab bar. Fixed to the bottom, respects the safe-area inset; hidden from md up (use <Navigation> there). */
+/**
+ * Mobile tab bar: a dock floating just above the bottom edge (and the safe-area inset); hidden from md up (use
+ * <Navigation> there). One coral pill glides to the current tab, whose icon gives a small hop as it arrives; a pressed
+ * icon squishes. Tabs with unread activity carry a dot. Reduced motion turns all of it into plain state changes.
+ */
 export function BottomNavigation({ items, label }: { items: NavItem[]; label: string }) {
+  const index = items.findIndex((it) => it.current);
   return (
     <nav
       aria-label={label}
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-surface pb-[env(safe-area-inset-bottom)] md:hidden"
+      className="fixed inset-x-2 bottom-[calc(0.5rem+env(safe-area-inset-bottom))] z-40 mx-auto max-w-xl rounded-[1.75rem] border border-border/70 bg-surface/90 shadow-float backdrop-blur-md md:hidden"
     >
-      <ul className="mx-auto flex max-w-xl">
+      <ul className="relative flex">
+        {/* The gliding pill: one element that slides between tabs, rather than one per tab switching on and off. */}
+        <li
+          aria-hidden="true"
+          className={cn(
+            'pointer-events-none absolute inset-y-0 left-0 flex justify-center pt-2 transition-[translate,opacity] duration-500 ease-spring',
+            index < 0 && 'opacity-0',
+          )}
+          style={{ width: `${100 / items.length}%`, translate: `${Math.max(index, 0) * 100}% 0` }}
+        >
+          <span className="h-8 w-12 rounded-pill bg-accent shadow-clay-sm" />
+        </li>
         {items.map((it) => (
-          // min-w-0 + a pill that shrinks: six tabs share a 320 px screen (six fixed 56 px pills did not fit).
-          <li key={it.href} className="min-w-0 flex-1">
+          // min-w-0: six tabs share a 320 px screen.
+          <li key={it.href} className="relative min-w-0 flex-1">
             <Link
               href={it.href}
               aria-current={it.current ? 'page' : undefined}
               className={cn(
-                'flex min-h-14 flex-col items-center justify-center gap-0.5 text-metadata font-semibold no-underline',
-                it.current ? 'text-text-primary' : 'text-text-secondary',
+                'group flex min-h-16 flex-col items-center gap-0.5 pt-2 pb-1.5 text-[0.6875rem] leading-tight no-underline transition-colors',
+                it.current ? 'font-bold text-text-primary' : 'font-semibold text-text-secondary',
               )}
             >
               <span
                 aria-hidden="true"
                 className={cn(
-                  'flex h-8 w-full max-w-14 items-center justify-center rounded-pill text-title',
-                  it.current && 'bg-accent text-on-accent',
+                  'relative flex h-8 w-12 items-center justify-center text-title transition-transform duration-150 group-active:scale-85',
+                  it.current && 'animate-nav-pop text-on-accent',
                 )}
               >
                 {it.icon}
+                {it.badge && (
+                  <span className="absolute top-1 right-3 size-2 animate-yo-pop rounded-full bg-danger ring-2 ring-surface" />
+                )}
               </span>
-              <span className="max-w-full truncate px-0.5">{it.label}</span>
+              {/* Tight tracking, no side padding: "Whispers" then just fits a sixth of a 320 px dock. */}
+              <span className="max-w-full truncate tracking-tight">{it.label}</span>
               {it.badge && <span className="sr-only"> ({it.badge})</span>}
             </Link>
           </li>

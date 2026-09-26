@@ -95,7 +95,8 @@ export function ShellBottomNav({ items }: { items: ShellNavItem[] }) {
     .filter((it) => !it.sidebarOnly)
     .map((it) => ({
       href: it.href,
-      label: it.label,
+      // "My Ranch" does not fit a sixth of a 320 px phone; the highlighted tab already says whose it is.
+      label: it.key === 'ranch' ? 'Ranch' : it.label,
       icon: ICON[it.key],
       current: isCurrent(pathname, it.href),
       ...(it.badge ? { badge: `${badgeText(it.badge)} unread` } : {}),

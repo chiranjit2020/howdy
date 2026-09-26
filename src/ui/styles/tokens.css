@@ -140,6 +140,23 @@
   /* The sign-in card's tabs: the new form slides in from the side of the tab that was picked. */
   --animate-slide-from-right: slide-from-right 0.25s ease-out;
   --animate-slide-from-left: slide-from-left 0.25s ease-out;
+  /* The phone tab bar: the icon of the tab you land on gives one small hop. */
+  --animate-nav-pop: nav-pop 0.45s var(--ease-spring);
+
+  @keyframes nav-pop {
+    0% {
+      transform: none;
+    }
+    40% {
+      transform: translateY(-4px) scale(1.18) rotate(-6deg);
+    }
+    70% {
+      transform: translateY(1px) scale(0.96);
+    }
+    100% {
+      transform: none;
+    }
+  }
 
   @keyframes slide-from-right {
     from {

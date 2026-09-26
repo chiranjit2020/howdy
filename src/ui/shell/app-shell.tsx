@@ -138,8 +138,10 @@ export function AppShell({
             </div>
           </aside>
         )}
-        {/* Room for the phone tab bar, which only exists when signed in. */}
-        <div className={cn('min-w-0 flex-1', me && 'pb-24 md:pb-8')}>{children}</div>
+        {/* Room for the floating phone tab bar (and the safe-area inset under it), which only exists when signed in. */}
+        <div className={cn('min-w-0 flex-1', me && 'pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-8')}>
+          {children}
+        </div>
       </div>
       {me && <ShellBottomNav items={items} />}
     </div>
