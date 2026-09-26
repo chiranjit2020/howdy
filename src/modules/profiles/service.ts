@@ -1,5 +1,5 @@
 import { profiles, users } from '@db/schema';
-import { and, eq, inArray, isNotNull, lte } from 'drizzle-orm';
+import { and, desc, eq, gt, inArray, isNotNull, lte } from 'drizzle-orm';
 import { can, type Actor, type FenceResource } from '@/modules/authz';
 import { relationshipOf } from '@/modules/relationships';
 import { getDb } from '@/platform/db';
@@ -35,6 +35,32 @@ export interface RanchView {
   portraitTint: PortraitTint;
   signal: { text: string; expiresAt: Date } | null;
   isOwner: boolean;
+  /** The Howdy team account: shown with the Verified badge. */
+  verified: boolean;
+}
+
+/**
+ * The Howdy team account is any account with the `admin` role (set by hand in the database). Its Porch, Signal and
+ * Fence are open to everyone, signed in or not, whatever its own settings say, so everyone can follow what is new in
+ * Howdy; nobody can block it (see the relationships module); and it carries the Verified badge.
+ */
+export const isOfficial = (role: string): boolean => role === 'admin';
+
+/** The privacy settings the policy should use: the account's own, or "everyone" for the Howdy team account. */
+function effectiveVisibility(row: {
+  role: string;
+  ranchVisibility: string;
+  signalVisibility: string;
+  fenceVisibility?: string;
+}): { ranchVisibility: Visibility; signalVisibility: Visibility; fenceVisibility: Visibility } {
+  if (isOfficial(row.role)) {
+    return { ranchVisibility: 'everyone', signalVisibility: 'everyone', fenceVisibility: 'everyone' };
+  }
+  return {
+    ranchVisibility: row.ranchVisibility as Visibility,
+    signalVisibility: row.signalVisibility as Visibility,
+    fenceVisibility: (row.fenceVisibility ?? 'members') as Visibility,
+  };
 }
 
 /** What the owner receives for their own Ranch (adds the privacy settings so they can be edited). */
@@ -70,6 +96,7 @@ export async function createProfile(
 interface Row {
   userId: string;
   handle: string;
+  role: string;
   displayName: string;
   portraitTint: string;
   signal: string | null;
@@ -85,6 +112,7 @@ interface Row {
 const SELECT = {
   userId: users.id,
   handle: users.handle,
+  role: users.role,
   displayName: profiles.displayName,
   portraitTint: profiles.portraitTint,
   signal: profiles.signal,
@@ -106,6 +134,7 @@ function toView(row: Row, isOwner: boolean, now: Date, showSignal: boolean): Ran
     // An expired Signal is gone even before the retention job clears it.
     signal: live ? { text: row.signal!, expiresAt: row.signalExpiresAt! } : null,
     isOwner,
+    verified: isOfficial(row.role),
   };
 }
 
@@ -135,11 +164,8 @@ export async function getRanchForViewer(
     .limit(1);
   if (!row) return null;
 
-  const resource = {
-    ownerId: row.userId,
-    ranchVisibility: row.ranchVisibility as Visibility,
-    signalVisibility: row.signalVisibility as Visibility,
-  };
+  const { ranchVisibility, signalVisibility } = effectiveVisibility(row);
+  const resource = { ownerId: row.userId, ranchVisibility, signalVisibility };
   const relationship = viewer.kind === 'user' ? await relationshipOf(row.userId, viewer.id) : 'UNKNOWN';
   const ctx = { relationship } as const;
 
@@ -186,9 +212,7 @@ export async function getFenceResource(ownerId: string): Promise<FenceResource |
   if (!row) return null;
   return {
     ownerId: row.userId,
-    ranchVisibility: row.ranchVisibility as Visibility,
-    signalVisibility: row.signalVisibility as Visibility,
-    fenceVisibility: row.fenceVisibility as Visibility,
+    ...effectiveVisibility(row),
     fencePosting: row.fencePosting as FencePosting,
     fenceReview: row.fenceReview,
   };
@@ -200,59 +224,95 @@ export interface PersonCard {
   handle: string;
   displayName: string;
   portraitTint: PortraitTint;
+  /** The Howdy team account: shown with the Verified badge. */
+  verified: boolean;
 }
+
+const CARD = {
+  userId: users.id,
+  handle: users.handle,
+  role: users.role,
+  displayName: profiles.displayName,
+  portraitTint: profiles.portraitTint,
+} as const;
+
+const toCard = ({
+  role,
+  ...r
+}: { role: string; portraitTint: string } & Omit<PersonCard, 'portraitTint' | 'verified'>) => ({
+  ...r,
+  portraitTint: r.portraitTint as PortraitTint,
+  verified: isOfficial(role),
+});
 
 /** Find an ACTIVE person by handle (case-insensitive). Null for a malformed handle, a missing person or an inactive account. */
 export async function resolveHandle(handleParam: string): Promise<PersonCard | null> {
   const handle = handleParamSchema.safeParse(handleParam);
   if (!handle.success) return null;
   const [row] = await getDb()
-    .select({
-      userId: users.id,
-      handle: users.handle,
-      displayName: profiles.displayName,
-      portraitTint: profiles.portraitTint,
-    })
+    .select(CARD)
     .from(users)
     .innerJoin(profiles, eq(profiles.userId, users.id))
     .where(and(eq(users.handle, handle.data), eq(users.status, 'active')))
     .limit(1);
-  return row ? { ...row, portraitTint: row.portraitTint as PortraitTint } : null;
+  return row ? toCard(row) : null;
 }
 
 /** Cards for a set of user ids. Inactive or missing accounts are simply absent from the result. */
 export async function getCards(userIds: string[]): Promise<Map<string, PersonCard>> {
   if (userIds.length === 0) return new Map();
   const rows = await getDb()
-    .select({
-      userId: users.id,
-      handle: users.handle,
-      displayName: profiles.displayName,
-      portraitTint: profiles.portraitTint,
-    })
+    .select(CARD)
     .from(users)
     .innerJoin(profiles, eq(profiles.userId, users.id))
     .where(and(inArray(users.id, [...new Set(userIds)]), eq(users.status, 'active')));
-  return new Map(rows.map((r) => [r.userId, { ...r, portraitTint: r.portraitTint as PortraitTint }]));
+  return new Map(rows.map((r) => [r.userId, toCard(r)]));
+}
+
+/**
+ * The Howdy team's current Signal, for everyone's Home: what is new in the app. Null when no team account has a live
+ * Signal. (Visible to every signed-in person: the team account's Signal is open to everyone.)
+ */
+export async function getTeamAnnouncement(
+  now: Date = new Date(),
+): Promise<{ author: PersonCard; text: string; expiresAt: Date } | null> {
+  const [row] = await getDb()
+    .select({ ...CARD, signal: profiles.signal, signalExpiresAt: profiles.signalExpiresAt })
+    .from(users)
+    .innerJoin(profiles, eq(profiles.userId, users.id))
+    .where(
+      and(
+        eq(users.role, 'admin'),
+        eq(users.status, 'active'),
+        isNotNull(profiles.signal),
+        gt(profiles.signalExpiresAt, now),
+      ),
+    )
+    .orderBy(desc(profiles.signalExpiresAt))
+    .limit(1);
+  if (!row?.signal || !row.signalExpiresAt) return null;
+  const { signal, signalExpiresAt, ...card } = row;
+  return { author: toCard(card), text: signal, expiresAt: signalExpiresAt };
 }
 
 /** Could `viewerId` open `ownerId`'s Ranch right now? Same policy as viewing, without producing the view. */
 export async function mayViewRanch(viewerId: string, ownerId: string): Promise<boolean> {
   const [row] = await getDb()
-    .select({ ranchVisibility: profiles.ranchVisibility, signalVisibility: profiles.signalVisibility })
+    .select({
+      role: users.role,
+      ranchVisibility: profiles.ranchVisibility,
+      signalVisibility: profiles.signalVisibility,
+    })
     .from(users)
     .innerJoin(profiles, eq(profiles.userId, users.id))
     .where(and(eq(users.id, ownerId), eq(users.status, 'active')))
     .limit(1);
   if (!row) return false;
+  const { ranchVisibility, signalVisibility } = effectiveVisibility(row);
   return can(
     { kind: 'user', id: viewerId, status: 'active' },
     'profile:view',
-    {
-      ownerId,
-      ranchVisibility: row.ranchVisibility as Visibility,
-      signalVisibility: row.signalVisibility as Visibility,
-    },
+    { ownerId, ranchVisibility, signalVisibility },
     { relationship: await relationshipOf(ownerId, viewerId) },
   ).allow;
 }

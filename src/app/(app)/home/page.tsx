@@ -2,9 +2,10 @@ import Link from 'next/link';
 import { withCards } from '@/app/_lib/social';
 import { Glyph } from '@/ui/art/glyph';
 import { listMySessions, requireUser } from '@/modules/auth';
-import { getOwnRanch } from '@/modules/profiles';
+import { getOwnRanch, getTeamAnnouncement } from '@/modules/profiles';
 import { listMyRelationships } from '@/modules/relationships';
 import { cn } from '@/ui/cn';
+import { VerifiedBadge } from '@/ui/howdy';
 import { Badge, buttonClasses, ClayCard } from '@/ui/primitives';
 import { HitTheTrail, HitTheTrailEverywhere, OpenGates } from './home-actions';
 
@@ -15,10 +16,19 @@ const SMALL = buttonClasses({ variant: 'secondary', size: 'sm', compact: true })
 /** First protected page. The session check happens on the server: an unauthenticated request never reaches the markup. */
 export default async function HomePage() {
   const user = await requireUser();
-  const ranch = await getOwnRanch(user.id);
-  // Only requests from people who are still active count (a suspended account's request is not shown or counted).
-  const requests = (await withCards(await listMyRelationships(user.id))).incoming.length;
-  const gates = (await listMySessions()).map((s) => ({
+  // Independent lookups, asked for together rather than one after another.
+  const [ranch, lists, sessions, news] = await Promise.all([
+    getOwnRanch(user.id),
+    // Only requests from people who are still active count (a suspended account's request is not shown or counted).
+    listMyRelationships(user.id).then(withCards),
+    listMySessions(),
+    // Best-effort: Home never fails because the announcement could not be read.
+    getTeamAnnouncement().catch(() => null),
+  ]);
+  const requests = lists.incoming.length;
+  // The Howdy team's current Signal ("what's new"), unless this person has turned the team's noise down.
+  const announcement = news && !lists.muted.some((m) => m.handle === news.author.handle) ? news : null;
+  const gates = sessions.map((s) => ({
     id: s.id,
     deviceLabel: s.deviceLabel,
     lastSeenAt: s.lastSeenAt.toISOString(),
@@ -37,7 +47,17 @@ export default async function HomePage() {
               <h1 className="text-heading text-text-primary">Howdy, {ranch.displayName}</h1>
               <p className="flex flex-wrap items-center gap-x-2 text-caption text-text-secondary">
                 <span>Deed granted, @{user.handle}.</span>
-                <Badge tone="success">Email confirmed</Badge>
+                {/* A quiet fact, not a headline: small muted text with a tick, no pill. */}
+                <span className="inline-flex items-center gap-1 text-metadata text-text-muted">
+                  <svg
+                    aria-hidden="true"
+                    viewBox="0 0 24 24"
+                    className="size-3 fill-none stroke-current stroke-[3]"
+                  >
+                    <path d="M5 12.5l4.5 4.5L19 7.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  Email confirmed
+                </span>
               </p>
             </div>
           </div>
@@ -66,6 +86,23 @@ export default async function HomePage() {
             <HitTheTrailEverywhere />
           </div>
         </ClayCard>
+        {announcement && (
+          <section aria-labelledby="whats-new" className="clay flex flex-col gap-2 bg-info/25 p-4 sm:p-5">
+            <h2
+              id="whats-new"
+              className="flex items-center gap-1.5 text-metadata font-semibold tracking-wider text-text-secondary uppercase"
+            >
+              What’s new on Howdy
+            </h2>
+            <p className="text-body break-words text-text-primary">{announcement.text}</p>
+            <p className="text-caption text-text-secondary">
+              <Link href={`/porch/${announcement.author.handle}`} className="font-semibold">
+                {announcement.author.displayName}
+              </Link>
+              {announcement.author.verified && <VerifiedBadge className="ml-1" />}
+            </p>
+          </section>
+        )}
         {/* Technical, and rarely needed: a quiet folded line instead of a card of its own. */}
         <OpenGates initial={gates} />
       </main>

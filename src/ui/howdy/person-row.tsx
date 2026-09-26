@@ -2,6 +2,7 @@ import Link from 'next/link';
 import type { ReactNode } from 'react';
 import type { PortraitTint } from '@/shared/validation/profile';
 import { Avatar } from '../primitives/avatar';
+import { VerifiedBadge } from './verified-badge';
 
 /** One person in a list: portrait, name, @handle, and an actions slot. The name block links to their Ranch. */
 export function PersonRow({
@@ -11,6 +12,7 @@ export function PersonRow({
   actions,
   note,
   linkToRanch = true,
+  verified,
 }: {
   displayName: string;
   handle: string;
@@ -20,11 +22,14 @@ export function PersonRow({
   note?: ReactNode;
   /** False for people whose Ranch the viewer cannot open (e.g. someone they blocked). */
   linkToRanch?: boolean;
+  /** The Howdy team account: the Verified badge follows the name. */
+  verified?: boolean | undefined;
 }) {
   const text = (
     <>
       <span className="block text-body font-semibold [overflow-wrap:anywhere] text-text-primary">
         {displayName}
+        {verified && <VerifiedBadge className="ml-1" />}
       </span>
       <span className="block text-caption [overflow-wrap:anywhere] text-text-secondary">
         @{handle}

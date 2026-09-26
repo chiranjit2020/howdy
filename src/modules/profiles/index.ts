@@ -10,6 +10,8 @@ export {
   getFenceResource,
   getOwnRanch,
   getRanchForViewer,
+  getTeamAnnouncement,
+  isOfficial,
   isShadowWalking,
   mayViewRanch,
   resolveHandle,

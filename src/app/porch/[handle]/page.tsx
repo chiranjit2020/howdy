@@ -3,12 +3,12 @@ import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 import { getCurrentUser } from '@/modules/auth';
 import type { Actor } from '@/modules/authz';
-import { listFence, listWaiting, type FencePage, type Waiting } from '@/modules/fence';
+import { listFence, listWaiting } from '@/modules/fence';
 import { getVibeMatrix } from '@/modules/marks';
 import { getPortraitVersion } from '@/modules/media';
 import { getRanchForViewer, resolveHandle, type RanchView } from '@/modules/profiles';
 import { getRelationshipView, listMyRelationships } from '@/modules/relationships';
-import { listTributes, listWaitingTributes, type TributePage } from '@/modules/tributes';
+import { listTributes, listWaitingTributes } from '@/modules/tributes';
 import { withCards } from '@/app/_lib/social';
 import { getEnv } from '@/platform/config/env';
 import { AppError } from '@/platform/errors';
@@ -26,6 +26,16 @@ import { WaitingQueue } from './waiting-queue';
 
 // Ranches are private by default and never belong in a search index.
 export const metadata = { title: 'Porch', robots: { index: false, follow: false } };
+
+/** A section that hit the rate limit is shown as "take a breather" instead of failing the whole page. */
+async function unlessRateLimited<T>(work: Promise<T>): Promise<{ value: T | null; limited: boolean }> {
+  try {
+    return { value: await work, limited: false };
+  } catch (err) {
+    if (err instanceof AppError && err.code === 'RATE_LIMITED') return { value: null, limited: true };
+    throw err;
+  }
+}
 
 function hoursLeft(expiresAt: Date): string {
   const h = Math.max(1, Math.ceil((expiresAt.getTime() - Date.now()) / 3_600_000));
@@ -81,13 +91,45 @@ export default async function RanchPage({ params }: { params: Promise<{ handle: 
     );
   }
 
-  // A signed-in visitor also sees how they relate to this person (and can act on it).
-  const person = user && !ranch.isOwner ? await resolveHandle(ranch.handle) : null;
-  const rel = user && person ? await getRelationshipView(user.id, person.userId) : null;
-  // The photo is offered only to signed-in viewers (the picture itself needs a session), and only on a Ranch they may open, which
-  // this page has already established. Best-effort: a problem finding it just means the initials show.
-  const ownerId = ranch.isOwner ? user?.id : person?.userId;
-  const photo = user && ownerId ? await getPortraitVersion(ownerId).catch(() => null) : null;
+  // Everything below needs only the Porch itself, so it is all asked for at once rather than one query after another:
+  // on a phone far from the server, each extra round trip in a row is time the person spends looking at the outline.
+  const r = ranch;
+  const isOwner = Boolean(user && r.isOwner);
+  const [
+    { rel, photo },
+    { value: fence, limited: fenceBusy },
+    waiting,
+    waitingTributes,
+    posse,
+    { value: tributes },
+    { value: vibe },
+  ] = await Promise.all([
+    // A signed-in visitor also sees how they relate to this person (and can act on it). The photo is offered only to
+    // signed-in viewers (the picture itself needs a session), and only on a Porch they may open, which this page has
+    // already established. Best-effort: a problem finding it just means the initials show.
+    (async () => {
+      const person = user && !r.isOwner ? await resolveHandle(r.handle) : null;
+      const ownerId = r.isOwner ? user?.id : person?.userId;
+      const [rel, photo] = await Promise.all([
+        user && person ? getRelationshipView(user.id, person.userId) : null,
+        user && ownerId ? getPortraitVersion(ownerId).catch(() => null) : null,
+      ]);
+      return { rel, photo };
+    })(),
+    // The Fence is judged separately: it can be narrower than the Porch (e.g. Pals only), and then it is not shown.
+    unlessRateLimited(listFence(viewer, r.handle, { rateKey })),
+    isOwner && user ? listWaiting(user.id) : null,
+    isOwner && user ? listWaitingTributes(user.id) : [],
+    // Only the owner sees their own Pals here; nobody else's list is ever shown on a Porch.
+    isOwner && user
+      ? listMyRelationships(user.id)
+          .then(withCards)
+          .then((l) => l.posse)
+      : null,
+    // Tributes and the Vibe Matrix follow the Porch's own visibility (the same rule as the Fence), separately from it.
+    unlessRateLimited(listTributes(viewer, r.handle, { rateKey })),
+    unlessRateLimited(getVibeMatrix(viewer, r.handle, { rateKey })),
+  ]);
   const badge = !rel
     ? undefined
     : rel.posse === 'member'
@@ -100,35 +142,6 @@ export default async function RanchPage({ params }: { params: Promise<{ handle: 
           ? 'SCOUTING'
           : undefined;
 
-  // The Fence is judged separately: it can be narrower than the Ranch (e.g. Posse only), and then it is simply not shown.
-  let fence: FencePage | null = null;
-  let fenceBusy = false;
-  try {
-    fence = await listFence(viewer, ranch.handle, { rateKey });
-  } catch (err) {
-    if (err instanceof AppError && err.code === 'RATE_LIMITED') fenceBusy = true;
-    else throw err;
-  }
-  const waiting: Waiting | null = user && ranch.isOwner ? await listWaiting(user.id) : null;
-  const waitingTributes = user && ranch.isOwner ? await listWaitingTributes(user.id) : [];
-
-  // Only the owner sees their own Posse here; nobody else's list is ever shown on a Ranch.
-  const posse = user && ranch.isOwner ? (await withCards(await listMyRelationships(user.id))).posse : null;
-
-  // Tributes and the Vibe Matrix follow the Ranch's own visibility (the same rule as the Fence), separately from it.
-  let tributes: TributePage | null = null;
-  try {
-    tributes = await listTributes(viewer, ranch.handle, { rateKey });
-  } catch (err) {
-    if (!(err instanceof AppError && err.code === 'RATE_LIMITED')) throw err;
-  }
-  let vibe = null;
-  try {
-    vibe = await getVibeMatrix(viewer, ranch.handle, { rateKey });
-  } catch (err) {
-    if (!(err instanceof AppError && err.code === 'RATE_LIMITED')) throw err;
-  }
-
   // Two columns from `lg` up: the profile, relationship controls and Fence on the left, the Signal and owner cards on the
   // right (which spans the left column's rows). On a phone everything stacks in reading order.
   return (
@@ -138,6 +151,7 @@ export default async function RanchPage({ params }: { params: Promise<{ handle: 
         <div className="px-5 pb-6 sm:px-7">
           <RanchHeader
             overlap
+            verified={ranch.verified}
             displayName={ranch.displayName}
             handle={ranch.handle}
             portraitTint={ranch.portraitTint}
@@ -156,7 +170,12 @@ export default async function RanchPage({ params }: { params: Promise<{ handle: 
 
       {rel && (
         <div className="lg:col-start-1">
-          <RelationshipBar handle={ranch.handle} displayName={ranch.displayName} initial={rel} />
+          <RelationshipBar
+            handle={ranch.handle}
+            displayName={ranch.displayName}
+            initial={rel}
+            official={ranch.verified}
+          />
         </div>
       )}
 

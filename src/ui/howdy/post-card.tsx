@@ -10,6 +10,7 @@ import { Avatar } from '../primitives/avatar';
 import { Button } from '../primitives/button';
 import { Textarea } from '../primitives/field';
 import { RelativeTime } from './time';
+import { VerifiedBadge } from './verified-badge';
 import { YoButton } from './yo-button';
 
 export interface PostCardAuthor {
@@ -17,6 +18,8 @@ export interface PostCardAuthor {
   handle: string;
   tint?: PortraitTint;
   avatarUrl?: string | null;
+  /** The Howdy team account: the Verified badge follows the name. */
+  verified?: boolean;
 }
 
 /** One scribble on the back of a Post Card (max 80 chars, enforced server-side). */
@@ -45,8 +48,11 @@ export function PostCardReply({
       />
       <div className="min-w-0">
         <p className="text-metadata [overflow-wrap:anywhere] text-text-muted">
-          <span className="font-semibold text-text-secondary">@{author.handle}</span> ·{' '}
-          <RelativeTime date={createdAt} />
+          <span className="font-semibold text-text-secondary">
+            @{author.handle}
+            {author.verified && <VerifiedBadge className="ml-0.5" />}
+          </span>{' '}
+          · <RelativeTime date={createdAt} />
         </p>
         <p className="font-mono text-code break-words text-text-primary">{body}</p>
         {notice && <p className="text-metadata text-text-muted">{notice}</p>}
@@ -187,7 +193,10 @@ export function PostCard({
               {...(author.tint ? { tint: author.tint } : {})}
             />
             <div className="min-w-0 flex-1">
-              <p className="truncate text-body font-semibold text-text-primary">{author.name}</p>
+              <p className="truncate text-body font-semibold text-text-primary">
+                {author.name}
+                {author.verified && <VerifiedBadge className="ml-1" />}
+              </p>
               <p className="text-metadata [overflow-wrap:anywhere] text-text-muted">
                 @{author.handle} · <RelativeTime date={createdAt} />
               </p>

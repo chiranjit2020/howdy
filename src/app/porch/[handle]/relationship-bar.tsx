@@ -33,10 +33,13 @@ export function RelationshipBar({
   handle,
   displayName,
   initial,
+  official = false,
 }: {
   handle: string;
   displayName: string;
   initial: RelationshipState;
+  /** The Howdy team account: it cannot be blocked (the server refuses too), so Block is not offered. */
+  official?: boolean;
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -129,13 +132,15 @@ export function RelationshipBar({
               onSelect: () => run(rel.restricted ? 'unrestrict' : 'restrict'),
             },
             { id: 'report', label: 'Flag trouble…', onSelect: () => setReporting(true) },
-            { id: 'block', label: 'Block…', danger: true, onSelect: () => setConfirm('block') },
+            ...(official
+              ? []
+              : [{ id: 'block', label: 'Block…', danger: true, onSelect: () => setConfirm('block') }]),
           ]}
         />
       </div>
       <p className="text-metadata text-text-muted">
-        Only you can see Scouting, Close Pal, Mute, Restrict and Block. {displayName} is never told about
-        them.
+        Only you can see Scouting, Close Pal, Mute{official ? ' and Restrict' : ', Restrict and Block'}.{' '}
+        {displayName} is never told about them.
       </p>
 
       <ConfirmationDialog

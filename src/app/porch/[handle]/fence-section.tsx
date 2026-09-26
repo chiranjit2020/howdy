@@ -177,7 +177,12 @@ export function FenceSection({
         {cards.map((c) => (
           <PostCard
             key={c.id}
-            author={{ name: c.author.displayName, handle: c.author.handle, tint: c.author.portraitTint }}
+            author={{
+              name: c.author.displayName,
+              handle: c.author.handle,
+              tint: c.author.portraitTint,
+              verified: c.author.verified,
+            }}
             body={c.body}
             createdAt={c.createdAt}
             yoCount={c.yoCount}
@@ -191,7 +196,12 @@ export function FenceSection({
             replies={c.replies.map((r) => (
               <PostCardReply
                 key={r.id}
-                author={{ name: r.author.displayName, handle: r.author.handle, tint: r.author.portraitTint }}
+                author={{
+                  name: r.author.displayName,
+                  handle: r.author.handle,
+                  tint: r.author.portraitTint,
+                  verified: r.author.verified,
+                }}
                 body={r.body}
                 createdAt={r.createdAt}
                 {...(r.waiting ? { notice: 'Waiting for approval.' } : {})}

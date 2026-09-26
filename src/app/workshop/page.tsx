@@ -32,7 +32,11 @@ export default async function WorkshopPage() {
           portraitSrc={photo ? portraitUrl(user.handle, photo) : null}
         />
         <TendForm displayName={ranch.displayName} portraitTint={ranch.portraitTint} handle={user.handle} />
-        <BoundaryForm ranchVisibility={ranch.ranchVisibility} signalVisibility={ranch.signalVisibility} />
+        <BoundaryForm
+          ranchVisibility={ranch.ranchVisibility}
+          signalVisibility={ranch.signalVisibility}
+          official={ranch.verified}
+        />
         <FenceRulesForm
           fenceVisibility={ranch.fenceVisibility}
           fencePosting={ranch.fencePosting}

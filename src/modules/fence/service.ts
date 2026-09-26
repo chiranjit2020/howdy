@@ -48,6 +48,8 @@ export interface AuthorRef {
   handle: string;
   displayName: string;
   portraitTint: PortraitTint;
+  /** The Howdy team account (Verified badge). */
+  verified: boolean;
 }
 
 export interface ReplyView {
@@ -91,6 +93,7 @@ const toRef = (p: PersonCard): AuthorRef => ({
   handle: p.handle,
   displayName: p.displayName,
   portraitTint: p.portraitTint,
+  verified: p.verified,
 });
 
 const actorOf = (userId: string): Actor => ({ kind: 'user', id: userId, status: 'active' });

@@ -110,9 +110,12 @@ export function TendForm({
 export function BoundaryForm({
   ranchVisibility,
   signalVisibility,
+  official = false,
 }: {
   ranchVisibility: Visibility;
   signalVisibility: Visibility;
+  /** The Howdy team account: these settings are overridden to "everyone", so say so rather than pretend. */
+  official?: boolean;
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -141,6 +144,12 @@ export function BoundaryForm({
       <form onSubmit={save} noValidate className="flex flex-col gap-5">
         <h2 className="text-title text-text-primary">Boundary Lines</h2>
         {formError && <FormMessage tone="error">{formError}</FormMessage>}
+        {official && (
+          <FormMessage tone="info">
+            As the Howdy team account, your Porch, Signal and Fence are always open to everyone (signed in or
+            not), whatever you choose here, and nobody can block you.
+          </FormMessage>
+        )}
         <Select
           label="Who can visit your Porch?"
           value={ranch}

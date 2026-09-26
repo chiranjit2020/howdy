@@ -21,6 +21,8 @@ export interface PersonEntry {
   portraitTint: PersonCard['portraitTint'];
   at: string;
   closeByMe?: boolean;
+  /** The Howdy team account (Verified badge). Present only when true. */
+  verified?: true;
 }
 
 export type RelationshipLists = Record<
@@ -45,6 +47,7 @@ export async function withCards(rel: MyRelationships): Promise<RelationshipLists
         at: r.at.toISOString(),
       };
       if (r.closeByMe !== undefined) e.closeByMe = r.closeByMe;
+      if (c.verified) e.verified = true;
       return [e];
     });
   return {

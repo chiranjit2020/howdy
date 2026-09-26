@@ -29,5 +29,12 @@ export const POST = route(async ({ req, params }) => {
   const target = await targetFor((await params).handle);
   // Scouting says "show me their things", so it needs the right to see them; it never grants that right.
   if (action === 'scout' && !(await mayViewRanch(user.id, target.userId))) throw new AppError('NOT_FOUND');
+  // The Howdy team account cannot be blocked: it is how everyone hears what is new. Muting it still works, for anyone
+  // who would rather not see it.
+  if (action === 'block' && target.verified) {
+    throw new AppError('FORBIDDEN', {
+      message: 'The Howdy team account can’t be blocked. You can turn down the noise instead.',
+    });
+  }
   return json({ relationship: await act(user.id, target.userId, action) });
 });
