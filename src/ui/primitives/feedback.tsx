@@ -5,9 +5,18 @@ import { Button } from './button';
 
 export type HeadingTag = 'h1' | 'h2' | 'h3' | 'h4';
 
-/** Decorative placeholder. Hidden from assistive tech; pair with <LoadingState> for the announcement. */
+/**
+ * Decorative placeholder. Hidden from assistive tech; pair with <LoadingState> (or a role="status" line) for the
+ * announcement. Corners default to rounded-md; a `rounded-*` class in `className` replaces that (cn does not merge).
+ */
 export function Skeleton({ className }: { className?: string }) {
-  return <div aria-hidden="true" className={cn('animate-shimmer rounded-md bg-border', className)} />;
+  const ownCorners = /(^|\s)rounded(-|\s|$)/.test(className ?? '');
+  return (
+    <div
+      aria-hidden="true"
+      className={cn('animate-shimmer bg-border', !ownCorners && 'rounded-md', className)}
+    />
+  );
 }
 
 export function LoadingState({ label = 'Loading', className }: { label?: string; className?: string }) {

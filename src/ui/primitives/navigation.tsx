@@ -1,6 +1,6 @@
 'use client';
 
-import Link from 'next/link';
+import Link, { useLinkStatus } from 'next/link';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { cn } from '../cn';
 
@@ -59,6 +59,30 @@ export function Navigation({
 }
 
 /**
+ * A tab's icon. Lives inside the <Link> so it can see that link's navigation: on a slow network, before the next page's
+ * outline has arrived, the tapped icon dims and breathes so the tap never feels ignored (useLinkStatus; usually the
+ * outline is already prefetched and this never shows).
+ */
+function TabIcon({ current, badge, children }: { current: boolean; badge: boolean; children: ReactNode }) {
+  const { pending } = useLinkStatus();
+  return (
+    <span
+      aria-hidden="true"
+      className={cn(
+        'relative flex h-8 w-12 items-center justify-center text-title transition-[transform,opacity] duration-150 group-active:scale-85',
+        current && 'animate-nav-pop text-on-accent',
+        pending && 'animate-shimmer opacity-60',
+      )}
+    >
+      {children}
+      {badge && (
+        <span className="absolute top-1 right-3 size-2 animate-yo-pop rounded-full bg-danger ring-2 ring-surface" />
+      )}
+    </span>
+  );
+}
+
+/**
  * Mobile tab bar: a dock floating just above the bottom edge (and the safe-area inset); hidden from md up (use
  * <Navigation> there). One coral pill glides to the current tab, whose icon gives a small hop as it arrives; a pressed
  * icon squishes. Tabs with unread activity carry a dot. Reduced motion turns all of it into plain state changes.
@@ -111,18 +135,9 @@ export function BottomNavigation({ items, label }: { items: NavItem[]; label: st
                 it.current ? 'font-bold text-text-primary' : 'font-semibold text-text-secondary',
               )}
             >
-              <span
-                aria-hidden="true"
-                className={cn(
-                  'relative flex h-8 w-12 items-center justify-center text-title transition-transform duration-150 group-active:scale-85',
-                  it.current && 'animate-nav-pop text-on-accent',
-                )}
-              >
+              <TabIcon current={Boolean(it.current)} badge={Boolean(it.badge)}>
                 {it.icon}
-                {it.badge && (
-                  <span className="absolute top-1 right-3 size-2 animate-yo-pop rounded-full bg-danger ring-2 ring-surface" />
-                )}
-              </span>
+              </TabIcon>
               {/* Tight tracking, no side padding: "Whispers" then just fits a sixth of a 320 px dock. */}
               <span className="max-w-full truncate tracking-tight">{it.label}</span>
               {it.badge && <span className="sr-only"> ({it.badge})</span>}

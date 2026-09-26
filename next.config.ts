@@ -13,6 +13,11 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
+  experimental: {
+    // Keep pages the person just visited for 30 s in the browser, so hopping between tabs and back is instant instead of
+    // asking the server again every time. Anything they change still refreshes at once (router.refresh after an action).
+    staleTimes: { dynamic: 30 },
+  },
   // Native or heavy server-only libraries are loaded from node_modules at runtime, never bundled (sharp is native code).
   serverExternalPackages: [
     'pg',
