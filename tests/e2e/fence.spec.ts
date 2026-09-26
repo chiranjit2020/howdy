@@ -85,7 +85,7 @@ test.describe('The Fence in a real browser (production build, real CSP)', () => 
     await c.page.goto(`/porch/${a.handle}`);
     await expect(cardWith(c.page, 'Hi from Bob')).toBeVisible();
     await expect(c.page.getByLabel('Nail a Post Card')).toHaveCount(0);
-    expect((await api(c, `/api/ranch/${a.handle}/fence`, { body: 'let me in' })).status()).toBe(403);
+    expect((await api(c, `/api/porch/${a.handle}/fence`, { body: 'let me in' })).status()).toBe(403);
 
     // Restrict: Bob's next card looks posted to Bob, is invisible to others, and waits for Alice.
     expect((await api(a, `/api/relationships/${b.handle}`, { action: 'restrict' })).ok()).toBe(true);
@@ -184,16 +184,16 @@ test.describe('Fence: accessibility and layout in a real browser', () => {
     const a = await person(browser, `fa${Date.now().toString(36).slice(-4)}`, opts);
     const b = await person(browser, `fb${Date.now().toString(36).slice(-4)}`, opts);
     await makePosse(b, a);
-    await api(a, '/api/me/ranch', { fenceReview: false }, 'PATCH');
+    await api(a, '/api/me/porch', { fenceReview: false }, 'PATCH');
     const long = 'x'.repeat(150); // an unbreakable string: the classic way to break a layout
-    const posted = await api(b, `/api/ranch/${a.handle}/fence`, { body: long });
+    const posted = await api(b, `/api/porch/${a.handle}/fence`, { body: long });
     expect(posted.status()).toBe(201);
-    const first = await api(a, `/api/ranch/${a.handle}/fence`, { body: 'A normal card with words in it' });
+    const first = await api(a, `/api/porch/${a.handle}/fence`, { body: 'A normal card with words in it' });
     const cardId = ((await first.json()) as { card: { id: string } }).card.id;
     await api(b, `/api/cards/${cardId}/yo`, { on: true });
     await api(b, `/api/cards/${cardId}/replies`, { body: 'A short reply' });
     await api(a, `/api/relationships/${b.handle}`, { action: 'restrict' });
-    await api(b, `/api/ranch/${a.handle}/fence`, { body: 'Held for approval' });
+    await api(b, `/api/porch/${a.handle}/fence`, { body: 'Held for approval' });
     return { a, b };
   }
 

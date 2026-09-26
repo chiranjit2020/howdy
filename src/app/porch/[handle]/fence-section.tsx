@@ -58,7 +58,7 @@ export function FenceSection({
 
   async function nail(body: string): Promise<boolean> {
     setError(undefined);
-    const res = await postJson<{ card: WireCard }>(`/api/ranch/${handle}/fence`, { body });
+    const res = await postJson<{ card: WireCard }>(`/api/porch/${handle}/fence`, { body });
     if (res.ok && res.data) {
       const card = res.data.card;
       setCards((all) => [card, ...all]);
@@ -111,7 +111,7 @@ export function FenceSection({
   async function loadMore() {
     if (!next) return;
     setLoadingMore(true);
-    const res = await apiRequest<InitialFence>('GET', `/api/ranch/${handle}/fence?cursor=${next}`);
+    const res = await apiRequest<InitialFence>('GET', `/api/porch/${handle}/fence?cursor=${next}`);
     setLoadingMore(false);
     if (res.ok && res.data) {
       const more = res.data.cards;

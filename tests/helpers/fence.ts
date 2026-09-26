@@ -4,7 +4,7 @@ import { POST as reportCardRoute } from '@/app/api/cards/[id]/report/route';
 import { DELETE as deleteCardRoute } from '@/app/api/cards/[id]/route';
 import { POST as yoRoute } from '@/app/api/cards/[id]/yo/route';
 import { GET as waitingRoute } from '@/app/api/me/fence/waiting/route';
-import { GET as getFenceRoute, POST as postFenceRoute } from '@/app/api/ranch/[handle]/fence/route';
+import { GET as getFenceRoute, POST as postFenceRoute } from '@/app/api/porch/[handle]/fence/route';
 import { POST as approveReplyRoute } from '@/app/api/replies/[id]/approve/route';
 import { DELETE as deleteReplyRoute } from '@/app/api/replies/[id]/route';
 import { call, request } from './auth';
@@ -65,13 +65,13 @@ async function dynamic(
 
 const enc = encodeURIComponent;
 
-/** GET /api/ranch/:handle/fence[?query]. */
+/** GET /api/porch/:handle/fence[?query]. */
 export const fenceOf = (handle: string, opts: Opts = {}, query = '') =>
-  dynamic(getFenceRoute, 'GET', `/api/ranch/${enc(handle)}/fence${query}`, { handle }, undefined, opts);
+  dynamic(getFenceRoute, 'GET', `/api/porch/${enc(handle)}/fence${query}`, { handle }, undefined, opts);
 
-/** POST /api/ranch/:handle/fence {body}. */
+/** POST /api/porch/:handle/fence {body}. */
 export const nail = (handle: string, body: unknown, opts: Opts = {}) =>
-  dynamic(postFenceRoute, 'POST', `/api/ranch/${enc(handle)}/fence`, { handle }, body, opts);
+  dynamic(postFenceRoute, 'POST', `/api/porch/${enc(handle)}/fence`, { handle }, body, opts);
 
 export const replyTo = (cardId: string, body: unknown, opts: Opts = {}) =>
   dynamic(replyRoute, 'POST', `/api/cards/${enc(cardId)}/replies`, { id: cardId }, body, opts);

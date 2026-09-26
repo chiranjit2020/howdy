@@ -40,7 +40,7 @@ export function TributesSection({
     if (!trimmed || giving) return;
     setGiving(true);
     setError(undefined);
-    const res = await postJson<{ tribute: WireTribute }>(`/api/ranch/${handle}/tributes`, { body: trimmed });
+    const res = await postJson<{ tribute: WireTribute }>(`/api/porch/${handle}/tributes`, { body: trimmed });
     setGiving(false);
     if (res.ok && res.data) {
       setTributes((all) => [res.data!.tribute, ...all]);
@@ -52,7 +52,7 @@ export function TributesSection({
   async function loadMore() {
     if (!next) return;
     setLoadingMore(true);
-    const res = await apiRequest<InitialTributes>('GET', `/api/ranch/${handle}/tributes?cursor=${next}`);
+    const res = await apiRequest<InitialTributes>('GET', `/api/porch/${handle}/tributes?cursor=${next}`);
     setLoadingMore(false);
     if (res.ok && res.data) {
       const more = res.data.tributes;

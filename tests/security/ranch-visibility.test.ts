@@ -146,7 +146,7 @@ describe('what a viewer receives', () => {
     }
   });
 
-  it('the owner’s own view (GET /api/me/ranch) adds their privacy settings, and only theirs', async () => {
+  it('the owner’s own view (GET /api/me/porch) adds their privacy settings, and only theirs', async () => {
     const { a, b } = await twoUsers();
     await patchRanch({ displayName: 'Bob the Builder', ranchVisibility: 'everyone' }, { cookie: b.cookie });
     const own = await myRanch(b.cookie);

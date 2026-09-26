@@ -50,7 +50,7 @@ test.describe('Tracks in a real browser (production build, real CSP)', () => {
     const stranger = await person(browser, 'trc');
     const bystander = await person(browser, 'trd');
     await makePosse(friend, a);
-    await api(a, '/api/me/ranch', { ranchVisibility: 'everyone' }, 'PATCH');
+    await api(a, '/api/me/porch', { ranchVisibility: 'everyone' }, 'PATCH');
     const problems = await watchProblems(a.page);
 
     // Lists and headers link to Ranches; merely rendering them must never count as a visit.
@@ -94,7 +94,7 @@ test.describe('Tracks in a real browser (production build, real CSP)', () => {
     await expect.poll(async () => (await tracksOf(a)).hidden.today).toBe(2);
 
     // The owner on Shadow Walk sees a frozen page, not the list.
-    await api(a, '/api/me/ranch', { shadowWalk: true }, 'PATCH');
+    await api(a, '/api/me/porch', { shadowWalk: true }, 'PATCH');
     await a.page.reload();
     await expect(a.page.getByRole('heading', { name: 'Your Tracks are frozen' })).toBeVisible();
     await expect(a.page.getByText('Your Pals dropped by')).toHaveCount(0);
@@ -107,7 +107,7 @@ test.describe('Tracks in a real browser (production build, real CSP)', () => {
     const a = await person(browser, 'tre');
     const b = await person(browser, 'trf');
     const c = await person(browser, 'trg');
-    await api(a, '/api/me/ranch', { ranchVisibility: 'everyone' }, 'PATCH');
+    await api(a, '/api/me/porch', { ranchVisibility: 'everyone' }, 'PATCH');
     await b.page.goto(`/porch/${a.handle}`);
     await c.page.goto(`/porch/${a.handle}`);
     await expect.poll(async () => (await tracksOf(a)).hidden.today).toBe(2);
@@ -125,7 +125,7 @@ test.describe('Tracks: accessibility and layout in a real browser', () => {
     const b = await person(browser, `tb${Date.now().toString(36).slice(-4)}`, opts);
     const c = await person(browser, `tc${Date.now().toString(36).slice(-4)}`, opts);
     await makePosse(b, a);
-    await api(a, '/api/me/ranch', { ranchVisibility: 'everyone' }, 'PATCH');
+    await api(a, '/api/me/porch', { ranchVisibility: 'everyone' }, 'PATCH');
     await b.page.goto(`/porch/${a.handle}`);
     await c.page.goto(`/porch/${a.handle}`);
     await expect.poll(async () => (await tracksOf(a)).people.length).toBe(1);
@@ -142,7 +142,7 @@ test.describe('Tracks: accessibility and layout in a real browser', () => {
       });
       const source = axeSource();
       for (const shadow of [false, true]) {
-        await api(a, '/api/me/ranch', { shadowWalk: shadow }, 'PATCH');
+        await api(a, '/api/me/porch', { shadowWalk: shadow }, 'PATCH');
         await a.page.goto('/tracks');
         await a.page.evaluate(() => document.fonts.ready);
         await a.page.addScriptTag({ content: source });

@@ -1,7 +1,7 @@
 import { POST as approveRoute } from '@/app/api/tributes/[id]/approve/route';
 import { DELETE as deleteRoute, PATCH as patchRoute } from '@/app/api/tributes/[id]/route';
 import { GET as waitingRoute } from '@/app/api/me/tributes/waiting/route';
-import { GET as getRoute, POST as postRoute } from '@/app/api/ranch/[handle]/tributes/route';
+import { GET as getRoute, POST as postRoute } from '@/app/api/porch/[handle]/tributes/route';
 import { call, request } from './auth';
 
 type Opts = { cookie?: string; ip?: string; origin?: string | null };
@@ -46,13 +46,13 @@ async function dynamic(
 
 const enc = encodeURIComponent;
 
-/** GET /api/ranch/:handle/tributes[?query]. */
+/** GET /api/porch/:handle/tributes[?query]. */
 export const tributesOf = (handle: string, opts: Opts = {}, query = '') =>
-  dynamic(getRoute, 'GET', `/api/ranch/${enc(handle)}/tributes${query}`, { handle }, undefined, opts);
+  dynamic(getRoute, 'GET', `/api/porch/${enc(handle)}/tributes${query}`, { handle }, undefined, opts);
 
-/** POST /api/ranch/:handle/tributes {body}. */
+/** POST /api/porch/:handle/tributes {body}. */
 export const leaveTribute = (handle: string, body: unknown, opts: Opts = {}) =>
-  dynamic(postRoute, 'POST', `/api/ranch/${enc(handle)}/tributes`, { handle }, body, opts);
+  dynamic(postRoute, 'POST', `/api/porch/${enc(handle)}/tributes`, { handle }, body, opts);
 
 export const approveTributeOf = (id: string, opts: Opts = {}) =>
   dynamic(approveRoute, 'POST', `/api/tributes/${enc(id)}/approve`, { id }, {}, opts);

@@ -81,7 +81,7 @@ export const portraitTintSchema = z.enum(PORTRAIT_TINTS);
 export const visibilitySchema = z.enum(VISIBILITIES);
 export const fencePostingSchema = z.enum(FENCE_POSTING_LEVELS);
 
-/** PATCH /api/me/ranch — every field optional, at least one required. Unknown keys are dropped (no mass assignment). */
+/** PATCH /api/me/porch — every field optional, at least one required. Unknown keys are dropped (no mass assignment). */
 export const updateRanchSchema = z
   .object({
     displayName: displayNameSchema.optional(),

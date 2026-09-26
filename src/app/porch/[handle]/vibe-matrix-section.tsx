@@ -25,7 +25,7 @@ export function VibeMatrixSection({ handle, initial }: { handle: string; initial
   async function give(kind: MarkKind) {
     setGiving(kind);
     setError(undefined);
-    const res = await postJson<{ kind: MarkKind }>(`/api/ranch/${handle}/marks`, { kind });
+    const res = await postJson<{ kind: MarkKind }>(`/api/porch/${handle}/marks`, { kind });
     setGiving(undefined);
     if (res.ok) {
       setMatrix((m) => ({

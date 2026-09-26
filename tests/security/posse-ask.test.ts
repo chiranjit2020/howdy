@@ -1,5 +1,5 @@
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
-import { POST as askRoute } from '@/app/api/posse/ask/route';
+import { POST as askRoute } from '@/app/api/pals/ask/route';
 import { getPool } from '@/platform/db';
 import { MAX_PENDING_OUTGOING, RATE } from '@/modules/relationships/service';
 import { MemoryRateLimiter, setRateLimiter } from '@/platform/rate-limit';
@@ -18,7 +18,7 @@ afterAll(async () => {
 const person = (tag: string) => signedInUser(kit, uniqueUser(tag));
 const as = (p: { cookie: string }) => ({ cookie: p.cookie });
 const ask = (handle: unknown, opts: { cookie?: string; origin?: string | null } = {}) =>
-  call(askRoute, 'POST', '/api/posse/ask', { handle }, opts);
+  call(askRoute, 'POST', '/api/pals/ask', { handle }, opts);
 const links = async () => (await q('select count(*)::int n from posse_links')).rows[0].n as number;
 
 describe('Ask by call sign (the way in to a private Ranch)', () => {

@@ -5,7 +5,7 @@ import { RATE } from '@/modules/profiles/service';
 import { SIGNAL_TTL_MS } from '@/shared/validation/profile';
 import { call, freshAuthState, me, signedInUser, uniqueUser, type TestKit } from '../helpers/auth';
 import { clearSignal, myRanch, patchRanch, setSignal, sql, viewRanch } from '../helpers/ranch';
-import { PATCH as patchRanchRoute } from '@/app/api/me/ranch/route';
+import { PATCH as patchRanchRoute } from '@/app/api/me/porch/route';
 
 let kit: TestKit;
 beforeEach(async () => {
@@ -122,14 +122,14 @@ describe('Tend the Ranch: validation is enforced on the server', () => {
         await call(
           patchRanchRoute,
           'PATCH',
-          '/api/me/ranch',
+          '/api/me/porch',
           {},
           { cookie: a.cookie, contentType: 'text/plain' },
         )
       ).status,
     ).toBe(400);
     expect(
-      (await call(patchRanchRoute, 'PATCH', '/api/me/ranch', {}, { cookie: a.cookie, rawBody: '[1]' }))
+      (await call(patchRanchRoute, 'PATCH', '/api/me/porch', {}, { cookie: a.cookie, rawBody: '[1]' }))
         .status,
     ).toBe(400);
   });

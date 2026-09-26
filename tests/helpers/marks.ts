@@ -1,4 +1,4 @@
-import { GET as getRoute, POST as postRoute } from '@/app/api/ranch/[handle]/marks/route';
+import { GET as getRoute, POST as postRoute } from '@/app/api/porch/[handle]/marks/route';
 import { request } from './auth';
 
 type Opts = { cookie?: string; ip?: string; origin?: string | null };
@@ -34,10 +34,10 @@ async function dynamic(
 
 const enc = encodeURIComponent;
 
-/** GET /api/ranch/:handle/marks — the Vibe Matrix. */
+/** GET /api/porch/:handle/marks — the Vibe Matrix. */
 export const marksOf = (handle: string, opts: Opts = {}) =>
-  dynamic(getRoute, 'GET', `/api/ranch/${enc(handle)}/marks`, handle, undefined, opts);
+  dynamic(getRoute, 'GET', `/api/porch/${enc(handle)}/marks`, handle, undefined, opts);
 
-/** POST /api/ranch/:handle/marks {kind}. */
+/** POST /api/porch/:handle/marks {kind}. */
 export const giveMarkTo = (handle: string, kind: unknown, opts: Opts = {}) =>
-  dynamic(postRoute, 'POST', `/api/ranch/${enc(handle)}/marks`, handle, { kind }, opts);
+  dynamic(postRoute, 'POST', `/api/porch/${enc(handle)}/marks`, handle, { kind }, opts);

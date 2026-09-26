@@ -57,7 +57,7 @@ export function TendForm({
     }
     setNameError(undefined);
     setBusy(true);
-    const res = await apiRequest('PATCH', '/api/me/ranch', { displayName: parsed.data, portraitTint: tint });
+    const res = await apiRequest('PATCH', '/api/me/porch', { displayName: parsed.data, portraitTint: tint });
     setBusy(false);
     if (res.ok) {
       setDisplayName(parsed.data);
@@ -128,7 +128,7 @@ export function BoundaryForm({
     e.preventDefault();
     setFormError(undefined);
     setBusy(true);
-    const res = await apiRequest('PATCH', '/api/me/ranch', {
+    const res = await apiRequest('PATCH', '/api/me/porch', {
       ranchVisibility: ranch,
       signalVisibility: signal,
     });
@@ -210,7 +210,7 @@ export function FenceRulesForm({
     e.preventDefault();
     setFormError(undefined);
     setBusy(true);
-    const res = await apiRequest('PATCH', '/api/me/ranch', {
+    const res = await apiRequest('PATCH', '/api/me/porch', {
       fenceVisibility: reading,
       fencePosting: posting,
       fenceReview: review,

@@ -17,7 +17,7 @@ export function ShadowWalk({ initial }: { initial: boolean }) {
     const before = on;
     setOn(value);
     setError(undefined);
-    const res = await apiRequest('PATCH', '/api/me/ranch', { shadowWalk: value });
+    const res = await apiRequest('PATCH', '/api/me/porch', { shadowWalk: value });
     if (res.ok) {
       toast({ title: value ? 'Shadow Walk is on.' : 'Shadow Walk is off.', tone: 'success' });
       router.refresh();

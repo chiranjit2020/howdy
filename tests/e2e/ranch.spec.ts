@@ -141,10 +141,10 @@ test.describe('Ranch, Signal and Workshop (production build, real CSP)', () => {
     const page = await ctx.newPage();
     await page.goto('/workshop');
     await expect(page).toHaveURL(/\/step-inside$/);
-    expect((await ctx.request.get('/api/me/ranch')).status()).toBe(401);
+    expect((await ctx.request.get('/api/me/porch')).status()).toBe(401);
     expect(
       (
-        await ctx.request.patch('/api/me/ranch', {
+        await ctx.request.patch('/api/me/porch', {
           data: { displayName: 'x' },
           headers: { origin: 'http://localhost:3300' },
         })

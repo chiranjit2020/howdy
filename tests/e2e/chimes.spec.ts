@@ -79,9 +79,9 @@ test.describe('Chimes in a real browser (production build, real CSP)', () => {
     // Alice accepts (Bob is told), Bob nails a card and gives a Yo; "Mark all read" clears the lot.
     expect((await api(a, `/api/relationships/${b.handle}`, { action: 'accept' })).ok()).toBe(true);
     await untilUnread(b, 1);
-    const card = await api(b, `/api/ranch/${a.handle}/fence`, { body: 'Howdy from Bob' });
+    const card = await api(b, `/api/porch/${a.handle}/fence`, { body: 'Howdy from Bob' });
     expect(card.status()).toBe(201);
-    const ownCard = await api(a, `/api/ranch/${a.handle}/fence`, { body: 'Alice card' });
+    const ownCard = await api(a, `/api/porch/${a.handle}/fence`, { body: 'Alice card' });
     const cardId = ((await ownCard.json()) as { card: { id: string } }).card.id;
     expect((await api(b, `/api/cards/${cardId}/yo`, { on: true })).ok()).toBe(true);
     await untilUnread(a, 2);
@@ -104,7 +104,7 @@ test.describe('Chimes in a real browser (production build, real CSP)', () => {
     await a.page.goto('/workshop');
     await a.page.getByRole('switch', { name: /^Yo When/ }).click();
     await expect(a.page.getByRole('status').filter({ hasText: 'Chime settings saved' })).toBeVisible();
-    const second = await api(a, `/api/ranch/${a.handle}/fence`, { body: 'Second card' });
+    const second = await api(a, `/api/porch/${a.handle}/fence`, { body: 'Second card' });
     const id2 = ((await second.json()) as { card: { id: string } }).card.id;
     expect((await api(b, `/api/cards/${id2}/yo`, { on: true })).ok()).toBe(true);
     await api(b, `/api/cards/${id2}/replies`, { body: 'a reply' }); // replies are still on
@@ -123,9 +123,9 @@ test.describe('Chimes in a real browser (production build, real CSP)', () => {
     const a = await person(browser, 'waitowner');
     const b = await person(browser, 'waitfriend');
     await makePosse(b, a);
-    await api(a, '/api/me/ranch', { fencePosting: 'members' }, 'PATCH');
+    await api(a, '/api/me/porch', { fencePosting: 'members' }, 'PATCH');
     await api(a, `/api/relationships/${b.handle}`, { action: 'restrict' });
-    const posted = await api(b, `/api/ranch/${a.handle}/fence`, { body: 'Quiet words' });
+    const posted = await api(b, `/api/porch/${a.handle}/fence`, { body: 'Quiet words' });
     const id = ((await posted.json()) as { card: { id: string } }).card.id;
     await untilUnread(a, 2); // the accept-era Posse chime is Alice's? No: Bob asked, Alice accepted -> Bob rang; Alice got the ask + this
     await a.page.goto('/chimes');
@@ -147,9 +147,9 @@ test.describe('Chimes: accessibility and layout in a real browser', () => {
     const b = await person(browser, `cb${Date.now().toString(36).slice(-4)}`, opts);
     await api(b, `/api/relationships/${a.handle}`, { action: 'request' });
     await api(a, `/api/relationships/${b.handle}`, { action: 'accept' });
-    await api(a, '/api/me/ranch', { fencePosting: 'members' }, 'PATCH');
-    await api(b, `/api/ranch/${a.handle}/fence`, { body: 'A card from a friend' });
-    const own = await api(a, `/api/ranch/${a.handle}/fence`, { body: 'My own card' });
+    await api(a, '/api/me/porch', { fencePosting: 'members' }, 'PATCH');
+    await api(b, `/api/porch/${a.handle}/fence`, { body: 'A card from a friend' });
+    const own = await api(a, `/api/porch/${a.handle}/fence`, { body: 'My own card' });
     const id = ((await own.json()) as { card: { id: string } }).card.id;
     await api(b, `/api/cards/${id}/yo`, { on: true });
     await api(b, `/api/cards/${id}/replies`, { body: 'A reply' });

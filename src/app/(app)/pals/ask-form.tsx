@@ -30,7 +30,7 @@ export function AskForm() {
     }
     setFieldError(undefined);
     setBusy(true);
-    const res = await postJson('/api/posse/ask', { handle: cleaned });
+    const res = await postJson('/api/pals/ask', { handle: cleaned });
     setBusy(false);
     if (res.ok) {
       setSent(cleaned.toLowerCase());

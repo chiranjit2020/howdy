@@ -37,6 +37,11 @@ const nextConfig: NextConfig = {
     return [
       { source: '/posse', destination: '/pals', permanent: false },
       { source: '/ranch/:handle', destination: '/porch/:handle', permanent: false },
+      // The API followed the rename too. 307 keeps the method and body, so a page still open with the old code (right
+      // after a deploy) can keep posting until it reloads.
+      { source: '/api/ranch/:path*', destination: '/api/porch/:path*', permanent: false },
+      { source: '/api/me/ranch', destination: '/api/me/porch', permanent: false },
+      { source: '/api/posse/:path*', destination: '/api/pals/:path*', permanent: false },
     ];
   },
 };
