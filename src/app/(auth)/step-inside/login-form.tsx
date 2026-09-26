@@ -54,7 +54,7 @@ export function LoginForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} noValidate className="flex flex-col gap-4">
+    <form onSubmit={onSubmit} noValidate className="flex flex-col gap-3">
       <div>
         <h1 className="text-title text-text-primary">Welcome back</h1>
         <p className="text-body text-text-secondary">Sign in to your Howdy account.</p>

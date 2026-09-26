@@ -85,10 +85,10 @@ export function ClaimForm() {
   }
 
   return (
-    <form ref={formRef} onSubmit={onSubmit} noValidate className="flex flex-col gap-4">
+    <form ref={formRef} onSubmit={onSubmit} noValidate className="flex flex-col gap-3">
       <div>
         <h1 className="text-title text-text-primary">Join Howdy</h1>
-        <p className="text-body text-text-secondary">Create your account. It only takes a minute.</p>
+        <p className="text-body text-text-secondary">It only takes a minute.</p>
       </div>
       {formError && (
         <FormMessage tone="error" focusKey={attempt}>
@@ -115,7 +115,7 @@ export function ClaimForm() {
         value={values.displayName}
         onChange={set('displayName')}
         error={errors.displayName}
-        hint="Shown on your Ranch. Leave blank to use your handle."
+        hint="Leave blank to use your handle."
       />
       <Input
         label="Email address"
@@ -135,7 +135,7 @@ export function ClaimForm() {
         value={values.password}
         onChange={set('password')}
         error={errors.password}
-        hint={`Your secret knock: at least ${PASSWORD_MIN} characters. A short phrase works well.`}
+        hint={`Your secret knock: at least ${PASSWORD_MIN} characters.`}
       />
       <Button type="submit" size="lg" fullWidth loading={busy}>
         Create My Account

@@ -7,7 +7,12 @@ export const metadata = { title: 'Step Inside' };
 export default async function StepInsidePage() {
   if (await getCurrentUser()) redirect('/home');
   return (
-    <main id="main" className="mx-auto flex w-full max-w-md flex-col gap-6 px-4 py-6 sm:py-8">
+    <main
+      id="main"
+      // Centred in the space under the top bar (4rem + its 1px border). No side padding of its own: the shell's px-4
+      // already gives the gutter, and doubling it squeezes the card on a 320px phone.
+      className="mx-auto flex min-h-[calc(100dvh-4rem-1px)] w-full max-w-md flex-col justify-center py-4"
+    >
       <AuthCard initial="step-inside" />
     </main>
   );

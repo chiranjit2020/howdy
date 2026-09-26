@@ -56,7 +56,7 @@ export function AuthCard({ initial }: { initial: AuthMode }) {
   }
 
   return (
-    <ClayCard className="flex flex-col gap-5 p-6 sm:p-7">
+    <ClayCard className="flex flex-col gap-4 p-4 min-[360px]:p-5 sm:p-6">
       <div
         role="tablist"
         aria-label="Sign in or create an account"
@@ -79,7 +79,7 @@ export function AuthCard({ initial }: { initial: AuthMode }) {
               tabIndex={selected ? 0 : -1}
               onClick={() => select(t.id)}
               className={cn(
-                'flex min-h-12 flex-col items-center justify-center rounded-pill px-3 py-1.5 transition-colors',
+                'flex min-h-11 flex-col items-center justify-center rounded-pill px-2 py-1 transition-colors min-[360px]:px-3',
                 selected
                   ? 'bg-surface text-text-primary shadow-clay-sm'
                   : 'text-text-secondary hover:text-text-primary',
