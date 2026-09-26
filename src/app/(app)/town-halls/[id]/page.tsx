@@ -14,7 +14,7 @@ export default async function TownHallPage({ params }: { params: Promise<{ id: s
   const members = townHall.membership === 'active' ? await listMembers(user.id, id, {}) : null;
 
   return (
-    <main id="main" className="mx-auto flex max-w-2xl flex-col gap-6 px-4 py-8">
+    <main id="main" className="mx-auto flex max-w-2xl flex-col gap-4 py-4 sm:gap-6 sm:py-8">
       <TownHallDetailView townHall={townHall} initialMembers={members} />
     </main>
   );

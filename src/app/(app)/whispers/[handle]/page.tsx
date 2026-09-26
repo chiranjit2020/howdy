@@ -37,7 +37,7 @@ export default async function ThreadPage({ params }: { params: Promise<{ handle:
   if (!page) notFound();
   return (
     <>
-      <main id="main" className="mx-auto flex w-full max-w-xl flex-col gap-4 px-4 py-6">
+      <main id="main" className="mx-auto flex w-full max-w-xl flex-col gap-4 py-4 sm:py-6">
         <ThreadView
           handle={page.person.handle}
           displayName={page.person.displayName}

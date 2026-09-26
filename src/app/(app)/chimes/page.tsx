@@ -11,7 +11,7 @@ export default async function ChimesPage() {
   const page = await listChimes(user.id, {});
   return (
     <>
-      <main id="main" className="mx-auto flex w-full max-w-xl flex-col gap-6 px-4 py-8">
+      <main id="main" className="mx-auto flex w-full max-w-xl flex-col gap-4 py-4 sm:gap-6 sm:py-8">
         <div className="flex items-center">
           <h1 className="text-heading text-text-primary">Chimes</h1>
           <GlossaryHint term="chimes" />

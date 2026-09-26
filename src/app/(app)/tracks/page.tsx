@@ -16,7 +16,7 @@ export default async function TracksPage() {
   const hiddenTotal = ORDER.reduce((n, w) => n + tracks.hidden[w], 0);
   return (
     <>
-      <main id="main" className="mx-auto flex w-full max-w-xl flex-col gap-6 px-4 py-8">
+      <main id="main" className="mx-auto flex w-full max-w-xl flex-col gap-4 py-4 sm:gap-6 sm:py-8">
         <div className="flex items-center">
           <h1 className="text-heading text-text-primary">Tracks</h1>
           <GlossaryHint term="tracks" />

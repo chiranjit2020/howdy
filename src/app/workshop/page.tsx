@@ -24,7 +24,7 @@ export default async function WorkshopPage() {
   return (
     // The shell is applied here (not in a layout): /workshop/kit is a design gallery with its own navigation demo.
     <AppFrame>
-      <main id="main" className="mx-auto flex max-w-xl flex-col gap-6 px-4 py-8">
+      <main id="main" className="mx-auto flex max-w-xl flex-col gap-4 py-4 sm:gap-6 sm:py-8">
         <h1 className="text-heading text-text-primary">Workshop</h1>
         <PortraitForm
           displayName={ranch.displayName}
