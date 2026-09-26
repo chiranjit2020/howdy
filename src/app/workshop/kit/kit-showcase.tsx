@@ -122,7 +122,7 @@ export function KitShowcase({ initialTheme }: { initialTheme: Theme | undefined 
   ]);
 
   const nav = [
-    { href: '/workshop/kit', label: 'Ranch', icon: <HomeIcon />, current: true },
+    { href: '/workshop/kit', label: 'Porch', icon: <HomeIcon />, current: true },
     { href: '#fence', label: 'Fence', icon: <FenceIcon /> },
     { href: '#tracks', label: 'Tracks', icon: <TracksIcon />, badge: '3 new' },
     { href: '#whispers', label: 'Whispers', icon: <WhisperIcon /> },
@@ -190,12 +190,12 @@ export function KitShowcase({ initialTheme }: { initialTheme: Theme | undefined 
           <Textarea label="Signal" showCount maxLength={LIMITS.SIGNAL_MAX} hint="Expires after 12 hours." />
           <Select label="Who can read your Fence?" defaultValue="posse">
             <option value="all">Anyone</option>
-            <option value="posse">Posse only</option>
+            <option value="posse">Pals only</option>
           </Select>
           <Checkbox label="Review cards before they go up" hint="Cards wait in your queue." />
           <fieldset className="flex flex-col">
             <legend className="text-caption font-semibold">Whisper permission</legend>
-            <Radio name="whisper" label="Posse only" defaultChecked />
+            <Radio name="whisper" label="Pals only" defaultChecked />
             <Radio name="whisper" label="Anyone can ask" />
           </fieldset>
           <Switch
@@ -269,7 +269,7 @@ export function KitShowcase({ initialTheme }: { initialTheme: Theme | undefined 
             )}
           >
             <p className="text-caption text-text-secondary">
-              Boundary Lines decide who can step onto your Ranch.
+              Boundary Lines decide who can step onto your Porch.
             </p>
           </Popover>
           <Dropdown
@@ -318,7 +318,7 @@ export function KitShowcase({ initialTheme }: { initialTheme: Theme | undefined 
         <Modal
           open={modal}
           onClose={() => setModal(false)}
-          title="Tend the Ranch"
+          title="Tend your Porch"
           description="Edits appear as soon as you save."
         >
           <Input label="Display name" defaultValue="Chiranjit" />
@@ -328,7 +328,7 @@ export function KitShowcase({ initialTheme }: { initialTheme: Theme | undefined 
           open={drawer}
           onClose={() => setDrawer(false)}
           title="Boundary Lines"
-          description="Who can do what on your Ranch."
+          description="Who can do what on your Porch."
         >
           <Switch label="Show my Signal to passersby" checked={sw} onCheckedChange={setSw} />
         </Drawer>
@@ -350,7 +350,7 @@ export function KitShowcase({ initialTheme }: { initialTheme: Theme | undefined 
           open={confirm}
           destructive
           title="Burn the Deed?"
-          description="This removes your Ranch, cards and marks. It can’t be undone."
+          description="This removes your Porch, cards and marks. It can’t be undone."
           confirmLabel="Burn it"
           onCancel={() => setConfirm(false)}
           onConfirm={() => setConfirm(false)}
@@ -359,19 +359,19 @@ export function KitShowcase({ initialTheme }: { initialTheme: Theme | undefined 
 
       <Section title="Tabs">
         <Tabs
-          label="Ranch sections"
+          label="Porch sections"
           tabs={[
             {
               id: 'fence',
               label: 'Fence',
-              panel: <p className="text-body text-text-secondary">Cards nailed to this Ranch.</p>,
+              panel: <p className="text-body text-text-secondary">Cards nailed to this Porch.</p>,
             },
             {
               id: 'tributes',
               label: 'Tributes',
               panel: <p className="text-body text-text-secondary">What friends say.</p>,
             },
-            { id: 'posse', label: 'Posse', panel: <p className="text-body text-text-secondary">Mutuals.</p> },
+            { id: 'posse', label: 'Pals', panel: <p className="text-body text-text-secondary">Mutuals.</p> },
           ]}
         />
       </Section>
@@ -390,7 +390,7 @@ export function KitShowcase({ initialTheme }: { initialTheme: Theme | undefined 
               icon="👣"
               title="No tracks yet today"
               description="Footprints will show up here."
-              action={<Button variant="secondary">Visit a Ranch</Button>}
+              action={<Button variant="secondary">Visit a Porch</Button>}
             />
           </ClayCard>
           <div className="sm:col-span-2">
@@ -402,7 +402,7 @@ export function KitShowcase({ initialTheme }: { initialTheme: Theme | undefined 
         </div>
       </Section>
 
-      <Section title="Ranch">
+      <Section title="Porch">
         <ClayCard>
           <RanchHeader
             displayName="Chiranjit Karmakar"
@@ -565,7 +565,7 @@ export function KitShowcase({ initialTheme }: { initialTheme: Theme | undefined 
           <ChimeItem type="YO_DROPPED" text="Sneha dropped a Yo on your card." createdAt={ago(120)} />
           <ChimeItem
             type="POSSE_REQUESTED"
-            text="Alex wants to join your Posse."
+            text="Alex wants to be your Pal."
             createdAt={ago(60 * 26)}
             unread
           />

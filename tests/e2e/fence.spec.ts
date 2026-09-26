@@ -52,14 +52,14 @@ test.describe('The Fence in a real browser (production build, real CSP)', () => 
     const problems = await watchProblems(b.page);
 
     // The owner nails the first card.
-    await a.page.goto(`/ranch/${a.handle}`);
+    await a.page.goto(`/porch/${a.handle}`);
     await expect(a.page.getByRole('heading', { name: 'The Fence' })).toBeVisible();
     await expect(a.page.getByText('Nothing nailed up yet')).toBeVisible();
     await nailVia(a.page, 'Howdy from the ranch');
     await expect(a.page.getByLabel('Nail a Post Card')).toHaveValue(''); // cleared after posting
 
     // A Posse friend sees it, writes on the Fence, gives a Yo and scribbles a reply.
-    await b.page.goto(`/ranch/${a.handle}`);
+    await b.page.goto(`/porch/${a.handle}`);
     await expect(cardWith(b.page, 'Howdy from the ranch')).toBeVisible();
     await nailVia(b.page, 'Hi from Bob');
     const owners = cardWith(b.page, 'Howdy from the ranch');
@@ -82,7 +82,7 @@ test.describe('The Fence in a real browser (production build, real CSP)', () => 
     );
 
     // A stranger reads the wall (members can) but the composer is not offered: only the Posse may write.
-    await c.page.goto(`/ranch/${a.handle}`);
+    await c.page.goto(`/porch/${a.handle}`);
     await expect(cardWith(c.page, 'Hi from Bob')).toBeVisible();
     await expect(c.page.getByLabel('Nail a Post Card')).toHaveCount(0);
     expect((await api(c, `/api/ranch/${a.handle}/fence`, { body: 'let me in' })).status()).toBe(403);
@@ -145,7 +145,7 @@ test.describe('The Fence in a real browser (production build, real CSP)', () => 
 
     // Block: the whole Fence vanishes for the blocked person, exactly like a missing Ranch.
     expect((await api(a, `/api/relationships/${c.handle}`, { action: 'block' })).ok()).toBe(true);
-    expect((await c.page.goto(`/ranch/${a.handle}`))?.status()).toBe(404);
+    expect((await c.page.goto(`/porch/${a.handle}`))?.status()).toBe(404);
 
     expect(problems).toEqual([]);
     await Promise.all([a.ctx.close(), b.ctx.close(), c.ctx.close()]);
@@ -163,12 +163,12 @@ test.describe('The Fence in a real browser (production build, real CSP)', () => 
     await a.page.getByRole('button', { name: 'Save Fence rules' }).click();
     await expect(a.page.getByRole('status').filter({ hasText: 'Fence rules updated' })).toBeVisible();
 
-    await b.page.goto(`/ranch/${a.handle}`);
+    await b.page.goto(`/porch/${a.handle}`);
     await expect(b.page.getByText(/Cards on this Fence wait for .* to approve/)).toBeVisible();
     await nailVia(b.page, 'Please approve me');
     await expect(cardWith(b.page, 'Please approve me').getByText(/Waiting for .* to approve/)).toBeVisible();
 
-    await a.page.goto(`/ranch/${a.handle}`);
+    await a.page.goto(`/porch/${a.handle}`);
     await expect(cardWith(a.page, 'Please approve me')).toHaveCount(0); // in the queue, not on the wall
     await expect(a.page.getByText('Please approve me')).toBeVisible();
     await expect(a.page.getByRole('heading', { name: 'Waiting for you (1)' })).toBeVisible();
@@ -203,8 +203,8 @@ test.describe('Fence: accessibility and layout in a real browser', () => {
       const { a, b } = await seed(browser, { colorScheme: scheme, bypassCSP: true, reducedMotion: 'reduce' });
       const source = axeSource();
       for (const [who, path] of [
-        [a, `/ranch/${a.handle}`], // owner: queue + menus
-        [b, `/ranch/${a.handle}`], // Posse friend: composer
+        [a, `/porch/${a.handle}`], // owner: queue + menus
+        [b, `/porch/${a.handle}`], // Posse friend: composer
         [a, '/workshop'], // Fence rules
       ] as const) {
         await who.page.goto(path);
@@ -245,8 +245,8 @@ test.describe('Fence: accessibility and layout in a real browser', () => {
     const opts = { hasTouch: true, isMobile: true, viewport: { width: 320, height: 700 } };
     const { a, b } = await seed(browser, opts);
     for (const [who, path] of [
-      [a, `/ranch/${a.handle}`],
-      [b, `/ranch/${a.handle}`],
+      [a, `/porch/${a.handle}`],
+      [b, `/porch/${a.handle}`],
       [a, '/workshop'],
     ] as const) {
       await who.page.goto(path);
@@ -278,7 +278,7 @@ test.describe('Fence: accessibility and layout in a real browser', () => {
       expect(problems, `${path} layout`).toEqual([]);
     }
     // The back of a card too.
-    await b.page.goto(`/ranch/${a.handle}`);
+    await b.page.goto(`/porch/${a.handle}`);
     await b.page.getByRole('button', { name: /^Flip/ }).first().click();
     expect(await horizontalOverflow(b.page), 'flipped overflow').toBeLessThanOrEqual(0);
     await Promise.all([a.ctx.close(), b.ctx.close()]);

@@ -42,7 +42,7 @@ export function AskForm() {
   return (
     <ClayCard>
       <form onSubmit={submit} noValidate className="flex flex-col gap-3">
-        <h2 className="text-title text-text-primary">Ask someone to join your Posse</h2>
+        <h2 className="text-title text-text-primary">Ask someone to be your Pal</h2>
         {formError && <FormMessage tone="error">{formError}</FormMessage>}
         {sent && (
           <FormMessage tone="success">
@@ -57,10 +57,10 @@ export function AskForm() {
           error={fieldError}
           autoCapitalize="none"
           spellCheck={false}
-          hint="You can ask people whose Ranch is private, too."
+          hint="You can ask people whose Porch is private, too."
         />
         <Button type="submit" loading={busy} className="self-start">
-          Ask to join Posse
+          Ask to be Pals
         </Button>
       </form>
     </ClayCard>

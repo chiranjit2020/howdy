@@ -72,7 +72,7 @@ export function PosseLists({ lists }: { lists: RelationshipLists }) {
             <PersonRow
               key={p.handle}
               {...p}
-              note="asked to join your Posse"
+              note="wants to be your Pal"
               actions={
                 <>
                   {btn(p, 'accept', 'Accept', 'primary')}
@@ -89,13 +89,13 @@ export function PosseLists({ lists }: { lists: RelationshipLists }) {
           <EmptyState
             as="h2"
             icon="🤝"
-            title="No Posse yet"
-            description="Visit a Ranch and ask to join their Posse. Requests are private until they say yes."
+            title="No Pals yet"
+            description="Visit someone's Porch and ask to be Pals. Requests are private until they say yes."
           />
         ) : (
           section(
             'posse',
-            `Posse (${lists.posse.length})`,
+            `Pals (${lists.posse.length})`,
             lists.posse,
             'Nobody yet. Accept a request or ask someone.',
             (p) => (
@@ -107,7 +107,7 @@ export function PosseLists({ lists }: { lists: RelationshipLists }) {
                     <Chip
                       selected={Boolean(p.closeByMe)}
                       onSelect={() => run(p.handle, p.closeByMe ? 'unclose' : 'close')}
-                      aria-label={`Close Posse: ${p.displayName}`}
+                      aria-label={`Close Pal: ${p.displayName}`}
                     >
                       Close
                     </Chip>
@@ -142,7 +142,7 @@ export function PosseLists({ lists }: { lists: RelationshipLists }) {
       )}
 
       <p className="text-metadata text-text-muted">
-        Close Posse and Scouting are private: nobody else can see them.
+        Close Pals and Scouting are private: nobody else can see them.
       </p>
     </div>
   );

@@ -75,7 +75,7 @@ describe('Avatar portrait tint', () => {
 });
 
 describe('AppShell', () => {
-  it('signed in: Home / My Ranch / Posse / Workshop with the current page marked, and unread counts as text', () => {
+  it('signed in: Home / My Porch / Pals / Workshop with the current page marked, and unread counts as text', () => {
     render(
       <AppShell me={{ handle: 'chiru', displayName: 'Chiru' }} unread={3} unreadWhispers={2}>
         <main>page</main>
@@ -85,8 +85,8 @@ describe('AppShell', () => {
     const navs = screen.getAllByRole('navigation', { name: 'Primary' });
     expect(navs).toHaveLength(2);
     const nav = within(navs[0]!);
-    expect(nav.getByRole('link', { name: 'My Ranch' })).toHaveAttribute('href', '/ranch/chiru');
-    expect(nav.getByRole('link', { name: 'Posse' })).toHaveAttribute('href', '/posse');
+    expect(nav.getByRole('link', { name: 'My Porch' })).toHaveAttribute('href', '/porch/chiru');
+    expect(nav.getByRole('link', { name: 'Pals' })).toHaveAttribute('href', '/pals');
     expect(nav.getByRole('link', { name: 'Workshop' })).toHaveAttribute('aria-current', 'page');
     expect(nav.getByRole('link', { name: 'Home' })).not.toHaveAttribute('aria-current');
     // The count is text (not only a coloured pill), and the link still starts with its label.
@@ -94,7 +94,7 @@ describe('AppShell', () => {
     expect(nav.getByRole('link', { name: /^Whispers/ })).toHaveTextContent(/2\s*unread/);
     // The top bar: a bell that says how many are unread, and the way to your own Ranch.
     expect(screen.getByRole('link', { name: 'Notifications, 3 unread' })).toHaveAttribute('href', '/chimes');
-    expect(screen.getByRole('link', { name: 'Your Ranch' })).toHaveAttribute('href', '/ranch/chiru');
+    expect(screen.getByRole('link', { name: 'Your Porch' })).toHaveAttribute('href', '/porch/chiru');
   });
   it('signed out: only a way in, and no handle-based links', () => {
     render(
@@ -104,7 +104,7 @@ describe('AppShell', () => {
     );
     expect(screen.getByRole('link', { name: /^Step Inside/ })).toHaveAttribute('href', '/step-inside');
     expect(screen.getByRole('link', { name: /^Stake a Claim/ })).toHaveAttribute('href', '/stake-a-claim');
-    expect(screen.queryByRole('link', { name: 'My Ranch' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'My Porch' })).not.toBeInTheDocument();
     expect(screen.queryByRole('navigation', { name: 'Primary' })).not.toBeInTheDocument();
   });
   it('signed out on the sign-in pages: just the logo (the page itself is the way in)', () => {

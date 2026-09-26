@@ -302,7 +302,7 @@ describe('ChimeItem, TownHallCard, RanchHeader', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'Chiranjit' })).toBeInTheDocument();
     expect(screen.getByText('@chiranjit')).toBeInTheDocument();
     expect(screen.getByText('Writing code')).toBeInTheDocument();
-    expect(screen.getByText('Posse')).toBeInTheDocument();
+    expect(screen.getByText('Pal')).toBeInTheDocument();
   });
 
   it('a composed Ranch has no accessibility violations', async () => {

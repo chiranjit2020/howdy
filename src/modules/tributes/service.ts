@@ -211,7 +211,7 @@ export async function giveTribute(authorId: string, handle: string, body: string
   const acc = await access(actor, ownerId);
   if (!acc) throw new AppError('NOT_FOUND');
   if (!can(actor, 'tribute:give', acc.ranch, { relationship: acc.relationship.relationship }).allow) {
-    throw new AppError('FORBIDDEN', { message: 'Only people in your Posse can leave you a Tribute.' });
+    throw new AppError('FORBIDDEN', { message: 'Only your Pals can leave you a Tribute.' });
   }
   await enforceRateLimit(`tributes:give:${authorId}:${ownerId}`, RATE.givePerOwner);
   const [row] = await getDb()

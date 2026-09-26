@@ -64,13 +64,13 @@ test.describe('Chimes in a real browser (production build, real CSP)', () => {
     await b.page.goto('/home'); // Bob never rings his own bell
     await expect(bellLink(b.page)).toHaveAccessibleName('Chimes');
 
-    // She opens Chimes, sees it as unread, and following it goes to the Posse page and marks it read.
+    // She opens Chimes, sees it as unread, and following it goes to the Pals page and marks it read.
     await bellLink(a.page).click();
     await expect(a.page.getByRole('heading', { name: 'Chimes', level: 1 })).toBeVisible();
-    const item = a.page.getByRole('link', { name: /asked to join your Posse/ });
+    const item = a.page.getByRole('link', { name: /wants to be your Pal/ });
     await expect(item).toContainText('Unread');
     await item.click();
-    await expect(a.page).toHaveURL(/\/posse$/);
+    await expect(a.page).toHaveURL(/\/pals$/);
     await untilUnread(a, 0);
     await a.page.goto('/chimes');
     await expect(a.page.getByRole('status')).toHaveText('All caught up');

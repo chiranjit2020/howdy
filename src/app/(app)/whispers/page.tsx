@@ -22,7 +22,7 @@ export default async function WhispersPage() {
             <EmptyState
               icon="🤫"
               title="No Whispers yet"
-              description="Open the Ranch of someone in your Posse and choose Whisper to start a private conversation."
+              description="Visit one of your Pals' Porches and choose Whisper to start a private conversation."
             />
           </ClayCard>
         ) : (

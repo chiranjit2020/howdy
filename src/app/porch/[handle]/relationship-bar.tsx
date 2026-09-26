@@ -70,7 +70,7 @@ export function RelationshipBar({
       <div className="flex flex-wrap items-center gap-3">
         {rel.posse === 'none' && (
           <Button loading={busy === 'request'} onClick={() => run('request')}>
-            Ask to join Posse
+            Ask to be Pals
           </Button>
         )}
         {rel.posse === 'sent' && (
@@ -83,7 +83,7 @@ export function RelationshipBar({
         )}
         {rel.posse === 'received' && (
           <>
-            <span className="text-body text-text-secondary">@{handle} asked to join your Posse.</span>
+            <span className="text-body text-text-secondary">@{handle} wants to be your Pal.</span>
             <Button loading={busy === 'accept'} onClick={() => run('accept')}>
               Accept
             </Button>
@@ -94,15 +94,15 @@ export function RelationshipBar({
         )}
         {rel.posse === 'member' && (
           <>
-            <Badge tone="success">In your Posse</Badge>
+            <Badge tone="success">Pals</Badge>
             <Link href={`/whispers/${handle}`} className={buttonClasses()}>
               Whisper
             </Link>
             <Chip selected={rel.closeByMe} onSelect={() => run(rel.closeByMe ? 'unclose' : 'close')}>
-              Close Posse
+              Close Pal
             </Chip>
             <Button variant="ghost" size="sm" onClick={() => setConfirm('leave')}>
-              Leave Posse
+              Stop being Pals
             </Button>
           </>
         )}
@@ -134,7 +134,7 @@ export function RelationshipBar({
         />
       </div>
       <p className="text-metadata text-text-muted">
-        Only you can see Scouting, Close Posse, Mute, Restrict and Block. {displayName} is never told about
+        Only you can see Scouting, Close Pal, Mute, Restrict and Block. {displayName} is never told about
         them.
       </p>
 
@@ -142,7 +142,7 @@ export function RelationshipBar({
         open={confirm === 'block'}
         destructive
         title={`Block @${handle}?`}
-        description="You will both disappear from each other. Any Posse, requests and scouting between you end. They are not told."
+        description="You will both disappear from each other. If you are Pals, that ends, along with any requests and scouting between you. They are not told."
         confirmLabel="Block"
         loading={busy === 'block'}
         onCancel={() => setConfirm(undefined)}
@@ -160,9 +160,9 @@ export function RelationshipBar({
       />
       <ConfirmationDialog
         open={confirm === 'leave'}
-        title="Leave this Posse?"
-        description={`You and @${handle} will no longer be in each other's Posse. They are not told.`}
-        confirmLabel="Leave Posse"
+        title="Stop being Pals?"
+        description={`You and @${handle} will no longer be Pals. They are not told.`}
+        confirmLabel="Stop being Pals"
         loading={busy === 'leave'}
         onCancel={() => setConfirm(undefined)}
         onConfirm={() =>

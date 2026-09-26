@@ -55,20 +55,20 @@ test.describe('Tracks in a real browser (production build, real CSP)', () => {
 
     // Lists and headers link to Ranches; merely rendering them must never count as a visit.
     await bystander.page.goto('/home');
-    await bystander.page.goto('/posse');
+    await bystander.page.goto('/pals');
     await bystander.page.goto('/whispers');
     await a.page.waitForTimeout(800);
     expect((await tracksOf(a)).hidden).toEqual({ today: 0, yesterday: 0, 'this-week': 0 });
 
     // Real visits: only opening the Ranch counts.
-    await friend.page.goto(`/ranch/${a.handle}`);
-    await stranger.page.goto(`/ranch/${a.handle}`);
+    await friend.page.goto(`/porch/${a.handle}`);
+    await stranger.page.goto(`/porch/${a.handle}`);
     await expect.poll(async () => (await tracksOf(a)).hidden.today).toBe(1);
 
     await a.page.goto('/home');
     await a.page.getByRole('navigation', { name: 'Primary' }).getByRole('link', { name: 'Tracks' }).click();
     await expect(a.page.getByRole('heading', { name: 'Tracks', level: 1 })).toBeVisible();
-    await expect(a.page.getByRole('heading', { name: 'Your Posse dropped by' })).toBeVisible();
+    await expect(a.page.getByRole('heading', { name: 'Your Pals dropped by' })).toBeVisible();
     const named = a.page.getByRole('list').filter({ hasText: friend.handle });
     await expect(named).toContainText('Today');
     await expect(a.page.getByText('Hidden track')).toBeVisible();
@@ -82,7 +82,7 @@ test.describe('Tracks in a real browser (production build, real CSP)', () => {
     await bystander.page.getByRole('switch', { name: /^Shadow Walk/ }).click();
     await expect(bystander.page.getByRole('status').filter({ hasText: 'Shadow Walk is on' })).toBeVisible();
     await expect(bystander.page.getByRole('heading', { name: 'Your Tracks are frozen' })).toBeVisible();
-    await bystander.page.goto(`/ranch/${a.handle}`);
+    await bystander.page.goto(`/porch/${a.handle}`);
     await a.page.waitForTimeout(1200);
     expect((await tracksOf(a)).hidden.today).toBe(1); // still just the stranger
 
@@ -90,14 +90,14 @@ test.describe('Tracks in a real browser (production build, real CSP)', () => {
     await bystander.page.goto('/tracks');
     await bystander.page.getByRole('switch', { name: /^Shadow Walk/ }).click();
     await expect(bystander.page.getByRole('status').filter({ hasText: 'Shadow Walk is off' })).toBeVisible();
-    await bystander.page.goto(`/ranch/${a.handle}`);
+    await bystander.page.goto(`/porch/${a.handle}`);
     await expect.poll(async () => (await tracksOf(a)).hidden.today).toBe(2);
 
     // The owner on Shadow Walk sees a frozen page, not the list.
     await api(a, '/api/me/ranch', { shadowWalk: true }, 'PATCH');
     await a.page.reload();
     await expect(a.page.getByRole('heading', { name: 'Your Tracks are frozen' })).toBeVisible();
-    await expect(a.page.getByText('Your Posse dropped by')).toHaveCount(0);
+    await expect(a.page.getByText('Your Pals dropped by')).toHaveCount(0);
 
     expect(problems).toEqual([]);
     await Promise.all([a.ctx.close(), friend.ctx.close(), stranger.ctx.close(), bystander.ctx.close()]);
@@ -108,8 +108,8 @@ test.describe('Tracks in a real browser (production build, real CSP)', () => {
     const b = await person(browser, 'trf');
     const c = await person(browser, 'trg');
     await api(a, '/api/me/ranch', { ranchVisibility: 'everyone' }, 'PATCH');
-    await b.page.goto(`/ranch/${a.handle}`);
-    await c.page.goto(`/ranch/${a.handle}`);
+    await b.page.goto(`/porch/${a.handle}`);
+    await c.page.goto(`/porch/${a.handle}`);
     await expect.poll(async () => (await tracksOf(a)).hidden.today).toBe(2);
     await api(a, `/api/relationships/${b.handle}`, { action: 'block' });
     await api(a, `/api/relationships/${c.handle}`, { action: 'mute' });
@@ -126,8 +126,8 @@ test.describe('Tracks: accessibility and layout in a real browser', () => {
     const c = await person(browser, `tc${Date.now().toString(36).slice(-4)}`, opts);
     await makePosse(b, a);
     await api(a, '/api/me/ranch', { ranchVisibility: 'everyone' }, 'PATCH');
-    await b.page.goto(`/ranch/${a.handle}`);
-    await c.page.goto(`/ranch/${a.handle}`);
+    await b.page.goto(`/porch/${a.handle}`);
+    await c.page.goto(`/porch/${a.handle}`);
     await expect.poll(async () => (await tracksOf(a)).people.length).toBe(1);
     await expect.poll(async () => (await tracksOf(a)).hidden.today).toBe(1);
     return { a, b, c };

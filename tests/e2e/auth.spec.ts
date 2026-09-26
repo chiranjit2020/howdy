@@ -331,7 +331,7 @@ test.describe('signed-out pages: accessibility and layout in a real browser', ()
         viewport: { width, height: 700 },
       });
       const page = await ctx.newPage();
-      await page.goto(`/ranch/${a.handle}`);
+      await page.goto(`/porch/${a.handle}`);
       const bar = page.getByRole('banner');
       const pills = [
         bar.getByRole('link', { name: /Step Inside/ }),

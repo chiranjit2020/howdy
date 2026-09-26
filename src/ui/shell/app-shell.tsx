@@ -6,6 +6,7 @@ import { cn } from '../cn';
 import { BellIcon } from '../icons';
 import { HowdyLogo } from '../logo';
 import { Avatar } from '../primitives/avatar';
+import { BirdVisitor } from './bird-visitor';
 import { ShellBottomNav, ShellSidebarNav, type ShellNavItem } from './nav';
 
 // The signed-out top bar's two ways in: equal widths, never wrapping, sized to fit beside the logo on a 320 px phone.
@@ -53,12 +54,12 @@ export function AppShell({
   const items: ShellNavItem[] = me
     ? [
         { key: 'home', href: '/home', label: 'Home' },
-        { key: 'ranch', href: `/ranch/${me.handle}`, label: 'My Ranch' },
-        { key: 'posse', href: '/posse', label: 'Posse' },
+        { key: 'ranch', href: `/porch/${me.handle}`, label: 'My Porch' },
+        { key: 'posse', href: '/pals', label: 'Pals' },
         { key: 'tracks', href: '/tracks', label: 'Tracks' },
         { key: 'whispers', href: '/whispers', label: 'Whispers', badge: unreadWhispers },
         { key: 'chimes', href: '/chimes', label: 'Chimes', badge: unread },
-        // Phones reach the Workshop from "Tend the Ranch" on their own Ranch; the tab bar only has room for six.
+        // Phones reach the Workshop from "Tend your Porch" on their own Porch; the tab bar only has room for six.
         { key: 'workshop', href: '/workshop', label: 'Workshop', sidebarOnly: true },
         {
           key: 'town-halls',
@@ -82,8 +83,13 @@ export function AppShell({
           <HowdyLogo size={me || logoOnly ? 'xs' : 'bar'} href={me ? '/home' : '/gate'} />
           {logoOnly ? null : me ? (
             <div className="flex items-center gap-3">
-              {/* Decorative: a little bird that hops beside the bell. */}
-              <span aria-hidden="true" className="pointer-events-none select-none">
+              {/* Decorative: a little bird that hops beside the bell, and now and then flies off to visit a card
+                  (BirdVisitor); its spot stays empty until it is back. */}
+              <span
+                aria-hidden="true"
+                data-howdy-bird
+                className="pointer-events-none transition-opacity duration-500 select-none [:root[data-bird-away]_&]:opacity-0 [:root[data-bird-away]_&]:duration-0"
+              >
                 <Art name="bird" size="free" className="w-9 origin-bottom animate-bird-hop" />
               </span>
               <Link
@@ -103,8 +109,8 @@ export function AppShell({
               </Link>
               {/* A real 44 px box (an inline link around an image is shorter than its picture, and too small to tap). */}
               <Link
-                href={`/ranch/${me.handle}`}
-                aria-label="Your Ranch"
+                href={`/porch/${me.handle}`}
+                aria-label="Your Porch"
                 className="inline-flex size-11 rounded-pill"
               >
                 <Avatar name={me.displayName} src={me.portraitUrl} tint={me.portraitTint} size="md" />
@@ -144,6 +150,7 @@ export function AppShell({
         </div>
       </div>
       {me && <ShellBottomNav items={items} />}
+      {me && <BirdVisitor />}
     </div>
   );
 }

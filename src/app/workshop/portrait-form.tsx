@@ -129,7 +129,7 @@ export function PortraitForm({
       </div>
       <p className="text-metadata text-text-muted">
         JPEG, PNG or WebP, up to {PORTRAIT_MAX_BYTES / (1024 * 1024)} MB. It is cropped to a square. Only
-        people who can open your Ranch can see it, and location details in the photo are removed.
+        people who can visit your Porch can see it, and location details in the photo are removed.
       </p>
     </ClayCard>
   );

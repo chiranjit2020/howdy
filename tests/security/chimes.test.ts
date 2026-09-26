@@ -42,18 +42,18 @@ describe('Posse Chimes', () => {
     const a = await person('alice');
     const b = await person('bob');
     await doAct(b.handle, 'request', as(a));
-    expect(await texts(as(b))).toEqual([`${a.handle} asked to join your Posse.`]);
+    expect(await texts(as(b))).toEqual([`${a.handle} wants to be your Pal.`]);
     expect((await chimesOf(as(b))).data.chimes![0]).toMatchObject({
       type: 'posse_requested',
-      href: '/posse',
+      href: '/pals',
       unread: true,
     });
     expect(await bell(as(b))).toBe(1);
     expect(await texts(as(a))).toEqual([]);
 
     await doAct(a.handle, 'accept', as(b));
-    expect(await texts(as(a))).toEqual([`${b.handle} said yes. You are in each other's Posse.`]);
-    expect((await chimesOf(as(a))).data.chimes![0]!.href).toBe(`/ranch/${b.handle}`);
+    expect(await texts(as(a))).toEqual([`${b.handle} said yes. You are Pals now.`]);
+    expect((await chimesOf(as(a))).data.chimes![0]!.href).toBe(`/porch/${b.handle}`);
     expect(await bell(as(b))).toBe(1); // accepting rings nothing for the accepter
   });
 
@@ -122,7 +122,7 @@ describe('Fence Chimes', () => {
     expect((await chimesOf(as(owner))).data.chimes![0]).toMatchObject({
       type: 'card_created',
       text: `${friend.handle} nailed a card to your Fence.`,
-      href: `/ranch/${owner.handle}`,
+      href: `/porch/${owner.handle}`,
     });
     expect(await bell(as(friend))).toBe(0);
   });

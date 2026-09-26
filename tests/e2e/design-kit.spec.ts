@@ -79,7 +79,7 @@ test.describe('design kit (production build, real CSP)', () => {
     await page.goto(KIT);
     const trigger = page.getByRole('button', { name: 'Modal', exact: true });
     await trigger.click();
-    const dialog = page.getByRole('dialog', { name: 'Tend the Ranch' });
+    const dialog = page.getByRole('dialog', { name: 'Tend your Porch' });
     await expect(dialog).toBeVisible();
     await expect(dialog.locator(':focus')).toHaveCount(1);
     await page.keyboard.press('Escape');

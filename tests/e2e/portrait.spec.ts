@@ -68,12 +68,12 @@ test.describe('Portrait (production build, real CSP, local file storage)', () =>
     });
 
     // On the Ranch: in the top bar and in the header.
-    await a.page.goto(`/ranch/${a.handle}`);
+    await a.page.goto(`/porch/${a.handle}`);
     await expect.poll(async () => (await portraits(a.page)).count).toBe(2);
     await expect.poll(async () => (await portraits(a.page)).decoded, { timeout: 15_000 }).toBe(true);
 
     // Another member who may open the Ranch sees it; a signed-out visitor gets nothing.
-    await b.page.goto(`/ranch/${a.handle}`);
+    await b.page.goto(`/porch/${a.handle}`);
     await expect.poll(async () => (await portraits(b.page)).decoded).toBe(true);
     const anon = await newContext(browser);
     expect((await anon.request.get(src!)).status()).toBe(404);
@@ -81,7 +81,7 @@ test.describe('Portrait (production build, real CSP, local file storage)', () =>
 
     // Hide the Ranch from non-Posse members: the photo goes with it, at the very next request.
     await a.page.goto('/workshop');
-    await a.page.getByLabel('Who can open your Ranch?').selectOption('posse');
+    await a.page.getByLabel('Who can visit your Porch?').selectOption('posse');
     await a.page.getByRole('button', { name: 'Save Boundary Lines' }).click();
     await expect(a.page.getByRole('status').filter({ hasText: 'Boundary Lines updated' })).toBeVisible();
     expect((await b.page.request.get(src!)).status()).toBe(404);

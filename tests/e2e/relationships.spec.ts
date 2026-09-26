@@ -24,13 +24,13 @@ type Person = Awaited<ReturnType<typeof person>>;
 
 /** `asker` asks `asked` to join their Posse and `asked` accepts — all through the UI. */
 async function makePosse(asker: Person, asked: Person) {
-  await asker.page.goto(`/ranch/${asked.handle}`);
-  await asker.page.getByRole('button', { name: 'Ask to join Posse' }).click();
+  await asker.page.goto(`/porch/${asked.handle}`);
+  await asker.page.getByRole('button', { name: 'Ask to be Pals' }).click();
   // The relationship bar says so at once; after the page refreshes the Ranch header's badge says it too.
   await expect(asker.page.getByText('Requested', { exact: true }).first()).toBeVisible();
-  await asked.page.goto('/posse');
+  await asked.page.goto('/pals');
   await asked.page.getByRole('button', { name: `Accept ${asker.handle}` }).click();
-  await expect(asked.page.getByRole('heading', { name: /^Posse \(1\)/ })).toBeVisible();
+  await expect(asked.page.getByRole('heading', { name: /^Pals \(1\)/ })).toBeVisible();
 }
 
 const openMore = async (page: Page) => {
@@ -46,49 +46,49 @@ test.describe('Posse, Block and Flag trouble (production build, real CSP)', () =
 
     // Alice makes her Ranch posse-only. Bob (a stranger for now) cannot see it.
     await a.page.goto('/workshop');
-    await a.page.getByLabel('Who can open your Ranch?').selectOption('posse');
+    await a.page.getByLabel('Who can visit your Porch?').selectOption('posse');
     await a.page.getByLabel('Who can read your Signal?').selectOption('posse');
     await a.page.getByRole('button', { name: 'Save Boundary Lines' }).click();
     await expect(a.page.getByRole('status').filter({ hasText: 'Boundary Lines updated' })).toBeVisible();
-    const before = await b.page.goto(`/ranch/${a.handle}`);
+    const before = await b.page.goto(`/porch/${a.handle}`);
     expect(before?.status()).toBe(404);
 
     // The Ranch is hidden, so Bob has no button there; he asks by call sign on his Posse page. The answer never says
-    // whether the call sign exists. Alice then sees the request on Home and on /posse.
-    await b.page.goto('/posse');
+    // whether the call sign exists. Alice then sees the request on Home and on /pals.
+    await b.page.goto('/pals');
     await b.page.getByLabel('Their call sign').fill(`@${a.handle}`);
-    await b.page.getByRole('button', { name: 'Ask to join Posse' }).click();
+    await b.page.getByRole('button', { name: 'Ask to be Pals' }).click();
     await expect(b.page.getByText(`If @${a.handle} is out there`)).toBeVisible();
     await b.page.getByLabel('Their call sign').fill('nobody_home_zzz');
-    await b.page.getByRole('button', { name: 'Ask to join Posse' }).click();
+    await b.page.getByRole('button', { name: 'Ask to be Pals' }).click();
     await expect(b.page.getByText('If @nobody_home_zzz is out there')).toBeVisible(); // identical for a call sign that does not exist
     await a.page.goto('/home');
-    await expect(a.page.getByRole('main').getByRole('link', { name: /Posse.*1 new/ })).toBeVisible();
-    await a.page.getByRole('main').getByRole('link', { name: /Posse/ }).click();
+    await expect(a.page.getByRole('main').getByRole('link', { name: /Pals.*1 new/ })).toBeVisible();
+    await a.page.getByRole('main').getByRole('link', { name: /Pals/ }).click();
     await expect(a.page.getByRole('heading', { name: 'Requests for you (1)' })).toBeVisible();
-    await expect(a.page.getByText('asked to join your Posse')).toBeVisible();
-    expect((await b.page.goto(`/ranch/${a.handle}`))?.status()).toBe(404); // still hidden while pending
+    await expect(a.page.getByText('wants to be your Pal')).toBeVisible();
+    expect((await b.page.goto(`/porch/${a.handle}`))?.status()).toBe(404); // still hidden while pending
 
     await a.page.getByRole('button', { name: `Accept ${b.handle}` }).click();
-    await expect(a.page.getByRole('heading', { name: /^Posse \(1\)/ })).toBeVisible();
+    await expect(a.page.getByRole('heading', { name: /^Pals \(1\)/ })).toBeVisible();
 
     // Now Bob is in the Posse: the Ranch opens for him, with the relationship shown.
-    const after = await b.page.goto(`/ranch/${a.handle}`);
+    const after = await b.page.goto(`/porch/${a.handle}`);
     expect(after?.status()).toBe(200);
     await expect(b.page.getByRole('heading', { level: 1, name: a.handle })).toBeVisible();
-    await expect(b.page.getByText('In your Posse')).toBeVisible();
+    await expect(b.page.getByText('Pals', { exact: true })).toBeVisible();
 
     // A stranger (Carol) still gets the ordinary 404.
-    expect((await c.page.goto(`/ranch/${a.handle}`))?.status()).toBe(404);
+    expect((await c.page.goto(`/porch/${a.handle}`))?.status()).toBe(404);
     await expect(c.page.getByRole('heading', { name: 'Nothing out here' })).toBeVisible();
 
     // Bob marks Alice close (private) and then leaves the Posse; the Ranch closes to him again.
-    await b.page.getByRole('button', { name: 'Close Posse' }).click();
-    await expect(b.page.getByRole('button', { name: 'Close Posse' })).toHaveAttribute('aria-pressed', 'true');
-    await b.page.getByRole('button', { name: 'Leave Posse' }).click();
+    await b.page.getByRole('button', { name: 'Close Pal' }).click();
+    await expect(b.page.getByRole('button', { name: 'Close Pal' })).toHaveAttribute('aria-pressed', 'true');
+    await b.page.getByRole('button', { name: 'Stop being Pals' }).click();
     await b.page
-      .getByRole('alertdialog', { name: 'Leave this Posse?' })
-      .getByRole('button', { name: 'Leave Posse' })
+      .getByRole('alertdialog', { name: 'Stop being Pals?' })
+      .getByRole('button', { name: 'Stop being Pals' })
       .click();
     await expect(b.page.getByRole('heading', { name: 'Nothing out here' })).toBeVisible();
 
@@ -102,7 +102,7 @@ test.describe('Posse, Block and Flag trouble (production build, real CSP)', () =
     await makePosse(b, a); // Bob asked Alice, Alice accepted
 
     // Alice blocks Bob from his Ranch. It asks first, and says Bob is not told.
-    await a.page.goto(`/ranch/${b.handle}`);
+    await a.page.goto(`/porch/${b.handle}`);
     await openMore(a.page);
     await a.page.getByRole('menuitem', { name: 'Block…' }).click();
     const dialog = a.page.getByRole('alertdialog', { name: `Block @${b.handle}?` });
@@ -112,26 +112,26 @@ test.describe('Posse, Block and Flag trouble (production build, real CSP)', () =
     await expect(a.page).toHaveURL(/\/home$/);
 
     // Bob simply can no longer find Alice — the same "nothing out here" as a Ranch that does not exist.
-    const seen = await b.page.goto(`/ranch/${a.handle}`);
+    const seen = await b.page.goto(`/porch/${a.handle}`);
     expect(seen?.status()).toBe(404);
     const blockedText = await b.page.getByRole('main').innerText();
-    await b.page.goto('/ranch/nobody_home_zzz');
+    await b.page.goto('/porch/nobody_home_zzz');
     expect(await b.page.getByRole('main').innerText()).toBe(blockedText);
-    await b.page.goto('/posse');
+    await b.page.goto('/pals');
     await expect(b.page.getByText(a.handle)).toHaveCount(0);
 
     // Alice's Workshop lists Bob as an Outlaw, with an undo; her Posse is empty.
     await a.page.goto('/workshop');
     await expect(a.page.getByRole('heading', { name: 'Blocked (Outlaws)' })).toBeVisible();
-    await a.page.goto('/posse');
-    await expect(a.page.getByText('No Posse yet')).toBeVisible();
+    await a.page.goto('/pals');
+    await expect(a.page.getByText('No Pals yet')).toBeVisible();
     await a.page.goto('/workshop');
     await a.page.getByRole('button', { name: `Unblock ${b.handle}` }).click();
     await expect(a.page.getByText(/Nobody\. You can block/)).toBeVisible();
 
     // Unblocked: Bob can see Alice again (members-only is the default), but the Posse is gone.
-    expect((await b.page.goto(`/ranch/${a.handle}`))?.status()).toBe(200);
-    await expect(b.page.getByRole('button', { name: 'Ask to join Posse' })).toBeVisible();
+    expect((await b.page.goto(`/porch/${a.handle}`))?.status()).toBe(200);
+    await expect(b.page.getByRole('button', { name: 'Ask to be Pals' })).toBeVisible();
     await Promise.all([a.ctx.close(), b.ctx.close()]);
   });
 
@@ -139,7 +139,7 @@ test.describe('Posse, Block and Flag trouble (production build, real CSP)', () =
     const a = await person(browser, 'reporter');
     const b = await person(browser, 'reported');
     const send = async () => {
-      await a.page.goto(`/ranch/${b.handle}`);
+      await a.page.goto(`/porch/${b.handle}`);
       await openMore(a.page);
       await a.page.getByRole('menuitem', { name: 'Flag trouble…' }).click();
       const modal = a.page.getByRole('dialog', { name: `Flag trouble with @${b.handle}` });
@@ -159,7 +159,7 @@ test.describe('Posse, Block and Flag trouble (production build, real CSP)', () =
   test('menu and dialogs are keyboard operable', async ({ browser }) => {
     const a = await person(browser, 'kbd');
     const b = await person(browser, 'target');
-    await a.page.goto(`/ranch/${b.handle}`);
+    await a.page.goto(`/porch/${b.handle}`);
     const more = a.page.getByRole('button', { name: /^More/ });
     await more.focus();
     await a.page.keyboard.press('ArrowDown');
@@ -172,15 +172,20 @@ test.describe('Posse, Block and Flag trouble (production build, real CSP)', () =
     await expect(a.page.getByRole('alertdialog', { name: `Block @${b.handle}?` })).toBeVisible();
     await a.page.keyboard.press('Escape');
     await expect(a.page.getByRole('alertdialog')).toBeHidden();
-    await expect(a.page).toHaveURL(new RegExp(`/ranch/${b.handle}$`)); // cancelling changed nothing
+    await expect(a.page).toHaveURL(new RegExp(`/porch/${b.handle}$`)); // cancelling changed nothing
     await Promise.all([a.ctx.close(), b.ctx.close()]);
   });
 
   test('the Posse pages and APIs refuse signed-out visitors', async ({ browser }) => {
     const ctx = await newContext(browser);
     const page = await ctx.newPage();
+    await page.goto('/pals');
+    await expect(page).toHaveURL(/\/step-inside$/);
+    // The old addresses still lead to the new ones: /posse to /pals (so, signed out, to Step Inside), /ranch to /porch.
     await page.goto('/posse');
     await expect(page).toHaveURL(/\/step-inside$/);
+    await page.goto('/ranch/nobody_home_zzz');
+    await expect(page).toHaveURL(/\/porch\/nobody_home_zzz$/);
     expect((await ctx.request.get('/api/me/relationships')).status()).toBe(401);
     expect(
       (
@@ -211,7 +216,7 @@ test.describe('Posse pages: accessibility and layout in a real browser', () => {
         headers: { origin: 'http://localhost:3300' },
       });
       const source = axeSource();
-      for (const path of ['/posse', `/ranch/${b.handle}`, '/workshop', '/home']) {
+      for (const path of ['/pals', `/porch/${b.handle}`, '/workshop', '/home']) {
         await a.page.goto(path);
         await a.page.evaluate(() => document.fonts.ready);
         await a.page.addScriptTag({ content: source });
@@ -243,7 +248,7 @@ test.describe('Posse pages: accessibility and layout in a real browser', () => {
     });
     const b = await person(browser, 'smallb');
     await makePosse(b, a);
-    for (const path of ['/posse', `/ranch/${b.handle}`, '/workshop']) {
+    for (const path of ['/pals', `/porch/${b.handle}`, '/workshop']) {
       await a.page.goto(path);
       expect(await horizontalOverflow(a.page), `${path} overflow`).toBeLessThanOrEqual(0);
       const small = await a.page.evaluate(() => {

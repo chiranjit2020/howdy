@@ -53,7 +53,7 @@ test.describe('Whispers in a real browser (production build, real CSP, real WebS
     const problems = await watchProblems(a.page);
 
     // Alice opens Bob's Ranch and starts a Whisper from the button there.
-    await a.page.goto(`/ranch/${b.handle}`);
+    await a.page.goto(`/porch/${b.handle}`);
     await a.page.getByRole('link', { name: 'Whisper', exact: true }).click();
     await expect(a.page).toHaveURL(new RegExp(`/whispers/${b.handle}$`));
     await expect(status(a.page)).toHaveText('Live'); // the CSP allowed exactly this socket, and the session cookie authenticated it
@@ -201,7 +201,7 @@ test.describe('Whispers: accessibility and layout in a real browser', () => {
     test(`axe finds no violations, including real colour contrast (${scheme})`, async ({ browser }) => {
       const { a, b } = await seed(browser, { colorScheme: scheme, bypassCSP: true, reducedMotion: 'reduce' });
       const source = axeSource();
-      for (const path of ['/whispers', `/whispers/${b.handle}`, '/workshop', `/ranch/${b.handle}`]) {
+      for (const path of ['/whispers', `/whispers/${b.handle}`, '/workshop', `/porch/${b.handle}`]) {
         await a.page.goto(path);
         await a.page.evaluate(() => document.fonts.ready);
         await a.page.addScriptTag({ content: source });

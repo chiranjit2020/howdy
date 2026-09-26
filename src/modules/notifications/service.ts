@@ -277,16 +277,16 @@ async function visible(userId: string, rows: Row[]): Promise<Shown[]> {
 
 function describe(userId: string, s: Shown, myHandle: string): { text: string; href: string } {
   const name = s.actor.displayName;
-  const fence = s.ownerHandle ? `/ranch/${s.ownerHandle}` : `/ranch/${myHandle}`;
+  const fence = s.ownerHandle ? `/porch/${s.ownerHandle}` : `/porch/${myHandle}`;
   switch (s.row.type as ChimeType) {
     case 'posse_requested':
-      return { text: `${name} asked to join your Posse.`, href: '/posse' };
+      return { text: `${name} wants to be your Pal.`, href: '/pals' };
     case 'posse_accepted':
-      return { text: `${name} said yes. You are in each other's Posse.`, href: `/ranch/${s.actor.handle}` };
+      return { text: `${name} said yes. You are Pals now.`, href: `/porch/${s.actor.handle}` };
     case 'card_created':
       return { text: `${name} nailed a card to your Fence.`, href: fence };
     case 'card_waiting':
-      return { text: `A card from ${name} is waiting for your approval.`, href: `/ranch/${myHandle}` };
+      return { text: `A card from ${name} is waiting for your approval.`, href: `/porch/${myHandle}` };
     case 'card_approved':
       return { text: `${name} approved your card. It is on the Fence now.`, href: fence };
     case 'reply_created':
@@ -298,21 +298,21 @@ function describe(userId: string, s: Shown, myHandle: string): { text: string; h
         href: fence,
       };
     case 'reply_waiting':
-      return { text: `A reply from ${name} is waiting for your approval.`, href: `/ranch/${myHandle}` };
+      return { text: `A reply from ${name} is waiting for your approval.`, href: `/porch/${myHandle}` };
     case 'yo_given':
       return { text: `${name} gave your card a Yo.`, href: fence };
     case 'whisper_received':
       return { text: `${name} whispered to you.`, href: `/whispers/${s.actor.handle}` };
     case 'tribute_waiting':
-      return { text: `A Tribute from ${name} is waiting for your approval.`, href: `/ranch/${myHandle}` };
+      return { text: `A Tribute from ${name} is waiting for your approval.`, href: `/porch/${myHandle}` };
     case 'tribute_approved':
       // The actor here is the owner who approved it — always the right Ranch to link to.
       return {
-        text: `${name} approved your Tribute. It is on their Ranch now.`,
-        href: `/ranch/${s.actor.handle}`,
+        text: `${name} approved your Tribute. It is on their Porch now.`,
+        href: `/porch/${s.actor.handle}`,
       };
     case 'mark_given':
-      return { text: `${name} gave you a Mark.`, href: `/ranch/${myHandle}` };
+      return { text: `${name} gave you a Mark.`, href: `/porch/${myHandle}` };
     case 'townhall_invited':
       return { text: `${name} invited you to a Town Hall.`, href: '/town-halls' };
     case 'townhall_invite_accepted':

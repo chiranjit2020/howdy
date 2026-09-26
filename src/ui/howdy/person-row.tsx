@@ -39,7 +39,7 @@ export function PersonRow({
       <div className="min-w-0 flex-[1_1_12rem]">
         {linkToRanch ? (
           // The whole name block is the link: a large target that reads as "Sneha Roy @sneha".
-          <Link href={`/ranch/${handle}`} className="block min-h-11 no-underline hover:underline">
+          <Link href={`/porch/${handle}`} className="block min-h-11 no-underline hover:underline">
             {text}
           </Link>
         ) : (

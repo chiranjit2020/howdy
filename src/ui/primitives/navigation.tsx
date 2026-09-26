@@ -1,6 +1,11 @@
+'use client';
+
 import Link from 'next/link';
-import type { ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { cn } from '../cn';
+
+/** Which tab the phone tab bar last highlighted, kept across tab bars (see BottomNavigation). */
+let lastIndex: number | undefined;
 
 export interface NavItem {
   href: string;
@@ -60,20 +65,38 @@ export function Navigation({
  */
 export function BottomNavigation({ items, label }: { items: NavItem[]; label: string }) {
   const index = items.findIndex((it) => it.current);
+  const pillRef = useRef<HTMLLIElement>(null);
+  // A page with its own layout (a Ranch) brings a brand-new tab bar, so the pill starts where the last bar left it and
+  // glides from there; otherwise every trip to or from a Ranch would just jump.
+  // The render only places the pill at that starting spot; from then on this effect moves it.
+  const [start] = useState(() => lastIndex ?? index);
+  useEffect(() => {
+    lastIndex = index;
+    const pill = pillRef.current;
+    if (!pill) return;
+    // Two frames: the first paints the old spot, the second starts the glide from it.
+    let frame = requestAnimationFrame(() => {
+      frame = requestAnimationFrame(() => {
+        pill.style.translate = `${Math.max(index, 0) * 100}% 0`;
+      });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [index]);
   return (
     <nav
       aria-label={label}
-      className="fixed inset-x-2 bottom-[calc(0.5rem+env(safe-area-inset-bottom))] z-40 mx-auto max-w-xl rounded-[1.75rem] border border-border/70 bg-surface/90 shadow-float backdrop-blur-md md:hidden"
+      className="fixed inset-x-2 bottom-[calc(0.5rem+env(safe-area-inset-bottom))] z-40 mx-auto max-w-xl rounded-2xl border border-border/70 bg-surface/90 shadow-float backdrop-blur-md md:hidden"
     >
       <ul className="relative flex">
         {/* The gliding pill: one element that slides between tabs, rather than one per tab switching on and off. */}
         <li
+          ref={pillRef}
           aria-hidden="true"
           className={cn(
             'pointer-events-none absolute inset-y-0 left-0 flex justify-center pt-2 transition-[translate,opacity] duration-500 ease-spring',
             index < 0 && 'opacity-0',
           )}
-          style={{ width: `${100 / items.length}%`, translate: `${Math.max(index, 0) * 100}% 0` }}
+          style={{ width: `${100 / items.length}%`, translate: `${Math.max(start, 0) * 100}% 0` }}
         >
           <span className="h-8 w-12 rounded-pill bg-accent shadow-clay-sm" />
         </li>
@@ -84,7 +107,7 @@ export function BottomNavigation({ items, label }: { items: NavItem[]; label: st
               href={it.href}
               aria-current={it.current ? 'page' : undefined}
               className={cn(
-                'group flex min-h-16 flex-col items-center gap-0.5 pt-2 pb-1.5 text-[0.6875rem] leading-tight no-underline transition-colors',
+                'group flex min-h-16 flex-col items-center gap-0.5 pt-2 pb-1.5 text-tab no-underline transition-colors',
                 it.current ? 'font-bold text-text-primary' : 'font-semibold text-text-secondary',
               )}
             >

@@ -72,7 +72,7 @@ export function PeopleControls({
         {error && <FormMessage tone="error">{error}</FormMessage>}
         {none ? (
           <p className="text-caption text-text-secondary">
-            Nobody. You can block, mute or restrict someone from their Ranch. They are never told.
+            Nobody. You can block, mute or restrict someone from their Porch. They are never told.
           </p>
         ) : (
           <>

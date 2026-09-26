@@ -45,21 +45,21 @@ export function PosseCard({ members }: { members: PersonEntry[] }) {
             >
               <UsersIcon />
             </span>
-            Posse
+            Pals
           </h2>
           <GlossaryHint term="posse" />
         </div>
-        <Link href="/posse" className="inline-flex min-h-11 items-center text-caption text-auth-link">
+        <Link href="/pals" className="inline-flex min-h-11 items-center text-caption text-auth-link">
           View all
         </Link>
       </div>
       {shown.length > 0 ? (
         <>
-          <ul className="flex items-center" aria-label="Some of your Posse">
+          <ul className="flex items-center" aria-label="Some of your Pals">
             {shown.map((m) => (
               <li key={m.handle} className="-ml-2 first:ml-0">
                 <Link
-                  href={`/ranch/${m.handle}`}
+                  href={`/porch/${m.handle}`}
                   aria-label={`${m.displayName}, @${m.handle}`}
                   className="rounded-pill"
                 >
@@ -75,11 +75,11 @@ export function PosseCard({ members }: { members: PersonEntry[] }) {
             )}
           </ul>
           <p className="text-caption text-text-secondary">
-            {members.length} {members.length === 1 ? 'person' : 'people'} in your Posse
+            {members.length} {members.length === 1 ? 'Pal' : 'Pals'}
           </p>
         </>
       ) : (
-        <p className="text-caption text-text-secondary">Nobody yet. Ask someone from the Posse page.</p>
+        <p className="text-caption text-text-secondary">Nobody yet. Ask someone from the Pals page.</p>
       )}
     </ClayCard>
   );

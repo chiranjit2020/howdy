@@ -26,7 +26,7 @@ const TINT_LABEL: Record<PortraitTint, string> = {
 const VISIBILITY_LABEL: Record<Visibility, string> = {
   everyone: 'Anyone, even signed-out visitors',
   members: 'Howdy members only',
-  posse: 'My Posse only',
+  posse: 'My Pals only',
 };
 
 /** Tend the Ranch: display name and Portrait. */
@@ -61,7 +61,7 @@ export function TendForm({
     setBusy(false);
     if (res.ok) {
       setDisplayName(parsed.data);
-      toast({ title: 'Ranch tidied up and looking sharp.', tone: 'success' });
+      toast({ title: 'Porch swept and looking sharp.', tone: 'success' });
       router.refresh();
     } else if (res.error?.fields?.displayName) setNameError(res.error.fields.displayName);
     else setFormError(res.error?.message);
@@ -70,7 +70,7 @@ export function TendForm({
   return (
     <ClayCard>
       <form onSubmit={save} noValidate className="flex flex-col gap-5">
-        <h2 className="text-title text-text-primary">Tend the Ranch</h2>
+        <h2 className="text-title text-text-primary">Tend your Porch</h2>
         {formError && <FormMessage tone="error">{formError}</FormMessage>}
         <Input
           label="Display name"
@@ -79,7 +79,7 @@ export function TendForm({
           onChange={(e) => setDisplayName(e.target.value)}
           maxLength={60}
           error={nameError}
-          hint={`Shown on your Ranch. Your call sign @${handle} stays the same.`}
+          hint={`Shown on your Porch. Your call sign @${handle} stays the same.`}
           autoComplete="name"
         />
         <fieldset className="flex flex-col">
@@ -142,10 +142,10 @@ export function BoundaryForm({
         <h2 className="text-title text-text-primary">Boundary Lines</h2>
         {formError && <FormMessage tone="error">{formError}</FormMessage>}
         <Select
-          label="Who can open your Ranch?"
+          label="Who can visit your Porch?"
           value={ranch}
           onChange={(e) => setRanch(e.target.value as Visibility)}
-          hint="New Ranches start with members only."
+          hint="New Porches start with members only."
         >
           {VISIBILITIES.map((v) => (
             <option key={v} value={v}>
@@ -157,7 +157,7 @@ export function BoundaryForm({
           label="Who can read your Signal?"
           value={signal}
           onChange={(e) => setSignal(e.target.value as Visibility)}
-          hint="Never broader than who can open your Ranch."
+          hint="Never broader than who can visit your Porch."
         >
           {VISIBILITIES.map((v) => (
             <option key={v} value={v}>
@@ -175,7 +175,7 @@ export function BoundaryForm({
 
 const POSTING_LABEL: Record<FencePosting, string> = {
   members: 'Any Howdy member who can read it',
-  posse: 'My Posse only',
+  posse: 'My Pals only',
   nobody: 'Nobody but me',
 };
 
@@ -222,7 +222,7 @@ export function FenceRulesForm({
           label="Who can read your Fence?"
           value={reading}
           onChange={(e) => setReading(e.target.value as Visibility)}
-          hint="Never broader than who can open your Ranch."
+          hint="Never broader than who can visit your Porch."
         >
           {VISIBILITIES.map((v) => (
             <option key={v} value={v}>
@@ -285,8 +285,8 @@ export function ChimePrefsForm({
       </p>
       {error && <FormMessage tone="error">{error}</FormMessage>}
       <Switch
-        label="Posse"
-        hint="Requests to join, and yeses."
+        label="Pals"
+        hint="Requests to be Pals, and yeses."
         checked={prefs.posse}
         onCheckedChange={(v) => set('posse', v)}
       />
@@ -310,7 +310,7 @@ export function ChimePrefsForm({
       />
       <Switch
         label="Whispers"
-        hint="Private messages from your Posse."
+        hint="Private messages from your Pals."
         checked={prefs.whispers}
         onCheckedChange={(v) => set('whispers', v)}
       />

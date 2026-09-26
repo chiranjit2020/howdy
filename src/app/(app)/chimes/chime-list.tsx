@@ -86,7 +86,7 @@ export function ChimeList({ initial }: { initial: Page }) {
         <EmptyState
           icon="🔔"
           title="All quiet on the range"
-          description="When someone asks to join your Posse, nails a card to your Fence, gives you a Yo, leaves a Tribute or a Mark, or invites you to a Town Hall, it rings here."
+          description="When someone asks to be your Pal, nails a card to your Fence, gives you a Yo, leaves a Tribute or a Mark, or invites you to a Town Hall, it rings here."
         />
       </ClayCard>
     );

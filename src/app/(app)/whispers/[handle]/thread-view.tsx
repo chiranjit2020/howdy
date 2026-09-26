@@ -298,7 +298,7 @@ export function ThreadView({
         <div className="min-w-0 flex-1">
           <h1 className="text-title [overflow-wrap:anywhere] text-text-primary">{displayName}</h1>
           <p className="text-caption text-text-secondary">
-            <Link href={`/ranch/${handle}`}>@{handle}</Link>
+            <Link href={`/porch/${handle}`}>@{handle}</Link>
           </p>
         </div>
         <Button variant="ghost" size="sm" onClick={() => setBurning(true)}>

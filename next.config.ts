@@ -26,6 +26,14 @@ const nextConfig: NextConfig = {
   async headers() {
     return [{ source: '/:path*', headers: securityHeaders }];
   },
+  // "Posse" became "Pals" and "Ranch" became "Porch": old links and bookmarks keep working. Temporary (307) so browsers
+  // do not cache them forever.
+  async redirects() {
+    return [
+      { source: '/posse', destination: '/pals', permanent: false },
+      { source: '/ranch/:handle', destination: '/porch/:handle', permanent: false },
+    ];
+  },
 };
 
 export default nextConfig;

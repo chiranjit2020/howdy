@@ -25,7 +25,7 @@ import { VibeMatrixSection } from './vibe-matrix-section';
 import { WaitingQueue } from './waiting-queue';
 
 // Ranches are private by default and never belong in a search index.
-export const metadata = { title: 'Ranch', robots: { index: false, follow: false } };
+export const metadata = { title: 'Porch', robots: { index: false, follow: false } };
 
 function hoursLeft(expiresAt: Date): string {
   const h = Math.max(1, Math.ceil((expiresAt.getTime() - Date.now()) / 3_600_000));
@@ -50,7 +50,7 @@ export default async function RanchPage({ params }: { params: Promise<{ handle: 
               as="h1"
               icon="⏳"
               title="Easy there, partner"
-              description="You have opened a lot of Ranches. Give it a minute and try again."
+              description="You have visited a lot of Porches. Give it a minute and try again."
             />
           </ClayCard>
         </main>
@@ -67,7 +67,7 @@ export default async function RanchPage({ params }: { params: Promise<{ handle: 
       <>
         <main id="main" className="mx-auto max-w-md px-4 py-16">
           <ClayCard className="flex flex-col items-center gap-3 p-8 text-center">
-            <h1 className="text-heading text-text-primary">Step inside to visit this Ranch</h1>
+            <h1 className="text-heading text-text-primary">Step inside to visit this Porch</h1>
             <p className="text-body text-text-secondary">Log in to your Howdy account to look around.</p>
             <Link href="/step-inside" className={buttonClasses({ size: 'lg', fullWidth: true })}>
               Step Inside
@@ -146,7 +146,7 @@ export default async function RanchPage({ params }: { params: Promise<{ handle: 
             actions={
               ranch.isOwner ? (
                 <Link href="/workshop" className={buttonClasses({ variant: 'secondary' })}>
-                  Tend the Ranch
+                  Tend your Porch
                 </Link>
               ) : undefined
             }
@@ -161,7 +161,7 @@ export default async function RanchPage({ params }: { params: Promise<{ handle: 
       )}
 
       <aside
-        aria-label="Signal and Posse"
+        aria-label="Signal and Pals"
         className="flex flex-col gap-6 lg:col-start-2 lg:row-span-3 lg:row-start-1"
       >
         {ranch.signal && (

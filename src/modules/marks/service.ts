@@ -132,7 +132,7 @@ export async function giveMark(raterId: string, handle: string, kind: MarkKind):
   const acc = await access(actor, targetId);
   if (!acc) throw new AppError('NOT_FOUND');
   if (!can(actor, 'mark:give', acc.ranch, { relationship: acc.relationship.relationship }).allow) {
-    throw new AppError('FORBIDDEN', { message: 'Only people in your Posse can Mark you.' });
+    throw new AppError('FORBIDDEN', { message: 'Only your Pals can Mark you.' });
   }
   // One statement, so two racing requests cannot both slip past the cooldown: the second sees the first's row.
   const cutoff = new Date(Date.now() - COOLDOWN_MS);

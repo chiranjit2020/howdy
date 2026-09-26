@@ -38,7 +38,7 @@ export default async function TracksPage() {
               as="h2"
               icon="👣"
               title="No Tracks this week"
-              description="When someone opens your Ranch, they leave a footprint here for a few days."
+              description="When someone stops by your Porch, they leave a footprint here for a few days."
             />
           </ClayCard>
         ) : (
@@ -46,14 +46,14 @@ export default async function TracksPage() {
             {tracks.people.length > 0 && (
               <section aria-labelledby="posse-tracks" className="flex flex-col gap-3">
                 <h2 id="posse-tracks" className="text-title text-text-primary">
-                  Your Posse dropped by
+                  Your Pals dropped by
                 </h2>
                 <ul className="flex flex-col gap-2">
                   {tracks.people.map((p) => (
                     <TrackItem
                       key={p.handle}
                       visitor={{ name: p.displayName, handle: p.handle }}
-                      href={`/ranch/${p.handle}`}
+                      href={`/porch/${p.handle}`}
                       when={p.when}
                     />
                   ))}
@@ -70,7 +70,7 @@ export default async function TracksPage() {
                     <TrackItem
                       key={w}
                       count={tracks.hidden[w]}
-                      hint="People outside your Posse. That is all anyone can know."
+                      hint="People who are not your Pals. That is all anyone can know."
                       when={w}
                     />
                   ))}
@@ -81,9 +81,9 @@ export default async function TracksPage() {
         )}
 
         <p className="text-caption text-text-secondary">
-          Tracks stay for {tracks.days} days and only ever say Today, Yesterday or This week. People in your
-          Posse see when you stop by their Ranch unless you turn on Shadow Walk; everyone else only ever adds
-          to a count.
+          Tracks stay for {tracks.days} days and only ever say Today, Yesterday or This week. Your Pals see
+          when you stop by their Porch unless you turn on Shadow Walk; everyone else only ever adds to a
+          count.
         </p>
       </main>
     </>

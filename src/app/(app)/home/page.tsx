@@ -40,11 +40,11 @@ export default async function HomePage() {
           </div>
           {/* Two columns on a phone, with the Ranch across the top; one wrapping row from sm up. */}
           <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:gap-3">
-            <Link href={`/ranch/${user.handle}`} className={cn(buttonClasses(), 'col-span-2')}>
-              Visit your Ranch
+            <Link href={`/porch/${user.handle}`} className={cn(buttonClasses(), 'col-span-2')}>
+              Visit your Porch
             </Link>
-            <Link href="/posse" className={buttonClasses({ variant: 'secondary' })}>
-              Posse{requests > 0 && <span className="sr-only">, </span>}
+            <Link href="/pals" className={buttonClasses({ variant: 'secondary' })}>
+              Pals{requests > 0 && <span className="sr-only">, </span>}
               {requests > 0 && <Badge tone="accent">{requests} new</Badge>}
             </Link>
             <Link href="/workshop" className={buttonClasses({ variant: 'secondary' })}>
