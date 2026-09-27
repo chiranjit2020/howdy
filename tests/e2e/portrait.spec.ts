@@ -67,9 +67,9 @@ test.describe('Portrait (production build, real CSP, local file storage)', () =>
       height: 512,
     });
 
-    // On the Ranch: in the top bar and in the header.
+    // On the Ranch: in the top bar, in the header, and on the phone tab bar's Porch tab (in the page even where it is hidden).
     await a.page.goto(`/porch/${a.handle}`);
-    await expect.poll(async () => (await portraits(a.page)).count).toBe(2);
+    await expect.poll(async () => (await portraits(a.page)).count).toBe(3);
     await expect.poll(async () => (await portraits(a.page)).decoded, { timeout: 15_000 }).toBe(true);
 
     // Another member who may open the Ranch sees it; a signed-out visitor gets nothing.

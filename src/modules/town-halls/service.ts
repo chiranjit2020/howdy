@@ -265,6 +265,8 @@ export async function mayOpenTownHall(viewerId: string, townHallId: string): Pro
 
 export async function getTownHall(viewerId: string, townHallId: string): Promise<TownHallDetail | null> {
   await enforceRateLimit(`townhalls:read:${viewerId}`, RATE.read);
+  // The page calls this straight from the URL (in parallel with its gate layout): a malformed id is simply not found.
+  if (!townHallIdParamSchema.safeParse(townHallId).success) return null;
   const [row] = await getDb().select().from(townHalls).where(eq(townHalls.id, townHallId)).limit(1);
   if (!row) return null;
   const mine = await myMembership(viewerId, townHallId);

@@ -1,6 +1,6 @@
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { mayViewRanchByHandle } from '@/modules/profiles';
-import { mayOpenTownHall } from '@/modules/town-halls';
+import { getTownHall, mayOpenTownHall } from '@/modules/town-halls';
 import { mayOpenThread } from '@/modules/whispers';
 import { flushBackground } from '@/platform/background';
 import { getPool } from '@/platform/db';
@@ -112,5 +112,7 @@ describe('the Town Hall gate', () => {
     expect(await mayOpenTownHall(await userId(owner.handle), secret)).toBe(true);
     expect(await mayOpenTownHall(out, '00000000-0000-4000-8000-000000000000')).toBe(false);
     expect(await mayOpenTownHall(out, 'not-a-uuid')).toBe(false);
+    // The page itself renders alongside its gate, so its own read must also treat a bad id as missing, not throw.
+    expect(await getTownHall(out, 'not-a-uuid')).toBeNull();
   });
 });
