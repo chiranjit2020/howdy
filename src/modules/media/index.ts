@@ -6,6 +6,7 @@ export {
   completePortrait,
   deleteAllMediaFor,
   getPortraitVersion,
+  getPortraitVersions,
   purgeStaleMedia,
   readPortrait,
   removePortrait,

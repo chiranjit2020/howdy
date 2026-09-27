@@ -1,6 +1,8 @@
+import { getPortraitVersions } from '@/modules/media';
 import { getCards, resolveHandle, type PersonCard } from '@/modules/profiles';
 import type { MyRelationships, PersonRef } from '@/modules/relationships';
 import { AppError } from '@/platform/errors';
+import { portraitUrl } from '@/shared/portrait';
 
 /**
  * Glue between modules that must not depend on each other: `relationships` speaks in user ids, `profiles` turns handles
@@ -19,6 +21,8 @@ export interface PersonEntry {
   handle: string;
   displayName: string;
   portraitTint: PersonCard['portraitTint'];
+  /** Their photo, for Pals only: a Pal may always open the other's Porch, which is the rule the photo route applies. */
+  portraitUrl?: string;
   at: string;
   closeByMe?: boolean;
   /** The Howdy team account (Verified badge). Present only when true. */
@@ -32,10 +36,15 @@ export type RelationshipLists = Record<
   truncated: boolean;
 };
 
-/** Attach names to every list, dropping people whose account is no longer active. */
+/** Attach names (and Pals' photos) to every list, dropping people whose account is no longer active. */
 export async function withCards(rel: MyRelationships): Promise<RelationshipLists> {
   const keys = ['posse', 'incoming', 'outgoing', 'scouting', 'blocked', 'muted', 'restricted'] as const;
-  const cards = await getCards(keys.flatMap((k) => rel[k].map((p) => p.userId)));
+  const palIds = rel.posse.map((p) => p.userId);
+  const [cards, photos] = await Promise.all([
+    getCards(keys.flatMap((k) => rel[k].map((p) => p.userId))),
+    // Best-effort: a problem here just means initials show.
+    getPortraitVersions(palIds).catch(() => new Map<string, string>()),
+  ]);
   const entries = (refs: (PersonRef & { closeByMe?: boolean })[]): PersonEntry[] =>
     refs.flatMap((r) => {
       const c = cards.get(r.userId);
@@ -46,6 +55,8 @@ export async function withCards(rel: MyRelationships): Promise<RelationshipLists
         portraitTint: c.portraitTint,
         at: r.at.toISOString(),
       };
+      const photo = photos.get(r.userId);
+      if (photo) e.portraitUrl = portraitUrl(c.handle, photo);
       if (r.closeByMe !== undefined) e.closeByMe = r.closeByMe;
       if (c.verified) e.verified = true;
       return [e];

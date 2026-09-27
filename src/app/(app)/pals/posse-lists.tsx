@@ -7,7 +7,12 @@ import type { RelationshipAction } from '@/shared/validation/relationships';
 import { apiRequest } from '@/ui/auth/api';
 import { FormMessage } from '@/ui/auth/form-parts';
 import { PersonRow } from '@/ui/howdy';
-import { Button, Chip, ClayCard, ConfirmationDialog, EmptyState } from '@/ui/primitives';
+import { MoreIcon, StarIcon } from '@/ui/icons';
+import { Button, ClayCard, ConfirmationDialog, Dropdown, EmptyState } from '@/ui/primitives';
+
+// A round 44px icon button for the compact Pals row.
+const iconButton =
+  'inline-flex size-11 items-center justify-center rounded-pill text-title text-text-secondary hover:bg-surface aria-pressed:text-text-primary disabled:opacity-60';
 
 /** The signed-in person's Posse, requests and scouting. Each button sends one action; the page then reloads from the server. */
 export function PosseLists({ lists }: { lists: RelationshipLists }) {
@@ -103,23 +108,42 @@ export function PosseLists({ lists }: { lists: RelationshipLists }) {
               <PersonRow
                 key={p.handle}
                 {...p}
+                inlineActions
                 actions={
                   <>
-                    <Chip
-                      selected={Boolean(p.closeByMe)}
-                      onSelect={() => run(p.handle, p.closeByMe ? 'unclose' : 'close')}
+                    <button
+                      type="button"
+                      aria-pressed={Boolean(p.closeByMe)}
                       aria-label={`Close Pal: ${p.displayName}`}
+                      title="Close Pal"
+                      disabled={busy === `${p.handle}:${p.closeByMe ? 'unclose' : 'close'}`}
+                      onClick={() => run(p.handle, p.closeByMe ? 'unclose' : 'close')}
+                      className={iconButton}
                     >
-                      Close
-                    </Chip>
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      onClick={() => setLeaving(p)}
-                      aria-label={`Leave ${p.displayName}`}
-                    >
-                      Leave
-                    </Button>
+                      <StarIcon fill={p.closeByMe ? 'currentColor' : 'none'} />
+                    </button>
+                    <Dropdown
+                      label={`More about ${p.displayName}`}
+                      align="end"
+                      trigger={(t) => (
+                        <button
+                          type="button"
+                          aria-label={`More about ${p.displayName}`}
+                          className={iconButton}
+                          {...t}
+                        >
+                          <MoreIcon />
+                        </button>
+                      )}
+                      items={[
+                        {
+                          id: 'whisper',
+                          label: 'Whisper',
+                          onSelect: () => router.push(`/whispers/${p.handle}`),
+                        },
+                        { id: 'leave', label: 'Stop being Pals…', onSelect: () => setLeaving(p) },
+                      ]}
+                    />
                   </>
                 }
               />

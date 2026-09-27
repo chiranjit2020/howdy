@@ -68,7 +68,9 @@ export function RelationshipBar({
   return (
     <ClayCard className="flex flex-col gap-3">
       <div className="flex items-center gap-2">
-        <h2 className="min-w-0 flex-1 text-title [overflow-wrap:anywhere] text-text-primary">You and {displayName}</h2>
+        <h2 className="min-w-0 flex-1 text-title [overflow-wrap:anywhere] text-text-primary">
+          You and {displayName}
+        </h2>
         {rel.posse === 'member' && <Badge tone="success">Pals</Badge>}
         {rel.posse === 'sent' && <Badge tone="info">Requested</Badge>}
         <Dropdown

@@ -92,7 +92,7 @@ export function PosseCard({ members }: { members: PersonEntry[] }) {
                   aria-label={`${m.displayName}, @${m.handle}`}
                   className="rounded-pill"
                 >
-                  <Avatar name={m.displayName} tint={m.portraitTint} size="md" />
+                  <Avatar name={m.displayName} tint={m.portraitTint} src={m.portraitUrl} size="md" />
                 </Link>
               </li>
             ))}

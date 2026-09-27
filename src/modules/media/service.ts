@@ -216,6 +216,22 @@ export async function getPortraitVersion(userId: string): Promise<string | null>
   return row?.id ?? null;
 }
 
+/** `getPortraitVersion` for many people in one query: only those with a live Portrait appear in the map. */
+export async function getPortraitVersions(userIds: string[]): Promise<Map<string, string>> {
+  if (userIds.length === 0) return new Map();
+  const rows = await getDb()
+    .select({ ownerId: media.ownerId, id: media.id })
+    .from(media)
+    .where(
+      and(
+        inArray(media.ownerId, [...new Set(userIds)]),
+        eq(media.kind, 'portrait'),
+        eq(media.status, 'ready'),
+      ),
+    );
+  return new Map(rows.map((r) => [r.ownerId, r.id]));
+}
+
 /**
  * The bytes of someone's live Portrait. This does NOT decide who may look: the caller (the route) has already applied the
  * visibility rules. A row whose file has gone missing reads as "no Portrait".
