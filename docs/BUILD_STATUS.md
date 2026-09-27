@@ -1,13 +1,14 @@
 # Howdy Build Status
 
-_Last updated: 2026-09-23_
+_Last updated: 2026-09-27_
 
 ## Current Phase
 
-Phase 9 (Media / Portrait, and Tributes + Marks — the master prompt's own "Phase 9") and **Phase 10 — Town Halls** are
-all **complete**. Next: **Phase 11 — Moderation + Anti-Abuse Expansion**. Photos on Post Cards, image moderation and
-account deletion are the open Media follow-ups; a real R2 bucket and e2e coverage for Tributes/Marks/Town Halls are
-open follow-ups from recent passes (see Blockers/Known Issues).
+**P0 — Legal Foundation** (ADR-019) is **complete**. It is a security/legal foundation item done ahead of Phase 11.
+Phases 0–10 are complete. Next: **Phase 11 — Moderation + Anti-Abuse Expansion**. A first slice of it (the
+moderation queue) was built on 2026-09-27 and is parked in `git stash` ("moderation queue (ADR-018)"), awaiting a
+keep-or-drop decision. Open follow-ups: photos on Post Cards, image moderation, account deletion, a real R2 bucket CORS
+rule, and e2e coverage for Tributes/Marks/Town Halls (see Blockers/Known Issues).
 
 ## Status
 
@@ -25,6 +26,34 @@ open follow-ups from recent passes (see Blockers/Known Issues).
 | 9 — Media / Portrait | DONE (Portrait only; not yet exercised against a real R2 bucket) |
 | 9 — Tributes + Marks | DONE (no Playwright/e2e coverage yet — see Known Issues) |
 | 10 — Town Halls | DONE (directory + membership only, no shared feed; no Playwright/e2e coverage yet — see Known Issues) |
+| P0 — Legal Foundation | DONE (documents need a lawyer's review before launch — see ADR-019 "Before launch") |
+
+## Completed in P0 — Legal Foundation (ADR-019), 2026-09-27
+
+Decisions taken with you: operator **Chiranjit Karmakar (individual, India)**; public contact
+**privacy@howdy.chiranjitkarmakar.com**; minimum age **18**; existing accounts are **asked once** on their next visit.
+
+- [x] **Privacy Policy, Terms of Service, Campfire Rules, Cookie Policy.** Each is complete, plain-language and
+      accurate to what the code does, lives in `content/legal/*.md`, and has "Needs legal review" notes where a lawyer
+      must confirm something.
+- [x] **Versioning** (`src/shared/legal.ts`): a displayed `version`, plus an `acceptVersion` that asks people to agree
+      again only when it moves. Every page shows its version, effective date and last-updated date.
+- [x] **Acceptance tracking**: migration `0013` adds `legal_acceptances` (append-only, cascades with the account, DB
+      checks on document and version). Stake a Claim requires the "18 or older and I agree" box, and the versions are
+      recorded in the sign-up transaction. `/agree` asks once whenever something is pending (gated in `AppFrame`), and
+      the legal pages stay readable before agreeing. `GET/POST /api/me/legal`.
+- [x] **Footer** on every page (in `AppShell`): Privacy · Terms · Campfire Rules · Cookies · © Howdy.
+- [x] **Reading experience**: section cards, a sticky "On this page" list (xl) or a fold-out list (smaller screens)
+      with the current section marked, smooth scrolling that respects reduced motion, focus moved to the chosen
+      heading, a reading-progress bar, anchor links. Metadata: title, description, canonical URL, Open Graph, Twitter.
+- [x] **Retention made real**: `pnpm jobs:purge` is now a daily Vercel Cron (`/api/jobs/purge`, 04:00 UTC,
+      `CRON_SECRET`). The Privacy Policy's retention periods were only true for reads until now.
+- [x] **Tests**: `tests/unit/legal.test.ts`, `tests/security/legal.test.ts`, `tests/e2e/legal.spec.ts` (routes,
+      320/768/1440 px, keyboard, axe light and dark, the sign-up box, the `/agree` gate). Mutation run
+      `.dev/mutate-legal.mjs`: 7 of 7 caught. Found and fixed along the way: a test ("duplicate sign-up cannot claim a
+      handle") that had started passing for the wrong reason (a validation error) once the box became required.
+- [x] Also fixed: a pre-existing lint error in `tests/e2e/helpers.ts` and Prettier drift in
+      `src/app/porch/[handle]/loading.tsx`. Both made `pnpm check` fail on `main`.
 
 ## Completed in Phase 10 — Town Halls (ADR-017)
 
@@ -217,7 +246,7 @@ layers covered for them); direct tests of the recorder now catch both. All 15 ca
 1. **Mail provider (deploy blocker)** — unchanged.
 2. **Neon dev branch** — still none; local Postgres used. Two processes hold DB pools (site + realtime).
 3. **First commit** — not made (not requested).
-4. **Schedule `pnpm jobs:purge`** (now also drops stale Tributes, Tracks past 7 days and abandoned uploads / leftover files) and decide the audit-log retention period.
+4. ~~Schedule `pnpm jobs:purge`~~ **Done 2026-09-27**: daily Vercel Cron `/api/jobs/purge` (ADR-019). Still open: decide the audit-log and report-evidence retention periods (flagged in the Privacy Policy).
 5. **Cloudflare R2 (deploy blocker for photos):** create a private bucket, an Object Read & Write API token for it, and a bucket CORS rule allowing `PUT` from `APP_URL`; set `STORAGE_DRIVER=r2` and the four `R2_*` variables (see `.env.example`). The R2 driver is tested against a fake client only.
 6. **Deploying `pnpm ws`** (see ADR-013): long-lived Node process, `NODE_ENV=production`, `WS_PUBLIC_URL=wss://<same host as the site>`, Redis.
 
@@ -247,5 +276,5 @@ widen beyond Posse-only; a Town Hall shared feed if the need becomes real; Town 
 
 ## Architectural Decisions
 
-ADR-001 … ADR-017 in `docs/decisions/`; lifecycle and deletion design in `docs/DATA_LIFECYCLE.md`.
+ADR-001 … ADR-017 and ADR-019 in `docs/decisions/`; lifecycle and deletion design in `docs/DATA_LIFECYCLE.md`.
 

@@ -194,7 +194,8 @@ test.describe('authentication journey (production build, real CSP, real cookies)
     await expect(gates.getByRole('listitem')).toHaveCount(2);
     await expect(gates.getByText('This device')).toHaveCount(1);
     await gates.getByRole('button', { name: /Close gate on/ }).click();
-    await expect(gates.getByRole('listitem')).toHaveCount(1);
+    // With only this device left, the list folds itself away and says so in its summary line.
+    await expect(gates.getByText('· signed in on 1 device')).toBeVisible();
 
     await p2.reload();
     await expect(p2).toHaveURL(/\/step-inside$/);
@@ -285,7 +286,12 @@ test.describe('signed-out pages: accessibility and layout in a real browser', ()
           if (el.classList.contains('sr-only') || el.closest('.sr-only')) continue;
           // In-sentence text links are exempt (WCAG 2.5.8 inline exception); standalone controls are not.
           const inline = el.tagName === 'A' && getComputedStyle(el).display === 'inline';
-          if (!inline && r.height < 43.5)
+          // A checkbox or radio is also toggled by tapping its label, so the label is the real target.
+          const input = el as HTMLInputElement;
+          const labelled =
+            (input.type === 'checkbox' || input.type === 'radio') &&
+            [...(input.labels ?? [])].some((l) => l.getBoundingClientRect().height >= 43.5);
+          if (!inline && !labelled && r.height < 43.5)
             out.push(
               `${el.tagName} "${(el.textContent || el.getAttribute('aria-label') || '').trim().slice(0, 24)}" ${Math.round(r.height)}px`,
             );

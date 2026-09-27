@@ -6,14 +6,17 @@ import { PASSWORD_MIN, signUpSchema } from '@/shared/validation/auth';
 import { LIMITS } from '@/shared/limits';
 import { postJson } from '@/ui/auth/api';
 import { FormMessage, focusFirstInvalid } from '@/ui/auth/form-parts';
+import { TermsCheckbox } from '@/ui/auth/terms-checkbox';
 import { Button, Input } from '@/ui/primitives';
 
 type Fields = { handle: string; displayName: string; email: string; password: string };
+type Errors = Partial<Fields & { acceptTerms: string }>;
 
 export function ClaimForm() {
   const formRef = useRef<HTMLFormElement>(null);
   const [values, setValues] = useState<Fields>({ handle: '', displayName: '', email: '', password: '' });
-  const [errors, setErrors] = useState<Partial<Fields>>({});
+  const [acceptTerms, setAcceptTerms] = useState(false);
+  const [errors, setErrors] = useState<Errors>({});
   const [formError, setFormError] = useState<string | undefined>();
   const [attempt, setAttempt] = useState(0);
   const [busy, setBusy] = useState(false);
@@ -28,11 +31,13 @@ export function ClaimForm() {
     setFormError(undefined);
     // A blank Display name is not an error: the Ranch is simply named after the call sign.
     const { displayName, ...rest } = values;
-    const parsed = signUpSchema.safeParse(displayName.trim() ? { ...rest, displayName } : rest);
+    const parsed = signUpSchema.safeParse(
+      displayName.trim() ? { ...rest, displayName, acceptTerms } : { ...rest, acceptTerms },
+    );
     if (!parsed.success) {
-      const next: Partial<Fields> = {};
+      const next: Errors = {};
       for (const issue of parsed.error.issues) {
-        const key = issue.path[0] as keyof Fields;
+        const key = issue.path[0] as keyof Errors;
         next[key] ??= issue.message;
       }
       setErrors(next);
@@ -49,7 +54,7 @@ export function ClaimForm() {
       return;
     }
     if (res.error?.fields) {
-      setErrors(res.error.fields as Partial<Fields>);
+      setErrors(res.error.fields as Errors);
       requestAnimationFrame(() => focusFirstInvalid(formRef.current));
     } else {
       setFormError(res.error?.message);
@@ -137,12 +142,18 @@ export function ClaimForm() {
         error={errors.password}
         hint={`Your secret knock: at least ${PASSWORD_MIN} characters.`}
       />
+      <TermsCheckbox
+        checked={acceptTerms}
+        onChange={(v) => {
+          setAcceptTerms(v);
+          if (v) setErrors(({ acceptTerms: _, ...others }) => others);
+        }}
+        invalid={!!errors.acceptTerms}
+      />
+      {errors.acceptTerms && <FormMessage tone="error">{errors.acceptTerms}</FormMessage>}
       <Button type="submit" size="lg" fullWidth loading={busy}>
         Create My Account
       </Button>
-      <p className="text-center text-caption text-text-secondary">
-        By continuing, you agree to our Terms of Service and Privacy Policy.
-      </p>
     </form>
   );
 }

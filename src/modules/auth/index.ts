@@ -3,4 +3,5 @@ export { authHandlers } from './handlers';
 export { getCurrentUser, requireUser, listMySessions } from './server';
 export { optionalSession, requireSession, requestContext } from './request';
 export { purgeExpiredAuthData } from './retention';
+export { acceptCurrentTerms, pendingAcceptances } from './legal';
 export type { SessionContext, SessionUser, SessionSummary } from './sessions';

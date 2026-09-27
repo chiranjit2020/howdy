@@ -100,6 +100,7 @@ describe('sign up → verify → sign in → me → sign out (happy path)', () =
       email: 'Mixed.Case@Example.com'.toLowerCase(),
       handle: 'mixed_case',
       password: PASSWORD,
+      acceptTerms: true,
     });
     const byHandle = await call(authHandlers.login, 'POST', '/api/auth/login', {
       identifier: 'MIXED_CASE',

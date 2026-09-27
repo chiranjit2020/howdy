@@ -1,5 +1,6 @@
+import { redirect } from 'next/navigation';
 import type { ReactNode } from 'react';
-import { getCurrentUser } from '@/modules/auth';
+import { getCurrentUser, pendingAcceptances } from '@/modules/auth';
 import { getPortraitVersion } from '@/modules/media';
 import { unreadCount } from '@/modules/notifications';
 import { getOwnRanch } from '@/modules/profiles';
@@ -16,20 +17,29 @@ import { AppShell } from '@/ui/shell/app-shell';
 export async function AppFrame({
   children,
   waysIn = true,
+  askToAgree = true,
 }: {
   children: ReactNode;
   /** Signed out: show the Step Inside / Stake a Claim buttons in the top bar. The sign-in pages turn them off. */
   waysIn?: boolean;
+  /**
+   * Send a signed-in person who has not agreed to the current Terms / Privacy Policy to `/agree` first. Off for the
+   * legal pages themselves (they must be readable before agreeing) and for `/agree`.
+   */
+  askToAgree?: boolean;
 }) {
   const user = await getCurrentUser();
   if (!user) return <AppShell waysIn={waysIn}>{children}</AppShell>;
-  const [unread, unreadWhispers, invites, ranch, photo] = await Promise.all([
+  const [unread, unreadWhispers, invites, ranch, photo, pending] = await Promise.all([
     unreadCount(user.id).catch(() => 0),
     unreadThreads(user.id).catch(() => 0),
     countMyInvites(user.id).catch(() => 0),
     getOwnRanch(user.id).catch(() => null),
     getPortraitVersion(user.id).catch(() => null),
+    // Best-effort like the rest: if the check itself fails, let the person in rather than take every page down.
+    askToAgree ? pendingAcceptances(user.id).catch(() => []) : Promise.resolve([]),
   ]);
+  if (pending.length > 0) redirect('/agree');
   return (
     <AppShell
       me={{

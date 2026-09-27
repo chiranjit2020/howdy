@@ -115,6 +115,8 @@ export function passwordMatchesIdentity(password: string, email: string, handle?
 }
 
 export const IDENTITY_PASSWORD_MESSAGE = 'Your password should not contain your email or handle.';
+export const ACCEPT_TERMS_MESSAGE =
+  'Please confirm you are 18 or older and agree to the Terms and Privacy Policy.';
 
 /** `displayName` is optional: left out, the Ranch is named after the call sign (the same as before this field existed). */
 export const signUpSchema = z
@@ -123,6 +125,8 @@ export const signUpSchema = z
     handle: handleSchema,
     password: passwordSchema,
     displayName: displayNameSchema.optional(),
+    /** The "18 or older, and I agree to the Terms and Privacy Policy" box. Must be ticked; recorded with the versions. */
+    acceptTerms: z.literal(true, { error: ACCEPT_TERMS_MESSAGE }),
   })
   .superRefine((v, ctx) => {
     if (passwordMatchesIdentity(v.password, v.email, v.handle)) {

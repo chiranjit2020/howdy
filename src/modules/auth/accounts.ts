@@ -8,6 +8,7 @@ import { getMailer } from '@/platform/mailer';
 import { enforceRateLimit } from '@/platform/rate-limit';
 import { passwordMatchesIdentity, IDENTITY_PASSWORD_MESSAGE } from '@/shared/validation/auth';
 import { audit } from './audit';
+import { recordAcceptance } from './legal';
 import { createProfile } from '@/modules/profiles';
 import { RATE, RESET_PASSWORD_TTL_MS, VERIFY_EMAIL_TTL_MS } from './config';
 import { dummyPasswordHash, hashPassword, hashToken, keyDigest, newToken, verifyPassword } from './crypto';
@@ -97,6 +98,8 @@ export async function signUp(
       await tx.insert(credentials).values({ userId: u!.id, passwordHash });
       // Every account has a Ranch from the first moment (same transaction: no user without a profile, ever).
       await createProfile(tx, u!.id, input.displayName ?? input.handle);
+      // The sign-up form required agreeing to the current Terms + Privacy Policy; the schema refuses anything else.
+      await recordAcceptance(tx, u!.id);
       const token = await issueEmailToken(tx, u!.id, 'verify_email', VERIFY_EMAIL_TTL_MS);
       return { userId: u!.id, token };
     });

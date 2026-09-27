@@ -7,7 +7,11 @@ import { Skeleton } from '@/ui/primitives';
  */
 export default function Loading() {
   return (
-    <main id="main" aria-busy="true" className="grid items-start gap-6 py-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
+    <main
+      id="main"
+      aria-busy="true"
+      className="grid items-start gap-6 py-6 lg:grid-cols-[minmax(0,1fr)_20rem]"
+    >
       <p role="status" className="sr-only">
         Loading…
       </p>

@@ -28,6 +28,14 @@ const nextConfig: NextConfig = {
     '@aws-sdk/client-s3',
     '@aws-sdk/s3-request-presigner',
   ],
+  // The legal pages read their words from content/legal/*.md at runtime (so they can change without code), which the
+  // tracer cannot see from an import: ship the files with those routes explicitly.
+  outputFileTracingIncludes: {
+    '/privacy': ['./content/legal/**/*.md'],
+    '/terms': ['./content/legal/**/*.md'],
+    '/campfire-rules': ['./content/legal/**/*.md'],
+    '/cookies': ['./content/legal/**/*.md'],
+  },
   async headers() {
     return [{ source: '/:path*', headers: securityHeaders }];
   },

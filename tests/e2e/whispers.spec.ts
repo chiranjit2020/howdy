@@ -75,6 +75,8 @@ test.describe('Whispers in a real browser (production build, real CSP, real WebS
 
     // A reload keeps it all (it was stored), in order.
     await a.page.reload();
+    // Wait for the thread itself (the loading outline shows first), then read it in order.
+    await expect(log(a.page).getByText('Howdy Alice!')).toBeVisible();
     const texts = await log(a.page).getByRole('paragraph').allInnerTexts();
     expect(texts.join(' ')).toMatch(/Howdy Bob, live from the ranch[\s\S]*Howdy Alice!/);
 

@@ -68,6 +68,7 @@ describe('signUpSchema', () => {
       email: 'chiranjit@example.com',
       handle: 'chiru',
       password: 'chiranjit-is-great',
+      acceptTerms: true,
     });
     expect(r.success).toBe(false);
     expect(r.error?.issues[0]?.path).toEqual(['password']);
@@ -78,19 +79,35 @@ describe('signUpSchema', () => {
         email: 'A@Example.com',
         handle: 'Cool_Cat',
         password: 'correct horse battery staple',
+        acceptTerms: true,
       }),
     ).toEqual({
       email: 'a@example.com',
       handle: 'cool_cat',
       password: 'correct horse battery staple',
+      acceptTerms: true,
     });
   });
   it('the Display name is optional, and screened like any name when given', () => {
-    const base = { email: 'a@example.com', handle: 'cool_cat', password: 'correct horse battery staple' };
+    const base = {
+      email: 'a@example.com',
+      handle: 'cool_cat',
+      password: 'correct horse battery staple',
+      acceptTerms: true,
+    };
     expect(signUpSchema.parse({ ...base, displayName: '  Cool   Cat ' }).displayName).toBe('Cool Cat');
     expect(ok(signUpSchema, base)).toBe(true); // left out: the Ranch takes the call sign as its name
     for (const bad of ['', 'x'.repeat(200), 'see https://spam.example']) {
       expect(ok(signUpSchema, { ...base, displayName: bad }), bad).toBe(false);
+    }
+  });
+  it('the "18 or older and I agree" box must be exactly true', () => {
+    const base = { email: 'a@example.com', handle: 'cool_cat', password: 'correct horse battery staple' };
+    for (const acceptTerms of [undefined, false, 'true', 1, 'yes']) {
+      const r = signUpSchema.safeParse({ ...base, acceptTerms });
+      expect(r.success, String(acceptTerms)).toBe(false);
+      expect(r.error?.issues[0]?.path).toEqual(['acceptTerms']);
+      expect(r.error?.issues[0]?.message).toMatch(/18 or older/);
     }
   });
 });

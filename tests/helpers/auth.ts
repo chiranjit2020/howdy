@@ -94,7 +94,12 @@ export async function freshAuthState(): Promise<TestKit> {
 let counter = 0;
 export const uniqueUser = (prefix = 'user') => {
   counter += 1;
-  return { email: `${prefix}${counter}@example.com`, handle: `${prefix}${counter}`, password: PASSWORD };
+  return {
+    email: `${prefix}${counter}@example.com`,
+    handle: `${prefix}${counter}`,
+    password: PASSWORD,
+    acceptTerms: true as const,
+  };
 };
 
 export async function signUpUser(kit: TestKit, u = uniqueUser(), opts: CallOpts = {}) {

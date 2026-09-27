@@ -91,7 +91,7 @@ describe('brute-force protection', () => {
             authHandlers.signup,
             'POST',
             '/api/auth/signup',
-            { email, handle: `flood${i}`, password: PASSWORD },
+            { email, handle: `flood${i}`, password: PASSWORD, acceptTerms: true },
             { ip: `10.4.0.${i}` },
           )
         ).status,
@@ -103,7 +103,7 @@ describe('brute-force protection', () => {
           authHandlers.signup,
           'POST',
           '/api/auth/signup',
-          { email, handle: 'flood_last', password: PASSWORD },
+          { email, handle: 'flood_last', password: PASSWORD, acceptTerms: true },
           { ip: '10.4.9.9' },
         )
       ).status,
@@ -132,7 +132,7 @@ describe('brute-force protection', () => {
             authHandlers.signup,
             'POST',
             '/api/auth/signup',
-            { email: `ip${i}@example.com`, handle: `ipuser${i}`, password: PASSWORD },
+            { email: `ip${i}@example.com`, handle: `ipuser${i}`, password: PASSWORD, acceptTerms: true },
             { ip: '192.0.2.77' },
           )
         ).status,
@@ -144,7 +144,7 @@ describe('brute-force protection', () => {
           authHandlers.signup,
           'POST',
           '/api/auth/signup',
-          { email: 'ipx@example.com', handle: 'ipuserx', password: PASSWORD },
+          { email: 'ipx@example.com', handle: 'ipuserx', password: PASSWORD, acceptTerms: true },
           { ip: '192.0.2.77' },
         )
       ).status,

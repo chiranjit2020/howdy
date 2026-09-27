@@ -8,6 +8,7 @@ import { HowdyLogo } from '../logo';
 import { Avatar } from '../primitives/avatar';
 import { BirdVisitor } from './bird-visitor';
 import { ShellBottomNav, ShellSidebarNav, type ShellNavItem } from './nav';
+import { SiteFooter } from './site-footer';
 
 // The signed-out top bar's two ways in: equal widths, never wrapping, sized to fit beside the logo on a 320 px phone.
 // Width comes from the text (both grid columns match the wider pill), so nothing is squeezed on a 320 px phone.
@@ -142,6 +143,7 @@ export function AppShell({
         {/* Room for the phone tab bar and its raised Nail button (and the safe-area inset under it); signed in only. */}
         <div className={cn('min-w-0 flex-1', me && 'pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-8')}>
           {children}
+          <SiteFooter />
         </div>
       </div>
       {me && <ShellBottomNav items={items} me={me} />}

@@ -26,6 +26,7 @@ users ──┬─< credentials      ON DELETE CASCADE   (1:1, password hash)
         ├─< marks            ON DELETE CASCADE   (both rater_id and target_id; an append-only log)
         ├─< town_halls       ON DELETE CASCADE   (owner_id only — deleting the owner deletes the whole Town Hall)
         ├─< town_hall_members ON DELETE CASCADE  (user_id; also cascades from town_halls.id)
+        ├─< legal_acceptances ON DELETE CASCADE  (which Terms / Privacy versions were agreed to, and when; append-only)
         ├─< audit_log        ON DELETE SET NULL  (trail survives, anonymised)
         └─< reports          ON DELETE SET NULL  (reporter and target; evidence survives, identifiers go)
 ```
@@ -99,9 +100,7 @@ recorded as a `retired` row in the same transaction that makes the new photo liv
 | Tracks / typing / presence (future) | seconds → days, per ADR-006 | their own jobs |
 | Logs | no passwords, tokens, cookies or message/Signal bodies (redacted) | log platform retention |
 
-**Running the jobs:** `pnpm jobs:purge` runs every purge and prints a JSON summary; it is idempotent. **Scheduling it is a
-deployment task that is not done** — choose cron / the platform scheduler / a worker before going live, otherwise expired rows
-accumulate (reads are already correct without it; this is about not keeping data forever).
+**Running the jobs:** `pnpm jobs:purge` runs every purge and prints a JSON summary; it is idempotent. **In production it runs daily** as a Vercel Cron (`/api/jobs/purge`, 04:00 UTC, authorised by `CRON_SECRET`; ADR-019). The Privacy Policy states these periods, and `tests/unit/legal.test.ts` fails if its figures drift from the constants here.
 
 ## 4. Relationship privacy rules (Phase 4)
 

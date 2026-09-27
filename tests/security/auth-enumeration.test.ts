@@ -66,7 +66,13 @@ describe('sign up does not reveal whether an email is registered', () => {
 
   it('a duplicate sign-up cannot be used to claim a handle for someone else’s email', async () => {
     const existing = await verifiedUser(kit);
-    await signUpUser(kit, { email: existing.email, handle: 'sneaky_claim', password: PASSWORD });
+    const r = await signUpUser(kit, {
+      email: existing.email,
+      handle: 'sneaky_claim',
+      password: PASSWORD,
+      acceptTerms: true,
+    });
+    expect(r.response.status).toBe(202); // it reached the duplicate-email path, not a validation error
     expect(
       (await getPool().query("select count(*)::int as n from users where handle = 'sneaky_claim'")).rows[0].n,
     ).toBe(0);

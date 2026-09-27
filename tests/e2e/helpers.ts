@@ -47,6 +47,7 @@ export async function horizontalOverflow(page: Page): Promise<number> {
     };
   }, width);
   if (overflow > 0)
+    // eslint-disable-next-line no-console -- names the culprits in the Playwright output when the check fails
     console.log(`horizontalOverflow ${page.url()} +${overflow}px:\n  ${culprits.join('\n  ')}`);
   return overflow;
 }
@@ -117,6 +118,7 @@ export async function signUpVia(page: Page, a: { handle: string; email: string; 
   await page.getByLabel('Choose a handle').fill(a.handle);
   await page.getByLabel('Email address').fill(a.email);
   await page.getByLabel('Password', { exact: true }).fill(a.password);
+  await page.getByRole('checkbox', { name: /I am 18 or older/ }).check();
   await page.getByRole('button', { name: 'Create My Account' }).click();
   await page.getByRole('heading', { name: 'Check your email' }).waitFor();
 }
