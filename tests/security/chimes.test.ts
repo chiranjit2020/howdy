@@ -438,6 +438,19 @@ describe('marking read', () => {
     expect(await bell(as(other))).toBe(1); // untouched
   });
 
+  it('"all, before" (opening the Chimes page) leaves a Chime that rang after the page was drawn unread', async () => {
+    const { owner, friend } = await wall();
+    await nail(owner.handle, { body: 'seen on the page' }, as(friend));
+    await flushBackground();
+    const seenAt = new Date().toISOString();
+    await new Promise((r) => setTimeout(r, 20));
+    await nail(owner.handle, { body: 'rang afterwards' }, as(friend));
+    await flushBackground();
+    expect(await bell(as(owner))).toBe(2);
+    expect((await markRead({ all: true, before: seenAt }, as(owner))).data.marked).toBe(1);
+    expect(await bell(as(owner))).toBe(1);
+  });
+
   it('refuses malformed bodies, too many ids, and other people’s sessions or origins', async () => {
     const me = await person('me');
     for (const body of [
@@ -447,6 +460,7 @@ describe('marking read', () => {
       { ids: 'x' },
       { all: false },
       { all: 'true' },
+      { all: true, before: 'yesterday' },
       { ids: Array(51).fill('00000000-0000-4000-8000-000000000000') },
     ]) {
       expect((await markRead(body, as(me))).status, JSON.stringify(body).slice(0, 40)).toBe(422);

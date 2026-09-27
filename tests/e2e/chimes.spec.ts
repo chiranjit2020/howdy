@@ -65,7 +65,7 @@ test.describe('Chimes in a real browser (production build, real CSP)', () => {
     await b.page.goto('/home'); // Bob never rings his own bell
     await expect(bellLink(b.page)).toHaveAccessibleName('Chimes');
 
-    // She opens Chimes, sees it as unread, and following it goes to the Pals page and marks it read.
+    // She opens Chimes (which reads it), still sees it marked new for this visit, and following it goes to the Pals page.
     await bellLink(a.page).click();
     await expect(a.page.getByRole('heading', { name: 'Chimes', level: 1 })).toBeVisible();
     const item = a.page.getByRole('link', { name: /wants to be your Pal/ });
@@ -77,7 +77,7 @@ test.describe('Chimes in a real browser (production build, real CSP)', () => {
     await expect(a.page.getByRole('status')).toHaveText('All caught up');
     await expect(bellLink(a.page)).toHaveAccessibleName('Chimes');
 
-    // Alice accepts (Bob is told), Bob nails a card and gives a Yo; "Mark all read" clears the lot.
+    // Alice accepts (Bob is told), Bob nails a card and gives a Yo; opening Chimes reads them and clears the bell.
     expect((await api(a, `/api/relationships/${b.handle}`, { action: 'accept' })).ok()).toBe(true);
     await untilUnread(b, 1);
     const card = await api(b, `/api/porch/${a.handle}/fence`, { body: 'Howdy from Bob' });
@@ -89,11 +89,11 @@ test.describe('Chimes in a real browser (production build, real CSP)', () => {
     await a.page.goto('/chimes');
     await expect(a.page.getByText(`${b.handle} nailed a card to your Fence.`)).toBeVisible();
     await expect(a.page.getByText(`${b.handle} reacted to your card.`)).toBeVisible();
-    await expect(a.page.getByRole('status')).toHaveText('2 unread');
-    await a.page.getByRole('button', { name: 'Mark all read' }).click();
-    await expect(a.page.getByRole('status')).toHaveText('All caught up');
+    await expect(a.page.getByRole('status')).toHaveText('2 new');
+    await expect(bellLink(a.page)).toHaveAccessibleName('Chimes'); // cleared without a reload
+    await untilUnread(a, 0);
     await a.page.reload();
-    await expect(bellLink(a.page)).toHaveAccessibleName('Chimes');
+    await expect(a.page.getByRole('status')).toHaveText('All caught up');
 
     // Alice mutes Bob: what he rang earlier disappears from her Chimes, without a word to Bob.
     expect((await api(a, `/api/relationships/${b.handle}`, { action: 'mute' })).ok()).toBe(true);

@@ -8,6 +8,7 @@ export const metadata = { title: 'Chimes' };
 /** Notifications. Protected: the session is checked on the server before any of this renders. */
 export default async function ChimesPage() {
   const user = await requireUser();
+  const seenAt = new Date().toISOString(); // what this page shows; anything newer stays unread
   const page = await listChimes(user.id, {});
   return (
     <>
@@ -22,6 +23,7 @@ export default async function ChimesPage() {
             nextCursor: page.nextCursor,
             unread: page.unread,
           }}
+          seenAt={seenAt}
         />
       </main>
     </>

@@ -23,9 +23,12 @@ export const chimeQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(CHIME_MAX_PAGE_SIZE).optional(),
 });
 
-/** Mark Chimes read: everything, or up to 50 named ones (which must be the caller's own — the server checks). */
+/**
+ * Mark Chimes read: everything (optionally only what rang up to `before`, so a Chime that arrives while the page is open is
+ * not swept up unseen), or up to 50 named ones (which must be the caller's own — the server checks).
+ */
 export const markReadSchema = z.union([
-  z.object({ all: z.literal(true) }),
+  z.object({ all: z.literal(true), before: z.iso.datetime().optional() }),
   z.object({ ids: z.array(idParamSchema).min(1).max(50) }),
 ]);
 

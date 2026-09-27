@@ -55,6 +55,14 @@ Decisions taken with you: operator **Chiranjit Karmakar (individual, India)**; p
 - [x] Also fixed: a pre-existing lint error in `tests/e2e/helpers.ts` and Prettier drift in
       `src/app/porch/[handle]/loading.tsx`. Both made `pnpm check` fail on `main`.
 
+## Fixed 2026-09-27 — the Chime bell kept its number after reading
+
+The bell's count is drawn by the layout on the server, and nothing redrew it after a Chime was read in the page, so it
+stayed until a full reload. Opening Chimes now reads everything it shows (`{ all: true, before: <when the page was
+drawn> }`, so a Chime that rings meanwhile stays unread) and refreshes the frame; what was new stays highlighted for
+that visit. "Mark all read" is gone (nothing left for it to do). Tests: `tests/security/chimes.test.ts` ("all, before"),
+`tests/e2e/chimes.spec.ts` updated (e2e not run: short of RAM).
+
 ## Added 2026-09-27 — Post Card reactions (ADR-011 amendment)
 
 - [x] Yo, Laugh, Fire, Popcorn and Love on every Post Card, one per person per card (switching kind updates it). Migration

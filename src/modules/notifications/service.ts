@@ -1,5 +1,5 @@
 import { notificationPrefs, notifications, postCards } from '@db/schema';
-import { and, desc, eq, inArray, isNotNull, isNull, lt, or, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, isNotNull, isNull, lt, lte, or, sql } from 'drizzle-orm';
 import { canFence } from '@/modules/authz';
 import { getCards, getFenceResource, type PersonCard } from '@/modules/profiles';
 import { fenceStanding, hiddenAuthors, posseMembersAmong } from '@/modules/relationships';
@@ -403,10 +403,14 @@ export async function listChimes(
 /** Mark Chimes read — only ever the caller's own. Ids that are not theirs are ignored exactly like ids that do not exist. */
 export async function markRead(
   userId: string,
-  target: { all: true } | { ids: string[] },
+  target: { all: true; before?: string | undefined } | { ids: string[] },
 ): Promise<{ marked: number }> {
   await enforceRateLimit(`chimes:mark:${userId}`, RATE.mark);
-  const mine = and(eq(notifications.recipientId, userId), isNull(notifications.readAt));
+  const mine = and(
+    eq(notifications.recipientId, userId),
+    isNull(notifications.readAt),
+    'all' in target && target.before ? lte(notifications.createdAt, new Date(target.before)) : undefined,
+  );
   const rows = await getDb()
     .update(notifications)
     .set({ readAt: new Date() })
