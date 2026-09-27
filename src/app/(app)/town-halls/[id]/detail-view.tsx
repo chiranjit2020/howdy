@@ -25,6 +25,12 @@ export function TownHallDetailView({
   const [next, setNext] = useState<string | null>(initialMembers?.nextCursor ?? null);
   const [deleting, setDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  // The list is this component's own state (it grows with "More members"), so a removal is applied here as well as
+  // on the server; refreshing the page alone would not reset it.
+  const removed = (handle: string) => {
+    setMembers((all) => all.filter((m) => m.handle !== handle));
+    router.refresh();
+  };
 
   async function act(action: 'join' | 'leave' | 'accept' | 'decline') {
     setBusy(action);
@@ -80,6 +86,7 @@ export function TownHallDetailView({
   return (
     <>
       <TownHallCard
+        headingLevel={1}
         name={townHall.name}
         description={townHall.description}
         visibility={townHall.visibility}
@@ -106,7 +113,7 @@ export function TownHallDetailView({
                     <RemoveMemberButton
                       townHallId={townHall.id}
                       member={m}
-                      onRemoved={() => router.refresh()}
+                      onRemoved={() => removed(m.handle)}
                     />
                   )}
                 </li>

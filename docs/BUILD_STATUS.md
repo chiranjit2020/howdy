@@ -8,12 +8,33 @@ _Last updated: 2026-09-27_
 Phases 0–10 are complete. Next: **Phase 11 — Moderation + Anti-Abuse Expansion**. A first slice of it (the
 moderation queue) was built on 2026-09-27 and is parked in `git stash` ("moderation queue (ADR-018)"), awaiting a
 keep-or-drop decision. Open follow-ups: photos on Post Cards, image moderation, account deletion, a real R2 bucket CORS
-rule, and e2e coverage for Tributes/Marks/Town Halls (see Blockers/Known Issues).
+rule, and e2e coverage for Tributes (Marks and Town Halls have it since 2026-09-27; see Known Issues).
 
 Also shipped on 2026-09-27 (all live): the Vibe Matrix's five traits, Post Card reactions, a Whisper button on Pals rows
 (Close Pal moved into ⋯), the Chime bell clearing when Chimes is opened, and the fixes below. Migrations `0014` and `0015`
-are applied to `howdy_dev`, `howdy_prod` and the local e2e database. **Last full e2e run: 71 of 71 pass** (2026-09-27,
-after the two fixes in "Fixed 2026-09-27 — found by the e2e run").
+are applied to `howdy_dev`, `howdy_prod` and the local e2e database. **Last full e2e run: 79 of 79 pass** (2026-09-27,
+with the new Marks and Town Halls specs and the fixes they led to).
+
+## Added 2026-09-27 — e2e coverage for Marks and Town Halls
+
+- [x] `tests/e2e/marks.spec.ts`: a Pal awards a Mark, sees it counted and the 30-day wait (kept after a reload); the owner
+      is told without the kind and has no picks; a non-Pal's picks are closed and the API refuses (403). Axe light/dark,
+      320 px and 44 px targets.
+- [x] `tests/e2e/town-halls.spec.ts`: start via the form, discover and join, invite-only hidden (404) until invited,
+      invite by call sign and accept, remove a member, delete. Axe light/dark on the directory and a Town Hall, 320 px
+      and 44 px targets.
+- [x] `tests/ui/howdy.test.tsx`: the Vibe Matrix switches from counts to percentages at exactly 20 Marks (checked to fail
+      with the threshold moved), and closed picks show their reason.
+- [x] Shared e2e helpers `axeViolations(page)` and `smallTargets(page)` in `tests/e2e/helpers.ts` (older specs still
+      carry their own copies).
+- Found and fixed by these specs:
+  - **A removed Town Hall member stayed in the owner's list** until a full reload (the list is the page's own state;
+    `router.refresh()` does not reset it). The removal now updates the list too.
+  - **Heading levels:** the Town Halls list went h1 → h3, and a Town Hall's own page had no h1. `TownHallCard` takes
+    `headingLevel` (2 in lists, 1 on its own page); invite cards are h2.
+- Also fixed: the Portrait e2e waited for **every** Portrait image to decode, including the phone tab bar's, which is
+  hidden on wide screens and lazy, so it may never load (a flaky failure). It now waits only for Portraits on screen
+  and still counts all three.
 
 ## Fixed 2026-09-27 — found by the e2e run (91a5b78)
 
@@ -38,8 +59,8 @@ after the two fixes in "Fixed 2026-09-27 — found by the e2e run").
 | 7 — Whispers + WebSockets | DONE |
 | 8 — Tracks + Shadow Walk | DONE |
 | 9 — Media / Portrait | DONE (Portrait only; not yet exercised against a real R2 bucket) |
-| 9 — Tributes + Marks | DONE (no Playwright/e2e coverage yet — see Known Issues) |
-| 10 — Town Halls | DONE (directory + membership only, no shared feed; no Playwright/e2e coverage yet — see Known Issues) |
+| 9 — Tributes + Marks | DONE (Marks have e2e coverage; Tributes do not yet — see Known Issues) |
+| 10 — Town Halls | DONE (directory + membership only, no shared feed; e2e coverage since 2026-09-27) |
 | P0 — Legal Foundation | DONE (documents need a lawyer's review before launch — see ADR-019 "Before launch") |
 
 ## Completed in P0 — Legal Foundation (ADR-019), 2026-09-27
@@ -95,7 +116,7 @@ that visit. "Mark all read" is gone (nothing left for it to do). Tests: `tests/s
 - [x] Clay artwork for every Mark and the Post Card reactions, cut from the design sheet into `public/art/mark-*.png` and
       `react-*.png`. Yo (🤘) now uses `react-yo` everywhere, and the Mark Chime (💎) uses `mark-gem`. Laugh, Fire,
       Popcorn and Love reactions are a later phase.
-- [x] `pnpm build` and the full e2e run pass (no Marks-specific e2e yet; see Known Issues).
+- [x] `pnpm build` and the full e2e run pass; Marks have their own spec (`tests/e2e/marks.spec.ts`).
 - Fixed the same day: 4 Dropdown tests failed (`window.matchMedia is not a function` in jsdom) since the "menus stay on
   screen" change. The menu now works without `matchMedia` (as the bird does), so it no longer crashes on open in
   embedded browsers that lack it.
@@ -336,7 +357,7 @@ layers covered for them); direct tests of the recorder now catch both. All 15 ca
 **Moderation + Anti-Abuse Expansion** (master prompt §61 Phase 11). Media follow-ups still open: photos on Post Cards
 (per-card media with the Fence's privacy rules), showing Portraits in lists / cards / Chimes (needs a per-viewer
 decision per row), reporting a photo, image moderation, and the account-deletion flow calling `deleteAllMediaFor`.
-Tributes/Marks/Town Halls follow-ups: e2e coverage for all three; revisit whether Tribute/Mark giving should ever
+Tributes/Marks/Town Halls follow-ups: e2e coverage for Tributes; revisit whether Tribute/Mark giving should ever
 widen beyond Posse-only; a Town Hall shared feed if the need becomes real; Town Hall roles beyond owner/member.
 
 ## Architectural Decisions

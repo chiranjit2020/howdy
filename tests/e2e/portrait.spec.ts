@@ -27,11 +27,18 @@ const photo = () =>
     .jpeg()
     .toBuffer();
 
-/** Portrait images on the page: how many, and whether every one really decoded at 512 px. */
+/**
+ * Portrait images on the page: how many are in it, and whether every one on screen really decoded at 512 px. Hidden ones
+ * (the phone tab bar's, on a wide screen) are lazy and may never load, so they count but are not waited for.
+ */
 const portraits = (page: Page) =>
   page.evaluate(() => {
     const imgs = [...document.querySelectorAll('img')].filter((i) => i.src.includes('/api/portraits/'));
-    return { count: imgs.length, decoded: imgs.every((i) => i.complete && i.naturalWidth === 512) };
+    const shown = imgs.filter((i) => i.getClientRects().length > 0);
+    return {
+      count: imgs.length,
+      decoded: shown.length > 0 && shown.every((i) => i.complete && i.naturalWidth === 512),
+    };
   });
 
 test.describe('Portrait (production build, real CSP, local file storage)', () => {

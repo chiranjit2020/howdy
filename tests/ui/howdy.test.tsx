@@ -15,6 +15,7 @@ import {
   TownHallCard,
   TrackItem,
   TributeCard,
+  VibeMatrix,
   WhisperBubble,
   YoButton,
   formatRelative,
@@ -76,6 +77,43 @@ describe('YoButton', () => {
     rerender(<YoButton count={14} active onToggle={onToggle} />);
     expect(btn).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByLabelText('14 Yos')).toBeInTheDocument();
+  });
+});
+
+describe('VibeMatrix', () => {
+  const counts = (gem: number, pure: number) => ({ gem, pure, chill: 0, sharp: 0, bold: 0 });
+
+  it('shows earned counts with meanings below 20 Marks, and the percentage bars from 20', () => {
+    const { rerender } = render(<VibeMatrix counts={counts(12, 7)} total={19} />);
+    expect(screen.getByText('Rare, genuinely valuable')).toBeInTheDocument();
+    expect(screen.getByText((_, el) => el?.textContent === '12 Marks')).toBeInTheDocument(); // count + hidden word
+    expect(
+      screen.getByText(/19 Marks total\. The percentages show up after 20 — 1 to go\./),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('img', { name: /%$/ })).not.toBeInTheDocument();
+
+    rerender(<VibeMatrix counts={counts(13, 7)} total={20} />);
+    expect(screen.getByRole('img', { name: 'Gem: 13 Marks, 65%' })).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'Bold: 0 Marks, 0%' })).toBeInTheDocument();
+    expect(screen.getByText('20 Marks total.')).toBeInTheDocument();
+    expect(screen.queryByText('Rare, genuinely valuable')).not.toBeInTheDocument();
+  });
+
+  it('offers five picks only when there is somewhere to send them, disabled with the reason when not allowed', () => {
+    const { rerender } = render(<VibeMatrix counts={counts(0, 0)} total={0} />);
+    expect(screen.queryByRole('group', { name: 'Award a Mark' })).not.toBeInTheDocument();
+    rerender(
+      <VibeMatrix
+        counts={counts(0, 0)}
+        total={0}
+        canGive={false}
+        onGive={() => undefined}
+        disabledHint="You can Mark them again in 3 days."
+      />,
+    );
+    expect(screen.getAllByRole('button')).toHaveLength(5);
+    for (const b of screen.getAllByRole('button')) expect(b).toBeDisabled();
+    expect(screen.getByText('You can Mark them again in 3 days.')).toBeInTheDocument();
   });
 });
 

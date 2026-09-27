@@ -160,7 +160,7 @@ function Invites({ initial }: { initial: InviteSummary[] }) {
       {error && <FormMessage tone="error">{error}</FormMessage>}
       {invites.map((i) => (
         <ClayCard key={i.townHallId} className="flex flex-col gap-3">
-          <h3 className="text-title text-text-primary">{i.name}</h3>
+          <h2 className="text-title text-text-primary">{i.name}</h2>
           <p className="text-body text-text-secondary">{i.description}</p>
           <p className="text-caption text-text-secondary">Invited by @{i.invitedBy.handle}</p>
           <div className="flex gap-2">

@@ -169,3 +169,47 @@ export const axeSource = (): string =>
 export async function pageReady(page: Page): Promise<void> {
   await expect(page.locator('[aria-busy="true"]')).toHaveCount(0, { timeout: 15_000 });
 }
+
+/** Run axe on the page as it is now and return one readable line per violation (empty when clean). */
+export async function axeViolations(page: Page): Promise<string[]> {
+  await page.evaluate(() => document.fonts.ready);
+  await page.addScriptTag({ content: axeSource() });
+  return page.evaluate(async () => {
+    const axe = (
+      window as unknown as {
+        axe: {
+          run: () => Promise<{
+            violations: {
+              id: string;
+              help: string;
+              nodes: { target: string[]; any: { message: string }[] }[];
+            }[];
+          }>;
+        };
+      }
+    ).axe;
+    return (await axe.run()).violations.map(
+      (v) =>
+        `${v.id}: ${v.help} (${v.nodes.map((n) => `${n.target.join(' ')} — ${n.any.map((x) => x.message).join('; ')}`).join(', ')})`,
+    );
+  });
+}
+
+/** Visible controls shorter than a 44 px touch target (inline text links excepted), described for the failure message. */
+export function smallTargets(page: Page): Promise<string[]> {
+  return page.evaluate(() => {
+    const out: string[] = [];
+    for (const el of document.querySelectorAll<HTMLElement>(
+      'button, a[href], select, textarea, input:not([type="radio"])',
+    )) {
+      const r = el.getBoundingClientRect();
+      if (r.width === 0 || r.height === 0 || el.closest('.sr-only')) continue;
+      const inline = el.tagName === 'A' && getComputedStyle(el).display === 'inline';
+      if (!inline && r.height < 43.5)
+        out.push(
+          `${el.tagName} "${(el.textContent || el.getAttribute('aria-label') || '').trim().slice(0, 28)}" ${Math.round(r.height)}px`,
+        );
+    }
+    return out;
+  });
+}
