@@ -179,7 +179,7 @@ export function LegalDocument({ slug }: { slug: LegalSlug }) {
                       {CAMPFIRE_ICON[s.id]}
                     </span>
                   )}
-                  <a href={`#${s.id}`} className="hover:underline hover:underline-offset-4">
+                  <a href={`#${s.id}`} className="no-underline hover:underline hover:underline-offset-4">
                     {s.title}
                   </a>
                 </h2>
@@ -197,7 +197,7 @@ export function LegalDocument({ slug }: { slug: LegalSlug }) {
               <Link
                 key={s}
                 href={`/${s}`}
-                className="inline-flex min-h-11 items-center rounded-pill border border-border bg-surface px-4 text-caption text-text-primary hover:bg-surface-sunken"
+                className="inline-flex min-h-11 items-center rounded-pill border border-border bg-surface px-4 text-caption text-text-primary no-underline hover:bg-surface-sunken"
               >
                 {LEGAL_DOCS[s].title}
               </Link>

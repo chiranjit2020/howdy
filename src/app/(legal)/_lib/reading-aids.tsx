@@ -88,7 +88,7 @@ export function LegalContents({ sections }: { sections: LegalSection[] }) {
             onClick={(e) => go(e, s.id)}
             aria-current={active === s.id ? 'location' : undefined}
             className={cn(
-              'block rounded-md border-l-2 px-3 py-2 text-caption transition-colors',
+              'block rounded-md border-l-2 px-3 py-2 text-caption no-underline transition-colors',
               active === s.id
                 ? 'border-accent bg-accent-soft font-semibold text-text-primary'
                 : 'border-transparent text-text-secondary hover:bg-surface-sunken hover:text-text-primary',
