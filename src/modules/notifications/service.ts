@@ -300,7 +300,7 @@ function describe(userId: string, s: Shown, myHandle: string): { text: string; h
     case 'reply_waiting':
       return { text: `A reply from ${name} is waiting for your approval.`, href: `/porch/${myHandle}` };
     case 'yo_given':
-      return { text: `${name} gave your card a Yo.`, href: fence };
+      return { text: `${name} reacted to your card.`, href: fence };
     case 'whisper_received':
       return { text: `${name} whispered to you.`, href: `/whispers/${s.actor.handle}` };
     case 'tribute_waiting':

@@ -88,7 +88,7 @@ test.describe('Chimes in a real browser (production build, real CSP)', () => {
     await untilUnread(a, 2);
     await a.page.goto('/chimes');
     await expect(a.page.getByText(`${b.handle} nailed a card to your Fence.`)).toBeVisible();
-    await expect(a.page.getByText(`${b.handle} gave your card a Yo.`)).toBeVisible();
+    await expect(a.page.getByText(`${b.handle} reacted to your card.`)).toBeVisible();
     await expect(a.page.getByRole('status')).toHaveText('2 unread');
     await a.page.getByRole('button', { name: 'Mark all read' }).click();
     await expect(a.page.getByRole('status')).toHaveText('All caught up');
@@ -101,9 +101,9 @@ test.describe('Chimes in a real browser (production build, real CSP)', () => {
     await expect(a.page.getByText('All quiet on the range')).toBeVisible();
     expect((await api(a, `/api/relationships/${b.handle}`, { action: 'unmute' })).ok()).toBe(true);
 
-    // Chime settings: switching Yo off means a new Yo does not ring.
+    // Chime settings: switching Reactions off means a new Yo does not ring.
     await a.page.goto('/workshop');
-    await a.page.getByRole('switch', { name: /^Yo When/ }).click();
+    await a.page.getByRole('switch', { name: /^Reactions When/ }).click();
     await expect(a.page.getByRole('status').filter({ hasText: 'Chime settings saved' })).toBeVisible();
     const second = await api(a, `/api/porch/${a.handle}/fence`, { body: 'Second card' });
     const id2 = ((await second.json()) as { card: { id: string } }).card.id;
@@ -112,7 +112,7 @@ test.describe('Chimes in a real browser (production build, real CSP)', () => {
     await untilUnread(a, 1); // the earlier ones were marked read; only this reply is new — this Yo did not ring
     await a.page.goto('/chimes');
     await expect(a.page.getByText('scribbled a reply on your card')).toBeVisible();
-    await expect(a.page.getByText(`${b.handle} gave your card a Yo.`)).toHaveCount(1); // only the earlier one
+    await expect(a.page.getByText(`${b.handle} reacted to your card.`)).toHaveCount(1); // only the earlier one
 
     expect(problems).toEqual([]);
     await Promise.all([a.ctx.close(), b.ctx.close()]);

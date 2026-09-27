@@ -43,3 +43,19 @@ signals that reveal the protected fact.
 ## Not in this phase
 
 Notifications for new cards / approvals (Phase 6), Tips, anonymous notes, media on cards, editing a card after posting.
+
+## Amendment, 2026-09-27 — Post Card reactions
+
+Yo is now the default of five reactions: **Yo, Laugh, Fire, Popcorn, Love**. They are momentary ("that post"), unlike
+Marks, which describe a person (ADR-016 amendment).
+
+- **Storage:** the `yos` table keeps its name and its one-row-per-person-per-card key, and gains `kind` (default `'yo'`,
+  checked, migration `0015`). Existing Yos are Yos. Switching kind updates the row, so a person still has at most one
+  reaction on a card.
+- **API:** `POST /api/cards/:id/yo` takes `{ on, kind? }` (Yo when no kind) and answers `{ yoByMe, myReaction }`. A card
+  view adds `reactions` (count per kind) and `myReaction`. `yoCount`/`yoByMe` stay as the total and "reacted at all".
+- **Privacy:** only counts per kind are shown, never who reacted with what, as before.
+- **Chimes:** one `yo_given` Chime per new reaction ("X reacted to your card."), with no kind in it. Switching kind or
+  re-giving never rings the bell again. The preference is shown as "Reactions".
+- **UI:** one tap gives a Yo (or takes yours back), a face button opens the other four, and a summary shows the top
+  three kinds with the total. A double-click on the card still only gives a Yo.

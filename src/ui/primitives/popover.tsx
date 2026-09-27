@@ -27,6 +27,7 @@ export function Popover({
   label,
   align = 'start',
   arrow = false,
+  closeOnPick = false,
   className,
 }: {
   trigger: (props: TriggerProps, state: { open: boolean }) => ReactNode;
@@ -35,6 +36,8 @@ export function Popover({
   label: string;
   align?: 'start' | 'end';
   arrow?: boolean;
+  /** Close (and return focus to the trigger) once any button inside the panel is pressed — for pickers. */
+  closeOnPick?: boolean;
   className?: string;
 }) {
   const [open, setOpen] = useState(false);
@@ -82,6 +85,13 @@ export function Popover({
           id={panelId}
           role="dialog"
           aria-label={label}
+          onClick={
+            closeOnPick
+              ? (e) => {
+                  if ((e.target as HTMLElement).closest('button')) close();
+                }
+              : undefined
+          }
           className={cn(
             'absolute top-full z-30 mt-2 bg-surface-raised shadow-float',
             align === 'end' ? 'right-0' : 'left-0',

@@ -58,7 +58,11 @@ export const cardReplies = pgTable(
   ],
 );
 
-/** A Yo: one per person per card. Not a generic reaction — it is its own interaction. */
+/**
+ * A reaction to a Post Card: one per person per card. Yo is the default and the table keeps its name; `kind` says which of
+ * the five it is (Yo / Laugh / Fire / Popcorn / Love). Switching kind updates the row. Only counts per kind are ever shown,
+ * never who reacted with what.
+ */
 export const yos = pgTable(
   'yos',
   {
@@ -68,7 +72,12 @@ export const yos = pgTable(
     userId: uuid('user_id')
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
+    kind: text('kind').notNull().default('yo'),
     createdAt: tstz('created_at').notNull().defaultNow(),
   },
-  (t) => [primaryKey({ columns: [t.cardId, t.userId] }), index('yos_user_idx').on(t.userId)],
+  (t) => [
+    primaryKey({ columns: [t.cardId, t.userId] }),
+    index('yos_user_idx').on(t.userId),
+    check('yos_kind_check', sql`${t.kind} in ('yo', 'laugh', 'fire', 'popcorn', 'love')`),
+  ],
 );

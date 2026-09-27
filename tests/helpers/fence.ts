@@ -19,6 +19,7 @@ type Wire = {
   isOwner?: boolean;
   review?: boolean;
   yoByMe?: boolean;
+  myReaction?: string | null;
   error?: { code: string; message: string; requestId: string; fields?: Record<string, string> };
   [k: string]: unknown;
 };
@@ -40,6 +41,8 @@ export interface Card {
   canReply: boolean;
   yoCount: number;
   yoByMe: boolean;
+  reactions: Record<string, number>;
+  myReaction: string | null;
   replies: Reply[];
   author: { handle: string; displayName: string };
 }
@@ -76,8 +79,15 @@ export const nail = (handle: string, body: unknown, opts: Opts = {}) =>
 export const replyTo = (cardId: string, body: unknown, opts: Opts = {}) =>
   dynamic(replyRoute, 'POST', `/api/cards/${enc(cardId)}/replies`, { id: cardId }, body, opts);
 
-export const yo = (cardId: string, on: unknown, opts: Opts = {}) =>
-  dynamic(yoRoute, 'POST', `/api/cards/${enc(cardId)}/yo`, { id: cardId }, { on }, opts);
+export const yo = (cardId: string, on: unknown, opts: Opts = {}, kind?: unknown) =>
+  dynamic(
+    yoRoute,
+    'POST',
+    `/api/cards/${enc(cardId)}/yo`,
+    { id: cardId },
+    kind === undefined ? { on } : { on, kind },
+    opts,
+  );
 
 export const scrape = (cardId: string, opts: Opts = {}) =>
   dynamic(deleteCardRoute, 'DELETE', `/api/cards/${enc(cardId)}`, { id: cardId }, undefined, opts);

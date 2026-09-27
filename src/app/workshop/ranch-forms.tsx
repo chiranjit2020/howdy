@@ -312,8 +312,8 @@ export function ChimePrefsForm({
         onCheckedChange={(v) => set('replies', v)}
       />
       <Switch
-        label="Yo"
-        hint="When someone gives your card a Yo."
+        label="Reactions"
+        hint="When someone reacts to your card: a Yo, a laugh, anything."
         checked={prefs.yo}
         onCheckedChange={(v) => set('yo', v)}
       />

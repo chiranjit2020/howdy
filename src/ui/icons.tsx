@@ -44,6 +44,10 @@ export const TracksIcon = (p: IconProps) => (
     {...p}
   />
 );
+// A smiling face: "pick a reaction".
+export const ReactIcon = (p: IconProps) => (
+  <Svg d="M12 21a9 9 0 1 1 0-18 9 9 0 0 1 0 18zM8.5 14a4 4 0 0 0 7 0M9 9.5h.01M15 9.5h.01" {...p} />
+);
 export const WhisperIcon = (p: IconProps) => (
   <Svg d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z" {...p} />
 );

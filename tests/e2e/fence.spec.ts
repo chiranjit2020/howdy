@@ -68,16 +68,23 @@ test.describe('The Fence in a real browser (production build, real CSP)', () => 
     await expect(yo).toHaveAttribute('aria-pressed', 'false');
     await yo.click();
     await expect(yo).toHaveAttribute('aria-pressed', 'true');
-    await expect(yo).toContainText('1');
+    await expect(owners.getByRole('img', { name: '1 reaction: 1 Yo' })).toBeVisible();
+    // The picker switches it to another reaction: still one per person.
+    await owners.getByRole('button', { name: 'More reactions' }).click();
+    await b.page.getByRole('dialog', { name: 'Reactions' }).getByRole('button', { name: 'Laugh' }).click();
+    await expect(owners.getByRole('button', { name: 'Laugh', pressed: true })).toBeVisible();
+    await expect(owners.getByRole('img', { name: '1 reaction: 1 Laugh' })).toBeVisible();
     await owners.getByRole('button', { name: /^Flip/ }).click();
     await b.page.getByLabel('Scribble a reply').fill('Nice ranch!');
     await b.page.getByRole('button', { name: 'Scribble' }).click();
     await expect(b.page.getByText('Nice ranch!')).toBeVisible();
 
-    // A refresh keeps everything (it really was saved), and the owner sees the Yo count.
+    // A refresh keeps everything (it really was saved), and the owner sees the reaction count.
     await a.page.reload();
     await expect(cardWith(a.page, 'Hi from Bob')).toBeVisible();
-    await expect(cardWith(a.page, 'Howdy from the ranch').getByText('1 Yo')).toBeVisible(); // own card: count, no button
+    await expect(
+      cardWith(a.page, 'Howdy from the ranch').getByRole('img', { name: '1 reaction: 1 Laugh' }),
+    ).toBeVisible(); // own card: count, no button
     await expect(cardWith(a.page, 'Howdy from the ranch').getByRole('button', { name: /^Yo/ })).toHaveCount(
       0,
     );

@@ -355,6 +355,32 @@ describe('Yo', () => {
     expect((await q('select count(*)::int n from yos')).rows[0].n).toBe(0);
   });
 
+  it('reactions: Yo by default, one per person whatever the kind, switching kind recounts, only counts are shown', async () => {
+    const { owner, friend } = await wall();
+    const other = await person('other');
+    const id = (await nail(owner.handle, { body: 'a card' }, as(owner))).data.card!.id;
+    expect((await yo(id, true, as(friend))).data).toMatchObject({ yoByMe: true, myReaction: 'yo' });
+    expect((await yo(id, true, as(friend), 'laugh')).data).toMatchObject({ myReaction: 'laugh' });
+    expect((await yo(id, true, as(other), 'popcorn')).status).toBe(200);
+    const view = (await fenceOf(owner.handle, as(friend))).data.cards![0]!;
+    expect(view).toMatchObject({ yoCount: 2, myReaction: 'laugh' });
+    expect(view.reactions).toEqual({ yo: 0, laugh: 1, fire: 0, popcorn: 1, love: 0 });
+    const ownersView = (await fenceOf(owner.handle, as(owner))).data.cards![0]!;
+    expect(ownersView).toMatchObject({ yoCount: 2, myReaction: null });
+    expect(JSON.stringify(ownersView)).not.toContain(friend.handle); // nobody learns who reacted with what
+    expect((await q('select count(*)::int n from yos')).rows[0].n).toBe(2);
+    expect((await yo(id, true, as(friend), 'sigma')).status).toBe(422);
+    expect((await yo(id, true, as(friend), 'fire')).status).toBe(200);
+    expect((await fenceOf(owner.handle, as(friend))).data.cards![0]!.reactions).toMatchObject({
+      laugh: 0,
+      fire: 1,
+    });
+    expect((await yo(id, false, as(friend))).data).toMatchObject({ yoByMe: false, myReaction: null });
+    await expect(
+      q("insert into yos (card_id, user_id, kind) values ($1, (select id from users limit 1), 'meh')", [id]),
+    ).rejects.toThrow(/yos_kind_check/);
+  });
+
   it('cannot Yo a card you cannot see: hidden, blocked, waiting or missing all give the same 404', async () => {
     const { owner, friend } = await wall();
     const villain = await person('villain');

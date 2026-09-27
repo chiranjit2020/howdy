@@ -3,6 +3,7 @@
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import type { CardView, FencePage, ReplyView } from '@/modules/fence';
+import type { ReactionKind } from '@/shared/validation/fence';
 import { apiRequest, postJson } from '@/ui/auth/api';
 import { FormMessage } from '@/ui/auth/form-parts';
 import { Fence, PostCard, PostCardComposer, PostCardReply } from '@/ui/howdy';
@@ -80,14 +81,26 @@ export function FenceSection({
     return false;
   }
 
-  async function toggleYo(card: WireCard) {
-    const on = !card.yoByMe;
+  /** Give, switch or take back the viewer's reaction: shown at once, put back if the server says no. */
+  async function react(card: WireCard, kind: ReactionKind | null) {
+    const before = { myReaction: card.myReaction, reactions: card.reactions };
+    const set = (mine: ReactionKind | null, reactions: Record<ReactionKind, number>) =>
+      patchCard(card.id, (c) => ({
+        ...c,
+        myReaction: mine,
+        yoByMe: mine !== null,
+        reactions,
+        yoCount: Object.values(reactions).reduce((a, b) => a + b, 0),
+      }));
+    const next = { ...card.reactions };
+    if (card.myReaction) next[card.myReaction] = Math.max(0, next[card.myReaction] - 1);
+    if (kind) next[kind] += 1;
     setError(undefined);
-    patchCard(card.id, (c) => ({ ...c, yoByMe: on, yoCount: Math.max(0, c.yoCount + (on ? 1 : -1)) }));
-    const res = await postJson(`/api/cards/${card.id}/yo`, { on });
+    set(kind, next);
+    const res = await postJson(`/api/cards/${card.id}/yo`, kind ? { on: true, kind } : { on: false });
     if (!res.ok) {
-      patchCard(card.id, (c) => ({ ...c, yoByMe: !on, yoCount: Math.max(0, c.yoCount + (on ? -1 : 1)) }));
-      setError(res.error?.message ?? 'That Yo did not go through.');
+      set(before.myReaction, before.reactions);
+      setError(res.error?.message ?? 'That reaction did not go through.');
     }
   }
 
@@ -185,10 +198,10 @@ export function FenceSection({
             }}
             body={c.body}
             createdAt={c.createdAt}
-            yoCount={c.yoCount}
-            yoActive={c.yoByMe}
-            canYo={c.canYo}
-            onYo={() => toggleYo(c)}
+            reactions={c.reactions}
+            myReaction={c.myReaction}
+            canReact={c.canYo}
+            onReact={(kind) => react(c, kind)}
             {...(c.waiting
               ? { notice: `Waiting for ${initial.isOwner ? 'you' : ownerName} to approve.` }
               : {})}

@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { RELATIONSHIP_STATES } from '@/shared/relationship';
@@ -31,9 +31,9 @@ function card(overrides: Partial<Parameters<typeof PostCard>[0]> = {}) {
       body="Late-night canteen run?"
       createdAt={at}
       stamp="North Gate"
-      yoCount={3}
-      yoActive={false}
-      onYo={() => undefined}
+      reactions={{ yo: 2, laugh: 1, fire: 0, popcorn: 0, love: 0 }}
+      myReaction={null}
+      onReact={() => undefined}
       replyCount={1}
       replies={
         <PostCardReply author={{ name: 'Rahul', handle: 'rahul' }} body="Bringing coffee." createdAt={at} />
@@ -114,15 +114,49 @@ describe('PostCard', () => {
     expect(document.body).toHaveFocus();
   });
 
-  it('double-click drops a Yo once, but never removes one', async () => {
+  it('double-click drops a Yo once, but never removes or replaces a reaction', async () => {
     const user = userEvent.setup();
-    const onYo = vi.fn();
-    const { rerender } = render(card({ onYo }));
+    const onReact = vi.fn();
+    const { rerender } = render(card({ onReact }));
     await user.dblClick(screen.getByText('Late-night canteen run?'));
-    expect(onYo).toHaveBeenCalledTimes(1);
-    rerender(card({ onYo, yoActive: true }));
+    expect(onReact).toHaveBeenCalledTimes(1);
+    expect(onReact).toHaveBeenLastCalledWith('yo');
+    rerender(card({ onReact, myReaction: 'laugh' }));
     await user.dblClick(screen.getByText('Late-night canteen run?'));
-    expect(onYo).toHaveBeenCalledTimes(1);
+    expect(onReact).toHaveBeenCalledTimes(1);
+  });
+
+  it('reactions: one tap gives a Yo, the picker switches or takes back, and the summary reads out the counts', async () => {
+    const user = userEvent.setup();
+    const onReact = vi.fn();
+    const { rerender } = render(card({ onReact }));
+    expect(screen.getByRole('img', { name: '3 reactions: 2 Yo, 1 Laugh' })).toBeInTheDocument();
+    const main = screen.getByRole('button', { name: 'Yo' });
+    expect(main).toHaveAttribute('aria-pressed', 'false');
+    await user.click(main);
+    expect(onReact).toHaveBeenLastCalledWith('yo');
+
+    await user.click(screen.getByRole('button', { name: 'More reactions' }));
+    await user.click(screen.getByRole('button', { name: 'Popcorn' }));
+    expect(onReact).toHaveBeenLastCalledWith('popcorn');
+    expect(screen.queryByRole('dialog', { name: 'Reactions' })).not.toBeInTheDocument(); // a pick closes the picker
+
+    rerender(card({ onReact, myReaction: 'popcorn' }));
+    const mine = screen.getByRole('button', { name: 'Popcorn' }); // the main button now shows your reaction
+    expect(mine).toHaveAttribute('aria-pressed', 'true');
+    await user.click(mine); // tapping it takes yours back
+    expect(onReact).toHaveBeenLastCalledWith(null);
+    await user.click(screen.getByRole('button', { name: 'More reactions' }));
+    const picker = screen.getByRole('dialog', { name: 'Reactions' });
+    await user.click(within(picker).getByRole('button', { name: 'Popcorn', pressed: true }));
+    expect(onReact).toHaveBeenLastCalledWith(null);
+  });
+
+  it('without the right to react, only the summary shows', () => {
+    render(card({ canReact: false }));
+    expect(screen.queryByRole('button', { name: 'Yo' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'More reactions' })).not.toBeInTheDocument();
+    expect(screen.getByRole('img', { name: /3 reactions/ })).toBeInTheDocument();
   });
 
   it('renders the message as text — markup in a body is never interpreted', () => {

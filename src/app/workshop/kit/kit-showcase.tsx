@@ -460,9 +460,13 @@ export function KitShowcase({ initialTheme }: { initialTheme: Theme | undefined 
                 body={c.body}
                 createdAt={c.at}
                 stamp={c.stamp}
-                yoCount={c.id === 1 ? 14 : 4}
-                yoActive={false}
-                onYo={() => toast({ title: '🤘 Yo dropped' })}
+                reactions={
+                  c.id === 1
+                    ? { yo: 9, laugh: 3, fire: 1, popcorn: 1, love: 0 }
+                    : { yo: 4, laugh: 0, fire: 0, popcorn: 0, love: 0 }
+                }
+                myReaction={null}
+                onReact={(kind) => toast({ title: kind ? `Reacted: ${kind}` : 'Reaction taken back' })}
                 replyCount={c.id === 1 ? 2 : 0}
                 replies={
                   c.id === 1 && (

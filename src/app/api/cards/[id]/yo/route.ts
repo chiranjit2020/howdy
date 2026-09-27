@@ -6,9 +6,12 @@ import { yoSchema } from '@/shared/validation/fence';
 
 export const dynamic = 'force-dynamic';
 
-/** Give (`{on:true}`) or take back (`{on:false}`) a Yo. One per person per card; idempotent both ways. */
+/**
+ * Give (`{on:true, kind?}`, Yo by default), change (`{on:true, kind}` again) or take back (`{on:false}`) your reaction. One
+ * per person per card; idempotent both ways.
+ */
 export const POST = route(async ({ req, params }) => {
   const { user } = await requireSession(req);
-  const { on } = await readJson(req, yoSchema);
-  return json(await setYo(user.id, (await params).id ?? '', on));
+  const { on, kind } = await readJson(req, yoSchema);
+  return json(await setYo(user.id, (await params).id ?? '', on, kind));
 });

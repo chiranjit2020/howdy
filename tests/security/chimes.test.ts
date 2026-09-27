@@ -152,10 +152,11 @@ describe('Fence Chimes', () => {
       await yo(id, false, as(friend));
     }
     await yo(id, true, as(friend));
-    expect(await texts(as(owner))).toEqual([`${friend.handle} gave your card a Yo.`]);
+    expect(await texts(as(owner))).toEqual([`${friend.handle} reacted to your card.`]);
     await markRead({ all: true }, as(owner));
     await yo(id, false, as(friend));
     await yo(id, true, as(friend));
+    await yo(id, true, as(friend), 'love'); // changing the kind is not a new reaction either
     expect(await bell(as(owner))).toBe(0);
   });
 

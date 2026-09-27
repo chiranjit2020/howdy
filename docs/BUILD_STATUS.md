@@ -55,6 +55,15 @@ Decisions taken with you: operator **Chiranjit Karmakar (individual, India)**; p
 - [x] Also fixed: a pre-existing lint error in `tests/e2e/helpers.ts` and Prettier drift in
       `src/app/porch/[handle]/loading.tsx`. Both made `pnpm check` fail on `main`.
 
+## Added 2026-09-27 — Post Card reactions (ADR-011 amendment)
+
+- [x] Yo, Laugh, Fire, Popcorn and Love on every Post Card, one per person per card (switching kind updates it). Migration
+      `0015` adds `yos.kind` (default `'yo'`). It is additive, so the running code keeps working before and after it.
+- [x] Counts per kind only. The Chime reads "reacted to your card" and rings once per new reaction; the preference is
+      called "Reactions".
+- [x] Tests: security (kinds, switching, refused kind, no names, database check, no second Chime), UI (tap, picker,
+      take back, summary text), e2e fence spec updated to switch Yo → Laugh.
+
 ## Changed 2026-09-27 — the Vibe Matrix becomes five traits (ADR-016 amendment)
 
 - [x] Marks are now **Gem / Pure / Chill / Sharp / Bold**. Cinema and Sigma are retired: migration `0014` deletes their

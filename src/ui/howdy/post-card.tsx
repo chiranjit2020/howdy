@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { LIMITS } from '@/shared/limits';
+import type { ReactionKind } from '@/shared/validation/fence';
 import type { PortraitTint } from '@/shared/validation/profile';
-import { Glyph } from '../art/glyph';
 import { cn } from '../cn';
 import { FlipIcon } from '../icons';
 import { Avatar } from '../primitives/avatar';
@@ -11,7 +11,7 @@ import { Button } from '../primitives/button';
 import { Textarea } from '../primitives/field';
 import { RelativeTime } from './time';
 import { VerifiedBadge } from './verified-badge';
-import { YoButton } from './yo-button';
+import { ReactionBar, ReactionSummary } from './reactions';
 
 export interface PostCardAuthor {
   name: string;
@@ -114,11 +114,14 @@ export interface PostCardProps {
   createdAt: Date | string;
   /** Faux postal stamp, e.g. cohort label. Plain text only. */
   stamp?: string;
-  yoCount: number;
-  yoActive: boolean;
-  onYo: () => void;
-  /** Whether this viewer may give a Yo. When not (e.g. their own card) the count is shown as plain text. Default true. */
-  canYo?: boolean;
+  /** Reactions per kind (counts only). */
+  reactions: Record<ReactionKind, number>;
+  /** The viewer's own reaction, if any. */
+  myReaction: ReactionKind | null;
+  /** Give or switch to a kind, or `null` to take the viewer's reaction back. */
+  onReact: (kind: ReactionKind | null) => void;
+  /** Whether this viewer may react. When not (e.g. their own card) only the summary is shown. Default true. */
+  canReact?: boolean;
   /** Short honest status such as "Waiting for approval". Plain text only. */
   notice?: string;
   replies?: ReactNode;
@@ -130,7 +133,7 @@ export interface PostCardProps {
 }
 
 /**
- * Post Card: the front shows the message + Yo; "Flip" turns it over to the scribbles (replies) and the reply composer.
+ * Post Card: the front shows the message + reactions; "Flip" turns it over to the scribbles (replies) and the reply composer.
  * Only the visible face is rendered, so the card is exactly as tall as its content and keyboard / screen-reader users
  * can only ever reach what they can see. The flip is an entrance animation on the newly shown face (removed under
  * prefers-reduced-motion), and focus moves to the control that replaces the one just used.
@@ -140,10 +143,10 @@ export function PostCard({
   body,
   createdAt,
   stamp,
-  yoCount,
-  yoActive,
-  onYo,
-  canYo = true,
+  reactions,
+  myReaction,
+  onReact,
+  canReact = true,
   notice,
   replies,
   replyCount = 0,
@@ -185,7 +188,7 @@ export function PostCard({
           {replyComposer}
         </div>
       ) : (
-        <div onDoubleClick={() => canYo && !yoActive && onYo()} className={face}>
+        <div onDoubleClick={() => canReact && !myReaction && onReact('yo')} className={face}>
           <header className="flex items-start gap-3">
             <Avatar
               name={author.name}
@@ -210,16 +213,13 @@ export function PostCard({
           </header>
           <p className="text-body break-words whitespace-pre-wrap text-text-primary">{body}</p>
           {notice && <p className="text-caption font-semibold text-text-secondary">{notice}</p>}
-          <footer className="flex items-center justify-between gap-2">
-            {canYo || yoActive ? (
-              <YoButton count={yoCount} active={yoActive} onToggle={onYo} />
+          <footer className="flex flex-wrap items-center justify-between gap-2">
+            {canReact || myReaction ? (
+              <ReactionBar reactions={reactions} mine={myReaction} onReact={onReact} />
             ) : (
-              <p className="text-caption text-text-secondary">
-                <Glyph emoji="🤘" className="mr-1" />
-                {yoCount} {yoCount === 1 ? 'Yo' : 'Yos'}
-              </p>
+              <ReactionSummary reactions={reactions} />
             )}
-            <Button ref={flipBtn} variant="ghost" size="sm" onClick={() => flip(true)}>
+            <Button ref={flipBtn} variant="ghost" size="sm" className="ml-auto" onClick={() => flip(true)}>
               <FlipIcon /> Flip · {replyCount} {replyCount === 1 ? 'reply' : 'replies'}
             </Button>
           </footer>

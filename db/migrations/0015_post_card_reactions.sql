@@ -1,0 +1,2 @@
+ALTER TABLE "yos" ADD COLUMN "kind" text DEFAULT 'yo' NOT NULL;--> statement-breakpoint
+ALTER TABLE "yos" ADD CONSTRAINT "yos_kind_check" CHECK ("yos"."kind" in ('yo', 'laugh', 'fire', 'popcorn', 'love'));

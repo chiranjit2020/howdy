@@ -10,13 +10,25 @@ import { enforceRateLimit, type RateLimitRule } from '@/platform/rate-limit';
 import {
   FENCE_MAX_PAGE_SIZE,
   FENCE_PAGE_SIZE,
+  REACTION_KINDS,
   REPLIES_PER_CARD,
   idParamSchema,
+  type ReactionKind,
 } from '@/shared/validation/fence';
 import type { PortraitTint } from '@/shared/validation/profile';
 import { decodeCursor, encodeCursor, type Cursor } from '@/platform/cursor';
 
 const rule = (limit: number, windowSec: number): RateLimitRule => ({ limit, windowSec });
+
+const isReactionKind = (k: string): k is ReactionKind => (REACTION_KINDS as readonly string[]).includes(k);
+const emptyReactions = (): Record<ReactionKind, number> =>
+  Object.fromEntries(REACTION_KINDS.map((k) => [k, 0])) as Record<ReactionKind, number>;
+const reactionFields = (reactions: Record<ReactionKind, number>, mine: ReactionKind | null) => ({
+  yoCount: REACTION_KINDS.reduce((sum, k) => sum + reactions[k], 0),
+  yoByMe: mine !== null,
+  reactions,
+  myReaction: mine,
+});
 
 /**
  * Every limit fails closed. Per-person limits are spent BEFORE anything is looked up, so they behave identically whatever
@@ -72,10 +84,17 @@ export interface CardView {
   /** Only ever true for the writer of a card that is honestly waiting for approval (Review is on). */
   waiting: boolean;
   canRemove: boolean;
+  /** May the viewer react to this card (Yo or any other reaction)? */
   canYo: boolean;
   canReply: boolean;
+  /** All reactions of every kind. */
   yoCount: number;
+  /** Has the viewer reacted at all? */
   yoByMe: boolean;
+  /** Count per kind, always present even at zero. Never who gave which. */
+  reactions: Record<ReactionKind, number>;
+  /** The viewer's own reaction, if any. */
+  myReaction: ReactionKind | null;
   replies: ReplyView[];
 }
 
@@ -155,16 +174,16 @@ async function hydrate(
 
   const [counts, mine, replyRows] = await Promise.all([
     db
-      .select({ cardId: yos.cardId, n: count() })
+      .select({ cardId: yos.cardId, kind: yos.kind, n: count() })
       .from(yos)
       .where(inArray(yos.cardId, ids))
-      .groupBy(yos.cardId),
+      .groupBy(yos.cardId, yos.kind),
     viewerId
       ? db
-          .select({ cardId: yos.cardId })
+          .select({ cardId: yos.cardId, kind: yos.kind })
           .from(yos)
           .where(and(inArray(yos.cardId, ids), eq(yos.userId, viewerId)))
-      : Promise.resolve([] as { cardId: string }[]),
+      : Promise.resolve([] as { cardId: string; kind: string }[]),
     db
       .select()
       .from(cardReplies)
@@ -188,8 +207,16 @@ async function hydrate(
         replyRows.map((r: ReplyRow) => r.authorId),
       )
     : new Set<string>();
-  const yoCount = new Map(counts.map((c) => [c.cardId, c.n]));
-  const yoMine = new Set(mine.map((m) => m.cardId));
+  const reactionsByCard = new Map<string, Record<ReactionKind, number>>();
+  for (const c of counts) {
+    if (!isReactionKind(c.kind)) continue;
+    const r = reactionsByCard.get(c.cardId) ?? emptyReactions();
+    r[c.kind] = c.n;
+    reactionsByCard.set(c.cardId, r);
+  }
+  const myReaction = new Map(
+    mine.flatMap((m) => (isReactionKind(m.kind) ? [[m.cardId, m.kind] as const] : [])),
+  );
 
   const repliesByCard = new Map<string, ReplyView[]>();
   for (const r of replyRows as ReplyRow[]) {
@@ -224,8 +251,7 @@ async function hydrate(
         canRemove: isOwner || row.authorId === viewerId,
         canYo: published && canReactHere && row.authorId !== viewerId,
         canReply: published && canPostHere,
-        yoCount: yoCount.get(row.id) ?? 0,
-        yoByMe: yoMine.has(row.id),
+        ...reactionFields(reactionsByCard.get(row.id) ?? emptyReactions(), myReaction.get(row.id) ?? null),
         replies: repliesByCard.get(row.id) ?? [],
       },
     ];
@@ -438,17 +464,23 @@ export async function postReply(userId: string, cardId: string, body: string): P
 }
 
 /**
- * Give or take back a Yo. Giving needs the right to read the Fence and a published card that is not your own. Taking one
- * back always works (undoing is never gated) and reveals nothing about the card.
+ * Give, change or take back your reaction (Yo by default). Giving needs the right to read the Fence and a published card
+ * that is not your own. Taking one back always works (undoing is never gated) and reveals nothing about the card. Only a
+ * brand-new reaction rings the author's bell: switching kind, or switching off and on, never does twice.
  */
-export async function setYo(userId: string, cardId: string, on: boolean): Promise<{ yoByMe: boolean }> {
+export async function setYo(
+  userId: string,
+  cardId: string,
+  on: boolean,
+  kind: ReactionKind = 'yo',
+): Promise<{ yoByMe: boolean; myReaction: ReactionKind | null }> {
   await enforceRateLimit(`fence:yo:${userId}`, RATE.yo);
   if (!idParamSchema.safeParse(cardId).success) throw new AppError('NOT_FOUND');
   if (!on) {
     await getDb()
       .delete(yos)
       .where(and(eq(yos.cardId, cardId), eq(yos.userId, userId)));
-    return { yoByMe: false };
+    return { yoByMe: false, myReaction: null };
   }
   const loaded = await loadCard(userId, cardId);
   if (!loaded || loaded.card.status !== 'published') throw new AppError('NOT_FOUND');
@@ -456,12 +488,19 @@ export async function setYo(userId: string, cardId: string, on: boolean): Promis
   if (loaded.card.authorId === userId) {
     throw new AppError('BAD_REQUEST', { message: 'You cannot Yo your own card.' });
   }
-  const made = await getDb()
+  const db = getDb();
+  const made = await db
     .insert(yos)
-    .values({ cardId, userId })
+    .values({ cardId, userId, kind })
     .onConflictDoNothing()
     .returning({ cardId: yos.cardId });
-  // Only a Yo that is really new is an event, so switching one on and off cannot ring the bell again.
+  if (made.length === 0) {
+    await db
+      .update(yos)
+      .set({ kind })
+      .where(and(eq(yos.cardId, cardId), eq(yos.userId, userId)));
+  }
+  // Only a reaction that is really new is an event, so changing or re-giving one cannot ring the bell again.
   if (made.length > 0) {
     emit({
       type: 'yo.given',
@@ -471,7 +510,7 @@ export async function setYo(userId: string, cardId: string, on: boolean): Promis
       actorId: userId,
     });
   }
-  return { yoByMe: true };
+  return { yoByMe: true, myReaction: kind };
 }
 
 /**

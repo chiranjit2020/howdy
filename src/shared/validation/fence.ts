@@ -48,6 +48,11 @@ export const fenceQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(FENCE_MAX_PAGE_SIZE).optional(),
 });
 
-export const yoSchema = z.object({ on: z.boolean() });
+/** Post Card reactions. Yo is the default; each person has at most one reaction on a card. */
+export const REACTION_KINDS = ['yo', 'laugh', 'fire', 'popcorn', 'love'] as const;
+export type ReactionKind = (typeof REACTION_KINDS)[number];
+
+/** Give (`on: true`, with an optional kind, default Yo) or take back (`on: false`) your reaction. */
+export const yoSchema = z.object({ on: z.boolean(), kind: z.enum(REACTION_KINDS).optional() });
 
 export const cardActionSchema = z.object({ action: z.enum(['approve']) });
