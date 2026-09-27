@@ -7,13 +7,14 @@ import type { RelationshipAction } from '@/shared/validation/relationships';
 import { apiRequest } from '@/ui/auth/api';
 import { FormMessage } from '@/ui/auth/form-parts';
 import { PersonRow } from '@/ui/howdy';
-import { Button, Chip, ClayCard, EmptyState } from '@/ui/primitives';
+import { Button, Chip, ClayCard, ConfirmationDialog, EmptyState } from '@/ui/primitives';
 
 /** The signed-in person's Posse, requests and scouting. Each button sends one action; the page then reloads from the server. */
 export function PosseLists({ lists }: { lists: RelationshipLists }) {
   const router = useRouter();
   const [busy, setBusy] = useState<string | undefined>();
   const [error, setError] = useState<string | undefined>();
+  const [leaving, setLeaving] = useState<PersonEntry | undefined>();
 
   async function run(handle: string, action: RelationshipAction) {
     setBusy(`${handle}:${action}`);
@@ -111,7 +112,14 @@ export function PosseLists({ lists }: { lists: RelationshipLists }) {
                     >
                       Close
                     </Chip>
-                    {btn(p, 'leave', 'Leave', 'ghost')}
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => setLeaving(p)}
+                      aria-label={`Leave ${p.displayName}`}
+                    >
+                      Leave
+                    </Button>
                   </>
                 }
               />
@@ -144,6 +152,20 @@ export function PosseLists({ lists }: { lists: RelationshipLists }) {
       <p className="text-metadata text-text-muted">
         Close Pals and Scouting are private: nobody else can see them.
       </p>
+
+      <ConfirmationDialog
+        open={leaving !== undefined}
+        title="Stop being Pals?"
+        description={`You and @${leaving?.handle ?? ''} will no longer be Pals. They are not told.`}
+        confirmLabel="Stop being Pals"
+        loading={leaving !== undefined && busy === `${leaving.handle}:leave`}
+        onCancel={() => setLeaving(undefined)}
+        onConfirm={async () => {
+          // Closes either way: on failure the error shows above the lists.
+          if (leaving) await run(leaving.handle, 'leave');
+          setLeaving(undefined);
+        }}
+      />
     </div>
   );
 }

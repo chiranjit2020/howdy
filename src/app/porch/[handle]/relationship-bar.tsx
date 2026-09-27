@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { apiRequest } from '@/ui/auth/api';
 import { FormMessage } from '@/ui/auth/form-parts';
-import { ChevronDownIcon } from '@/ui/icons';
+import { MoreIcon, WhisperIcon } from '@/ui/icons';
 import {
   Badge,
   Button,
@@ -66,61 +66,28 @@ export function RelationshipBar({
   }
 
   return (
-    <ClayCard className="flex flex-col gap-4">
-      <h2 className="text-title text-text-primary">You and {displayName}</h2>
-      {error && <FormMessage tone="error">{error}</FormMessage>}
-
-      <div className="flex flex-wrap items-center gap-3">
-        {rel.posse === 'none' && (
-          <Button loading={busy === 'request'} onClick={() => run('request')}>
-            Ask to be Pals
-          </Button>
-        )}
-        {rel.posse === 'sent' && (
-          <>
-            <Badge tone="info">Requested</Badge>
-            <Button variant="secondary" size="sm" loading={busy === 'cancel'} onClick={() => run('cancel')}>
-              Cancel request
-            </Button>
-          </>
-        )}
-        {rel.posse === 'received' && (
-          <>
-            <span className="text-body text-text-secondary">@{handle} wants to be your Pal.</span>
-            <Button loading={busy === 'accept'} onClick={() => run('accept')}>
-              Accept
-            </Button>
-            <Button variant="secondary" loading={busy === 'decline'} onClick={() => run('decline')}>
-              Decline
-            </Button>
-          </>
-        )}
-        {rel.posse === 'member' && (
-          <>
-            <Badge tone="success">Pals</Badge>
-            <Link href={`/whispers/${handle}`} className={buttonClasses()}>
-              Whisper
-            </Link>
-            <Chip selected={rel.closeByMe} onSelect={() => run(rel.closeByMe ? 'unclose' : 'close')}>
-              Close Pal
-            </Chip>
-            <Button variant="ghost" size="sm" onClick={() => setConfirm('leave')}>
-              Stop being Pals
-            </Button>
-          </>
-        )}
-        <Chip selected={rel.scouting} onSelect={() => run(rel.scouting ? 'unscout' : 'scout')}>
-          Scouting
-        </Chip>
+    <ClayCard className="flex flex-col gap-3">
+      <div className="flex items-center gap-2">
+        <h2 className="min-w-0 flex-1 text-title [overflow-wrap:anywhere] text-text-primary">You and {displayName}</h2>
+        {rel.posse === 'member' && <Badge tone="success">Pals</Badge>}
+        {rel.posse === 'sent' && <Badge tone="info">Requested</Badge>}
         <Dropdown
           label={`More about ${displayName}`}
           align="end"
           trigger={(p) => (
-            <Button variant="ghost" size="sm" {...p}>
-              More <ChevronDownIcon />
-            </Button>
+            <button
+              type="button"
+              aria-label="More"
+              className="-mr-2 inline-flex size-11 shrink-0 items-center justify-center rounded-pill text-title text-text-secondary hover:bg-surface-sunken"
+              {...p}
+            >
+              <MoreIcon />
+            </button>
           )}
           items={[
+            ...(rel.posse === 'member'
+              ? [{ id: 'leave', label: 'Stop being Pals…', onSelect: () => setConfirm('leave') }]
+              : []),
             {
               id: 'mute',
               label: rel.muted ? 'Turn the noise back up' : 'Turn down the noise',
@@ -137,6 +104,49 @@ export function RelationshipBar({
               : [{ id: 'block', label: 'Block…', danger: true, onSelect: () => setConfirm('block') }]),
           ]}
         />
+      </div>
+      {error && <FormMessage tone="error">{error}</FormMessage>}
+
+      {/* One main action, full width. */}
+      {rel.posse === 'none' && (
+        <Button fullWidth loading={busy === 'request'} onClick={() => run('request')}>
+          Ask to be Pals
+        </Button>
+      )}
+      {rel.posse === 'sent' && (
+        <Button variant="secondary" fullWidth loading={busy === 'cancel'} onClick={() => run('cancel')}>
+          Cancel request
+        </Button>
+      )}
+      {rel.posse === 'received' && (
+        <>
+          <p className="text-body text-text-secondary">@{handle} wants to be your Pal.</p>
+          <div className="grid grid-cols-2 gap-2">
+            <Button loading={busy === 'accept'} onClick={() => run('accept')}>
+              Accept
+            </Button>
+            <Button variant="secondary" loading={busy === 'decline'} onClick={() => run('decline')}>
+              Decline
+            </Button>
+          </div>
+        </>
+      )}
+      {rel.posse === 'member' && (
+        <Link href={`/whispers/${handle}`} className={buttonClasses({ fullWidth: true })}>
+          <WhisperIcon /> Whisper
+        </Link>
+      )}
+
+      {/* The private toggles: same shape, side by side. */}
+      <div className="flex flex-wrap gap-2">
+        {rel.posse === 'member' && (
+          <Chip selected={rel.closeByMe} onSelect={() => run(rel.closeByMe ? 'unclose' : 'close')}>
+            Close Pal
+          </Chip>
+        )}
+        <Chip selected={rel.scouting} onSelect={() => run(rel.scouting ? 'unscout' : 'scout')}>
+          Scouting
+        </Chip>
       </div>
       <p className="text-metadata text-text-muted">
         Only you can see Scouting, Close Pal, Mute{official ? ' and Restrict' : ', Restrict and Block'}.{' '}

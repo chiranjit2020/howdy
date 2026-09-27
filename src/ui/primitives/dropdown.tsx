@@ -4,6 +4,7 @@ import {
   useCallback,
   useEffect,
   useId,
+  useLayoutEffect,
   useRef,
   useState,
   type KeyboardEvent,
@@ -48,6 +49,7 @@ export function Dropdown({
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const [focusIndex, setFocusIndex] = useState(0);
   const menuId = useId();
@@ -59,6 +61,29 @@ export function Dropdown({
     if (restoreFocus) triggerRef.current?.focus();
   }, []);
   useDismiss(open, [rootRef], close);
+
+  // Keep the open menu on screen: nudge it sideways off either edge, and open it upwards when the space below
+  // (above the phone tab bar) is too short. Styles are set directly so the first paint is already in place.
+  useLayoutEffect(() => {
+    const menu = menuRef.current;
+    if (!open || !menu) return;
+    menu.style.translate = '';
+    menu.style.top = '';
+    menu.style.bottom = '';
+    const gap = 8;
+    const vw = document.documentElement.clientWidth;
+    const r = menu.getBoundingClientRect();
+    let dx = 0;
+    if (r.right > vw - gap) dx = vw - gap - r.right;
+    if (r.left + dx < gap) dx = gap - r.left;
+    if (dx) menu.style.translate = `${dx}px 0`;
+    const floor = window.innerHeight - (window.matchMedia('(min-width: 48rem)').matches ? gap : 104);
+    const triggerTop = triggerRef.current?.getBoundingClientRect().top ?? r.top;
+    if (r.bottom > floor && triggerTop - r.height - gap > gap) {
+      menu.style.top = 'auto';
+      menu.style.bottom = '100%';
+    }
+  }, [open]);
 
   useEffect(() => {
     if (open) itemRefs.current[focusIndex]?.focus();
@@ -108,12 +133,13 @@ export function Dropdown({
       )}
       {open && (
         <div
+          ref={menuRef}
           id={menuId}
           role="menu"
           aria-label={label}
           onKeyDown={onMenuKey}
           className={cn(
-            'absolute top-full z-30 mt-2 flex min-w-52 flex-col rounded-lg bg-surface-raised p-1.5 shadow-float',
+            'absolute top-full z-30 my-2 flex min-w-52 flex-col rounded-lg bg-surface-raised p-1.5 shadow-float',
             align === 'end' ? 'right-0' : 'left-0',
           )}
         >

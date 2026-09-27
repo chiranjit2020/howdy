@@ -24,7 +24,8 @@ function Svg(props: IconProps & { d: string }) {
 }
 
 export const CloseIcon = (p: IconProps) => <Svg d="M6 6l12 12M18 6L6 18" {...p} />;
-export const ChevronDownIcon = (p: IconProps) => <Svg d="M6 9l6 6 6-6" {...p} />;
+export const MoreIcon = (p: IconProps) => <Svg d="M5 12h.01M12 12h.01M19 12h.01" strokeWidth="3" {...p} />;
+export const ChevronDownIcon =(p: IconProps) => <Svg d="M6 9l6 6 6-6" {...p} />;
 export const FlipIcon = (p: IconProps) => (
   <Svg d="M3 12a9 9 0 0 1 15-6.7L21 8M21 3v5h-5M21 12a9 9 0 0 1-15 6.7L3 16M3 21v-5h5" {...p} />
 );
