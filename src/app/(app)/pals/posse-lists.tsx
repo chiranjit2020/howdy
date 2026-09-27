@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, type ReactNode } from 'react';
 import type { PersonEntry, RelationshipLists } from '@/app/_lib/social';
@@ -7,12 +8,12 @@ import type { RelationshipAction } from '@/shared/validation/relationships';
 import { apiRequest } from '@/ui/auth/api';
 import { FormMessage } from '@/ui/auth/form-parts';
 import { PersonRow } from '@/ui/howdy';
-import { MoreIcon, StarIcon } from '@/ui/icons';
+import { MoreIcon, WhisperIcon } from '@/ui/icons';
 import { Button, ClayCard, ConfirmationDialog, Dropdown, EmptyState } from '@/ui/primitives';
 
-// A round 44px icon button for the compact Pals row.
+// A round 44px icon button (or link) for the compact Pals row.
 const iconButton =
-  'inline-flex size-11 items-center justify-center rounded-pill text-title text-text-secondary hover:bg-surface aria-pressed:text-text-primary disabled:opacity-60';
+  'inline-flex size-11 items-center justify-center rounded-pill text-title text-text-secondary no-underline hover:bg-surface hover:text-text-primary';
 
 /** The signed-in person's Posse, requests and scouting. Each button sends one action; the page then reloads from the server. */
 export function PosseLists({ lists }: { lists: RelationshipLists }) {
@@ -109,19 +110,17 @@ export function PosseLists({ lists }: { lists: RelationshipLists }) {
                 key={p.handle}
                 {...p}
                 inlineActions
+                {...(p.closeByMe ? { note: 'Close Pal' } : {})}
                 actions={
                   <>
-                    <button
-                      type="button"
-                      aria-pressed={Boolean(p.closeByMe)}
-                      aria-label={`Close Pal: ${p.displayName}`}
-                      title="Close Pal"
-                      disabled={busy === `${p.handle}:${p.closeByMe ? 'unclose' : 'close'}`}
-                      onClick={() => run(p.handle, p.closeByMe ? 'unclose' : 'close')}
+                    <Link
+                      href={`/whispers/${p.handle}`}
+                      aria-label={`Whisper to ${p.displayName}`}
+                      title="Whisper"
                       className={iconButton}
                     >
-                      <StarIcon fill={p.closeByMe ? 'currentColor' : 'none'} />
-                    </button>
+                      <WhisperIcon />
+                    </Link>
                     <Dropdown
                       label={`More about ${p.displayName}`}
                       align="end"
@@ -137,9 +136,10 @@ export function PosseLists({ lists }: { lists: RelationshipLists }) {
                       )}
                       items={[
                         {
-                          id: 'whisper',
-                          label: 'Whisper',
-                          onSelect: () => router.push(`/whispers/${p.handle}`),
+                          id: 'close',
+                          label: p.closeByMe ? 'Remove from Close Pals' : 'Add to Close Pals',
+                          disabled: busy !== undefined,
+                          onSelect: () => run(p.handle, p.closeByMe ? 'unclose' : 'close'),
                         },
                         { id: 'leave', label: 'Stop being Pals…', onSelect: () => setLeaving(p) },
                       ]}
@@ -174,7 +174,8 @@ export function PosseLists({ lists }: { lists: RelationshipLists }) {
       )}
 
       <p className="text-metadata text-text-muted">
-        Close Pals and Scouting are private: nobody else can see them.
+        Close Pals and Scouting are private labels, just for you: nobody else can see them, and they change
+        nothing for the other person.
       </p>
 
       <ConfirmationDialog
