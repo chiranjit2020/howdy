@@ -77,7 +77,9 @@ export function Dropdown({
     if (r.right > vw - gap) dx = vw - gap - r.right;
     if (r.left + dx < gap) dx = gap - r.left;
     if (dx) menu.style.translate = `${dx}px 0`;
-    const floor = window.innerHeight - (window.matchMedia('(min-width: 48rem)').matches ? gap : 104);
+    // No matchMedia (some embedded browsers, test DOMs): assume a phone and keep clear of the tab bar.
+    const wide = window.matchMedia?.('(min-width: 48rem)').matches ?? false;
+    const floor = window.innerHeight - (wide ? gap : 104);
     const triggerTop = triggerRef.current?.getBoundingClientRect().top ?? r.top;
     if (r.bottom > floor && triggerTop - r.height - gap > gap) {
       menu.style.top = 'auto';

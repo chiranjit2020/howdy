@@ -65,8 +65,9 @@ Decisions taken with you: operator **Chiranjit Karmakar (individual, India)**; p
       `react-*.png`. Yo (🤘) now uses `react-yo` everywhere, and the Mark Chime (💎) uses `mark-gem`. Laugh, Fire,
       Popcorn and Love reactions are a later phase.
 - [ ] Not yet looked at in a browser, and `pnpm build`/e2e are not run (the machine was short of RAM).
-- Known and unrelated: 4 Dropdown tests in `tests/ui/primitives.test.tsx` fail on `main` (`window.matchMedia is not a
-  function` in jsdom), since the "menus stay on screen" change.
+- Fixed the same day: 4 Dropdown tests failed (`window.matchMedia is not a function` in jsdom) since the "menus stay on
+  screen" change. The menu now works without `matchMedia` (as the bird does), so it no longer crashes on open in
+  embedded browsers that lack it.
 
 ## Fixed 2026-09-27 — hidden pages answered 200 again (the loading outlines, 07f28aa)
 
