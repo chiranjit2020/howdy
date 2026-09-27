@@ -10,6 +10,20 @@ moderation queue) was built on 2026-09-27 and is parked in `git stash` ("moderat
 keep-or-drop decision. Open follow-ups: photos on Post Cards, image moderation, account deletion, a real R2 bucket CORS
 rule, and e2e coverage for Tributes/Marks/Town Halls (see Blockers/Known Issues).
 
+Also shipped on 2026-09-27 (all live): the Vibe Matrix's five traits, Post Card reactions, a Whisper button on Pals rows
+(Close Pal moved into ⋯), the Chime bell clearing when Chimes is opened, and the fixes below. Migrations `0014` and `0015`
+are applied to `howdy_dev`, `howdy_prod` and the local e2e database. **Last full e2e run: 71 of 71 pass** (2026-09-27,
+after the two fixes in "Fixed 2026-09-27 — found by the e2e run").
+
+## Fixed 2026-09-27 — found by the e2e run (91a5b78)
+
+- A made-up Town Hall id (`/town-halls/not-a-real-id`) reached Postgres as an invalid uuid and threw. The gate layout
+  still answered 404, but **the page renders alongside its layout**, so the page's own `getTownHall` read the raw id.
+  It now treats a malformed id as missing (test in `tests/security/page-gates.test.ts`). Rule: a page behind a gate
+  layout must still validate its own params.
+- The Portrait e2e expected 2 Portraits on your own Porch; the phone tab bar's Porch tab (0f2fc36) adds a third, present
+  in the page even where it is hidden. Test updated.
+
 ## Status
 
 | Phase | State |
@@ -61,7 +75,7 @@ The bell's count is drawn by the layout on the server, and nothing redrew it aft
 stayed until a full reload. Opening Chimes now reads everything it shows (`{ all: true, before: <when the page was
 drawn> }`, so a Chime that rings meanwhile stays unread) and refreshes the frame; what was new stays highlighted for
 that visit. "Mark all read" is gone (nothing left for it to do). Tests: `tests/security/chimes.test.ts` ("all, before"),
-`tests/e2e/chimes.spec.ts` updated (e2e not run: short of RAM).
+`tests/e2e/chimes.spec.ts` updated and passing.
 
 ## Added 2026-09-27 — Post Card reactions (ADR-011 amendment)
 
@@ -81,7 +95,7 @@ that visit. "Mark all read" is gone (nothing left for it to do). Tests: `tests/s
 - [x] Clay artwork for every Mark and the Post Card reactions, cut from the design sheet into `public/art/mark-*.png` and
       `react-*.png`. Yo (🤘) now uses `react-yo` everywhere, and the Mark Chime (💎) uses `mark-gem`. Laugh, Fire,
       Popcorn and Love reactions are a later phase.
-- [ ] Not yet looked at in a browser, and `pnpm build`/e2e are not run (the machine was short of RAM).
+- [x] `pnpm build` and the full e2e run pass (no Marks-specific e2e yet; see Known Issues).
 - Fixed the same day: 4 Dropdown tests failed (`window.matchMedia is not a function` in jsdom) since the "menus stay on
   screen" change. The menu now works without `matchMedia` (as the bird does), so it no longer crashes on open in
   embedded browsers that lack it.
