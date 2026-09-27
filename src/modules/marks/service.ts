@@ -92,6 +92,7 @@ export async function getVibeMatrix(
   const counts = EMPTY_COUNTS();
   let total = 0;
   for (const r of rows) {
+    if (!(r.kind in counts)) continue; // a retired kind, should one ever outlive its migration
     counts[r.kind as MarkKind] = r.n;
     total += r.n;
   }

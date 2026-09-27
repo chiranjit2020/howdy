@@ -126,14 +126,14 @@ describe('the Vibe Matrix — aggregate only, never who or which kind by whom', 
     await giveMarkTo(other.handle, 'gem', as(a));
 
     const seen = await marksOf(owner.handle, as(stranger));
-    expect(seen.data.counts).toEqual({ chill: 2, pure: 0, cinema: 0, sigma: 0, gem: 0 });
+    expect(seen.data.counts).toEqual({ gem: 0, pure: 0, chill: 2, sharp: 0, bold: 0 });
     expect(seen.data.total).toBe(2);
     expect(seen.text).not.toContain(a.handle);
     expect(seen.text).not.toContain(b.handle);
     expect(seen.text).not.toMatch(/raterId|rater_id/);
 
     const seenOther = await marksOf(other.handle, as(stranger));
-    expect(seenOther.data.counts).toEqual({ chill: 0, pure: 0, cinema: 0, sigma: 0, gem: 1 });
+    expect(seenOther.data.counts).toEqual({ gem: 1, pure: 0, chill: 0, sharp: 0, bold: 0 });
     expect(seenOther.data.total).toBe(1);
   });
 
@@ -189,6 +189,11 @@ describe('database invariants', () => {
     await expect(
       q("insert into marks (rater_id, target_id, kind) values ($1, $2, 'legendary')", [f, o]),
     ).rejects.toThrow(/marks_kind_check/);
+    // Cinema and Sigma were retired for Sharp and Bold (migration 0014).
+    await expect(
+      q("insert into marks (rater_id, target_id, kind) values ($1, $2, 'cinema')", [f, o]),
+    ).rejects.toThrow(/marks_kind_check/);
+    await q("insert into marks (rater_id, target_id, kind) values ($1, $2, 'sharp')", [f, o]);
   });
 
   it('deleting either person removes their Marks', async () => {

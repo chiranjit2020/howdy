@@ -28,6 +28,19 @@ rule, and e2e coverage for Tributes/Marks/Town Halls (see Blockers/Known Issues)
 | 10 — Town Halls | DONE (directory + membership only, no shared feed; no Playwright/e2e coverage yet — see Known Issues) |
 | P0 — Legal Foundation | DONE (documents need a lawyer's review before launch — see ADR-019 "Before launch") |
 
+## Changed 2026-09-27 — the Vibe Matrix becomes five traits (ADR-016 amendment)
+
+- [x] Marks are now **Gem / Pure / Chill / Sharp / Bold**. Cinema and Sigma are retired: migration `0014` deletes their
+      rows and tightens `marks_kind_check`. Applied to `howdy_dev` and `howdy_prod` (prod had no Marks yet, so nothing
+      was deleted) before the push.
+- [x] Earned counts (with each Mark's meaning) until 20 Marks, then the percentage bars (`PERCENT_AFTER`).
+- [x] Clay artwork for every Mark and the Post Card reactions, cut from the design sheet into `public/art/mark-*.png` and
+      `react-*.png`. Yo (🤘) now uses `react-yo` everywhere, and the Mark Chime (💎) uses `mark-gem`. Laugh, Fire,
+      Popcorn and Love reactions are a later phase.
+- [ ] Not yet looked at in a browser, and `pnpm build`/e2e are not run (the machine was short of RAM).
+- Known and unrelated: 4 Dropdown tests in `tests/ui/primitives.test.tsx` fail on `main` (`window.matchMedia is not a
+  function` in jsdom), since the "menus stay on screen" change.
+
 ## Completed in P0 — Legal Foundation (ADR-019), 2026-09-27
 
 Decisions taken with you: operator **Chiranjit Karmakar (individual, India)**; public contact
@@ -98,7 +111,7 @@ one pinned Tribute** at a time (2026-09-22).
       path), `listTributes` (keyset, pinned leads, a stranger sees only published, the author also sees their own pending),
       `approveTribute` / `setTributePinned` / `removeTribute` (owner and/or author only), `listWaitingTributes` (merged
       into the existing Fence waiting queue), `purgeStaleTributes` (30 days, in `pnpm jobs:purge`).
-- [x] **`marks` module**: `getVibeMatrix` (aggregate count per kind — Chill/Pure/Cinema/Sigma/Gem — for a target; visible
+- [x] **`marks` module**: `getVibeMatrix` (aggregate count per kind — Gem/Pure/Chill/Sharp/Bold since migration 0014; originally Chill/Pure/Cinema/Sigma/Gem — for a target; visible
       wherever the Ranch is), `giveMark` (Posse gate; the 30-day cooldown is checked and enforced in one atomic
       `insert … where not exists (…)` statement so two racing requests cannot both slip through).
 - [x] **`authz` policy**: `tribute:give` / `mark:give` share `whisper:exchange`'s shape (mutual Posse, no block, not

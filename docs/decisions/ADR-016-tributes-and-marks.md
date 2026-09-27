@@ -58,3 +58,15 @@ Mark names from your profile mockup; there was no backend for either.
 
 Tribute visibility settings separate from the Ranch's; Marks on Post Cards or anywhere but a Ranch; a history of who gave
 what (by design); Mark categories beyond the five named in the mockup.
+
+## Amendment, 2026-09-27 — the five Marks become traits
+
+The five Marks are now **Gem** (rare, genuinely valuable), **Pure** (kind, trustworthy), **Chill** (calm, easygoing),
+**Sharp** (smart, insightful) and **Bold** (confident, courageous). A Mark answers "what kind of person is this?", not
+"what kind of post was that?". Cinema described a moment, not a person, and Sigma was slang that ages and means
+different things to different people, so both are gone. Migration `0014` deletes their rows, which also ends those
+givers' cooldowns (decided with the owner of the product). Popcorn-style reactions belong on Post Cards, as a later phase.
+
+The matrix shows **earned counts until 20 Marks**, then the percentage bars: a handful of Marks makes percentages look
+lopsided, and a wall of 0% looks empty. Each Mark has clay artwork (`public/art/mark-*.png`), cut from the design sheet
+together with the future Post Card reactions (`react-*.png`). Only Yo's (`react-yo`) is in use so far.

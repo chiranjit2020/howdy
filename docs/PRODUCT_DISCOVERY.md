@@ -28,7 +28,7 @@ implementation priorities; this file preserves the useful product ideas and reco
 | Scribble / reply | PostCardReply | 80 chars |
 | Yo | Yo (its own interaction, not a generic reaction) | one-tap, rate-limited |
 | Tip Hat | Tip | zero-text nudge ("poke") |
-| Marks (Chill/Pure/Cinema/Sigma/Gem) | Mark | 5 deep-vibe awards; Phase 9 |
+| Marks (Gem/Pure/Chill/Sharp/Bold) | Mark | 5 deep-vibe awards (personality traits); Phase 9, Cinema/Sigma replaced 2026-09-27 |
 | Tribute | Tribute | testimonial, owner approval required |
 | Tracks | ProfileVisit | Phase 8 |
 | Shadow Walk | visit-privacy mode | hides own visits, freezes own Tracks |

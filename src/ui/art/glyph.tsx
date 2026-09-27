@@ -24,6 +24,17 @@ const FILES = {
   sparkle: { w: 65, h: 69 },
   star: { w: 96, h: 101 },
   sun: { w: 120, h: 98 },
+  /** The Vibe Matrix's five Marks and the Post Card reactions (only Yo is used so far). */
+  'mark-gem': { w: 160, h: 160 },
+  'mark-pure': { w: 160, h: 160 },
+  'mark-chill': { w: 160, h: 160 },
+  'mark-sharp': { w: 160, h: 160 },
+  'mark-bold': { w: 160, h: 160 },
+  'react-yo': { w: 160, h: 160 },
+  'react-laugh': { w: 160, h: 160 },
+  'react-fire': { w: 160, h: 160 },
+  'react-popcorn': { w: 160, h: 160 },
+  'react-love': { w: 160, h: 160 },
   /** The blue badge next to the Howdy team account's name. */
   verified: { w: 96, h: 96 },
 } as const;
@@ -37,10 +48,10 @@ const BY_EMOJI: Record<string, ArtName> = {
   '📮': 'mailbox',
   '🤫': 'chat',
   '🤝': 'friends',
-  '🤘': 'star',
+  '🤘': 'react-yo',
   '📜': 'note',
   '🔔': 'sparkle',
-  '💎': 'sparkle',
+  '💎': 'mark-gem',
 };
 
 const SIZE = {
