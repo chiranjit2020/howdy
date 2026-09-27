@@ -10,6 +10,7 @@ export {
   listMembers,
   listMine,
   listMyInvites,
+  mayOpenTownHall,
   removeMember,
   updateTownHall,
   RATE,

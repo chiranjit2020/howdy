@@ -8,6 +8,7 @@ import {
   stepInsideVia,
   uniqueAccount,
   watchProblems,
+  pageReady,
 } from './helpers';
 
 const ORIGIN = 'http://localhost:3300';
@@ -205,6 +206,7 @@ test.describe('Whispers: accessibility and layout in a real browser', () => {
       const source = axeSource();
       for (const path of ['/whispers', `/whispers/${b.handle}`, '/workshop', `/porch/${b.handle}`]) {
         await a.page.goto(path);
+        await pageReady(a.page);
         await a.page.evaluate(() => document.fonts.ready);
         await a.page.addScriptTag({ content: source });
         const violations = await a.page.evaluate(async () => {
@@ -242,6 +244,7 @@ test.describe('Whispers: accessibility and layout in a real browser', () => {
     });
     for (const path of ['/whispers', `/whispers/${b.handle}`]) {
       await a.page.goto(path);
+      await pageReady(a.page);
       expect(await horizontalOverflow(a.page), `${path} overflow`).toBeLessThanOrEqual(0);
       const problems = await a.page.evaluate(() => {
         const out: string[] = [];

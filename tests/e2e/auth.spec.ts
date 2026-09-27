@@ -11,6 +11,7 @@ import {
   uniqueAccount,
   waitForMail,
   watchProblems,
+  pageReady,
 } from './helpers';
 
 test.describe('authentication journey (production build, real CSP, real cookies)', () => {
@@ -244,6 +245,7 @@ test.describe('signed-out pages: accessibility and layout in a real browser', ()
       const source = axeSource();
       for (const path of pages) {
         await page.goto(path);
+        await pageReady(page);
         await page.evaluate(() => document.fonts.ready);
         await page.addScriptTag({ content: source });
         const violations = await page.evaluate(async () => {
@@ -277,6 +279,7 @@ test.describe('signed-out pages: accessibility and layout in a real browser', ()
     const page = await ctx.newPage();
     for (const path of pages) {
       await page.goto(path);
+      await pageReady(page);
       expect(await horizontalOverflow(page), `${path} overflow`).toBeLessThanOrEqual(0);
       const small = await page.evaluate(() => {
         const out: string[] = [];
@@ -312,6 +315,7 @@ test.describe('signed-out pages: accessibility and layout in a real browser', ()
     const page = await ctx.newPage();
     for (const path of pages) {
       await page.goto(path);
+      await pageReady(page);
       const bar = page.getByRole('banner');
       await expect(bar.getByRole('link')).toHaveCount(1);
       const logo = (await bar.getByRole('link', { name: 'Howdy' }).boundingBox())!;

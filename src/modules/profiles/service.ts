@@ -295,6 +295,18 @@ export async function getTeamAnnouncement(
   return { author: toCard(card), text: signal, expiresAt: signalExpiresAt };
 }
 
+/**
+ * May this signed-in person open the Porch at `handleParam`? The page's own gate, run in its layout BEFORE the loading
+ * outline streams, so a hidden or missing Porch answers a real 404 (once streaming starts the status is fixed at 200).
+ * Check only: no view is built and no visit is recorded (layouts also run for link prefetches). It spends its own
+ * rate-limit budget, so the view itself is not charged twice.
+ */
+export async function mayViewRanchByHandle(viewerId: string, handleParam: string): Promise<boolean> {
+  await enforceRateLimit(`ranch:check:${viewerId}`, RATE.viewUser);
+  const owner = await resolveHandle(handleParam);
+  return owner !== null && mayViewRanch(viewerId, owner.userId);
+}
+
 /** Could `viewerId` open `ownerId`'s Ranch right now? Same policy as viewing, without producing the view. */
 export async function mayViewRanch(viewerId: string, ownerId: string): Promise<boolean> {
   const [row] = await getDb()

@@ -11,6 +11,7 @@ import {
   MEMBER_PAGE_SIZE,
   TOWNHALL_MAX_PAGE_SIZE,
   TOWNHALL_PAGE_SIZE,
+  townHallIdParamSchema,
   type TownHallAction,
   type TownHallVisibility,
 } from '@/shared/validation/town-halls';
@@ -246,6 +247,22 @@ const toRef = (p: PersonCard): Omit<MemberRef, 'role'> => ({
  * One Town Hall, or null when the viewer may not know it exists: `invite` visibility is hidden from everyone without a
  * membership row (active or still-pending). `open`/`members` are visible to any active viewer.
  */
+/**
+ * Would `getTownHall` show this Town Hall to this person? The page's gate, run in its layout before the loading
+ * outline streams, so an invite-only Town Hall they are not in (or a made-up id) is a real 404. Its own budget.
+ */
+export async function mayOpenTownHall(viewerId: string, townHallId: string): Promise<boolean> {
+  await enforceRateLimit(`townhalls:check:${viewerId}`, RATE.read);
+  if (!townHallIdParamSchema.safeParse(townHallId).success) return false;
+  const [row] = await getDb()
+    .select({ visibility: townHalls.visibility })
+    .from(townHalls)
+    .where(eq(townHalls.id, townHallId))
+    .limit(1);
+  if (!row) return false;
+  return row.visibility !== 'invite' || (await myMembership(viewerId, townHallId)) !== null;
+}
+
 export async function getTownHall(viewerId: string, townHallId: string): Promise<TownHallDetail | null> {
   await enforceRateLimit(`townhalls:read:${viewerId}`, RATE.read);
   const [row] = await getDb().select().from(townHalls).where(eq(townHalls.id, townHallId)).limit(1);

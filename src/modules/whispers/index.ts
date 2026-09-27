@@ -8,6 +8,7 @@ export {
   getThread,
   listThreads,
   markThreadRead,
+  mayOpenThread,
   messageForDelivery,
   purgeOldWhispers,
   sendWhisper,

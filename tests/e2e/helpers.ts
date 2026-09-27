@@ -2,7 +2,7 @@ import { randomInt } from 'node:crypto';
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { join } from 'node:path';
-import type { Browser, BrowserContext, Page } from '@playwright/test';
+import { expect, type Browser, type BrowserContext, type Page } from '@playwright/test';
 
 const OUTBOX = join(process.cwd(), '.dev', 'e2e-outbox');
 
@@ -161,3 +161,11 @@ export async function watchProblems(page: Page): Promise<string[]> {
 
 export const axeSource = (): string =>
   readFileSync(createRequire(import.meta.url).resolve('axe-core/axe.min.js'), 'utf8');
+
+/**
+ * Wait until the page itself has replaced its loading outline (outlines are marked aria-busy="true"). page.goto can
+ * return while the outline is still on screen; axe and size checks must measure the real page, not the outline.
+ */
+export async function pageReady(page: Page): Promise<void> {
+  await expect(page.locator('[aria-busy="true"]')).toHaveCount(0, { timeout: 15_000 });
+}

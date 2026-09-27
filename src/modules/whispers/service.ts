@@ -92,6 +92,15 @@ async function access(userId: string, handle: string): Promise<Access | null> {
   return decision.allow ? { other, restricted: standing.restricted } : null;
 }
 
+/**
+ * May this person open the thread with `handle`? The thread page's gate, run in its layout before the loading outline
+ * streams so a thread they may not open is a real 404. Reads nothing from the thread; its own rate-limit budget.
+ */
+export async function mayOpenThread(userId: string, handle: string): Promise<boolean> {
+  await enforceRateLimit(`whisper:check:${userId}`, RATE.read);
+  return (await access(userId, handle)) !== null;
+}
+
 // ─── sending ─────────────────────────────────────────────────────────────────────────────────────────────────────────
 
 /**

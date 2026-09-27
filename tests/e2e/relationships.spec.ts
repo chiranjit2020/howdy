@@ -8,6 +8,7 @@ import {
   stepInsideVia,
   uniqueAccount,
   watchProblems,
+  pageReady,
 } from './helpers';
 
 async function person(browser: Browser, tag: string, opts: Parameters<typeof newContext>[1] = {}) {
@@ -76,7 +77,7 @@ test.describe('Posse, Block and Flag trouble (production build, real CSP)', () =
     const after = await b.page.goto(`/porch/${a.handle}`);
     expect(after?.status()).toBe(200);
     await expect(b.page.getByRole('heading', { level: 1, name: a.handle })).toBeVisible();
-    await expect(b.page.getByText('Pals', { exact: true })).toBeVisible();
+    await expect(b.page.locator('#main').getByText('Pals', { exact: true })).toBeVisible(); // the relationship badge
 
     // A stranger (Carol) still gets the ordinary 404.
     expect((await c.page.goto(`/porch/${a.handle}`))?.status()).toBe(404);
@@ -219,6 +220,7 @@ test.describe('Posse pages: accessibility and layout in a real browser', () => {
       const source = axeSource();
       for (const path of ['/pals', `/porch/${b.handle}`, '/workshop', '/home']) {
         await a.page.goto(path);
+        await pageReady(a.page);
         await a.page.evaluate(() => document.fonts.ready);
         await a.page.addScriptTag({ content: source });
         const violations = await a.page.evaluate(async () => {
@@ -251,6 +253,7 @@ test.describe('Posse pages: accessibility and layout in a real browser', () => {
     await makePosse(b, a);
     for (const path of ['/pals', `/porch/${b.handle}`, '/workshop']) {
       await a.page.goto(path);
+      await pageReady(a.page);
       expect(await horizontalOverflow(a.page), `${path} overflow`).toBeLessThanOrEqual(0);
       const small = await a.page.evaluate(() => {
         const out: string[] = [];

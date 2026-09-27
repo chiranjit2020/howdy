@@ -8,6 +8,7 @@ import {
   stepInsideVia,
   uniqueAccount,
   watchProblems,
+  pageReady,
 } from './helpers';
 
 const ORIGIN = 'http://localhost:3300';
@@ -208,6 +209,7 @@ test.describe('Fence: accessibility and layout in a real browser', () => {
         [a, '/workshop'], // Fence rules
       ] as const) {
         await who.page.goto(path);
+        await pageReady(who.page);
         await who.page.evaluate(() => document.fonts.ready);
         if (path.startsWith('/ranch')) {
           // Also check the back of a card (replies + composer).
@@ -250,6 +252,7 @@ test.describe('Fence: accessibility and layout in a real browser', () => {
       [a, '/workshop'],
     ] as const) {
       await who.page.goto(path);
+      await pageReady(who.page);
       expect(await horizontalOverflow(who.page), `${path} overflow`).toBeLessThanOrEqual(0);
       const problems = await who.page.evaluate(() => {
         const out: string[] = [];

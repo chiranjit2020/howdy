@@ -14,6 +14,7 @@ export {
   isOfficial,
   isShadowWalking,
   mayViewRanch,
+  mayViewRanchByHandle,
   resolveHandle,
   setSignal,
   updateRanch,

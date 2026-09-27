@@ -28,19 +28,6 @@ rule, and e2e coverage for Tributes/Marks/Town Halls (see Blockers/Known Issues)
 | 10 — Town Halls | DONE (directory + membership only, no shared feed; no Playwright/e2e coverage yet — see Known Issues) |
 | P0 — Legal Foundation | DONE (documents need a lawyer's review before launch — see ADR-019 "Before launch") |
 
-## Changed 2026-09-27 — the Vibe Matrix becomes five traits (ADR-016 amendment)
-
-- [x] Marks are now **Gem / Pure / Chill / Sharp / Bold**. Cinema and Sigma are retired: migration `0014` deletes their
-      rows and tightens `marks_kind_check`. Applied to `howdy_dev` and `howdy_prod` (prod had no Marks yet, so nothing
-      was deleted) before the push.
-- [x] Earned counts (with each Mark's meaning) until 20 Marks, then the percentage bars (`PERCENT_AFTER`).
-- [x] Clay artwork for every Mark and the Post Card reactions, cut from the design sheet into `public/art/mark-*.png` and
-      `react-*.png`. Yo (🤘) now uses `react-yo` everywhere, and the Mark Chime (💎) uses `mark-gem`. Laugh, Fire,
-      Popcorn and Love reactions are a later phase.
-- [ ] Not yet looked at in a browser, and `pnpm build`/e2e are not run (the machine was short of RAM).
-- Known and unrelated: 4 Dropdown tests in `tests/ui/primitives.test.tsx` fail on `main` (`window.matchMedia is not a
-  function` in jsdom), since the "menus stay on screen" change.
-
 ## Completed in P0 — Legal Foundation (ADR-019), 2026-09-27
 
 Decisions taken with you: operator **Chiranjit Karmakar (individual, India)**; public contact
@@ -67,6 +54,39 @@ Decisions taken with you: operator **Chiranjit Karmakar (individual, India)**; p
       handle") that had started passing for the wrong reason (a validation error) once the box became required.
 - [x] Also fixed: a pre-existing lint error in `tests/e2e/helpers.ts` and Prettier drift in
       `src/app/porch/[handle]/loading.tsx`. Both made `pnpm check` fail on `main`.
+
+## Changed 2026-09-27 — the Vibe Matrix becomes five traits (ADR-016 amendment)
+
+- [x] Marks are now **Gem / Pure / Chill / Sharp / Bold**. Cinema and Sigma are retired: migration `0014` deletes their
+      rows and tightens `marks_kind_check`. Applied to `howdy_dev` and `howdy_prod` (prod had no Marks yet, so nothing
+      was deleted) before the push.
+- [x] Earned counts (with each Mark's meaning) until 20 Marks, then the percentage bars (`PERCENT_AFTER`).
+- [x] Clay artwork for every Mark and the Post Card reactions, cut from the design sheet into `public/art/mark-*.png` and
+      `react-*.png`. Yo (🤘) now uses `react-yo` everywhere, and the Mark Chime (💎) uses `mark-gem`. Laugh, Fire,
+      Popcorn and Love reactions are a later phase.
+- [ ] Not yet looked at in a browser, and `pnpm build`/e2e are not run (the machine was short of RAM).
+- Known and unrelated: 4 Dropdown tests in `tests/ui/primitives.test.tsx` fail on `main` (`window.matchMedia is not a
+  function` in jsdom), since the "menus stay on screen" change.
+
+## Fixed 2026-09-27 — hidden pages answered 200 again (the loading outlines, 07f28aa)
+
+The loading outlines added for every page brought back the Phase 8 bug: a hidden Porch, a Whisper thread you may not
+open and an invite-only Town Hall answered **200** (with a not-found page inside) instead of **404**, because once a
+`loading.tsx` streams, the status is fixed. This time the outlines were kept:
+
+- Each of those pages now has a **gate layout** (`porch/[handle]/layout.tsx`, `whispers/[handle]/layout.tsx`,
+  `town-halls/[id]/layout.tsx`) that calls a check-only function (`mayViewRanchByHandle`, `mayOpenThread`,
+  `mayOpenTownHall`) and `notFound()` BEFORE the outline streams. A layout renders outside its own segment's loading
+  boundary. The checks have no side effects, because layouts also run for link prefetches: the Porch check records no
+  visit, which is tested. Each check has its own rate-limit budget, and the pages keep their full checks.
+- A parent segment's `loading.tsx` wraps its children too, so the Whispers and Town Halls **list** pages and their
+  outlines moved into a `(list)` route group. The URLs are unchanged.
+- Tests: `tests/security/page-gates.test.ts` (mutation run `.dev/mutate-gates.mjs`, 5 of 5 caught) and
+  `tests/e2e/not-found.spec.ts`. Axe and layout loops now wait for the page to replace its outline (`pageReady`),
+  because they sometimes measured the outline itself.
+
+**Rule for new pages:** a page that can be "not found" for some viewers and has a `loading.tsx` needs a gate layout,
+and no `loading.tsx` may sit above it.
 
 ## Completed in Phase 10 — Town Halls (ADR-017)
 
