@@ -8,10 +8,13 @@ import { apiRequest } from '@/ui/auth/api';
 import { FormMessage } from '@/ui/auth/form-parts';
 import { Button, ClayCard, Textarea } from '@/ui/primitives';
 
-/** Owner-only: set or clear the Signal. It expires 12 hours after it is set. */
+/**
+ * Owner-only: set or remove the Signal. It expires 12 hours after it is set. The live Signal is shown in its own card
+ * above, so this box is only for writing a new one: it starts empty and empties again once a Signal is set.
+ */
 export function SignalEditor({ current }: { current: string | undefined }) {
   const router = useRouter();
-  const [text, setText] = useState(current ?? '');
+  const [text, setText] = useState('');
   const [fieldError, setFieldError] = useState<string | undefined>();
   const [formError, setFormError] = useState<string | undefined>();
   const [busy, setBusy] = useState<'set' | 'clear' | undefined>();
@@ -28,19 +31,20 @@ export function SignalEditor({ current }: { current: string | undefined }) {
     setBusy('set');
     const res = await apiRequest('PUT', '/api/me/signal', parsed.data);
     setBusy(undefined);
-    if (res.ok) router.refresh();
-    else if (res.error?.fields?.text) setFieldError(res.error.fields.text);
-    else setFormError(res.error?.message);
-  }
-
-  async function clear() {
-    setBusy('clear');
-    const res = await apiRequest('DELETE', '/api/me/signal');
-    setBusy(undefined);
     if (res.ok) {
       setText('');
       router.refresh();
-    } else setFormError(res.error?.message);
+    } else if (res.error?.fields?.text) setFieldError(res.error.fields.text);
+    else setFormError(res.error?.message);
+  }
+
+  async function remove() {
+    setFormError(undefined);
+    setBusy('clear');
+    const res = await apiRequest('DELETE', '/api/me/signal');
+    setBusy(undefined);
+    if (res.ok) router.refresh();
+    else setFormError(res.error?.message);
   }
 
   return (
@@ -63,8 +67,8 @@ export function SignalEditor({ current }: { current: string | undefined }) {
             Set Signal
           </Button>
           {current && (
-            <Button variant="secondary" loading={busy === 'clear'} onClick={clear}>
-              Clear
+            <Button variant="secondary" loading={busy === 'clear'} onClick={remove}>
+              Remove Signal
             </Button>
           )}
         </div>

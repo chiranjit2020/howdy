@@ -41,11 +41,14 @@ test.describe('Ranch, Signal and Workshop (production build, real CSP)', () => {
     await expect(a.page).toHaveURL(new RegExp(`/porch/${a.handle}$`));
     await expect(a.page.getByRole('heading', { level: 1, name: a.handle })).toBeVisible(); // display name defaults to the handle
 
-    // Signal: set, see it, clear it.
+    // Signal: set, see it (and the box empties for the next one), remove it.
     await a.page.getByLabel('What is the vibe right now?').fill('In the zone. Send chai.');
     await a.page.getByRole('button', { name: 'Set Signal' }).click();
     await expect(signalOn(a.page, 'In the zone. Send chai.').filter({ hasText: /h left/ })).toBeVisible();
-    await a.page.getByRole('button', { name: 'Clear' }).click();
+    await expect(a.page.getByLabel('What is the vibe right now?')).toHaveValue('');
+    await a.page.reload();
+    await expect(a.page.getByLabel('What is the vibe right now?')).toHaveValue('');
+    await a.page.getByRole('button', { name: 'Remove Signal' }).click();
     await expect(signalOn(a.page, 'In the zone. Send chai.').filter({ hasText: /h left/ })).toHaveCount(0);
 
     // A link in a Signal is refused, on the field, with a reason.
