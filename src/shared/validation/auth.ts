@@ -77,12 +77,48 @@ const COMMON_PASSWORDS: ReadonlySet<string> = new Set([
   'trustno1234',
 ]);
 
+export const INVALID_EMAIL = 'Enter a valid email address.';
+
+/** One part of a domain name: letters, digits and inner hyphens, 1–63 characters. */
+const DOMAIN_LABEL = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
+
+/**
+ * What z.email() lets through but no real inbox needs: a domain part that starts or ends with a hyphen (`a@b-.com`),
+ * a local part over 64 characters (RFC 5321), and punycode (`xn--…`) domains. Punycode is how look-alike (homograph)
+ * domains are written in ASCII; Howdy is ASCII-only for emails, so it is refused rather than displayed.
+ */
+function wellFormedParts(email: string): boolean {
+  const at = email.lastIndexOf('@');
+  const local = email.slice(0, at);
+  const labels = email.slice(at + 1).split('.');
+  return (
+    local.length <= 64 &&
+    labels.every((l) => DOMAIN_LABEL.test(l) && !l.startsWith('xn--')) &&
+    !allDigits(local, labels)
+  );
+}
+
+/**
+ * Throwaway-looking: digits only on both sides of the @, ignoring the ending (`123@123.com`, `42@7.co.in`). A product
+ * decision (2026-09-27). Narrow on purpose: digits on ONE side are real (`12345@qq.com`, `me@163.com`) and stay allowed.
+ */
+function allDigits(local: string, labels: string[]): boolean {
+  const name = labels.slice(0, -1).filter((l) => !/^(co|com|net|org|ac|gov|edu)$/.test(l));
+  return /^\d+$/.test(local) && name.length > 0 && name.every((l) => /^\d+$/.test(l));
+}
+
+/**
+ * The one email rule, used by sign-up, the sign-up form and every "send me an email" form. Trimmed and lowercased
+ * first, so what is stored is always the normalised form. Rejects: no @, several @, missing or dotless domain
+ * (`user@localhost`), IP literals, consecutive or edge dots, spaces, quotes and other unusual characters, non-ASCII,
+ * over 254 characters — all with the same friendly message.
+ */
 export const emailSchema = z
   .string()
   .trim()
   .toLowerCase()
   .max(254, 'That email is too long.')
-  .pipe(z.email('Enter a valid email address.'));
+  .pipe(z.email(INVALID_EMAIL).refine(wellFormedParts, INVALID_EMAIL));
 
 export const handleSchema = z
   .string()

@@ -111,6 +111,56 @@ test.describe('authentication journey (production build, real CSP, real cookies)
     await ctx.close();
   });
 
+  test('a malformed email is flagged on leaving the box, kept as typed, never sent, and refused by the API too', async ({
+    browser,
+  }) => {
+    const ctx = await newContext(browser);
+    const page = await ctx.newPage();
+    const posts: string[] = [];
+    page.on(
+      'request',
+      (r) => r.method() === 'POST' && r.url().includes('/api/auth/signup') && posts.push(r.url()),
+    );
+    await page.goto('/stake-a-claim');
+    const email = page.getByLabel('Email address');
+
+    // Leaving the box shows the problem straight away, marks the box, and keeps what was typed.
+    await email.fill('test@gmail');
+    await email.blur();
+    await expect(page.getByText('Enter a valid email address.')).toBeVisible();
+    await expect(email).toHaveAttribute('aria-invalid', 'true');
+    await expect(email).toHaveValue('test@gmail');
+
+    // Submitting with it still wrong sends nothing and puts you back in the email box.
+    await page.getByLabel('Choose a handle').fill('mail_check');
+    await page.getByLabel('Password', { exact: true }).fill('correct horse battery staple');
+    await page.getByRole('checkbox').check();
+    await page.getByRole('button', { name: 'Create My Account' }).click();
+    await expect(email).toBeFocused();
+    expect(posts).toEqual([]);
+
+    // Fixing it clears the error as you type.
+    await email.fill('test@gmail.com');
+    await expect(page.getByText('Enter a valid email address.')).toHaveCount(0);
+    await expect(email).not.toHaveAttribute('aria-invalid', 'true');
+
+    // A crafted request with no form in front gets a structured field error, not an account.
+    const res = await ctx.request.post('/api/auth/signup', {
+      data: {
+        email: 'user@localhost',
+        handle: 'mail_check2',
+        password: 'correct horse battery staple',
+        acceptTerms: true,
+      },
+      headers: { origin: 'http://localhost:3300' },
+    });
+    expect(res.status()).toBe(422);
+    expect(((await res.json()) as { error: { fields: { email: string } } }).error.fields.email).toBe(
+      'Enter a valid email address.',
+    );
+    await ctx.close();
+  });
+
   test('protected pages and APIs refuse signed-out visitors', async ({ browser }) => {
     const ctx = await newContext(browser);
     const page = await ctx.newPage();

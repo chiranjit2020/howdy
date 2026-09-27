@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { INVALID_EMAILS, VALID_EMAILS } from '../helpers/emails';
 import {
   emailSchema,
   handleSchema,
@@ -33,6 +34,14 @@ describe('emailSchema', () => {
   });
   it.each(['nope', 'a@', '@b.com', 'a b@c.com', `${'a'.repeat(250)}@x.com`])('rejects %j', (e) => {
     expect(ok(emailSchema, e)).toBe(false);
+  });
+  it.each(INVALID_EMAILS.map((e) => [e]))('rejects %j with the friendly message', (e) => {
+    const r = emailSchema.safeParse(e);
+    expect(r.success).toBe(false);
+    expect(r.error!.issues[0]!.message).toMatch(/^(Enter a valid email address\.|That email is too long\.)$/);
+  });
+  it.each(VALID_EMAILS.map(([raw, stored]) => [raw, stored]))('accepts %j as %j', (raw, stored) => {
+    expect(emailSchema.parse(raw)).toBe(stored);
   });
 });
 

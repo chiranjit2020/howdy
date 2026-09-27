@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRef, useState, type FormEvent } from 'react';
-import { PASSWORD_MIN, signUpSchema } from '@/shared/validation/auth';
+import { PASSWORD_MIN, emailSchema, signUpSchema } from '@/shared/validation/auth';
 import { LIMITS } from '@/shared/limits';
 import { postJson } from '@/ui/auth/api';
 import { FormMessage, focusFirstInvalid } from '@/ui/auth/form-parts';
@@ -25,6 +25,21 @@ export function ClaimForm() {
 
   const set = (k: keyof Fields) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setValues((v) => ({ ...v, [k]: e.target.value }));
+
+  // The email is checked as soon as you leave the box (not only on submit), with the same rule the server uses; once
+  // an error is showing, it clears the moment the address is fixed. Nothing typed is ever cleared.
+  const emailError = (value: string) => {
+    const r = emailSchema.safeParse(value);
+    return r.success ? undefined : r.error.issues[0]?.message;
+  };
+  const checkEmail = () => {
+    if (values.email.trim()) setErrors((e) => ({ ...e, email: emailError(values.email) }));
+  };
+  const onEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setValues((v) => ({ ...v, email: value }));
+    if (errors.email && !emailError(value)) setErrors(({ email: _fixed, ...rest }) => rest);
+  };
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -129,7 +144,8 @@ export function ClaimForm() {
         autoComplete="email"
         inputMode="email"
         value={values.email}
-        onChange={set('email')}
+        onChange={onEmailChange}
+        onBlur={checkEmail}
         error={errors.email}
       />
       <Input

@@ -15,6 +15,29 @@ Also shipped on 2026-09-27 (all live): the Vibe Matrix's five traits, Post Card 
 are applied to `howdy_dev`, `howdy_prod` and the local e2e database. **Last full e2e run: 83 of 83 pass** (2026-09-27,
 with the new Tributes, Marks and Town Halls specs and the fixes they led to).
 
+## Security test 2026-09-27 — email validation at sign-up (P0 brief)
+
+Ran the "Email Validation Security Test (P0)" brief against sign-up, with the form bypassed.
+
+- Already enforced on the server (unchanged): trimmed and lowercased before storing; no `@`, several `@`, missing
+  domain or TLD (`test@gmail`, `user@localhost`), IP literals, consecutive/edge dots, spaces, quotes, `<>`, non-ASCII,
+  over 254 characters, non-string values — all 422 `VALIDATION_FAILED` with `fields.email` = "Enter a valid email
+  address." A repeat address in another case is the same account (identical reply, no second row). Sign-up is rate
+  limited per email and per address (`auth-abuse.test.ts`).
+- **Tightened** (`emailSchema` in `src/shared/validation/auth.ts`, used by every email form): domain parts may not start
+  or end with a hyphen (`a@b-.com` was accepted); local part at most 64 characters; **punycode (`xn--`) domains are
+  refused** (the ASCII form of look-alike IDN domains).
+- **Form:** the email is now checked when you leave the box (same rule as the server), marked, kept as typed, cleared as
+  soon as it is fixed, and a submit with it wrong sends nothing.
+- **Digits on both sides refused** (`123@123.com`, `42@7.co.in`), by the product owner's decision. Kept narrow on purpose:
+  digits on one side only are real addresses and stay allowed (`12345@qq.com`, `me@163.com`).
+- The error body keeps the app-wide shape (`{ error: { code, message, requestId, fields } }`) rather than the brief's
+  example `{ error: "INVALID_EMAIL" }`, so every form reads errors the same way.
+- Tests: `tests/helpers/emails.ts` (the shared list), `tests/unit/auth-validation.test.ts` (checked to fail without the
+  new rule), `tests/security/signup-email.test.ts` (56 cases through the route handler: rejected with no account and no
+  mail, accepted and stored normalised, non-string values, no echo of injection/script input, case-insensitive
+  duplicates), `tests/e2e/auth.spec.ts` (blur, kept input, nothing sent, API 422).
+
 ## Added 2026-09-27 — e2e coverage for Tributes
 
 - [x] `tests/e2e/tributes.spec.ts`: a Pal leaves a Tribute (shown to him as waiting, with "Take it back"); a non-Pal
