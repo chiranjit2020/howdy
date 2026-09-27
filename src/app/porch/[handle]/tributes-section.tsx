@@ -34,6 +34,14 @@ export function TributesSection({
   const [removal, setRemoval] = useState<string | undefined>();
   const [removing, setRemoving] = useState(false);
   const [pinning, setPinning] = useState<string | undefined>();
+  // Fresh server data (e.g. after approving one in "Waiting for you", which refreshes the page) replaces the list;
+  // useState alone would keep showing the first render's Tributes.
+  const [shownFrom, setShownFrom] = useState(initial);
+  if (initial !== shownFrom) {
+    setShownFrom(initial);
+    setTributes(initial.tributes);
+    setNext(initial.nextCursor);
+  }
 
   async function give() {
     const trimmed = body.trim();
@@ -79,8 +87,11 @@ export function TributesSection({
     const res = await apiRequest('PATCH', `/api/tributes/${t.id}`, { pinned: !t.pinned });
     setPinning(undefined);
     if (res.ok) {
+      // Only one is pinned, and the pinned one leads (as the server orders them); otherwise keep the order.
       setTributes((all) =>
-        all.map((x) => (x.id === t.id ? { ...x, pinned: !t.pinned } : { ...x, pinned: false })),
+        all
+          .map((x) => (x.id === t.id ? { ...x, pinned: !t.pinned } : { ...x, pinned: false }))
+          .sort((a, b) => Number(b.pinned) - Number(a.pinned)),
       );
     } else setError(res.error?.message ?? 'That did not work. Try again.');
   }

@@ -8,12 +8,25 @@ _Last updated: 2026-09-27_
 Phases 0–10 are complete. Next: **Phase 11 — Moderation + Anti-Abuse Expansion**. A first slice of it (the
 moderation queue) was built on 2026-09-27 and is parked in `git stash` ("moderation queue (ADR-018)"), awaiting a
 keep-or-drop decision. Open follow-ups: photos on Post Cards, image moderation, account deletion, a real R2 bucket CORS
-rule, and e2e coverage for Tributes (Marks and Town Halls have it since 2026-09-27; see Known Issues).
+rule. Every shipped feature now has e2e coverage (Tributes, Marks and Town Halls since 2026-09-27).
 
 Also shipped on 2026-09-27 (all live): the Vibe Matrix's five traits, Post Card reactions, a Whisper button on Pals rows
 (Close Pal moved into ⋯), the Chime bell clearing when Chimes is opened, and the fixes below. Migrations `0014` and `0015`
-are applied to `howdy_dev`, `howdy_prod` and the local e2e database. **Last full e2e run: 79 of 79 pass** (2026-09-27,
-with the new Marks and Town Halls specs and the fixes they led to).
+are applied to `howdy_dev`, `howdy_prod` and the local e2e database. **Last full e2e run: 83 of 83 pass** (2026-09-27,
+with the new Tributes, Marks and Town Halls specs and the fixes they led to).
+
+## Added 2026-09-27 — e2e coverage for Tributes
+
+- [x] `tests/e2e/tributes.spec.ts`: a Pal leaves a Tribute (shown to him as waiting, with "Take it back"); a non-Pal
+      cannot read it or write one; the owner is told, approves it from "Waiting for you", and it shows at once; the author
+      is told; a second one is approved, the older is pinned and moves to the top (saved, not just on screen); one is
+      taken down for everyone. Axe light/dark as owner and as author, 320 px and 44 px targets.
+- Found and fixed:
+  - **An approved Tribute did not appear in the owner's list** until a reload (the list is the section's own state and
+    the page refresh after approving did not reset it). The section now takes fresh server data when it arrives.
+  - **"Pin to top" did not move it to the top** until a reload. The pinned one now leads at once.
+  - **Wrong words on a waiting Tribute:** only its author sees it, but it said "Waiting for your approval". Now
+    "Waiting for approval".
 
 ## Added 2026-09-27 — e2e coverage for Marks and Town Halls
 
@@ -59,7 +72,7 @@ with the new Marks and Town Halls specs and the fixes they led to).
 | 7 — Whispers + WebSockets | DONE |
 | 8 — Tracks + Shadow Walk | DONE |
 | 9 — Media / Portrait | DONE (Portrait only; not yet exercised against a real R2 bucket) |
-| 9 — Tributes + Marks | DONE (Marks have e2e coverage; Tributes do not yet — see Known Issues) |
+| 9 — Tributes + Marks | DONE (e2e coverage for both since 2026-09-27) |
 | 10 — Town Halls | DONE (directory + membership only, no shared feed; e2e coverage since 2026-09-27) |
 | P0 — Legal Foundation | DONE (documents need a lawyer's review before launch — see ADR-019 "Before launch") |
 
@@ -357,7 +370,7 @@ layers covered for them); direct tests of the recorder now catch both. All 15 ca
 **Moderation + Anti-Abuse Expansion** (master prompt §61 Phase 11). Media follow-ups still open: photos on Post Cards
 (per-card media with the Fence's privacy rules), showing Portraits in lists / cards / Chimes (needs a per-viewer
 decision per row), reporting a photo, image moderation, and the account-deletion flow calling `deleteAllMediaFor`.
-Tributes/Marks/Town Halls follow-ups: e2e coverage for Tributes; revisit whether Tribute/Mark giving should ever
+Tributes/Marks/Town Halls follow-ups: revisit whether Tribute/Mark giving should ever
 widen beyond Posse-only; a Town Hall shared feed if the need becomes real; Town Hall roles beyond owner/member.
 
 ## Architectural Decisions

@@ -26,7 +26,8 @@ export function TributeCard({ body, authorHandle, status, pinned, actions }: Tri
             Pinned Tribute
           </Badge>
         )}
-        {status === 'pending' && <Badge tone="info">Waiting for your approval</Badge>}
+        {/* Only its author ever sees a waiting Tribute; the approving is the owner's, so not "your" approval. */}
+        {status === 'pending' && <Badge tone="info">Waiting for approval</Badge>}
       </div>
       <blockquote className="font-display text-title break-words text-text-primary italic">
         “{body}”

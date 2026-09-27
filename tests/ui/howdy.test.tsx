@@ -275,7 +275,7 @@ describe('TributeCard', () => {
         actions={<button type="button">Approve</button>}
       />,
     );
-    expect(screen.getByText('Waiting for your approval')).toBeInTheDocument();
+    expect(screen.getByText('Waiting for approval')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Approve' })).toBeInTheDocument();
     rerender(
       <TributeCard
@@ -286,7 +286,7 @@ describe('TributeCard', () => {
       />,
     );
     expect(screen.queryByRole('button', { name: 'Approve' })).not.toBeInTheDocument();
-    expect(screen.queryByText('Waiting for your approval')).not.toBeInTheDocument();
+    expect(screen.queryByText('Waiting for approval')).not.toBeInTheDocument();
   });
 });
 
