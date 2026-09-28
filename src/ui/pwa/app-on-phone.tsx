@@ -43,10 +43,18 @@ export function AppOnPhone({ vapidKey }: { vapidKey: string | undefined }) {
     if (!vapidKey) return;
     setBusy(true);
     setError(undefined);
-    const next = on ? await enablePush(vapidKey) : await disablePush();
-    setBusy(false);
-    setPush(next);
-    if (on && next === 'off') setError('Notifications did not turn on. Try again.');
+    try {
+      const next = on ? await enablePush(vapidKey) : await disablePush();
+      setPush(next);
+      if (on && next === 'off') setError('Notifications did not turn on. Try again.');
+    } catch (err) {
+      // Browsers fail here in their own ways (no push service, a blocked worker, a stale install): say which, so it can be fixed.
+      setError(
+        `Notifications did not turn on (${err instanceof Error ? `${err.name}: ${err.message}` : 'unknown error'}).`,
+      );
+    } finally {
+      setBusy(false);
+    }
   }
 
   if (os === null) return null; // decided in the browser only
