@@ -8,7 +8,8 @@ import type { RelationshipAction } from '@/shared/validation/relationships';
 import { apiRequest } from '@/ui/auth/api';
 import { FormMessage } from '@/ui/auth/form-parts';
 import { PersonRow } from '@/ui/howdy';
-import { MoreIcon, WhisperIcon } from '@/ui/icons';
+import { Art } from '@/ui/art/glyph';
+import { MoreIcon } from '@/ui/icons';
 import { Button, ClayCard, ConfirmationDialog, Dropdown, EmptyState } from '@/ui/primitives';
 
 // A round 44px icon button (or link) for the compact Pals row.
@@ -119,7 +120,7 @@ export function PosseLists({ lists }: { lists: RelationshipLists }) {
                       title="Whisper"
                       className={iconButton}
                     >
-                      <WhisperIcon />
+                      <Art name="nav-whispers" size="free" className="size-7" />
                     </Link>
                     <Dropdown
                       label={`More about ${p.displayName}`}

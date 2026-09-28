@@ -57,7 +57,7 @@ export function PostCardReply({
           </span>{' '}
           · <RelativeTime date={createdAt} />
         </p>
-        <p className="font-mono text-code break-words text-text-primary">{body}</p>
+        <p className="text-caption font-normal break-words text-text-primary">{body}</p>
         {notice && <p className="text-metadata text-text-muted">{notice}</p>}
         {actions}
       </div>
