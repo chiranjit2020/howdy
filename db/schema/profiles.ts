@@ -33,6 +33,11 @@ export const profiles = pgTable(
     fenceReview: boolean('fence_review').notNull().default(false),
     /** Shadow Walk: my visits leave no Track, and my own Tracks are frozen (reciprocal). Private: never shown to anyone else. */
     shadowWalk: boolean('shadow_walk').notNull().default(false),
+    /**
+     * Read receipts ("Seen" on Whispers), reciprocal: shown in a thread only when BOTH people have them on. Private: whether
+     * someone has them off is never shown, so a missing "Seen" also covers for a Restrict (ADR-021).
+     */
+    readReceipts: boolean('read_receipts').notNull().default(true),
     createdAt: tstz('created_at').notNull().defaultNow(),
     updatedAt: tstz('updated_at').notNull().defaultNow(),
   },

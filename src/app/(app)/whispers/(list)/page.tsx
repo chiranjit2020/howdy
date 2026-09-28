@@ -1,15 +1,17 @@
 import Link from 'next/link';
 import { requireUser } from '@/modules/auth';
+import { getOwnRanch } from '@/modules/profiles';
 import { listThreads } from '@/modules/whispers';
 import { formatRelative, GlossaryHint } from '@/ui/howdy';
 import { Avatar, Badge, ClayCard, EmptyState } from '@/ui/primitives';
+import { ReadReceipts } from './read-receipts';
 
 export const metadata = { title: 'Whispers' };
 
 /** My Whisper threads. Protected: the session is checked on the server before any of this renders. */
 export default async function WhispersPage() {
   const user = await requireUser();
-  const threads = await listThreads(user.id);
+  const [threads, me] = await Promise.all([listThreads(user.id), getOwnRanch(user.id)]);
   return (
     <>
       <main id="main" className="mx-auto flex w-full max-w-xl flex-col gap-4 py-4 sm:gap-6 sm:py-8">
@@ -59,6 +61,7 @@ export default async function WhispersPage() {
             ))}
           </ul>
         )}
+        <ReadReceipts initial={me.readReceipts} />
       </main>
     </>
   );

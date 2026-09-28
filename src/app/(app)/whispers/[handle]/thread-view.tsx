@@ -52,12 +52,14 @@ export function ThreadView({
   handle: string;
   displayName: string;
   portraitTint: PortraitTint;
-  initial: { messages: WhisperMessage[]; hasMore: boolean };
+  initial: { messages: WhisperMessage[]; hasMore: boolean; seenUpTo?: number | undefined };
   wsUrl: string | undefined;
 }) {
   const router = useRouter();
   const [messages, setMessages] = useState<Msg[]>(initial.messages);
   const [hasMore, setHasMore] = useState(initial.hasMore);
+  // How far they have read. Undefined when receipts are not shared in this thread: then nothing ever says "Seen".
+  const [seenUpTo, setSeenUpTo] = useState(initial.seenUpTo);
   const [live, setLive] = useState<Live>(wsUrl ? 'connecting' : 'off');
   const [text, setText] = useState('');
   const [error, setError] = useState<string | undefined>();
@@ -100,11 +102,12 @@ export function ThreadView({
   /** Fetch what happened since the last message I have (after a reconnect, or when polling). */
   const catchUp = useCallback(async () => {
     for (let i = 0; i < 5; i++) {
-      const res = await apiRequest<{ messages: WhisperMessage[]; hasMore: boolean }>(
+      const res = await apiRequest<{ messages: WhisperMessage[]; hasMore: boolean; seenUpTo?: number }>(
         'GET',
         `/api/whispers/${handle}?after=${lastSeq.current}`,
       );
       if (!res.ok || !res.data) return;
+      setSeenUpTo(res.data.seenUpTo);
       merge(res.data.messages);
       if (res.data.messages.some((m) => !m.mine)) markRead();
       if (!res.data.hasMore) return;
@@ -167,14 +170,19 @@ export function ThreadView({
     };
   }, [wsUrl, handle, merge, markRead, catchUp]);
 
+  const lastMine = [...messages].reverse().find((m) => m.mine && !m.state);
+  // "Seen" is not pushed over the socket, so while my last Whisper waits for it the page keeps asking even when live.
+  const awaitingSeen = seenUpTo !== undefined && lastMine !== undefined && lastMine.seq > seenUpTo;
+
   // Without a live connection the page still stays current by asking now and then.
   useEffect(() => {
-    if (live === 'live' || live === 'connecting' || live === 'ended') return;
+    if (live === 'ended') return;
+    if ((live === 'live' || live === 'connecting') && !awaitingSeen) return;
     const id = setInterval(() => {
       if (document.visibilityState === 'visible') void catchUp();
     }, POLL_MS);
     return () => clearInterval(id);
-  }, [live, catchUp]);
+  }, [live, awaitingSeen, catchUp]);
 
   useEffect(() => {
     markRead();
@@ -282,7 +290,6 @@ export function ThreadView({
 
   const clock = (iso: string) =>
     mounted ? new Date(iso).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : '';
-  const lastMine = [...messages].reverse().find((m) => m.mine && !m.state)?.id;
   const status: Record<Live, string> = {
     live: 'Live',
     connecting: 'Connecting…',
@@ -298,7 +305,9 @@ export function ThreadView({
         <div className="min-w-0 flex-1">
           <h1 className="text-title [overflow-wrap:anywhere] text-text-primary">{displayName}</h1>
           <p className="text-caption text-text-secondary">
-            <Link href={`/porch/${handle}`}>@{handle}</Link>
+            <Link href={`/porch/${handle}`} className="text-text-secondary no-underline hover:underline">
+              @{handle}
+            </Link>
           </p>
         </div>
         <Button variant="ghost" size="sm" onClick={() => setBurning(true)}>
@@ -325,7 +334,7 @@ export function ThreadView({
         role="log"
         aria-live="polite"
         aria-label={`Whispers with ${displayName}`}
-        className="flex min-h-40 flex-col gap-3 rounded-lg bg-surface-sunken p-3"
+        className="flex min-h-40 flex-col gap-1.5 rounded-lg bg-surface-sunken p-2.5"
       >
         {messages.length === 0 && (
           <p className="m-auto py-8 text-center text-caption text-text-secondary">
@@ -342,8 +351,11 @@ export function ThreadView({
                 ? { status: 'sending' as const }
                 : m.state === 'failed'
                   ? { status: 'failed' as const }
-                  : m.id === lastMine
-                    ? { status: 'sent' as const }
+                  : m.id === lastMine?.id
+                    ? {
+                        status:
+                          seenUpTo !== undefined && m.seq <= seenUpTo ? ('seen' as const) : ('sent' as const),
+                      }
                     : {})}
             />
             {m.state === 'failed' && (

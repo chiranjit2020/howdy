@@ -3,6 +3,7 @@
  * module in the app layer, which keeps auth → profiles the only dependency direction (no cycles).
  */
 export {
+  bothShareReceipts,
   clearExpiredSignals,
   clearSignal,
   createProfile,

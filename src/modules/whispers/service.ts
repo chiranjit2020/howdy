@@ -1,7 +1,7 @@
 import { conversations, messages } from '@db/schema';
 import { and, asc, desc, eq, exists, inArray, lt, or, sql } from 'drizzle-orm';
 import { can } from '@/modules/authz';
-import { getCards, resolveHandle, type PersonCard } from '@/modules/profiles';
+import { bothShareReceipts, getCards, resolveHandle, type PersonCard } from '@/modules/profiles';
 import { fenceStanding, hiddenAuthors, posseMembersAmong } from '@/modules/relationships';
 import { getDb } from '@/platform/db';
 import { AppError } from '@/platform/errors';
@@ -191,6 +191,12 @@ export interface ThreadPage {
   messages: WhisperMessage[];
   /** More messages exist in the direction that was asked for. */
   hasMore: boolean;
+  /**
+   * "Seen": how far the other person has read, present only when both have read receipts on AND they have not restricted me.
+   * A restricted sender therefore sees exactly what receipts-off looks like (their held words are never read, and the reader's
+   * mark moves past them anyway when they reply).
+   */
+  seenUpTo?: number;
 }
 
 /**
@@ -211,8 +217,15 @@ export async function getThread(
     portraitTint: acc.other.portraitTint,
   };
   const db = getDb();
-  const [conv] = await db.select().from(conversations).where(pairWhere(userId, acc.other.userId));
-  if (!conv) return { person, messages: [], hasMore: false };
+  const [[conv], shared] = await Promise.all([
+    db.select().from(conversations).where(pairWhere(userId, acc.other.userId)),
+    acc.restricted ? false : bothShareReceipts(userId, acc.other.userId),
+  ]);
+  // Present even before the first Whisper, so a page opened on an empty thread knows to watch for "Seen".
+  const seen = shared
+    ? { seenUpTo: !conv ? 0 : order(userId, acc.other.userId).meIsLow ? conv.highReadSeq : conv.lowReadSeq }
+    : {};
+  if (!conv) return { person, messages: [], hasMore: false, ...seen };
 
   const inThread = and(eq(messages.conversationId, conv.id), visibleTo(userId));
   if (q.after !== undefined) {
@@ -227,6 +240,7 @@ export async function getThread(
       person,
       messages: rows.slice(0, limit).map((m) => toWire(m, userId)),
       hasMore: rows.length > limit,
+      ...seen,
     };
   }
   const limit = Math.min(q.limit ?? THREAD_PAGE_SIZE, THREAD_MAX_PAGE_SIZE);
@@ -243,10 +257,14 @@ export async function getThread(
       .reverse()
       .map((m) => toWire(m, userId)),
     hasMore: rows.length > limit,
+    ...seen,
   };
 }
 
-/** Mark the thread read up to `upTo` (never beyond its last message). Private to the reader: nobody is told. */
+/**
+ * Mark the thread read up to `upTo` (never beyond its last message). The other person learns it only as "Seen", and only when
+ * both have read receipts on (see `ThreadPage.seenUpTo`).
+ */
 export async function markThreadRead(
   userId: string,
   handle: string,

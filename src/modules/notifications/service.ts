@@ -2,6 +2,7 @@ import { notificationPrefs, notifications, postCards } from '@db/schema';
 import { and, desc, eq, inArray, isNotNull, isNull, lt, lte, or, sql } from 'drizzle-orm';
 import { canFence } from '@/modules/authz';
 import { getCards, getFenceResource, type PersonCard } from '@/modules/profiles';
+import { pushTo } from '@/modules/push';
 import { fenceStanding, hiddenAuthors, posseMembersAmong } from '@/modules/relationships';
 import { decodeCursor, encodeCursor, type Cursor } from '@/platform/cursor';
 import { getDb } from '@/platform/db';
@@ -129,12 +130,48 @@ async function deliver(
       values (${recipientId}, ${actorId}, ${type}, ${now})
       on conflict (recipient_id, actor_id, type) where card_id is null
       do update set created_at = excluded.created_at, read_at = null`);
-    return;
+  } else {
+    const stored = await db
+      .insert(notifications)
+      .values({ recipientId, actorId, type, cardId, createdAt: now })
+      .onConflictDoNothing()
+      .returning({ id: notifications.id });
+    if (stored.length === 0) return; // a repeat never rings again, so it never pushes again either
   }
-  await db
-    .insert(notifications)
-    .values({ recipientId, actorId, type, cardId, createdAt: now })
-    .onConflictDoNothing();
+  await pushChime(recipientId, actorId, type, cardId);
+}
+
+/**
+ * Send the Chime that was just stored to the person's devices. The words come from the SAME read-time filter and wording as
+ * the Chimes list, so a push can never say more than the bell would — and a Chime the list would hide is not pushed at all.
+ */
+async function pushChime(recipientId: string, actorId: string, type: ChimeType, cardId: string | null) {
+  const [row] = await base()
+    .where(
+      and(
+        eq(notifications.recipientId, recipientId),
+        eq(notifications.actorId, actorId),
+        eq(notifications.type, type),
+        cardId === null ? isNull(notifications.cardId) : eq(notifications.cardId, cardId),
+      ),
+    )
+    .limit(1);
+  if (!row) return;
+  const [shown] = await visible(recipientId, [row]);
+  const me = (await getCards([recipientId])).get(recipientId);
+  if (!shown || !me) return;
+  const { text, href } = describe(recipientId, shown, me.handle);
+  await pushTo(recipientId, {
+    title: 'Howdy',
+    body: text,
+    url: href,
+    // One notification per thread / per card: a new one replaces the last instead of stacking up.
+    tag:
+      type === 'whisper_received'
+        ? `whisper:${shown.actor.handle}`
+        : `${type}:${cardId ?? shown.actor.handle}`,
+    badge: await unreadCount(recipientId),
+  });
 }
 
 /** Turn what happened into Chimes. Subscribed to the domain events at start-up (src/instrumentation.ts). */

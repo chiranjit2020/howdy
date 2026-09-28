@@ -1,6 +1,8 @@
 import { requireUser } from '@/modules/auth';
 import { listChimes } from '@/modules/notifications';
+import { pushPublicKey } from '@/modules/push';
 import { GlossaryHint } from '@/ui/howdy';
+import { AppOnPhone } from '@/ui/pwa/app-on-phone';
 import { ChimeList } from './chime-list';
 
 export const metadata = { title: 'Chimes' };
@@ -25,6 +27,7 @@ export default async function ChimesPage() {
           }}
           seenAt={seenAt}
         />
+        <AppOnPhone vapidKey={pushPublicKey()} />
       </main>
     </>
   );

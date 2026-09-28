@@ -83,6 +83,7 @@ recorded as a `retired` row in the same transaction that makes the new photo liv
 | --- | --- | --- |
 | **Signal** (`profiles.signal*`) | 12 hours from being set. Reads ignore an expired Signal immediately | `clearExpiredSignals()` physically clears it |
 | Session (`sessions`) | idle 14 d / absolute 60 d; dead rows kept 30 d after revoke/expiry for support | `purgeExpiredAuthData()` |
+| Push devices (`push_subscriptions`, ADR-022) | while the session that subscribed is live; a push service's 404/410 forgets it at once | session delete cascades; `purgeDeadSubscriptions()` (in `pnpm jobs:purge`) for revoked/expired sessions; unsubscribing |
 | Email tokens (`email_tokens`) | verify 24 h, reset 1 h; spent/expired rows kept 7 d | `purgeExpiredAuthData()` |
 | Audit log (`audit_log`) | **not yet limited** — needs a retention period decided (proposed 12 months) | — (gap) |
 | Rate-limit counters (Redis) | ≤ 1 hour, expire on their own | Redis TTL |
@@ -131,7 +132,8 @@ recorded as a `retired` row in the same transaction that makes the new photo liv
 - A thread exists between exactly two people who are in each other's Posse; a block or leaving the Posse closes it for both
   (nothing is deleted by that — retention or Burn Thread does that).
 - Held words (sender restricted by the recipient) are stored, visible only to their sender, never delivered, counted or rung.
-- No read receipts: each person stores only their own read position; it is never sent to the other person.
+- Read receipts (ADR-021): each person stores their own read position; the other person sees it as "Seen" only when both
+  have `profiles.read_receipts` on and they are not restricted by the reader. The setting itself is never shown to anyone else.
 - Redis pub/sub carries `{conversationId, seq}` only. Message text is stored only in Postgres.
 - Deleting a person removes every thread they are in and every Whisper in them, for both sides (cascade).
 - Logs never contain message bodies; the realtime process logs no addresses.

@@ -42,7 +42,7 @@ export default async function ThreadPage({ params }: { params: Promise<{ handle:
           handle={page.person.handle}
           displayName={page.person.displayName}
           portraitTint={page.person.portraitTint}
-          initial={{ messages: page.messages, hasMore: page.hasMore }}
+          initial={{ messages: page.messages, hasMore: page.hasMore, seenUpTo: page.seenUpTo }}
           wsUrl={getEnv().WS_PUBLIC_URL}
         />
       </main>

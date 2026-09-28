@@ -15,6 +15,9 @@ export function buildCsp(nonce: string, isDev: boolean, wsOrigin?: string, stora
     `style-src 'self' ${isDev ? "'unsafe-inline'" : `'nonce-${nonce}'`}`,
     "img-src 'self' blob: data:",
     "font-src 'self'",
+    // The service worker (/sw.js). Named explicitly: under 'strict-dynamic' script-src ignores 'self'.
+    "worker-src 'self'",
+    "manifest-src 'self'",
     isDev
       ? `connect-src 'self' ws: wss:${storageOrigin ? ` ${storageOrigin}` : ''}`
       : `connect-src 'self'${wsOrigin ? ` ${wsOrigin}` : ''}${storageOrigin ? ` ${storageOrigin}` : ''}`,

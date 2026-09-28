@@ -7,6 +7,7 @@ import { getOwnRanch } from '@/modules/profiles';
 import { countMyInvites } from '@/modules/town-halls';
 import { unreadThreads } from '@/modules/whispers';
 import { portraitUrl } from '@/shared/portrait';
+import { PwaBoot } from '@/ui/pwa/pwa-boot';
 import { AppShell } from '@/ui/shell/app-shell';
 
 /**
@@ -29,7 +30,14 @@ export async function AppFrame({
   askToAgree?: boolean;
 }) {
   const user = await getCurrentUser();
-  if (!user) return <AppShell waysIn={waysIn}>{children}</AppShell>;
+  if (!user) {
+    return (
+      <>
+        <PwaBoot signedIn={false} />
+        <AppShell waysIn={waysIn}>{children}</AppShell>
+      </>
+    );
+  }
   const [unread, unreadWhispers, invites, ranch, photo, pending] = await Promise.all([
     unreadCount(user.id).catch(() => 0),
     unreadThreads(user.id).catch(() => 0),
@@ -41,18 +49,21 @@ export async function AppFrame({
   ]);
   if (pending.length > 0) redirect('/agree');
   return (
-    <AppShell
-      me={{
-        handle: user.handle,
-        displayName: ranch?.displayName ?? user.handle,
-        portraitTint: ranch?.portraitTint,
-        portraitUrl: photo ? portraitUrl(user.handle, photo) : null,
-      }}
-      unread={unread}
-      unreadWhispers={unreadWhispers}
-      townHallInvites={invites}
-    >
-      {children}
-    </AppShell>
+    <>
+      <PwaBoot signedIn unread={unread} />
+      <AppShell
+        me={{
+          handle: user.handle,
+          displayName: ranch?.displayName ?? user.handle,
+          portraitTint: ranch?.portraitTint,
+          portraitUrl: photo ? portraitUrl(user.handle, photo) : null,
+        }}
+        unread={unread}
+        unreadWhispers={unreadWhispers}
+        townHallInvites={invites}
+      >
+        {children}
+      </AppShell>
+    </>
   );
 }

@@ -1,0 +1,1 @@
+ALTER TABLE "profiles" ADD COLUMN "read_receipts" boolean DEFAULT true NOT NULL;

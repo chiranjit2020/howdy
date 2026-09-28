@@ -71,8 +71,9 @@ test.describe('Whispers in a real browser (production build, real CSP, real WebS
     await expect(log(a.page).getByText('Howdy Alice!')).toBeVisible();
     await expect(a.page.getByLabel(/^Whisper to /)).toHaveValue('');
 
-    // Nothing shows Bob whether Alice has read it (no read receipts anywhere in the thread).
-    await expect(log(b.page).getByText(/(seen|read|delivered)/i)).toHaveCount(0);
+    // Read receipts are on for both (the default) and Alice has the thread open: Bob's Whisper turns "Seen" by itself.
+    await expect(log(b.page).getByText('Seen', { exact: true })).toBeVisible({ timeout: 20_000 });
+    await expect(log(b.page).getByText(/delivered/i)).toHaveCount(0);
 
     // A reload keeps it all (it was stored), in order.
     await a.page.reload();

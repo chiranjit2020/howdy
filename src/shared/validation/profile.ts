@@ -92,6 +92,7 @@ export const updateRanchSchema = z
     fencePosting: fencePostingSchema.optional(),
     fenceReview: z.boolean().optional(),
     shadowWalk: z.boolean().optional(),
+    readReceipts: z.boolean().optional(),
   })
   .refine((v) => Object.values(v).some((x) => x !== undefined), 'Nothing to change.');
 

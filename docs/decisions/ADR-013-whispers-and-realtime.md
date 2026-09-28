@@ -22,7 +22,8 @@ receipt or a "delivered" state is exactly the signal that would expose a Restric
 3. **Restrict is invisible to the restricted sender.** Their words are stored `held`: they look sent to the sender (same response,
    own devices still get live copies), and are never shown to, counted for, rung for or pushed to the recipient. The recipient
    currently has no way to view held words (a "held" tray is a later moderation decision — see Known issues).
-4. **No read receipts, no "delivered/seen".** Each side stores how far *they* have read, private to them. Any receipt would also
+4. *(Amended by ADR-021: "Seen" now exists, reciprocal and switchable, and never shown to a restricted sender.)*
+   **No read receipts, no "delivered/seen".** Each side stores how far *they* have read, private to them. Any receipt would also
    distinguish a restricted sender (never read) from everyone else. Statuses shown are only *Sending / Sent / Not sent*.
 5. **Numbering and idempotency:** every message has a per-thread `seq` assigned under a row lock (concurrent sends are ordered and
    never collide) and a device-chosen `client_id`, unique per sender per thread. Retrying returns the first message (200, not a

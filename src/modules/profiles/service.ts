@@ -80,6 +80,7 @@ export interface OwnRanch extends RanchView {
   fencePosting: FencePosting;
   fenceReview: boolean;
   shadowWalk: boolean;
+  readReceipts: boolean;
 }
 
 export interface RanchPatch {
@@ -91,6 +92,7 @@ export interface RanchPatch {
   fencePosting?: FencePosting | undefined;
   fenceReview?: boolean | undefined;
   shadowWalk?: boolean | undefined;
+  readReceipts?: boolean | undefined;
 }
 
 /** Create the Ranch for a new account. Called inside the sign-up transaction so every user always has one. */
@@ -116,6 +118,7 @@ interface Row {
   fencePosting: string;
   fenceReview: boolean;
   shadowWalk: boolean;
+  readReceipts: boolean;
   earnedTick: boolean;
 }
 
@@ -133,6 +136,7 @@ const SELECT = {
   fencePosting: profiles.fencePosting,
   fenceReview: profiles.fenceReview,
   shadowWalk: profiles.shadowWalk,
+  readReceipts: profiles.readReceipts,
   earnedTick,
 } as const;
 
@@ -207,6 +211,7 @@ export async function getOwnRanch(userId: string, now: Date = new Date()): Promi
     fencePosting: row.fencePosting as FencePosting,
     fenceReview: row.fenceReview,
     shadowWalk: row.shadowWalk,
+    readReceipts: row.readReceipts,
   };
 }
 
@@ -373,6 +378,7 @@ export async function updateRanch(userId: string, patch: RanchPatch): Promise<Ow
   if (patch.fencePosting !== undefined) set.fencePosting = patch.fencePosting;
   if (patch.fenceReview !== undefined) set.fenceReview = patch.fenceReview;
   if (patch.shadowWalk !== undefined) set.shadowWalk = patch.shadowWalk;
+  if (patch.readReceipts !== undefined) set.readReceipts = patch.readReceipts;
   await getDb().update(profiles).set(set).where(eq(profiles.userId, userId));
   return getOwnRanch(userId);
 }
@@ -421,4 +427,13 @@ export async function isShadowWalking(userId: string): Promise<boolean> {
     .where(eq(profiles.userId, userId))
     .limit(1);
   return row?.on ?? false;
+}
+
+/** Do both of these people have read receipts on? Private: only the whispers module asks, and it never says which one is off. */
+export async function bothShareReceipts(a: string, b: string): Promise<boolean> {
+  const rows = await getDb()
+    .select({ on: profiles.readReceipts })
+    .from(profiles)
+    .where(inArray(profiles.userId, [a, b]));
+  return rows.length === 2 && rows.every((r) => r.on);
 }

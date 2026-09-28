@@ -17,6 +17,7 @@ import {
   whisperBell,
   whisperRaw,
 } from '../helpers/whispers';
+import { myRanch, patchRanch, viewRanch } from '../helpers/ranch';
 import { doAct, insertUser, q, userId } from '../helpers/social';
 
 const NO_LIMIT = { consume: async () => ({ allowed: true, remaining: 999, retryAfterSec: 0 }) };
@@ -343,8 +344,9 @@ describe('reading, unread and the badge', () => {
     await say(a, b, 'three');
     expect((await threads(as(b))).data.threads![0]!.unread).toBe(1);
     expect(await whisperBell(as(b))).toBe(1);
-    const view = (await threadOf(a.handle, as(b))).text;
-    expect(view).not.toMatch(/read|seen|unread/i); // nothing about reading is in the thread itself
+    const { seenUpTo, ...view } = (await threadOf(a.handle, as(b))).data;
+    expect(seenUpTo).toBe(4); // alice's own last Whisper is as far as she has read (read receipts: see below)
+    expect(JSON.stringify(view)).not.toMatch(/read|seen|unread/i); // nothing else about reading is in the thread
     expect((await readTo(a.handle, 999, as(b))).data.readUpTo).toBe(4); // never beyond the last message
     expect((await readTo(a.handle, 1, as(b))).data.readUpTo).toBe(4); // never backwards
     expect(await whisperBell(as(b))).toBe(0);
@@ -380,6 +382,68 @@ describe('reading, unread and the badge', () => {
       expect((await readTo(b.handle, upTo, as(a))).status, String(upTo)).toBe(422);
     }
     expect((await readTo(b.handle, 1, {})).status).toBe(401);
+  });
+});
+
+describe('Seen (read receipts, ADR-021)', () => {
+  const seenBy = async (handle: string, viewer: P) => (await threadOf(handle, as(viewer))).data.seenUpTo;
+
+  it('with receipts on for both, the sender learns how far the other has read, and nothing more', async () => {
+    const { a, b } = await friends();
+    expect(await seenBy(b.handle, a)).toBe(0); // an empty thread already says receipts are shared, so the page watches
+    const first = await say(a, b, 'one');
+    await say(a, b, 'two');
+    expect(await seenBy(b.handle, a)).toBe(0); // bob has read nothing yet
+    await readTo(a.handle, first.data.message!.seq, as(b));
+    expect(await seenBy(b.handle, a)).toBe(1);
+    await readTo(a.handle, 999, as(b));
+    expect(await seenBy(b.handle, a)).toBe(2);
+    // the catch-up path carries it too, so an open thread sees "Seen" arrive
+    expect((await threadOf(b.handle, as(a), '?after=2')).data.seenUpTo).toBe(2);
+  });
+
+  it('is reciprocal: either person switching receipts off hides "Seen" from both, and back on restores it', async () => {
+    const { a, b } = await friends();
+    await say(a, b, 'hi');
+    await readTo(a.handle, 999, as(b));
+    for (const off of [a, b]) {
+      expect((await patchRanch({ readReceipts: false }, as(off))).status).toBe(200);
+      expect(await seenBy(b.handle, a)).toBeUndefined();
+      expect(await seenBy(a.handle, b)).toBeUndefined();
+      expect((await patchRanch({ readReceipts: true }, as(off))).status).toBe(200);
+    }
+    expect(await seenBy(b.handle, a)).toBe(1);
+    expect((await myRanch(a.cookie)).data.ranch).toMatchObject({ readReceipts: true });
+  });
+
+  it('a restricted sender never gets "Seen" — even after the other reads and replies past the held words — and cannot tell it from receipts being off', async () => {
+    const { a, b } = await friends();
+    await doAct(b.handle, 'restrict', as(a)); // alice restricts bob
+    await say(b, a, 'held');
+    await say(a, b, 'alice writes'); // alice's read mark now passes bob's held words
+    await readTo(b.handle, 999, as(a));
+    const restricted = (await threadOf(a.handle, as(b))).data;
+    expect(restricted.seenUpTo).toBeUndefined();
+
+    // Compare with a thread where nobody is restricted but the other person has receipts off: the same shape.
+    const c = await person('carol');
+    await posse(b, c);
+    await say(b, c, 'to carol');
+    await patchRanch({ readReceipts: false }, as(c));
+    await readTo(b.handle, 999, as(c));
+    const off = (await threadOf(c.handle, as(b))).data;
+    expect(Object.keys(restricted).sort()).toEqual(Object.keys(off).sort());
+
+    // Alice (who restricted) still sees how far bob has read her words: nothing about that reveals the Restrict to him.
+    expect(await seenBy(b.handle, a)).toBe(1);
+  });
+
+  it('the setting is private: another person’s Porch never shows it', async () => {
+    const { a, b } = await friends();
+    await patchRanch({ readReceipts: false }, as(b));
+    const porch = await viewRanch(b.handle, as(a));
+    expect(porch.status).toBe(200);
+    expect(porch.text).not.toMatch(/receipt/i);
   });
 });
 

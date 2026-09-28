@@ -15,6 +15,26 @@ Also shipped on 2026-09-27 (all live): the Vibe Matrix's five traits, Post Card 
 are applied to `howdy_dev`, `howdy_prod` and the local e2e database. **Last full e2e run: 83 of 83 pass** (2026-09-27,
 with the new Tributes, Marks and Town Halls specs and the fixes they led to).
 
+## Added 2026-09-28 (later) — Whisper UI, "Seen" (ADR-021), install + push (ADR-022)
+
+- [x] Whisper thread: the @handle under the name no longer carries the link underline; bubbles are compact with the
+      time inline in small type, `11:00 AM · Sent` / `· Seen` on the newest Whisper I sent.
+- [x] **Seen** with a reciprocal "Read receipts" switch (Whispers list), on by default; never shown to a restricted
+      sender. Migration `0017_read_receipts`.
+- [x] **Service worker + install**: `public/sw.js` (no caching), manifest `id`/`scope`/maskable icon, CSP
+      `worker-src 'self'`, an Install button / menu steps on Chimes ("Howdy on your phone").
+- [x] **Web Push** for Chimes (incl. Whispers), bound to the subscribing session, endpoint host allowlist (SSRF).
+      Migration `0018_push_subscriptions`. Needs `VAPID_PUBLIC_KEY` + `VAPID_PRIVATE_KEY` on Vercel, else push is off.
+- [x] Migrations 0017/0018 applied to `howdy_dev`, `howdy_prod` and the local test/e2e databases (2026-09-29; 0016 was
+      already on both). VAPID keys set on Vercel production. Full e2e: 83/84, the one failure a hydration race in
+      `portrait.spec.ts`, since made to retry.
+- [x] Tests: "Seen" block in `tests/security/whispers.test.ts`, new `tests/security/push.test.ts`, e2e Seen check.
+      Mutation-checked (Restrict guard, reciprocity, live-session filter, host allowlist). Found and fixed on the way:
+      `tests/e2e/whispers.spec.ts` had literal backspace bytes where `\b` was meant, so its "no receipts" check could
+      never fail.
+- Known flaky (pre-existing, untouched): `marks.test.ts` "two racing requests…" and `storage.test.ts` "is rejected
+  under another secret…" each failed once and passed on re-run.
+
 ## Added 2026-09-28 — the Trusted tick (ADR-020)
 
 - [x] A gold tick members earn when every check passes: email confirmed, account ≥ 30 days, a Portrait, ≥ 3 Pals,

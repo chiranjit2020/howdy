@@ -50,8 +50,15 @@ test.describe('Portrait (production build, real CSP, local file storage)', () =>
     // A wrong kind of file is refused in the browser, and nothing is stored.
     await a.page.goto('/workshop');
     const chooser = a.page.locator('input[type=file]');
-    await chooser.setInputFiles({ name: 'notes.txt', mimeType: 'text/plain', buffer: Buffer.from('hello') });
-    await expect(a.page.getByText('Choose a JPEG, PNG or WebP photo.')).toBeVisible();
+    // Retried: a file picked before the page has hydrated fires no React handler (seen once in a full run).
+    await expect(async () => {
+      await chooser.setInputFiles({
+        name: 'notes.txt',
+        mimeType: 'text/plain',
+        buffer: Buffer.from('hello'),
+      });
+      await expect(a.page.getByText('Choose a JPEG, PNG or WebP photo.')).toBeVisible({ timeout: 1000 });
+    }).toPass({ timeout: 15_000 });
     expect((await portraits(a.page)).count).toBe(0);
 
     // A real photo goes straight to storage, is decoded on the server, and shows up.

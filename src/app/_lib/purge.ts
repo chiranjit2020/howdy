@@ -3,6 +3,7 @@ import { purgeStaleWaiting } from '@/modules/fence';
 import { purgeStaleMedia } from '@/modules/media';
 import { purgeOldChimes } from '@/modules/notifications';
 import { clearExpiredSignals } from '@/modules/profiles';
+import { purgeDeadSubscriptions } from '@/modules/push';
 import { purgeOldTracks } from '@/modules/tracks';
 import { purgeStaleTributes } from '@/modules/tributes';
 import { recheckStaleTrust } from '@/modules/trust';
@@ -13,6 +14,8 @@ import { purgeOldWhispers } from '@/modules/whispers';
  * Cron (/api/jobs/purge) and by hand with `pnpm jobs:purge`. The Privacy Policy promises these periods, so this must run.
  */
 export async function runAllPurges() {
+  // Devices of ended sessions first (a revoked session row may be kept a while; its phone must not be).
+  const devices = await purgeDeadSubscriptions();
   const auth = await purgeExpiredAuthData();
   const signals = await clearExpiredSignals();
   const waiting = await purgeStaleWaiting();
@@ -23,5 +26,16 @@ export async function runAllPurges() {
   const tributeRows = await purgeStaleTributes();
   // Not retention, but daily upkeep that belongs with it: Trusted ticks nobody has looked at lately are checked again.
   const trust = await recheckStaleTrust();
-  return { ...auth, signals, waiting, ...chimes, whispers, ...trackRows, ...files, ...tributeRows, ...trust };
+  return {
+    ...devices,
+    ...auth,
+    signals,
+    waiting,
+    ...chimes,
+    whispers,
+    ...trackRows,
+    ...files,
+    ...tributeRows,
+    ...trust,
+  };
 }

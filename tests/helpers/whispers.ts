@@ -36,6 +36,7 @@ interface Wire {
   unread?: number;
   burned?: number;
   readUpTo?: number;
+  seenUpTo?: number;
   error?: { code: string; message: string; requestId: string; fields?: Record<string, string> };
   [k: string]: unknown;
 }

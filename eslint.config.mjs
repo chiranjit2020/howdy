@@ -41,11 +41,13 @@ const MODULE_DEPENDENCIES = {
   relationships: ['authz'],
   moderation: [],
   fence: ['authz', 'profiles', 'relationships'],
-  notifications: ['authz', 'profiles', 'relationships'],
+  notifications: ['authz', 'profiles', 'relationships', 'push'],
   whispers: ['authz', 'profiles', 'relationships'],
   tracks: ['profiles', 'relationships'],
   // Owns files and nothing else; who may SEE a file is decided in the app layer.
   media: [],
+  // Owns devices and sending; what deserves a push is the notifications module's call.
+  push: [],
 };
 const moduleRules = Object.entries(MODULE_DEPENDENCIES).map(([name, allowed]) => {
   const forbidden = Object.keys(MODULE_DEPENDENCIES).filter((m) => m !== name && !allowed.includes(m));

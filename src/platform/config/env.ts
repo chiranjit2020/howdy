@@ -54,6 +54,23 @@ const schema = z.object({
     .string()
     .regex(/^wss?:\/\/[^\s/?#]+$/, 'WS_PUBLIC_URL must look like wss://host[:port] with no path')
     .optional(),
+  /**
+   * Web Push (VAPID) key pair, from `npx web-push generate-vapid-keys`. Both or neither. Unset = phones get no notifications
+   * while Howdy is closed (everything else works). The public key is sent to browsers; the private key never leaves the server.
+   */
+  VAPID_PUBLIC_KEY: z
+    .string()
+    .regex(/^[A-Za-z0-9_-]{87}$/, 'VAPID_PUBLIC_KEY must be a base64url P-256 public key')
+    .optional(),
+  VAPID_PRIVATE_KEY: z
+    .string()
+    .regex(/^[A-Za-z0-9_-]{43}$/, 'VAPID_PRIVATE_KEY must be a base64url P-256 private key')
+    .optional(),
+  /** Who push services contact about our pushes (mailto: or https:). */
+  VAPID_SUBJECT: z
+    .string()
+    .regex(/^(mailto:|https:\/\/)\S+$/)
+    .default('mailto:privacy@howdy.chiranjitkarmakar.com'),
 });
 
 export type Env = z.infer<typeof schema>;
@@ -81,6 +98,9 @@ export function parseEnv(source: Record<string, string | undefined>): Env {
       ['R2_ACCOUNT_ID', 'R2_ACCESS_KEY_ID', 'R2_SECRET_ACCESS_KEY', 'R2_BUCKET'] as const
     ).filter((k) => !env[k]);
     if (missing.length) throw new Error(`STORAGE_DRIVER=r2 needs: ${missing.join(', ')}`);
+  }
+  if (!env.VAPID_PUBLIC_KEY !== !env.VAPID_PRIVATE_KEY) {
+    throw new Error('Web Push needs both VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY (or neither)');
   }
   if (env.MAIL_TRANSPORT === 'resend' && !env.RESEND_API_KEY) {
     throw new Error('MAIL_TRANSPORT=resend needs: RESEND_API_KEY');

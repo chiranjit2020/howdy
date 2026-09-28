@@ -7,8 +7,8 @@ const tstz = (name: string) => timestamp(name, { withTimezone: true, mode: 'date
 /**
  * A Whisper thread between exactly two people. One row per pair, stored with the smaller user id in `user_low` so the same pair
  * can never have two threads. `last_seq` numbers the messages 1, 2, 3… inside the thread (assigned under a row lock), which is
- * what makes reconnect sync and duplicate-safe delivery possible. Each side keeps only how far THEY have read; nothing about
- * that is ever shown to the other person (no read receipts).
+ * what makes reconnect sync and duplicate-safe delivery possible. Each side keeps how far THEY have read; the other person
+ * sees it as "Seen" only when both have read receipts on and nobody's words are held (ADR-021).
  */
 export const conversations = pgTable(
   'conversations',

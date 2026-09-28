@@ -120,6 +120,20 @@
       "when": 1790612539622,
       "tag": "0016_trust_ticks",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1790617377886,
+      "tag": "0017_read_receipts",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1790618574010,
+      "tag": "0018_push_subscriptions",
+      "breakpoints": true
     }
   ]
 }
