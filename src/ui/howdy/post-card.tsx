@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'rea
 import { LIMITS } from '@/shared/limits';
 import type { ReactionKind } from '@/shared/validation/fence';
 import type { PortraitTint } from '@/shared/validation/profile';
+import { Art } from '../art/glyph';
 import { cn } from '../cn';
 import { FlipIcon } from '../icons';
 import { Avatar } from '../primitives/avatar';
@@ -104,6 +105,7 @@ export function PostCardComposer({
         placeholder={kind === 'card' ? 'Short and sweet…' : 'One or two lines. Longer? Take it to a Whisper.'}
       />
       <Button type="submit" size="sm" loading={busy} disabled={disabled || !trimmed} className="self-end">
+        <Art name={kind === 'card' ? 'nav-nail' : 'nav-scribble'} />
         {kind === 'card' ? 'Nail to Fence' : 'Scribble'}
       </Button>
     </form>

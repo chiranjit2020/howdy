@@ -42,7 +42,7 @@ export function WhisperBubble({
             : 'rounded-bl-sm bg-surface text-text-primary shadow-clay-sm',
         )}
       >
-        <p className="text-body break-words whitespace-pre-wrap">
+        <p className="text-caption font-normal break-words whitespace-pre-wrap">
           <span className="sr-only">{out ? 'You said: ' : 'They said: '}</span>
           {body}
           <span

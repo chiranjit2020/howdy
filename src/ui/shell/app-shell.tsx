@@ -3,7 +3,6 @@ import type { ReactNode } from 'react';
 import type { PortraitTint } from '@/shared/validation/profile';
 import { Art } from '../art/glyph';
 import { cn } from '../cn';
-import { BellIcon } from '../icons';
 import { HowdyLogo } from '../logo';
 import { Avatar } from '../primitives/avatar';
 import { BirdVisitor } from './bird-visitor';
@@ -92,7 +91,7 @@ export function AppShell({
                 aria-label={unread > 0 ? `Notifications, ${unread} unread` : 'Notifications'}
                 className="relative grid size-11 place-items-center rounded-pill bg-surface text-heading text-text-primary no-underline shadow-clay-sm"
               >
-                <BellIcon />
+                <Art name="nav-chimes" size="free" className="size-8" loading="eager" />
                 {unread > 0 && (
                   <span
                     aria-hidden="true"

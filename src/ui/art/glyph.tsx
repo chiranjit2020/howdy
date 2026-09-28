@@ -37,6 +37,17 @@ const FILES = {
   'react-love': { w: 160, h: 160 },
   /** The blue badge next to the Howdy team account's name. */
   verified: { w: 96, h: 96 },
+  /** Navigation (cut from the user's icon sheet by .dev/cut-nav.mjs; 96 px = sharp at 32 px on a 3x phone). */
+  'nav-home': { w: 96, h: 96 },
+  'nav-pals': { w: 96, h: 96 },
+  'nav-nail': { w: 96, h: 96 },
+  'nav-whispers': { w: 96, h: 96 },
+  'nav-scribble': { w: 96, h: 96 },
+  'nav-porch': { w: 96, h: 96 },
+  'nav-tracks': { w: 96, h: 96 },
+  'nav-chimes': { w: 96, h: 96 },
+  'nav-wordshop': { w: 96, h: 96 },
+  'nav-town-halls': { w: 96, h: 96 },
 } as const;
 
 export type ArtName = keyof typeof FILES;
@@ -72,10 +83,13 @@ export function Art({
   name,
   size = 'inline',
   className,
+  loading,
 }: {
   name: ArtName;
   size?: GlyphSize;
   className?: string;
+  /** "eager" for art that is on screen from the first paint (the navigation); lazy otherwise. */
+  loading?: 'eager' | 'lazy';
 }) {
   const { w, h } = FILES[name];
   return (
@@ -85,6 +99,7 @@ export function Art({
       height={h}
       alt=""
       className={cn('inline-block object-contain', SIZE[size], className)}
+      {...(loading ? { loading } : {})}
     />
   );
 }

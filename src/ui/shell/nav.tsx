@@ -3,18 +3,8 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { ReactNode } from 'react';
+import { Art, type ArtName } from '../art/glyph';
 import { cn } from '../cn';
-import {
-  BellIcon,
-  FenceIcon,
-  HomeIcon,
-  PencilIcon,
-  ToolsIcon,
-  TownHallIcon,
-  TracksIcon,
-  UsersIcon,
-  WhisperIcon,
-} from '../icons';
 import { Avatar } from '../primitives/avatar';
 import { BottomNavigation, type NavItem } from '../primitives/navigation';
 import type { ShellMe } from './app-shell';
@@ -30,16 +20,22 @@ export interface ShellNavItem {
   badge?: number;
 }
 
-const ICON: Record<ShellNavKey, ReactNode> = {
-  home: <HomeIcon />,
-  ranch: <FenceIcon />,
-  posse: <UsersIcon />,
-  tracks: <TracksIcon />,
-  whispers: <WhisperIcon />,
-  chimes: <BellIcon />,
-  workshop: <ToolsIcon />,
-  'town-halls': <TownHallIcon />,
+const ART: Record<ShellNavKey, ArtName> = {
+  home: 'nav-home',
+  ranch: 'nav-porch',
+  posse: 'nav-pals',
+  tracks: 'nav-tracks',
+  whispers: 'nav-whispers',
+  chimes: 'nav-chimes',
+  workshop: 'nav-wordshop',
+  'town-halls': 'nav-town-halls',
 };
+// Loaded at once (not lazily): the navigation is on screen from the first paint.
+const navArt = (name: ArtName) => <Art name={name} size="free" className="size-7" loading="eager" />;
+const ICON = Object.fromEntries(Object.entries(ART).map(([key, name]) => [key, navArt(name)])) as Record<
+  ShellNavKey,
+  ReactNode
+>;
 
 const isCurrent = (pathname: string, href: string) => pathname === href || pathname.startsWith(`${href}/`);
 const badgeText = (n: number) => (n > 99 ? '99+' : String(n));
@@ -137,7 +133,7 @@ export function ShellBottomNav({ items, me }: { items: ShellNavItem[]; me: Shell
         href: `/porch/${me.handle}?nail=1`,
         label: 'Nail',
         description: 'Nail a card to your Fence',
-        icon: <PencilIcon />,
+        icon: navArt('nav-nail'),
       }}
     />
   );
