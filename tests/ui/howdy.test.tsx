@@ -400,3 +400,26 @@ describe('ChimeItem, TownHallCard, RanchHeader', () => {
     expect(await axeViolations(container)).toEqual([]);
   });
 });
+
+describe('name badges', () => {
+  it('an earned Trusted tick follows the name and is read as "Trusted"', async () => {
+    const { container } = render(<RanchHeader displayName="Sneha Roy" handle="sneha" trusted />);
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Sneha Roy (Trusted)');
+    expect(screen.getByTitle('Trusted · earned from Pals')).toBeInTheDocument();
+    expect(await axeViolations(container)).toEqual([]);
+  });
+
+  it('the team account shows Verified only, never both', () => {
+    render(<RanchHeader displayName="Howdy" handle="howdy" verified trusted />);
+    const h1 = screen.getByRole('heading', { level: 1 });
+    expect(h1).toHaveTextContent('(Verified)');
+    expect(h1).not.toHaveTextContent('Trusted');
+  });
+
+  it('a Post Card author and a reply author carry the tick too', () => {
+    render(card({ author: { ...author, trusted: true } }));
+    expect(screen.getByText('(Trusted)', { exact: false })).toBeInTheDocument();
+    render(<PostCardReply author={{ ...author, trusted: true }} body="nice" createdAt={at} />);
+    expect(screen.getAllByTitle('Trusted · earned from Pals')).toHaveLength(2);
+  });
+});

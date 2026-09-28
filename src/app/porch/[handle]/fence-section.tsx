@@ -195,6 +195,7 @@ export function FenceSection({
               handle: c.author.handle,
               tint: c.author.portraitTint,
               verified: c.author.verified,
+              trusted: c.author.trusted,
             }}
             body={c.body}
             createdAt={c.createdAt}
@@ -214,6 +215,7 @@ export function FenceSection({
                   handle: r.author.handle,
                   tint: r.author.portraitTint,
                   verified: r.author.verified,
+                  trusted: r.author.trusted,
                 }}
                 body={r.body}
                 createdAt={r.createdAt}

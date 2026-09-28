@@ -62,6 +62,8 @@ export interface AuthorRef {
   portraitTint: PortraitTint;
   /** The Howdy team account (Verified badge). */
   verified: boolean;
+  /** Has earned the Trusted tick. */
+  trusted: boolean;
 }
 
 export interface ReplyView {
@@ -113,6 +115,7 @@ const toRef = (p: PersonCard): AuthorRef => ({
   displayName: p.displayName,
   portraitTint: p.portraitTint,
   verified: p.verified,
+  trusted: p.trusted,
 });
 
 const actorOf = (userId: string): Actor => ({ kind: 'user', id: userId, status: 'active' });

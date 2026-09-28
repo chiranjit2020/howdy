@@ -1,5 +1,5 @@
 import { profiles, users } from '@db/schema';
-import { and, desc, eq, gt, inArray, isNotNull, lte } from 'drizzle-orm';
+import { and, desc, eq, gt, inArray, isNotNull, lte, sql } from 'drizzle-orm';
 import { can, type Actor, type FenceResource } from '@/modules/authz';
 import { relationshipOf } from '@/modules/relationships';
 import { getDb } from '@/platform/db';
@@ -37,7 +37,16 @@ export interface RanchView {
   isOwner: boolean;
   /** The Howdy team account: shown with the Verified badge. */
   verified: boolean;
+  /** Has earned the Trusted tick (the trust module, ADR-020). Never true for the team account, which has its own badge. */
+  trusted: boolean;
 }
+
+/**
+ * Has this person earned the Trusted tick? Read from the trust module's stored decision in the same query as the rest of
+ * the person, so showing the tick costs nothing extra. The team account never shows it: Verified already says more.
+ */
+const earnedTick = sql<boolean>`exists (select 1 from trust_ticks t where t.user_id = ${users.id} and t.earned_at is not null)`;
+const showsTick = (role: string, earned: boolean): boolean => earned && !isOfficial(role);
 
 /**
  * The Howdy team account is any account with the `admin` role (set by hand in the database). Its Porch, Signal and
@@ -107,6 +116,7 @@ interface Row {
   fencePosting: string;
   fenceReview: boolean;
   shadowWalk: boolean;
+  earnedTick: boolean;
 }
 
 const SELECT = {
@@ -123,6 +133,7 @@ const SELECT = {
   fencePosting: profiles.fencePosting,
   fenceReview: profiles.fenceReview,
   shadowWalk: profiles.shadowWalk,
+  earnedTick,
 } as const;
 
 function toView(row: Row, isOwner: boolean, now: Date, showSignal: boolean): RanchView {
@@ -135,6 +146,7 @@ function toView(row: Row, isOwner: boolean, now: Date, showSignal: boolean): Ran
     signal: live ? { text: row.signal!, expiresAt: row.signalExpiresAt! } : null,
     isOwner,
     verified: isOfficial(row.role),
+    trusted: showsTick(row.role, row.earnedTick),
   };
 }
 
@@ -226,6 +238,8 @@ export interface PersonCard {
   portraitTint: PortraitTint;
   /** The Howdy team account: shown with the Verified badge. */
   verified: boolean;
+  /** Has earned the Trusted tick. */
+  trusted: boolean;
 }
 
 const CARD = {
@@ -234,15 +248,21 @@ const CARD = {
   role: users.role,
   displayName: profiles.displayName,
   portraitTint: profiles.portraitTint,
+  earnedTick,
 } as const;
 
 const toCard = ({
   role,
+  earnedTick: earned,
   ...r
-}: { role: string; portraitTint: string } & Omit<PersonCard, 'portraitTint' | 'verified'>) => ({
+}: { role: string; portraitTint: string; earnedTick: boolean } & Omit<
+  PersonCard,
+  'portraitTint' | 'verified' | 'trusted'
+>): PersonCard => ({
   ...r,
   portraitTint: r.portraitTint as PortraitTint,
   verified: isOfficial(role),
+  trusted: showsTick(role, earned),
 });
 
 /** Find an ACTIVE person by handle (case-insensitive). Null for a malformed handle, a missing person or an inactive account. */

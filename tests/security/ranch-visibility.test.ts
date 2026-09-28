@@ -131,6 +131,7 @@ describe('what a viewer receives', () => {
       'isOwner',
       'portraitTint',
       'signal',
+      'trusted', // the public Trusted tick (ADR-020); never the checklist or any count behind it
       'verified', // the public Verified badge (the Howdy team account); never the role itself
     ]);
     const userId = (await sql('select id from users where handle = $1', [b.handle])).rows[0].id as string;

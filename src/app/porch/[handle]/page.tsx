@@ -9,6 +9,7 @@ import { getPortraitVersion } from '@/modules/media';
 import { getRanchForViewer, resolveHandle, type RanchView } from '@/modules/profiles';
 import { getRelationshipView, listMyRelationships } from '@/modules/relationships';
 import { listTributes, listWaitingTributes } from '@/modules/tributes';
+import { recheckTrust } from '@/modules/trust';
 import { withCards } from '@/app/_lib/social';
 import { getEnv } from '@/platform/config/env';
 import { AppError } from '@/platform/errors';
@@ -21,6 +22,7 @@ import { FenceSection } from './fence-section';
 import { SignalEditor } from './signal-editor';
 import { PosseCard, SignalCard, TracksCard } from './side-cards';
 import { TributesSection } from './tributes-section';
+import { TrustCard } from './trust-card';
 import { VibeMatrixSection } from './vibe-matrix-section';
 import { WaitingQueue } from './waiting-queue';
 
@@ -103,6 +105,7 @@ export default async function RanchPage({ params }: { params: Promise<{ handle: 
     posse,
     { value: tributes },
     { value: vibe },
+    trust,
   ] = await Promise.all([
     // A signed-in visitor also sees how they relate to this person (and can act on it). The photo is offered only to
     // signed-in viewers (the picture itself needs a session), and only on a Porch they may open, which this page has
@@ -129,6 +132,8 @@ export default async function RanchPage({ params }: { params: Promise<{ handle: 
     // Tributes and the Vibe Matrix follow the Porch's own visibility (the same rule as the Fence), separately from it.
     unlessRateLimited(listTributes(viewer, r.handle, { rateKey })),
     unlessRateLimited(getVibeMatrix(viewer, r.handle, { rateKey })),
+    // Only the owner sees their own Trusted-tick checklist. Checking also brings the stored tick up to date.
+    isOwner && user ? recheckTrust(user.id) : null,
   ]);
   const badge = !rel
     ? undefined
@@ -152,6 +157,8 @@ export default async function RanchPage({ params }: { params: Promise<{ handle: 
           <RanchHeader
             overlap
             verified={ranch.verified}
+            // The owner's own check just ran, so their header follows it rather than the decision stored before it.
+            trusted={trust ? trust.earned : ranch.trusted}
             displayName={ranch.displayName}
             handle={ranch.handle}
             portraitTint={ranch.portraitTint}
@@ -189,6 +196,7 @@ export default async function RanchPage({ params }: { params: Promise<{ handle: 
         {ranch.isOwner && <SignalEditor current={ranch.signal?.text} />}
         {waiting && <WaitingQueue waiting={waiting} tributes={waitingTributes} />}
         {vibe && <VibeMatrixSection handle={ranch.handle} initial={vibe} />}
+        {trust && !trust.team && <TrustCard status={trust} />}
         {posse && <PosseCard members={posse} />}
         {ranch.isOwner && <TracksCard />}
       </aside>

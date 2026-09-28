@@ -12,3 +12,4 @@ export * from './tributes';
 export * from './marks';
 export * from './town-halls';
 export * from './legal';
+export * from './trust';

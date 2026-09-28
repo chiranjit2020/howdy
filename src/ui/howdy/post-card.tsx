@@ -10,7 +10,7 @@ import { Avatar } from '../primitives/avatar';
 import { Button } from '../primitives/button';
 import { Textarea } from '../primitives/field';
 import { RelativeTime } from './time';
-import { VerifiedBadge } from './verified-badge';
+import { NameBadge } from './verified-badge';
 import { ReactionBar, ReactionSummary } from './reactions';
 
 export interface PostCardAuthor {
@@ -20,6 +20,8 @@ export interface PostCardAuthor {
   avatarUrl?: string | null;
   /** The Howdy team account: the Verified badge follows the name. */
   verified?: boolean;
+  /** Has earned the Trusted tick. */
+  trusted?: boolean;
 }
 
 /** One scribble on the back of a Post Card (max 80 chars, enforced server-side). */
@@ -50,7 +52,7 @@ export function PostCardReply({
         <p className="text-metadata [overflow-wrap:anywhere] text-text-muted">
           <span className="font-semibold text-text-secondary">
             @{author.handle}
-            {author.verified && <VerifiedBadge className="ml-0.5" />}
+            <NameBadge verified={author.verified} trusted={author.trusted} className="ml-0.5" />
           </span>{' '}
           · <RelativeTime date={createdAt} />
         </p>
@@ -198,7 +200,7 @@ export function PostCard({
             <div className="min-w-0 flex-1">
               <p className="truncate text-body font-semibold text-text-primary">
                 {author.name}
-                {author.verified && <VerifiedBadge className="ml-1" />}
+                <NameBadge verified={author.verified} trusted={author.trusted} className="ml-1" />
               </p>
               <p className="text-metadata [overflow-wrap:anywhere] text-text-muted">
                 @{author.handle} · <RelativeTime date={createdAt} />

@@ -4,7 +4,7 @@ import type { PortraitTint } from '@/shared/validation/profile';
 import { Avatar } from '../primitives/avatar';
 import { PosseBadge } from './posse-badge';
 import { Signal } from './signal';
-import { VerifiedBadge } from './verified-badge';
+import { NameBadge } from './verified-badge';
 
 export interface RanchHeaderProps {
   displayName: string;
@@ -21,6 +21,8 @@ export interface RanchHeaderProps {
   overlap?: boolean;
   /** The Howdy team account: the Verified badge follows the name. */
   verified?: boolean;
+  /** Has earned the Trusted tick (shown only when not the team account). */
+  trusted?: boolean;
 }
 
 /** Top of a Ranch (profile): portrait, name, handle, relationship, actions (and the Signal, when shown here). */
@@ -36,6 +38,7 @@ export function RanchHeader({
   actions,
   overlap,
   verified,
+  trusted,
 }: RanchHeaderProps) {
   return (
     <header className="flex flex-col gap-3">
@@ -51,7 +54,7 @@ export function RanchHeader({
         <div className="min-w-0 flex-1">
           <h1 className="font-display text-heading break-words text-brand-ink">
             {displayName}
-            {verified && <VerifiedBadge className="ml-1.5" />}
+            <NameBadge verified={verified} trusted={trusted} className="ml-1.5" />
           </h1>
           <p className="font-mono text-code text-text-secondary">@{handle}</p>
           {relationship && (

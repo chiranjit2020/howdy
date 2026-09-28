@@ -80,6 +80,11 @@
   --color-auth-link: light-dark(#2e3e62, #9ad7e6);
   --color-brand-ink: light-dark(#344b70, #f3effa);
 
+  /* The earned Trusted tick (a gold seal): fixed in both schemes, like the team's blue Verified artwork. */
+  --color-trusted: #f2b33d;
+  --color-trusted-edge: #8a5a12;
+  --color-trusted-ink: #4a2f06;
+
   /* Soft colour shape used on the Ranch cover banner (Dusk variant dimmed so it does not glow). */
   --color-auth-blob-peach: light-dark(#fee8dd, #3a2c3f);
 

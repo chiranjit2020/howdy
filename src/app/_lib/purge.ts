@@ -5,6 +5,7 @@ import { purgeOldChimes } from '@/modules/notifications';
 import { clearExpiredSignals } from '@/modules/profiles';
 import { purgeOldTracks } from '@/modules/tracks';
 import { purgeStaleTributes } from '@/modules/tributes';
+import { recheckStaleTrust } from '@/modules/trust';
 import { purgeOldWhispers } from '@/modules/whispers';
 
 /**
@@ -20,5 +21,7 @@ export async function runAllPurges() {
   const trackRows = await purgeOldTracks();
   const files = await purgeStaleMedia();
   const tributeRows = await purgeStaleTributes();
-  return { ...auth, signals, waiting, ...chimes, whispers, ...trackRows, ...files, ...tributeRows };
+  // Not retention, but daily upkeep that belongs with it: Trusted ticks nobody has looked at lately are checked again.
+  const trust = await recheckStaleTrust();
+  return { ...auth, signals, waiting, ...chimes, whispers, ...trackRows, ...files, ...tributeRows, ...trust };
 }

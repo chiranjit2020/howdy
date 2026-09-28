@@ -15,6 +15,19 @@ Also shipped on 2026-09-27 (all live): the Vibe Matrix's five traits, Post Card 
 are applied to `howdy_dev`, `howdy_prod` and the local e2e database. **Last full e2e run: 83 of 83 pass** (2026-09-27,
 with the new Tributes, Marks and Town Halls specs and the fixes they led to).
 
+## Added 2026-09-28 — the Trusted tick (ADR-020)
+
+- [x] A gold tick members earn when every check passes: email confirmed, account ≥ 30 days, a Portrait, ≥ 3 Pals,
+      Marks from ≥ 5 different people across ≥ 2 kinds (each from ≥ 2 people) in the last year, seen in the last 30
+      days, no upheld report in 180 days. Thresholds are small-group values in `TRUST_RULES`, to be raised later.
+- [x] Shown beside the name on a Porch and on Post Card and reply authors. The team account keeps blue Verified and
+      never shows it. The owner alone sees the checklist ("Trusted tick" card on their own Porch).
+- [x] Migration `0016_trust_ticks` (**not yet applied** to `howdy_dev`, `howdy_prod` or the local e2e database).
+- [x] Tests: `tests/unit/trust-rules.test.ts`, `tests/security/trust.test.ts` (each rule, which Marks count, open vs
+      upheld reports, team account, re-check on Mark / visit / daily job), badge tests in `tests/ui/howdy.test.tsx`.
+      Mutation-checked: counting repeat givers, counting open reports, counting young givers, the team showing the
+      tick, and no re-check on visit each make a test fail.
+
 ## Security test 2026-09-27 — email validation at sign-up (P0 brief)
 
 Ran the "Email Validation Security Test (P0)" brief against sign-up, with the form bypassed.

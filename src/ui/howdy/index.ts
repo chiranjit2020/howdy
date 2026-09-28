@@ -21,7 +21,7 @@ export { TownHallCard, type TownHallVisibility } from './town-hall-card';
 export { PersonRow } from './person-row';
 export { ChimeItem, type ChimeType } from './chime-item';
 export { GlossaryHint } from './glossary-hint';
-export { VerifiedBadge } from './verified-badge';
+export { NameBadge, TrustedBadge, VerifiedBadge } from './verified-badge';
 export { RelativeTime, formatRelative, COARSE_LABEL, type CoarseWhen } from './time';
 export {
   SkeletonPage,
