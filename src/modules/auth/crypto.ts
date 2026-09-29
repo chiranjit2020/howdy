@@ -1,4 +1,4 @@
-import { createHash, randomBytes } from 'node:crypto';
+import { createHash, createHmac, randomBytes } from 'node:crypto';
 import { hash, verify, type Algorithm } from '@node-rs/argon2';
 
 /**
@@ -44,4 +44,12 @@ export function hashToken(token: string): Buffer {
 /** Short stable digest for rate-limit keys and logs, so raw emails/identifiers never land in Redis keys or log lines. */
 export function keyDigest(value: string): string {
   return createHash('sha256').update(value.trim().toLowerCase()).digest('hex').slice(0, 32);
+}
+
+/**
+ * A keyed hash of a call sign, for holding back a deleted account's call sign without keeping the name (ADR-027). Keyed
+ * with AUTH_SECRET so the stored value cannot be matched against a list of names by anyone without the secret.
+ */
+export function handleDigest(secret: string, handle: string): string {
+  return createHmac('sha256', secret).update(`retired-handle:${handle.trim().toLowerCase()}`).digest('hex');
 }

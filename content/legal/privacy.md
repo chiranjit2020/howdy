@@ -10,7 +10,7 @@ Howdy is run by {{operator}}, an individual based in {{country}} ("Howdy", "we",
 - We do not use analytics or tracking tools, and we use only two small cookies (see the [Cookie Policy](/cookies)).
 - A lot of Howdy is built to forget: Signals fade after 12 hours, Whispers after 7 days, and Tracks keep only a date for 7 days.
 - Your privacy settings decide who can see your Porch, Signal and Fence. New Porches are visible to signed-in members only.
-- You can ask us for a copy of your data, to correct it, or to delete your account, by writing to [{{contactEmail}}](mailto:{{contactEmail}}).
+- You can delete your account yourself in the Workshop at any time. You can also ask us for a copy of your data, or to correct it, by writing to [{{contactEmail}}](mailto:{{contactEmail}}).
 
 ## Information we collect
 
@@ -127,14 +127,14 @@ No system is perfectly secure. If we learn of a breach that affects your persona
 
 - **Access:** for a summary of the personal data we hold about you and what we do with it.
 - **Correction:** to correct or complete information that is wrong.
-- **Deletion:** to delete your account. It is closed at once, and its data is deleted within 30 days, except for the records described in [How long we keep things](#how-long-we-keep-things).
+- **Deletion:** to delete your account, yourself, in the Workshop (or from the sign-in page if your account is suspended). It is closed at once: you are signed out everywhere and your Porch disappears. For 14 days you can still keep it by signing in; after that it is deleted for good, with your Porch, Post Cards, replies, Whispers, Pals, Tributes, Marks, Town Halls you own and your photo, except for the records described in [How long we keep things](#how-long-we-keep-things). We email you when it closes and when it is deleted. Your call sign is kept from anyone else for 90 days (we store only a scrambled form of it, not the name), so nobody can take it straight away to pretend to be you.
 - **Export:** for a copy of the information you gave us.
 - **Withdrawing consent:** you may withdraw your consent at any time by deleting your account. This does not affect anything done before.
 - **Nominating someone:** you may name another person to exercise these rights for you if you die or become unable to.
 
 We will answer within 30 days. We may need to confirm that the request really comes from you.
 
-> **Needs legal review:** confirm the list of rights, the response time and the nomination process under the DPDP Act, 2023 and the rules made under it, and add the rights of users in any other country Howdy serves (for example, the GDPR if you accept users in the European Union). Also confirm whether a self-service "delete my account" button is legally required before launch. It is designed but not yet built.
+> **Needs legal review:** confirm the list of rights, the response time and the nomination process under the DPDP Act, 2023 and the rules made under it, and add the rights of users in any other country Howdy serves (for example, the GDPR if you accept users in the European Union).
 
 ## Grievance Officer
 

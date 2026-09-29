@@ -629,6 +629,14 @@ export async function findAccountForModeration(
   };
 }
 
+/**
+ * Does this account have a suspension still in force? For putting an account back as it was when its owner cancels a
+ * deletion (ADR-027): someone suspended who asked to leave and then stays is still suspended.
+ */
+export async function hasLiveSuspension(userId: string): Promise<boolean> {
+  return (await liveSuspension(userId)) !== null;
+}
+
 async function liveSuspension(userId: string) {
   const [row] = await getDb()
     .select()

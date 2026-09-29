@@ -17,12 +17,15 @@ export type ErrorCode =
   | 'ACCOUNT_UNAVAILABLE'
   /** Correct credentials but the account is suspended; `data` says why, until when, and whether it can be appealed. */
   | 'ACCOUNT_SUSPENDED'
+  /** Correct credentials but the owner asked to delete the account; `data.deleteOn` says when. It can still be kept. */
+  | 'ACCOUNT_CLOSING'
   | 'INTERNAL';
 
 const STATUS: Record<ErrorCode, number> = {
   EMAIL_NOT_VERIFIED: 403,
   ACCOUNT_UNAVAILABLE: 403,
   ACCOUNT_SUSPENDED: 403,
+  ACCOUNT_CLOSING: 403,
   BAD_REQUEST: 400,
   VALIDATION_FAILED: 422,
   UNAUTHENTICATED: 401,
@@ -38,6 +41,7 @@ const DEFAULT_MESSAGE: Record<ErrorCode, string> = {
   EMAIL_NOT_VERIFIED: 'Confirm your email first. We can send the link again.',
   ACCOUNT_UNAVAILABLE: 'This account is not available right now.',
   ACCOUNT_SUSPENDED: 'This account is suspended.',
+  ACCOUNT_CLOSING: 'This account is closing.',
   BAD_REQUEST: 'That request was not understood.',
   VALIDATION_FAILED: 'Some fields need another look.',
   UNAUTHENTICATED: 'You need to step inside first.',

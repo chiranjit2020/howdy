@@ -5,6 +5,7 @@ export {
   dismissReport,
   fileAppeal,
   findAccountForModeration,
+  hasLiveSuspension,
   isModerator,
   liftExpiredSuspensions,
   listAppeals,

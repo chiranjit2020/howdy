@@ -29,6 +29,11 @@ export const users = pgTable(
     status: text('status').notNull().default('active'),
     /** member | moderator | admin (Phase 11). No self-service promotion yet — set by hand in the database. */
     role: text('role').notNull().default('member'),
+    /**
+     * When the owner asked to delete the account (status `pending_deletion`). After the grace period a daily job deletes
+     * it for good; signing in before then can keep it (ADR-027).
+     */
+    deletionRequestedAt: tstz('deletion_requested_at'),
     createdAt: tstz('created_at').notNull().defaultNow(),
     updatedAt: tstz('updated_at').notNull().defaultNow(),
   },
@@ -112,3 +117,13 @@ export const auditLog = pgTable(
   },
   (t) => [index('audit_log_user_created_idx').on(t.userId, t.createdAt)],
 );
+
+/**
+ * Call signs of deleted accounts, held back for a while so nobody can take one at once to impersonate the person who
+ * left (ADR-027). Only a keyed hash of the call sign is stored — never the name — and the row goes when it is free.
+ */
+export const retiredHandles = pgTable('retired_handles', {
+  handleDigest: text('handle_digest').primaryKey(),
+  availableAt: tstz('available_at').notNull(),
+  createdAt: tstz('created_at').notNull().defaultNow(),
+});

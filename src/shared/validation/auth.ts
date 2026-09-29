@@ -193,6 +193,11 @@ export const loginSchema = z.object({
  */
 export const appealSchema = loginSchema.extend({ text: appealTextSchema });
 
+/** Closing my own account: the password again, so an open session alone is not enough (ADR-027). */
+export const deleteAccountSchema = z.object({
+  password: z.string().min(1, 'Enter your password.').max(PASSWORD_MAX),
+});
+
 export const emailOnlySchema = z.object({ email: emailSchema });
 
 /** 32 random bytes as base64url is 43 chars. Anything wildly different is rejected before touching the database. */

@@ -3,6 +3,7 @@ import { json, route } from '@/platform/http/route';
 import { AppError } from '@/platform/errors';
 import {
   appealSchema,
+  deleteAccountSchema,
   emailOnlySchema,
   loginSchema,
   resetPasswordSchema,
@@ -10,9 +11,12 @@ import {
   verifyEmailSchema,
 } from '@/shared/validation/auth';
 import { audit } from './audit';
+import { requestDeletion } from './deletion';
 import {
   appealSuspension,
   forgotPassword,
+  keepClosingAccount,
+  closeFromSignIn,
   login,
   resendVerification,
   resetPassword,
@@ -63,6 +67,28 @@ export const authHandlers = {
     const body = await readJson(req, appealSchema);
     await appealSuspension(body, requestContext(req, requestId));
     return json(ACCEPTED);
+  }),
+
+  /** "Keep my account": cancel a scheduled deletion with the sign-in details (there is no session). ADR-027. */
+  keep: route(async ({ req, requestId }) => {
+    const body = await readJson(req, loginSchema);
+    await keepClosingAccount(body, requestContext(req, requestId));
+    return json(ACCEPTED);
+  }),
+
+  /** Close my account from the sign-in page (a suspended person has no session). Same checks as signing in. */
+  close: route(async ({ req, requestId }) => {
+    const body = await readJson(req, loginSchema);
+    const { deleteOn } = await closeFromSignIn(body, requestContext(req, requestId));
+    return json({ deleteOn: deleteOn.toISOString() });
+  }),
+
+  /** Close my account and schedule its deletion (password re-checked). Ends every session, this one included. */
+  deleteAccount: route(async ({ req, requestId }) => {
+    const { user } = await requireSession(req);
+    const { password } = await readJson(req, deleteAccountSchema);
+    const { deleteOn } = await requestDeletion(user.id, password, { requestId });
+    return withCookie(json({ deleteOn: deleteOn.toISOString() }), clearedSessionCookie());
   }),
 
   /** Idempotent: always clears the cookie, whether or not a live session was presented. */

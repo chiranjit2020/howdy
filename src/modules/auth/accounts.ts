@@ -9,6 +9,7 @@ import { enforceRateLimit } from '@/platform/rate-limit';
 import { passwordMatchesIdentity, IDENTITY_PASSWORD_MESSAGE } from '@/shared/validation/auth';
 import { audit } from './audit';
 import { recordAcceptance } from './legal';
+import { closeAccount, deletionDate, isHandleHeld, keepAccount } from './deletion';
 import { fileAppeal, suspensionAtSignIn, type SuspensionNotice } from '@/modules/moderation';
 import { createProfile } from '@/modules/profiles';
 import { RATE, RESET_PASSWORD_TTL_MS, VERIFY_EMAIL_TTL_MS } from './config';
@@ -88,7 +89,8 @@ export async function signUp(
     .from(users)
     .where(eq(users.handle, input.handle))
     .limit(1);
-  if (taken) throw handleTaken();
+  // A deleted account's call sign is held back for a while; it answers exactly like a taken one (ADR-027).
+  if (taken || (await isHandleHeld(input.handle))) throw handleTaken();
 
   try {
     const created = await db.transaction(async (tx) => {
@@ -301,6 +303,10 @@ export async function login(
     // Only now, with the password proven: say why, and until when. A timed suspension that ran out lifts here.
     const at = await suspensionAtSignIn(row.id);
     if (!at.lifted) throw suspendedError(at.notice);
+  } else if (row.status === 'pending_deletion') {
+    // Only now, with the password proven: say when it goes, and offer to keep it (ADR-027).
+    const deleteOn = await deletionDate(row.id);
+    throw new AppError('ACCOUNT_CLOSING', { data: { deleteOn: deleteOn?.toISOString() ?? null } });
   } else if (row.status !== 'active') {
     throw new AppError('ACCOUNT_UNAVAILABLE');
   }
@@ -332,6 +338,32 @@ export async function appealSuspension(
     throw new AppError('BAD_REQUEST', { message: 'This account is not suspended.' });
   await fileAppeal(row.id, input.text);
   await audit('appeal_filed', { userId: row.id, requestId: ctx.requestId });
+}
+
+/**
+ * "Keep my account" from the sign-in page (ADR-027): the same identifier and password as signing in, checked the same
+ * way and against the same limits, then the scheduled deletion is cancelled. The caller signs in again afterwards.
+ */
+export async function keepClosingAccount(
+  input: { identifier: string; password: string },
+  ctx: RequestContext,
+): Promise<void> {
+  const row = await verifyCredentials(input, ctx);
+  await keepAccount(row.id, ctx);
+}
+
+/**
+ * Close my account from the sign-in page (ADR-027). A suspended person has no session, so this is how they use their
+ * right to delete: the same identifier and password as signing in, the same checks and limits. Works for an active
+ * account too (the same thing the Workshop does).
+ */
+export async function closeFromSignIn(
+  input: { identifier: string; password: string },
+  ctx: RequestContext,
+): Promise<{ deleteOn: Date }> {
+  const row = await verifyCredentials(input, ctx);
+  const [u] = await getDb().select({ email: users.email }).from(users).where(eq(users.id, row.id)).limit(1);
+  return closeAccount(row.id, u!.email, ctx);
 }
 
 /**

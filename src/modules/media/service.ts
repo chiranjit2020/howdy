@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { media } from '@db/schema';
-import { and, eq, inArray, lt, sql } from 'drizzle-orm';
+import { and, count, eq, inArray, lt, sql } from 'drizzle-orm';
 import { getDb } from '@/platform/db';
 import { AppError } from '@/platform/errors';
 import { logger } from '@/platform/logger';
@@ -266,6 +266,12 @@ export async function readPortrait(ownerId: string): Promise<{ bytes: Buffer; ve
   if (!row) return null;
   const bytes = await store().get(row.objectKey, SERVE_MAX_BYTES);
   return bytes ? { bytes, version: row.id } : null;
+}
+
+/** How many file rows a person still has (account deletion must see 0 before it deletes the account, ADR-027). */
+export async function mediaLeftFor(userId: string): Promise<number> {
+  const [row] = await getDb().select({ n: count() }).from(media).where(eq(media.ownerId, userId));
+  return row?.n ?? 0;
 }
 
 /** Remove every file a person owns, objects first. What an account deletion has to call before the person's rows go. */

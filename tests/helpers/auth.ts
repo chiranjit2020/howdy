@@ -83,7 +83,7 @@ export interface TestKit {
 export async function freshAuthState(): Promise<TestKit> {
   await flushBackground();
   await getDb().execute(
-    sql`truncate table audit_log, email_tokens, sessions, credentials, users restart identity cascade`,
+    sql`truncate table audit_log, email_tokens, sessions, credentials, retired_handles, users restart identity cascade`,
   );
   const mailer = new MemoryMailer();
   setMailer(mailer);

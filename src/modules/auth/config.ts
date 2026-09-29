@@ -29,6 +29,8 @@ export const RATE = {
   resendIp: rule(10, 3600),
   resendEmail: rule(3, 3600),
   tokenIp: rule(20, 3600),
+  /** Asking to delete my account (it re-checks the password, so it is limited like a sign-in). */
+  deleteAccount: rule(5, 3600),
 } as const;
 
 /** Cookie name. The `__Host-` prefix (Secure, Path=/, no Domain) is used whenever the site is served over https. */

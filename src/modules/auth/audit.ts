@@ -13,7 +13,10 @@ export type AuditEvent =
   | 'password_reset_requested'
   | 'password_reset_completed'
   | 'legal_accepted'
-  | 'appeal_filed';
+  | 'appeal_filed'
+  | 'deletion_requested'
+  | 'deletion_cancelled'
+  | 'account_deleted';
 
 /** Best-effort append to the security audit trail. Never records IPs, tokens, passwords or message content. */
 export async function audit(

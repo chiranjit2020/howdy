@@ -70,3 +70,40 @@ export function passwordChangedMessage(to: string): MailMessage {
     ].join('\n'),
   };
 }
+
+const longDate = (d: Date) =>
+  d.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+
+/** Sent when someone asks to delete their account: when it goes, and how to keep it (ADR-027). */
+export function deletionScheduledMessage(to: string, deleteOn: Date): MailMessage {
+  return {
+    to,
+    subject: 'Your Howdy account will be deleted',
+    text: [
+      'Howdy.',
+      '',
+      `You asked us to delete your Howdy account. It is closed now, and on ${longDate(deleteOn)} it will be deleted for good,`,
+      'with your Porch, Post Cards, Whispers, Pals and photo.',
+      '',
+      `Changed your mind? Step inside before then and choose "Keep my account": ${link('/step-inside')}`,
+      '',
+      'If this was not you, step inside and keep your account, then change your password right away.',
+    ].join('\n'),
+  };
+}
+
+/** Sent once the account is gone. */
+export function accountDeletedMessage(to: string): MailMessage {
+  return {
+    to,
+    subject: 'Your Howdy account has been deleted',
+    text: [
+      'Howdy.',
+      '',
+      'Your Howdy account has now been deleted, as you asked. Thank you for spending time on the porch.',
+      '',
+      'We keep only what our Privacy Policy describes (for example, reports about your account, with your name removed).',
+      `You are welcome back any time: ${link('/stake-a-claim')}`,
+    ].join('\n'),
+  };
+}

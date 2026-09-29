@@ -1,4 +1,5 @@
-import { purgeExpiredAuthData } from '@/modules/auth';
+import { purgeExpiredAuthData, purgeFreedHandles } from '@/modules/auth';
+import { purgeDeletedAccounts } from './account-deletion';
 import { purgeStaleWaiting } from '@/modules/fence';
 import { purgeStaleMedia } from '@/modules/media';
 import { liftExpiredSuspensions, purgeClosedReports } from '@/modules/moderation';
@@ -30,6 +31,9 @@ export async function runAllPurges() {
   // Timed suspensions that ran out: lifted here too, so the person reappears without having to sign in first.
   const suspensionsDone = await liftExpiredSuspensions();
   const reportsDone = await purgeClosedReports();
+  // Accounts whose 14-day grace period is over (ADR-027): files first, then the account.
+  const accounts = await purgeDeletedAccounts();
+  const handles = await purgeFreedHandles();
   return {
     ...devices,
     ...auth,
@@ -43,5 +47,7 @@ export async function runAllPurges() {
     ...trust,
     ...suspensionsDone,
     ...reportsDone,
+    ...accounts,
+    ...handles,
   };
 }

@@ -67,7 +67,7 @@ Each version of these Terms has a version number and a date at the top. If we ma
 
 ## Ending your account
 
-You can stop using Howdy at any time, and you can ask us to delete your account by writing to [{{contactEmail}}](mailto:{{contactEmail}}) from its email address.
+You can stop using Howdy at any time, and you can delete your account yourself in the Workshop. It closes at once and is deleted for good after 14 days, unless you sign in before then and keep it. You can also write to [{{contactEmail}}](mailto:{{contactEmail}}) from its email address.
 
 We may suspend or close your account under [Moderation, reports and suspension](#moderation-reports-and-suspension), or if we stop running Howdy (in which case we will tell you first, if we can).
 

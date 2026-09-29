@@ -166,12 +166,14 @@ describe('what a suspended person is told at sign-in', () => {
     expect(errorData(r)).toEqual({ reason: 'other', endsAt: null, appeal: 'available' });
   });
 
-  it('an account being deleted is still just "not available"', async () => {
+  it('an account being deleted says so instead (ADR-027), without any suspension detail', async () => {
     const b = await person('someone');
-    await q(`update users set status = 'pending_deletion' where handle = $1`, [b.handle]);
+    await q(`update users set status = 'pending_deletion', deletion_requested_at = now() where handle = $1`, [
+      b.handle,
+    ]);
     const r = await signIn(b);
-    expect(r.data.error!.code).toBe('ACCOUNT_UNAVAILABLE');
-    expect(errorData(r)).toBeUndefined();
+    expect(r.data.error!.code).toBe('ACCOUNT_CLOSING');
+    expect(Object.keys(errorData(r)!)).toEqual(['deleteOn']);
   });
 });
 

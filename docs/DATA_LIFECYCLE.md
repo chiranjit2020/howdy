@@ -67,17 +67,23 @@ A Portrait has three states: `pending` (a signed upload URL was issued, nothing 
 at most one per person, enforced by the database) and `retired` (replaced or removed, its file being deleted). The raw upload is
 recorded as a `retired` row in the same transaction that makes the new photo live, so even a failed delete leaves a row to retry from.
 
-## 2. Account deletion ("Burn the Deed") — design, not yet built
+## 2. Account deletion ("Burn the Deed") — built (ADR-027, 2026-09-30)
 
-`users.status` already allows `pending_deletion`. The process, to be implemented as its own use case with a test per step:
-
-1. **Re-authenticate** (password), then set `status = 'pending_deletion'`. Effect is immediate: `validateSession` and the
-   authorisation policy both deny non-`active` accounts, so every session dies and the Ranch disappears.
-2. **Grace period** (proposed 14 days): the owner can sign in only to cancel. A daily job finds expired grace periods.
-3. **Purge**, in one transaction per user, in this order: revoke/delete sessions and tokens → remove authored content per the table
-   above (anonymise vs delete) → delete `profiles`, `credentials` → delete the `users` row (audit rows keep `user_id = NULL`).
-4. **Objects** in storage (Portraits, via `deleteAllMediaFor`) are deleted *before* the rows that reference them, so a failure leaves rows to retry from.
-5. Confirmation email; the handle becomes available again after a cooling-off period (proposed 90 days) to prevent impersonation.
+1. **Ask** — Workshop → "Burn the Deed" (password re-checked, rate limited), or the sign-in page for a suspended
+   account (identifier + password, the same checks and limits as signing in). `status = 'pending_deletion'`,
+   `deletion_requested_at = now`, every session revoked. Effect is immediate: every gate admits only `active`.
+   An email gives the date.
+2. **Grace period: 14 days.** Signing in answers `403 ACCOUNT_CLOSING` (only after the password is proven) and offers
+   "Keep my account", which puts the account back exactly as it was — `suspended` if a suspension is still in force —
+   without reviving any old session.
+3. **Purge** (daily job, `purgeDeletedAccounts` in `pnpm jobs:purge`): for each account past its grace period, the
+   photo files are deleted from storage FIRST (`deleteAllMediaFor`); only when no `media` row is left is the account
+   deleted (`eraseAccount`), otherwise it waits for the next run, so nothing is orphaned. Deleting the `users` row
+   cascades everything in §1; the audit log and reports keep their rows with the link cleared.
+4. **Call sign held back 90 days** in `retired_handles`, as an HMAC (keyed with `AUTH_SECRET`) — never the name.
+   Sign-up answers exactly as for a taken call sign. The daily job forgets freed ones (`purgeFreedHandles`).
+   Rotating `AUTH_SECRET` releases every held call sign early.
+5. A second email once it is deleted.
 
 ## 3. Retention (master prompt §54) — what is kept, how long, who removes it
 
@@ -101,6 +107,8 @@ recorded as a `retired` row in the same transaction that makes the new photo liv
 | Town Halls and memberships (incl. unanswered invites) | **kept indefinitely** — no sensitive detail to expire (two ids, a role, a status) | people (owner deletion cascades the whole Town Hall); no retention job |
 | Report evidence snapshot (`reports.evidence_text`, ≤ 600 chars: a card, ONE reported Whisper, a Town Hall's name + description) | open reports: kept; closed reports: **deleted 1 year after closing** (row, words, reporter/target) — outlives the thing, including a Whisper past its 7 days (disclosed in the Privacy Policy) | `purgeClosedReports()` (in `pnpm jobs:purge`) |
 | Suspensions and appeals (`suspensions`) | for the life of the account (disclosed in the Privacy Policy) | account deletion (CASCADE) |
+| Closing accounts (`users.status = 'pending_deletion'`) | 14 days from the request, then deleted for good | `purgeDeletedAccounts()` (in `pnpm jobs:purge`) |
+| Held-back call signs (`retired_handles`, a keyed hash only) | 90 days after the account is deleted | `purgeFreedHandles()` (in `pnpm jobs:purge`) |
 | Tracks / typing / presence (future) | seconds → days, per ADR-006 | their own jobs |
 | Logs | no passwords, tokens, cookies or message/Signal bodies (redacted) | log platform retention |
 

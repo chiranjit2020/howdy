@@ -49,6 +49,19 @@ export function SuspendedNotice({
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | undefined>();
+  // Deletion is a right a suspension does not take away (ADR-027): two steps, then the same result as the Workshop.
+  const [leaving, setLeaving] = useState<'idle' | 'confirm' | 'busy'>('idle');
+  const [closedOn, setClosedOn] = useState<string | undefined>();
+  const [leaveError, setLeaveError] = useState<string | undefined>();
+
+  async function leave() {
+    setLeaving('busy');
+    setLeaveError(undefined);
+    const res = await postJson<{ deleteOn: string }>('/api/auth/close', { identifier, password });
+    setLeaving('idle');
+    if (res.ok && res.data) setClosedOn(res.data.deleteOn);
+    else setLeaveError(res.error?.message ?? 'That did not work. Try again.');
+  }
 
   async function send(e: FormEvent) {
     e.preventDefault();
@@ -107,6 +120,34 @@ export function SuspendedNotice({
           </Button>
         </form>
       )}
+      <div className="flex flex-col gap-2 border-t border-border pt-3">
+        {closedOn ? (
+          <FormMessage tone="success">
+            Your account is closed and will be deleted for good on {longDate(closedOn)}. Signing in before
+            then lets you keep it.
+          </FormMessage>
+        ) : leaving === 'idle' ? (
+          <Button variant="ghost" className="self-start" onClick={() => setLeaving('confirm')}>
+            Delete my account instead…
+          </Button>
+        ) : (
+          <>
+            <p className="text-caption text-text-primary">
+              Your account closes now and is deleted for good after 14 days, with your Porch, Post Cards,
+              Whispers and photo. Reports about it are kept for a while, without your name.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <Button variant="danger" loading={leaving === 'busy'} onClick={leave}>
+                Yes, delete my account
+              </Button>
+              <Button variant="ghost" onClick={() => setLeaving('idle')}>
+                Cancel
+              </Button>
+            </div>
+          </>
+        )}
+        {leaveError && <FormMessage tone="error">{leaveError}</FormMessage>}
+      </div>
     </section>
   );
 }

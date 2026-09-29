@@ -6,6 +6,7 @@ import { getOwnRanch } from '@/modules/profiles';
 import { listMyRelationships } from '@/modules/relationships';
 import { AppFrame } from '@/app/_lib/app-shell';
 import { portraitUrl } from '@/shared/portrait';
+import { DeleteAccount } from './delete-account';
 import { PeopleControls } from './people-controls';
 import { PortraitForm } from './portrait-form';
 import { BoundaryForm, ChimePrefsForm, FenceRulesForm, TendForm } from './ranch-forms';
@@ -44,6 +45,7 @@ export default async function WorkshopPage() {
         />
         <ChimePrefsForm initial={prefs} />
         <PeopleControls blocked={lists.blocked} muted={lists.muted} restricted={lists.restricted} />
+        <DeleteAccount />
       </main>
     </AppFrame>
   );

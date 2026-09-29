@@ -136,6 +136,22 @@ Ran the "Email Validation Security Test (P0)" brief against sign-up, with the fo
 | P0 — Legal Foundation | DONE (documents need a lawyer's review before launch — see ADR-019 "Before launch") |
 | 11 — Moderation + Anti-Abuse | IN PROGRESS (queue, suspensions + appeals, anti-spam layers, report subjects, held tray done; image moderation + evidence retention period need decisions) |
 
+## Added 2026-09-30 — account deletion, "Burn the Deed" (ADR-027)
+
+Decisions taken with you: **14 days** to change your mind (by signing in), call sign **held back 90 days**, a
+**suspended account may delete itself**.
+
+- [x] Workshop → "Burn the Deed" (password + confirm) closes the account at once: every session ends, it disappears
+      everywhere, an email gives the date. A suspended person can do the same from the sign-in page.
+- [x] Signing in during the 14 days → "Your account is closing" → "Keep my account" puts it back exactly as it was
+      (still suspended if it was), without reviving old sessions.
+- [x] Daily job: photo files first, then the account (deferred if a file cannot be deleted); everything cascades,
+      reports and audit rows stay without the link; a closing email.
+- [x] Call sign held back 90 days as a keyed hash (`retired_handles`, migration `0022`); sign-up says "taken".
+- [x] Privacy + Terms 1.2.0 (self-service deletion; nobody asked to re-agree). DATA_LIFECYCLE §2 now describes what
+      is built.
+- [x] Tests: `account-deletion` (12) + e2e `account-deletion.spec.ts`; mutation run `.dev/mutate17.mjs` 12/12.
+
 ## Fixed 2026-09-30 — two "flaky" tests were real
 
 - **Marks cooldown race (a real bug).** `giveMark` relied on one `insert … where not exists` statement, which under
@@ -483,21 +499,19 @@ layers covered for them); direct tests of the recorder now catch both. All 15 ca
 - No Tracks digest / push, Guess Who, reveal tokens or cohort clues; no "who I visited".
 - The sidebar now has eight links (Town Halls is `sidebarOnly`, so the phone tab bar stays at six; the desktop sidebar
   wraps — already true at seven before this phase).
-- Earlier deferrals still stand (restricted Whispers tray, non-Posse Whispers, no MFA/passkeys, account deletion designed not built,
+- Earlier deferrals still stand (non-Posse Whispers, no MFA/passkeys, no self-service data export,
   fixed-window limiter, placeholder icons, e2e needs local Edge, no visual baselines, master prompt §49–50 items).
 
 ## Next Task
 
-**The rest of Phase 11:** image moderation (automatic detection needs an outside service and its own privacy
-decision); a fixed retention period for report evidence (legal decision). Check production for existing accounts
-called `held` or `unread` (now reserved; ADR-026). Before pushing ADR-023/024/025: apply migrations `0019`–`0021`
-to `howdy_dev` and `howdy_prod`. Media follow-ups still open: photos on Post Cards (per-card media with the Fence's
-privacy rules), showing Portraits in lists / cards / Chimes (needs a per-viewer decision per row), and the
-account-deletion flow calling `deleteAllMediaFor`.
+**Phase 11 is done** except what you deferred: image moderation (2026-09-30: not now) and an audit-log retention
+period (a legal decision). Media follow-ups still open: photos on Post Cards (per-card media with the Fence's privacy
+rules), showing Portraits in lists / cards / Chimes (needs a per-viewer decision per row). Next phase per the master
+prompt: **Phase 12 — Memories / Time Capsules**.
 Tributes/Marks/Town Halls follow-ups: revisit whether Tribute/Mark giving should ever
 widen beyond Posse-only; a Town Hall shared feed if the need becomes real; Town Hall roles beyond owner/member.
 
 ## Architectural Decisions
 
-ADR-001 … ADR-026 in `docs/decisions/`; lifecycle and deletion design in `docs/DATA_LIFECYCLE.md`.
+ADR-001 … ADR-027 in `docs/decisions/`; lifecycle and deletion design in `docs/DATA_LIFECYCLE.md`.
 
