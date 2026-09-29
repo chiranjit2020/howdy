@@ -17,7 +17,7 @@ import {
   Dropdown,
   useToast,
 } from '@/ui/primitives';
-import { ReportDialog } from './report-dialog';
+import { ReportDialog } from '@/ui/howdy/report-dialog';
 import type { RelationshipAction } from '@/shared/validation/relationships';
 
 export interface RelationshipState {
@@ -35,12 +35,15 @@ export function RelationshipBar({
   displayName,
   initial,
   official = false,
+  hasPhoto = false,
 }: {
   handle: string;
   displayName: string;
   initial: RelationshipState;
   /** The Howdy team account: it cannot be blocked (the server refuses too), so Block is not offered. */
   official?: boolean;
+  /** They have a photo I can see: offer to flag the photo itself (ADR-025). */
+  hasPhoto?: boolean;
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -48,7 +51,7 @@ export function RelationshipBar({
   const [busy, setBusy] = useState<RelationshipAction | undefined>();
   const [error, setError] = useState<string | undefined>();
   const [confirm, setConfirm] = useState<'block' | 'leave' | undefined>();
-  const [reporting, setReporting] = useState(false);
+  const [reporting, setReporting] = useState<'person' | 'photo' | false>(false);
 
   async function run(action: RelationshipAction, then?: () => void) {
     setBusy(action);
@@ -101,7 +104,10 @@ export function RelationshipBar({
               label: rel.restricted ? 'Lift the restriction' : 'Restrict',
               onSelect: () => run(rel.restricted ? 'unrestrict' : 'restrict'),
             },
-            { id: 'report', label: 'Flag trouble…', onSelect: () => setReporting(true) },
+            { id: 'report', label: 'Flag trouble…', onSelect: () => setReporting('person') },
+            ...(hasPhoto
+              ? [{ id: 'report-photo', label: 'Flag their photo…', onSelect: () => setReporting('photo') }]
+              : []),
             ...(official
               ? []
               : [{ id: 'block', label: 'Block…', danger: true, onSelect: () => setConfirm('block') }]),
@@ -191,10 +197,12 @@ export function RelationshipBar({
         }
       />
       <ReportDialog
-        open={reporting}
-        title={`Flag trouble with @${handle}`}
-        endpoint="/api/reports"
-        extra={{ handle }}
+        open={reporting !== false}
+        title={reporting === 'photo' ? `Flag @${handle}'s photo` : `Flag trouble with @${handle}`}
+        endpoint={
+          reporting === 'photo' ? `/api/reports/portrait/${encodeURIComponent(handle)}` : '/api/reports'
+        }
+        {...(reporting === 'photo' ? {} : { extra: { handle } })}
         onClose={() => setReporting(false)}
         onDone={() => toast({ title: 'Thanks. We will take a look.', tone: 'success' })}
       />

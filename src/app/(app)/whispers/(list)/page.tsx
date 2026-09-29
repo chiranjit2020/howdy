@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { requireUser } from '@/modules/auth';
 import { getOwnRanch } from '@/modules/profiles';
-import { listThreads } from '@/modules/whispers';
+import { countHeld, listThreads } from '@/modules/whispers';
 import { formatRelative, GlossaryHint } from '@/ui/howdy';
 import { Avatar, Badge, ClayCard, EmptyState } from '@/ui/primitives';
 import { ReadReceipts } from './read-receipts';
@@ -11,7 +11,12 @@ export const metadata = { title: 'Whispers' };
 /** My Whisper threads. Protected: the session is checked on the server before any of this renders. */
 export default async function WhispersPage() {
   const user = await requireUser();
-  const [threads, me] = await Promise.all([listThreads(user.id), getOwnRanch(user.id)]);
+  const [threads, me, held] = await Promise.all([
+    listThreads(user.id),
+    getOwnRanch(user.id),
+    // Best-effort: the tray link is a convenience, never a reason for the list to fail.
+    countHeld(user.id).catch(() => 0),
+  ]);
   return (
     <>
       <main id="main" className="mx-auto flex w-full max-w-xl flex-col gap-4 py-4 sm:gap-6 sm:py-8">
@@ -60,6 +65,11 @@ export default async function WhispersPage() {
               </li>
             ))}
           </ul>
+        )}
+        {held > 0 && (
+          <Link href="/whispers/held" className="inline-flex min-h-11 items-center self-start text-caption">
+            Held back from people you restricted ({held > 99 ? '99+' : held})
+          </Link>
         )}
         <ReadReceipts initial={me.readReceipts} />
       </main>

@@ -206,6 +206,27 @@ export async function removePortrait(userId: string): Promise<boolean> {
   return retired.length > 0;
 }
 
+/**
+ * Retire one exact Portrait (a moderator removing a reported photo, ADR-025). Only that version, only while it is live:
+ * a photo the owner has since replaced is left alone and this answers false.
+ */
+export async function retirePortrait(ownerId: string, mediaId: string): Promise<boolean> {
+  const retired = await getDb()
+    .update(media)
+    .set({ status: 'retired', updatedAt: sql`now()` })
+    .where(
+      and(
+        eq(media.id, mediaId),
+        eq(media.ownerId, ownerId),
+        eq(media.kind, 'portrait'),
+        eq(media.status, 'ready'),
+      ),
+    )
+    .returning({ id: media.id, objectKey: media.objectKey });
+  await destroy(retired);
+  return retired.length > 0;
+}
+
 /** The id of someone's live Portrait (used to name the picture in a URL and to bust caches), or null when they have none. */
 export async function getPortraitVersion(userId: string): Promise<string | null> {
   const [row] = await getDb()

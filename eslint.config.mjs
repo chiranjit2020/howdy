@@ -7,7 +7,7 @@ import nextTs from 'eslint-config-next/typescript';
  *   app → modules → platform / shared          (never the other way)
  *   ui  → shared only                          (no server code in components)
  *   a module is imported ONLY through its index.ts, and modules depend on each other in one direction:
- *   auth → profiles → (authz, relationships)   (no cycles)
+ *   auth → profiles → (authz, relationships), auth → moderation   (no cycles)
  * Tests are exempt: they exercise module internals on purpose.
  */
 const DEEP = {
@@ -35,14 +35,16 @@ const restrict = (files, ...patterns) => ({
 
 /** Which other modules each module may import (via their index only). Anything not listed is forbidden. */
 const MODULE_DEPENDENCIES = {
-  auth: ['profiles'],
+  // Sign-in asks moderation why an account is suspended (moderation itself depends on nothing).
+  auth: ['profiles', 'moderation'],
   profiles: ['authz', 'relationships'],
   authz: [],
-  relationships: ['authz'],
+  relationships: ['authz', 'moderation'],
   moderation: [],
-  fence: ['authz', 'profiles', 'relationships'],
+  // moderation: the anti-spam checks (new-account budgets, holding for review). It depends on nothing.
+  fence: ['authz', 'profiles', 'relationships', 'moderation'],
   notifications: ['authz', 'profiles', 'relationships', 'push'],
-  whispers: ['authz', 'profiles', 'relationships'],
+  whispers: ['authz', 'profiles', 'relationships', 'moderation'],
   tracks: ['profiles', 'relationships'],
   // Owns files and nothing else; who may SEE a file is decided in the app layer.
   media: [],

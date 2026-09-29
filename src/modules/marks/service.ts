@@ -135,15 +135,22 @@ export async function giveMark(raterId: string, handle: string, kind: MarkKind):
   if (!can(actor, 'mark:give', acc.ranch, { relationship: acc.relationship.relationship }).allow) {
     throw new AppError('FORBIDDEN', { message: 'Only your Pals can Mark you.' });
   }
-  // One statement, so two racing requests cannot both slip past the cooldown: the second sees the first's row.
+  // A single `insert … where not exists` is NOT enough: under read committed, two racing requests can both see "no
+  // recent Mark" and both insert (the marks race test caught it about 1 run in 4). So the pair is locked for the
+  // length of the transaction: the second request waits, then sees the first one's row.
   const cutoff = new Date(Date.now() - COOLDOWN_MS);
-  const inserted = await getDb().execute(sql`
-    insert into marks (rater_id, target_id, kind, created_at)
-    select ${raterId}, ${targetId}, ${kind}, ${new Date()}
-    where not exists (
-      select 1 from marks where rater_id = ${raterId} and target_id = ${targetId} and created_at > ${cutoff}
-    )
-    returning id`);
+  const inserted = await getDb().transaction(async (tx) => {
+    await tx.execute(
+      sql`select pg_advisory_xact_lock(hashtextextended(${`mark:${raterId}:${targetId}`}, 0))`,
+    );
+    return tx.execute(sql`
+      insert into marks (rater_id, target_id, kind, created_at)
+      select ${raterId}, ${targetId}, ${kind}, ${new Date()}
+      where not exists (
+        select 1 from marks where rater_id = ${raterId} and target_id = ${targetId} and created_at > ${cutoff}
+      )
+      returning id`);
+  });
   if (inserted.rows.length === 0) {
     throw new AppError('CONFLICT', { message: 'You can Mark this person again once the cooldown is over.' });
   }

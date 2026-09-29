@@ -134,6 +134,27 @@
       "when": 1790618574010,
       "tag": "0018_push_subscriptions",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1790700706533,
+      "tag": "0019_suspensions_and_appeals",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1790702109565,
+      "tag": "0020_reports_open_target_index",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1790702956712,
+      "tag": "0021_report_subjects",
+      "breakpoints": true
     }
   ]
 }

@@ -9,6 +9,7 @@ import { enforceRateLimit } from '@/platform/rate-limit';
 import { passwordMatchesIdentity, IDENTITY_PASSWORD_MESSAGE } from '@/shared/validation/auth';
 import { audit } from './audit';
 import { recordAcceptance } from './legal';
+import { fileAppeal, suspensionAtSignIn, type SuspensionNotice } from '@/modules/moderation';
 import { createProfile } from '@/modules/profiles';
 import { RATE, RESET_PASSWORD_TTL_MS, VERIFY_EMAIL_TTL_MS } from './config';
 import { dummyPasswordHash, hashPassword, hashToken, keyDigest, newToken, verifyPassword } from './crypto';
@@ -295,6 +296,49 @@ export async function login(
   input: { identifier: string; password: string },
   ctx: RequestContext & { userAgent?: string | null; previousToken?: string | undefined },
 ): Promise<LoginResult> {
+  const row = await verifyCredentials(input, ctx);
+  if (row.status === 'suspended') {
+    // Only now, with the password proven: say why, and until when. A timed suspension that ran out lifts here.
+    const at = await suspensionAtSignIn(row.id);
+    if (!at.lifted) throw suspendedError(at.notice);
+  } else if (row.status !== 'active') {
+    throw new AppError('ACCOUNT_UNAVAILABLE');
+  }
+  if (!row.emailVerifiedAt) throw new AppError('EMAIL_NOT_VERIFIED');
+
+  if (ctx.previousToken) await revokeSessionByToken(ctx.previousToken);
+  const session = await createSession(row.id, ctx.userAgent);
+  await audit('login_success', { userId: row.id, requestId: ctx.requestId });
+  return { token: session.token, maxAgeSec: session.maxAgeSec, user: { id: row.id, handle: row.handle } };
+}
+
+function suspendedError(notice: SuspensionNotice): AppError {
+  return new AppError('ACCOUNT_SUSPENDED', {
+    data: { reason: notice.reason, endsAt: notice.endsAt?.toISOString() ?? null, appeal: notice.appeal },
+  });
+}
+
+/**
+ * A suspended person's one appeal (ADR-023). They cannot hold a session, so it is sent with the same identifier and
+ * password as signing in, checked the same way and against the SAME rate limits (an appeal is not a second place to
+ * guess passwords). Nothing about the account is said until the password is proven.
+ */
+export async function appealSuspension(
+  input: { identifier: string; password: string; text: string },
+  ctx: RequestContext,
+): Promise<void> {
+  const row = await verifyCredentials(input, ctx);
+  if (row.status !== 'suspended')
+    throw new AppError('BAD_REQUEST', { message: 'This account is not suspended.' });
+  await fileAppeal(row.id, input.text);
+  await audit('appeal_filed', { userId: row.id, requestId: ctx.requestId });
+}
+
+/**
+ * The password check shared by sign-in and appeals. Unknown account and wrong password are indistinguishable (same
+ * error, same Argon2 cost via a dummy hash). Returns the account whatever its status; the caller decides what to say.
+ */
+async function verifyCredentials(input: { identifier: string; password: string }, ctx: RequestContext) {
   await enforceRateLimit(`auth:login:ip:${ctx.ip}`, RATE.loginIp);
   await enforceRateLimit(`auth:login:id:${keyDigest(input.identifier)}`, RATE.loginIdentifier);
 
@@ -323,11 +367,5 @@ export async function login(
     if (row) await audit('login_failed', { userId: row.id, requestId: ctx.requestId });
     throw new AppError('UNAUTHENTICATED', { message: INVALID_CREDENTIALS_MESSAGE });
   }
-  if (row.status !== 'active') throw new AppError('ACCOUNT_UNAVAILABLE');
-  if (!row.emailVerifiedAt) throw new AppError('EMAIL_NOT_VERIFIED');
-
-  if (ctx.previousToken) await revokeSessionByToken(ctx.previousToken);
-  const session = await createSession(row.id, ctx.userAgent);
-  await audit('login_success', { userId: row.id, requestId: ctx.requestId });
-  return { token: session.token, maxAgeSec: session.maxAgeSec, user: { id: row.id, handle: row.handle } };
+  return row;
 }

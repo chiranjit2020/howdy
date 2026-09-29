@@ -1,6 +1,7 @@
 import { purgeExpiredAuthData } from '@/modules/auth';
 import { purgeStaleWaiting } from '@/modules/fence';
 import { purgeStaleMedia } from '@/modules/media';
+import { liftExpiredSuspensions, purgeClosedReports } from '@/modules/moderation';
 import { purgeOldChimes } from '@/modules/notifications';
 import { clearExpiredSignals } from '@/modules/profiles';
 import { purgeDeadSubscriptions } from '@/modules/push';
@@ -26,6 +27,9 @@ export async function runAllPurges() {
   const tributeRows = await purgeStaleTributes();
   // Not retention, but daily upkeep that belongs with it: Trusted ticks nobody has looked at lately are checked again.
   const trust = await recheckStaleTrust();
+  // Timed suspensions that ran out: lifted here too, so the person reappears without having to sign in first.
+  const suspensionsDone = await liftExpiredSuspensions();
+  const reportsDone = await purgeClosedReports();
   return {
     ...devices,
     ...auth,
@@ -37,5 +41,7 @@ export async function runAllPurges() {
     ...files,
     ...tributeRows,
     ...trust,
+    ...suspensionsDone,
+    ...reportsDone,
   };
 }

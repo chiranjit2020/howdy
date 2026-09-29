@@ -10,6 +10,7 @@ export {
   purgeStaleMedia,
   readPortrait,
   removePortrait,
+  retirePortrait,
   startPortraitUpload,
   type StartedUpload,
 } from './service';

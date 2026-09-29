@@ -67,10 +67,16 @@ describe('architecture boundaries are enforced by lint', () => {
     expect(
       await violations('src/modules/profiles/x.ts', "import { createReport } from '@/modules/moderation';"),
     ).toHaveLength(1);
-    // fence sits on top: it may use authz, profiles and relationships — and nothing may depend on it
-    for (const ok of ['authz', 'profiles', 'relationships'])
+    // fence sits on top: it may use authz, profiles, relationships and moderation (the anti-spam checks, ADR-024) —
+    // and nothing may depend on it
+    for (const ok of ['authz', 'profiles', 'relationships', 'moderation'])
       expect(await violations('src/modules/fence/x.ts', `import { a } from '@/modules/${ok}';`)).toEqual([]);
-    for (const bad of ['auth', 'moderation'])
+    // moderation still depends on nothing, so letting others use it cannot make a cycle
+    for (const other of ['fence', 'relationships', 'whispers', 'auth'])
+      expect(
+        await violations('src/modules/moderation/x.ts', `import { a } from '@/modules/${other}';`),
+      ).toHaveLength(1);
+    for (const bad of ['auth'])
       expect(
         await violations('src/modules/fence/x.ts', `import { a } from '@/modules/${bad}';`),
       ).toHaveLength(1);
@@ -100,11 +106,12 @@ describe('architecture boundaries are enforced by lint', () => {
       ).toHaveLength(1);
     // whispers is a peer of fence / notifications: authz, profiles, relationships only — and nothing depends on it. The
     // realtime process (src/realtime) is a second entry point like src/app: it composes modules through their indexes.
-    for (const ok of ['authz', 'profiles', 'relationships'])
+    // (moderation too, for the first-week budget — ADR-024.)
+    for (const ok of ['authz', 'profiles', 'relationships', 'moderation'])
       expect(await violations('src/modules/whispers/x.ts', `import { a } from '@/modules/${ok}';`)).toEqual(
         [],
       );
-    for (const bad of ['auth', 'moderation', 'fence', 'notifications'])
+    for (const bad of ['auth', 'fence', 'notifications'])
       expect(
         await violations('src/modules/whispers/x.ts', `import { a } from '@/modules/${bad}';`),
       ).toHaveLength(1);

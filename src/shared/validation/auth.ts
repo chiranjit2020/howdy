@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { LIMITS } from '../limits';
+import { appealTextSchema } from './moderation';
 import { displayNameSchema } from './profile';
 import './zod-setup'; // jitless Zod (no eval probe under our CSP)
 
@@ -33,6 +34,9 @@ export const RESERVED_HANDLES: ReadonlySet<string> = new Set([
   'fence',
   'tracks',
   'whispers',
+  // Fixed words under /whispers/… and /api/whispers/…, where a call sign would otherwise land on the same URL.
+  'unread',
+  'held',
   'workshop',
   'gate',
   'null',
@@ -182,6 +186,12 @@ export const loginSchema = z.object({
     .refine((s) => !/[\u0000-\u001f\u007f]/.test(s), 'Enter your handle or email.'),
   password: z.string().min(1, 'Enter your password.').max(PASSWORD_MAX),
 });
+
+/**
+ * A suspended person's appeal (ADR-023). They cannot hold a session, so the appeal proves who they are the same way
+ * signing in does: the same identifier and password, checked the same way, before anything is said about the account.
+ */
+export const appealSchema = loginSchema.extend({ text: appealTextSchema });
 
 export const emailOnlySchema = z.object({ email: emailSchema });
 

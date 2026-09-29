@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { getCurrentUser, pendingAcceptances } from '@/modules/auth';
 import { getPortraitVersion } from '@/modules/media';
+import { isModerator } from '@/modules/moderation';
 import { unreadCount } from '@/modules/notifications';
 import { getOwnRanch } from '@/modules/profiles';
 import { countMyInvites } from '@/modules/town-halls';
@@ -38,7 +39,7 @@ export async function AppFrame({
       </>
     );
   }
-  const [unread, unreadWhispers, invites, ranch, photo, pending] = await Promise.all([
+  const [unread, unreadWhispers, invites, ranch, photo, pending, moderator] = await Promise.all([
     unreadCount(user.id).catch(() => 0),
     unreadThreads(user.id).catch(() => 0),
     countMyInvites(user.id).catch(() => 0),
@@ -46,6 +47,7 @@ export async function AppFrame({
     getPortraitVersion(user.id).catch(() => null),
     // Best-effort like the rest: if the check itself fails, let the person in rather than take every page down.
     askToAgree ? pendingAcceptances(user.id).catch(() => []) : Promise.resolve([]),
+    isModerator(user.id).catch(() => false),
   ]);
   if (pending.length > 0) redirect('/agree');
   return (
@@ -61,6 +63,7 @@ export async function AppFrame({
         unread={unread}
         unreadWhispers={unreadWhispers}
         townHallInvites={invites}
+        moderator={moderator}
       >
         {children}
       </AppShell>

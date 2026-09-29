@@ -2,6 +2,7 @@ import { readJson } from '@/platform/http/body';
 import { json, route } from '@/platform/http/route';
 import { AppError } from '@/platform/errors';
 import {
+  appealSchema,
   emailOnlySchema,
   loginSchema,
   resetPasswordSchema,
@@ -9,7 +10,15 @@ import {
   verifyEmailSchema,
 } from '@/shared/validation/auth';
 import { audit } from './audit';
-import { forgotPassword, login, resendVerification, resetPassword, signUp, verifyEmail } from './accounts';
+import {
+  appealSuspension,
+  forgotPassword,
+  login,
+  resendVerification,
+  resetPassword,
+  signUp,
+  verifyEmail,
+} from './accounts';
 import {
   clearedSessionCookie,
   requestContext,
@@ -47,6 +56,13 @@ export const authHandlers = {
       previousToken: sessionTokenFrom(req.headers),
     });
     return withCookie(json({ user: result.user }), sessionCookie(result.token, result.maxAgeSec));
+  }),
+
+  /** A suspended person's one appeal, sent with their sign-in details (they have no session). ADR-023. */
+  appeal: route(async ({ req, requestId }) => {
+    const body = await readJson(req, appealSchema);
+    await appealSuspension(body, requestContext(req, requestId));
+    return json(ACCEPTED);
   }),
 
   /** Idempotent: always clears the cookie, whether or not a live session was presented. */

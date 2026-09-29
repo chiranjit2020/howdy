@@ -5,12 +5,13 @@ import { usePathname } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { Art, type ArtName } from '../art/glyph';
 import { cn } from '../cn';
+import { ShieldIcon } from '../icons';
 import { Avatar } from '../primitives/avatar';
 import { BottomNavigation, type NavItem } from '../primitives/navigation';
 import type { ShellMe } from './app-shell';
 
 export type ShellNavKey =
-  'home' | 'ranch' | 'posse' | 'tracks' | 'whispers' | 'chimes' | 'workshop' | 'town-halls';
+  'home' | 'ranch' | 'posse' | 'tracks' | 'whispers' | 'chimes' | 'workshop' | 'town-halls' | 'moderation';
 
 export interface ShellNavItem {
   key: ShellNavKey;
@@ -20,7 +21,7 @@ export interface ShellNavItem {
   badge?: number;
 }
 
-const ART: Record<ShellNavKey, ArtName> = {
+const ART: Record<Exclude<ShellNavKey, 'moderation'>, ArtName> = {
   home: 'nav-home',
   ranch: 'nav-porch',
   posse: 'nav-pals',
@@ -32,10 +33,14 @@ const ART: Record<ShellNavKey, ArtName> = {
 };
 // Loaded at once (not lazily): the navigation is on screen from the first paint.
 const navArt = (name: ArtName) => <Art name={name} size="free" className="size-7" loading="eager" />;
-const ICON = Object.fromEntries(Object.entries(ART).map(([key, name]) => [key, navArt(name)])) as Record<
-  ShellNavKey,
-  ReactNode
->;
+const ICON: Record<ShellNavKey, ReactNode> = {
+  ...(Object.fromEntries(Object.entries(ART).map(([key, name]) => [key, navArt(name)])) as Record<
+    keyof typeof ART,
+    ReactNode
+  >),
+  // Staff-only, so it has no clay artwork: a plain line icon at the same size.
+  moderation: <ShieldIcon className="size-7" />,
+};
 
 const isCurrent = (pathname: string, href: string) => pathname === href || pathname.startsWith(`${href}/`);
 const badgeText = (n: number) => (n > 99 ? '99+' : String(n));

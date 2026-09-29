@@ -1,0 +1,1 @@
+CREATE INDEX "reports_open_target_idx" ON "reports" USING btree ("target_user_id","created_at") WHERE "reports"."status" = 'open';

@@ -7,6 +7,7 @@ import {
   pageReady,
   signUpVia,
   smallTargets,
+  settleAccount,
   stepInsideVia,
   uniqueAccount,
   watchProblems,
@@ -19,6 +20,8 @@ async function person(browser: Browser, tag: string, opts: Parameters<typeof new
   const ctx = await newContext(browser, opts);
   const page = await ctx.newPage();
   await signUpVia(page, account);
+  // Past the first week: these tests start more than one Town Hall per person (ADR-024 allows a new account one a day).
+  await settleAccount(account.handle);
   await confirmEmailVia(page, account.email);
   await stepInsideVia(page, account.email, account.password);
   await expect(page).toHaveURL(/\/home$/);

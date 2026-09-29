@@ -18,6 +18,7 @@ import { Art } from '@/ui/art/glyph';
 import { apiRequest, postJson } from '@/ui/auth/api';
 import { FormMessage } from '@/ui/auth/form-parts';
 import { WhisperBubble } from '@/ui/howdy';
+import { ReportDialog } from '@/ui/howdy/report-dialog';
 import { Avatar, Button, ConfirmationDialog, Textarea } from '@/ui/primitives';
 
 type Msg = WhisperMessage & { state?: 'sending' | 'failed'; error?: string };
@@ -64,6 +65,10 @@ export function ThreadView({
   const [text, setText] = useState('');
   const [error, setError] = useState<string | undefined>();
   const [burning, setBurning] = useState(false);
+  // Flagging (ADR-025): "pick mode" puts a Flag button under each Whisper I received; `flagId` is the one being reported.
+  const [picking, setPicking] = useState(false);
+  const [flagId, setFlagId] = useState<string | undefined>();
+  const [flagged, setFlagged] = useState(false);
   const [busy, setBusy] = useState<'older' | 'burn' | undefined>();
   // False while rendering on the server and hydrating, true afterwards: times of day are the browser's, not the server's.
   const mounted = useSyncExternalStore(
@@ -310,10 +315,28 @@ export function ThreadView({
             </Link>
           </p>
         </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          aria-pressed={picking}
+          onClick={() => {
+            setPicking((p) => !p);
+            setFlagged(false);
+          }}
+        >
+          {picking ? 'Done flagging' : 'Flag a Whisper'}
+        </Button>
         <Button variant="ghost" size="sm" onClick={() => setBurning(true)}>
           Burn thread
         </Button>
       </header>
+      {picking && (
+        <p className="text-caption text-text-secondary">
+          Pick the Whisper that is the problem. Only that one is sent to our team, never the rest of the
+          thread.
+        </p>
+      )}
+      {flagged && <FormMessage tone="success">Thanks. We will take a look. They are not told.</FormMessage>}
       <p role="status" className="text-metadata text-text-secondary">
         {status[live]}
       </p>
@@ -358,6 +381,11 @@ export function ThreadView({
                       }
                     : {})}
             />
+            {picking && !m.mine && !m.state && (
+              <Button size="sm" variant="ghost" className="self-start" onClick={() => setFlagId(m.id)}>
+                Flag this Whisper
+              </Button>
+            )}
             {m.state === 'failed' && (
               <div className="flex items-center justify-end gap-2">
                 <span className="text-metadata text-text-secondary">{m.error}</span>
@@ -388,6 +416,16 @@ export function ThreadView({
         </Button>
       </form>
 
+      <ReportDialog
+        open={flagId !== undefined}
+        title="Flag this Whisper"
+        endpoint={`/api/reports/whisper/${flagId ?? ''}`}
+        onClose={() => setFlagId(undefined)}
+        onDone={() => {
+          setPicking(false);
+          setFlagged(true);
+        }}
+      />
       <ConfirmationDialog
         open={burning}
         destructive

@@ -45,11 +45,11 @@ When you use Howdy, do not:
 
 ## Moderation, reports and suspension
 
-- **Anyone can report** a person or a Post Card. Reports go to our moderators. The person reported is not told who reported them.
+- **Anyone can report** a person, a Post Card, a photo, a Whisper they received, or a Town Hall. Reports go to our moderators. The person reported is not told who reported them.
 - **What we may do:** remove content, limit features, or suspend or close an account that breaks these Terms or the Campfire Rules, or where we must do so by law. We may also act to protect someone's safety, or Howdy itself.
 - **How we decide:** a person makes every moderation decision. We try to be fair and proportionate, and to look at the whole situation.
-- **Suspension** signs the account out everywhere and hides it. We may lift a suspension if it was a mistake, or once the problem is dealt with.
-- **If you disagree** with a decision about your content or your account, write to [{{contactEmail}}](mailto:{{contactEmail}}) and a person will look at it again.
+- **Suspension** signs the account out everywhere and hides it. It lasts 7 days, 30 days, or until we lift it. When you try to sign in, we tell you why and until when. We may lift a suspension early if it was a mistake, or once the problem is dealt with.
+- **If you disagree** with a suspension, you can appeal once, right there on the sign-in page, and a person will read it and answer. For any other decision about your content or your account, write to [{{contactEmail}}](mailto:{{contactEmail}}) and a person will look at it again.
 
 We are not obliged to watch everything posted on Howdy, and we do not. We rely on reports, and we act on them.
 

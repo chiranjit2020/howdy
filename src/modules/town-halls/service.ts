@@ -1,5 +1,6 @@
 import { townHallMembers, townHalls } from '@db/schema';
 import { and, desc, eq, inArray, sql } from 'drizzle-orm';
+import { enforceNewAccountLimit } from '@/modules/moderation';
 import { getCards, resolveHandle, type PersonCard } from '@/modules/profiles';
 import { decodeCursor, encodeCursor, type Cursor } from '@/platform/cursor';
 import { getDb } from '@/platform/db';
@@ -114,6 +115,7 @@ export async function createTownHall(
   input: { name: string; description: string; visibility: TownHallVisibility },
 ): Promise<TownHallDetail> {
   await enforceRateLimit(`townhalls:create:${ownerId}`, RATE.create);
+  await enforceNewAccountLimit(ownerId, 'townHallCreate');
   const row = await getDb().transaction(async (tx) => {
     const [made] = await tx
       .insert(townHalls)
@@ -281,6 +283,29 @@ export async function getTownHall(viewerId: string, townHallId: string): Promise
   };
 }
 
+/**
+ * A Town Hall as a report needs it (ADR-025): whose it is and its words. Only for someone who may see it — the same
+ * rule as `getTownHall` — so a report cannot be used to learn that an invite-only Town Hall exists.
+ */
+export async function townHallForReport(
+  viewerId: string,
+  townHallId: string,
+): Promise<{ id: string; ownerId: string; name: string; description: string } | null> {
+  const seen = await getTownHall(viewerId, townHallId);
+  if (!seen) return null;
+  const [row] = await getDb()
+    .select({
+      id: townHalls.id,
+      ownerId: townHalls.ownerId,
+      name: townHalls.name,
+      description: townHalls.description,
+    })
+    .from(townHalls)
+    .where(eq(townHalls.id, townHallId))
+    .limit(1);
+  return row ?? null;
+}
+
 /** A Town Hall's roster, paginated. Active members only (owner included) — nobody else may read it. */
 export async function listMembers(
   viewerId: string,
@@ -410,6 +435,7 @@ export async function act(
 /** Invite someone by call sign. Owner only. A repeat invite (already invited, or already a member) is a harmless no-op. */
 export async function invite(ownerId: string, townHallId: string, handle: string): Promise<void> {
   await enforceRateLimit(`townhalls:invite:${ownerId}`, RATE.invite);
+  await enforceNewAccountLimit(ownerId, 'townHallInvite');
   const [row] = await getDb()
     .select()
     .from(townHalls)

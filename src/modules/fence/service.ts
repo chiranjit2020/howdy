@@ -1,6 +1,7 @@
 import { cardReplies, postCards, yos } from '@db/schema';
 import { and, asc, count, desc, eq, inArray, lt, or, sql } from 'drizzle-orm';
 import { canFence, holdFor, type Actor, type FenceContext, type FenceResource } from '@/modules/authz';
+import { enforceNewAccountLimit, shouldHoldForOthers } from '@/modules/moderation';
 import { getCards, getFenceResource, resolveHandle, type PersonCard } from '@/modules/profiles';
 import { fenceStanding, hiddenAuthors } from '@/modules/relationships';
 import { getDb } from '@/platform/db';
@@ -378,10 +379,28 @@ async function loadCard(userId: string, cardId: string): Promise<CardContext | n
   return { card, fence: acc.fence, ctx: acc.ctx, actor, isOwner };
 }
 
+/**
+ * Where new words go: the owner's rules first (`holdFor`: Review on → `pending`, restricted → `held`), then the
+ * anti-spam check (ADR-024) for words on SOMEONE ELSE's Fence: an author many people have reported lately is `held`
+ * for the owner's OK. `held` looks posted to its writer either way.
+ */
+async function statusFor(
+  actor: Actor,
+  kind: 'card' | 'reply',
+  fence: FenceResource,
+  ctx: FenceContext,
+  authorId: string,
+): Promise<'published' | 'pending' | 'held'> {
+  const status = holdFor(actor, kind, fence, ctx);
+  if (status !== 'published' || authorId === fence.ownerId) return status;
+  return (await shouldHoldForOthers(authorId)) ? 'held' : 'published';
+}
+
 /** Nail a Post Card on the Fence of the person with call sign `handle`. */
 export async function postCard(userId: string, handle: string, body: string): Promise<CardView> {
   // Spent before the handle is looked up: the same limit trips whether the Fence exists, is hidden or is a made-up name.
   await enforceRateLimit(`fence:post:${userId}`, RATE.postUser);
+  await enforceNewAccountLimit(userId, 'card');
   const owner = await resolveHandle(handle);
   if (!owner) throw new AppError('NOT_FOUND');
   const ownerId = owner.userId;
@@ -396,7 +415,7 @@ export async function postCard(userId: string, handle: string, body: string): Pr
     await enforceRateLimit(`fence:post:${userId}:${ownerId}`, RATE.postPerFence);
     await enforceRateLimit(`fence:into:${ownerId}`, RATE.postIntoFence);
   }
-  const status = holdFor(actor, 'card', fence, ctx);
+  const status = await statusFor(actor, 'card', fence, ctx, userId);
   // Written with millisecond precision so cursors compare exactly (see cursor.ts).
   const [row] = await getDb()
     .insert(postCards)
@@ -417,6 +436,7 @@ export async function postCard(userId: string, handle: string, body: string): Pr
 /** Write a reply on the back of a published card. Restricted writers' replies are held, without being told. */
 export async function postReply(userId: string, cardId: string, body: string): Promise<ReplyView> {
   await enforceRateLimit(`fence:reply:${userId}`, RATE.replyUser);
+  await enforceNewAccountLimit(userId, 'reply');
   const loaded = await loadCard(userId, cardId);
   if (!loaded || loaded.card.status !== 'published') throw new AppError('NOT_FOUND');
   const { card, fence, ctx, actor } = loaded;
@@ -426,7 +446,7 @@ export async function postReply(userId: string, cardId: string, body: string): P
   if (userId !== fence.ownerId) {
     await enforceRateLimit(`fence:reply:${userId}:${fence.ownerId}`, RATE.replyPerFence);
   }
-  const status = holdFor(actor, 'reply', fence, ctx);
+  const status = await statusFor(actor, 'reply', fence, ctx, userId);
   const row = await getDb().transaction(async (tx) => {
     // Lock the card so two replies cannot both take the last free place.
     await tx.execute(sql`select 1 from ${postCards} where ${postCards.id} = ${card.id} for update`);
@@ -478,6 +498,7 @@ export async function setYo(
   kind: ReactionKind = 'yo',
 ): Promise<{ yoByMe: boolean; myReaction: ReactionKind | null }> {
   await enforceRateLimit(`fence:yo:${userId}`, RATE.yo);
+  await enforceNewAccountLimit(userId, 'reaction');
   if (!idParamSchema.safeParse(cardId).success) throw new AppError('NOT_FOUND');
   if (!on) {
     await getDb()

@@ -3,7 +3,7 @@ import { act } from '@/modules/relationships';
 import { MAX_PENDING_OUTGOING, RATE } from '@/modules/relationships/service';
 import { getPool } from '@/platform/db';
 import { setRateLimiter } from '@/platform/rate-limit';
-import { freshAuthState, signedInUser, stable, uniqueUser, type TestKit } from '../helpers/auth';
+import { freshAuthState, settledUser, stable, uniqueUser, type TestKit } from '../helpers/auth';
 import { patchRanch, setSignal, viewRanch } from '../helpers/ranch';
 import { NONE, doAct, insertUser, myLists, q, relWith, userId } from '../helpers/social';
 
@@ -15,7 +15,8 @@ afterAll(async () => {
   await getPool().end();
 });
 
-const person = (tag: string) => signedInUser(kit, uniqueUser(tag));
+// Settled accounts: these tests are about everyone's rules, not the first-week budgets (ADR-024).
+const person = (tag: string) => settledUser(kit, uniqueUser(tag));
 const as = (p: { cookie: string }) => ({ cookie: p.cookie });
 const count = async (table: string) => (await q(`select count(*)::int n from ${table}`)).rows[0].n as number;
 

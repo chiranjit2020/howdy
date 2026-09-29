@@ -7,6 +7,7 @@ import { loginSchema } from '@/shared/validation/auth';
 import { postJson } from '@/ui/auth/api';
 import { FormMessage } from '@/ui/auth/form-parts';
 import { Button, Input } from '@/ui/primitives';
+import { readSuspension, SuspendedNotice, type Suspension } from './suspended-notice';
 
 export function LoginForm() {
   const router = useRouter();
@@ -18,12 +19,16 @@ export function LoginForm() {
   const [resent, setResent] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const [busy, setBusy] = useState(false);
+  const [suspended, setSuspended] = useState<(Suspension & { identifier: string; password: string }) | null>(
+    null,
+  );
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setError(undefined);
     setNeedsVerify(false);
     setResent(false);
+    setSuspended(null);
     const parsed = loginSchema.safeParse({ identifier, password });
     if (!parsed.success) {
       setError('Enter your handle or email and your password.');
@@ -38,6 +43,11 @@ export function LoginForm() {
       return;
     }
     setBusy(false);
+    if (res.error?.code === 'ACCOUNT_SUSPENDED') {
+      // Not an error to fix: show what happened, and the appeal, instead of a red message.
+      setSuspended({ ...readSuspension(res.error.data), ...parsed.data });
+      return;
+    }
     if (res.error?.code === 'EMAIL_NOT_VERIFIED') {
       setNeedsVerify(true);
       setVerifyEmail(parsed.data.identifier.includes('@') ? parsed.data.identifier : '');
@@ -51,6 +61,23 @@ export function LoginForm() {
     if (!email) return;
     await postJson('/api/auth/resend-verification', { email });
     setResent(true);
+  }
+
+  // Shown instead of the form, not inside it: the appeal is a form of its own.
+  if (suspended) {
+    return (
+      <div className="flex flex-col gap-3">
+        <h1 className="text-title text-text-primary">Welcome back</h1>
+        <SuspendedNotice
+          suspension={suspended}
+          identifier={suspended.identifier}
+          password={suspended.password}
+        />
+        <Button variant="ghost" onClick={() => setSuspended(null)}>
+          Sign in with another account
+        </Button>
+      </div>
+    );
   }
 
   return (

@@ -66,7 +66,9 @@ describe('upload tokens (the local driver’s signed URL)', () => {
       JSON.stringify({ ...CLAIMS, size: 999_999_999, exp: Date.now() + 1e9 }),
     ).toString('base64url');
     expect(verifyUploadToken(SECRET, `${changed}.${sig}`)).toBeNull(); // new claims, old signature
-    expect(verifyUploadToken(SECRET, `${payload}.${sig!.slice(0, -1)}A`)).toBeNull();
+    // Change the last character to one it is not (swapping in a fixed 'A' was a no-op 1 time in 64: a flaky test).
+    const last = sig!.slice(-1) === 'A' ? 'B' : 'A';
+    expect(verifyUploadToken(SECRET, `${payload}.${sig!.slice(0, -1)}${last}`)).toBeNull();
     for (const junk of ['', '.', 'a.b', 'a.b.c', `${payload}`, `${payload}.`, '💥.💥']) {
       expect(verifyUploadToken(SECRET, junk), junk).toBeNull();
     }

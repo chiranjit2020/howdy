@@ -15,11 +15,14 @@ export type ErrorCode =
   | 'EMAIL_NOT_VERIFIED'
   /** Correct credentials but the account cannot be used (suspended, pending deletion). Also post-password only. */
   | 'ACCOUNT_UNAVAILABLE'
+  /** Correct credentials but the account is suspended; `data` says why, until when, and whether it can be appealed. */
+  | 'ACCOUNT_SUSPENDED'
   | 'INTERNAL';
 
 const STATUS: Record<ErrorCode, number> = {
   EMAIL_NOT_VERIFIED: 403,
   ACCOUNT_UNAVAILABLE: 403,
+  ACCOUNT_SUSPENDED: 403,
   BAD_REQUEST: 400,
   VALIDATION_FAILED: 422,
   UNAUTHENTICATED: 401,
@@ -34,6 +37,7 @@ const STATUS: Record<ErrorCode, number> = {
 const DEFAULT_MESSAGE: Record<ErrorCode, string> = {
   EMAIL_NOT_VERIFIED: 'Confirm your email first. We can send the link again.',
   ACCOUNT_UNAVAILABLE: 'This account is not available right now.',
+  ACCOUNT_SUSPENDED: 'This account is suspended.',
   BAD_REQUEST: 'That request was not understood.',
   VALIDATION_FAILED: 'Some fields need another look.',
   UNAUTHENTICATED: 'You need to step inside first.',
@@ -54,6 +58,8 @@ export class AppError extends Error {
   readonly fields: Record<string, string> | undefined;
   /** Seconds, for RATE_LIMITED. */
   readonly retryAfterSec: number | undefined;
+  /** Extra facts that are safe to send to the client (e.g. a suspension's reason and end date). */
+  readonly data: Record<string, string | null> | undefined;
 
   constructor(
     code: ErrorCode,
@@ -61,6 +67,7 @@ export class AppError extends Error {
       message?: string;
       fields?: Record<string, string>;
       retryAfterSec?: number;
+      data?: Record<string, string | null>;
       cause?: unknown;
     } = {},
   ) {
@@ -74,11 +81,18 @@ export class AppError extends Error {
     this.publicMessage = opts.message ?? DEFAULT_MESSAGE[code];
     this.fields = opts.fields;
     this.retryAfterSec = opts.retryAfterSec;
+    this.data = opts.data;
   }
 }
 
 export interface PublicErrorBody {
-  error: { code: ErrorCode; message: string; requestId: string; fields?: Record<string, string> };
+  error: {
+    code: ErrorCode;
+    message: string;
+    requestId: string;
+    fields?: Record<string, string>;
+    data?: Record<string, string | null>;
+  };
 }
 
 /** Convert anything thrown into a safe response body + status. Unknown errors become a generic INTERNAL. */
@@ -89,6 +103,7 @@ export function toPublicError(
   const appErr = err instanceof AppError ? err : new AppError('INTERNAL', { cause: err });
   const error: PublicErrorBody['error'] = { code: appErr.code, message: appErr.publicMessage, requestId };
   if (appErr.fields) error.fields = appErr.fields;
+  if (appErr.data) error.data = appErr.data;
   const out: { status: number; body: PublicErrorBody; retryAfterSec?: number } = {
     status: appErr.status,
     body: { error },

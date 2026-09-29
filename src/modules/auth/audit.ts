@@ -12,7 +12,8 @@ export type AuditEvent =
   | 'session_revoked'
   | 'password_reset_requested'
   | 'password_reset_completed'
-  | 'legal_accepted';
+  | 'legal_accepted'
+  | 'appeal_filed';
 
 /** Best-effort append to the security audit trail. Never records IPs, tokens, passwords or message content. */
 export async function audit(

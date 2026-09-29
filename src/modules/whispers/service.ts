@@ -1,6 +1,7 @@
 import { conversations, messages } from '@db/schema';
 import { and, asc, desc, eq, exists, inArray, lt, or, sql } from 'drizzle-orm';
 import { can } from '@/modules/authz';
+import { enforceNewAccountLimit } from '@/modules/moderation';
 import { bothShareReceipts, getCards, resolveHandle, type PersonCard } from '@/modules/profiles';
 import { fenceStanding, hiddenAuthors, posseMembersAmong } from '@/modules/relationships';
 import { getDb } from '@/platform/db';
@@ -14,6 +15,7 @@ import {
   THREAD_PAGE_SIZE,
   WHISPER_RETENTION_DAYS,
 } from '@/shared/validation/whispers';
+import { idParamSchema } from '@/shared/validation/fence';
 import type { PortraitTint } from '@/shared/validation/profile';
 
 const rule = (limit: number, windowSec: number): RateLimitRule => ({ limit, windowSec });
@@ -33,6 +35,8 @@ export const RATE = {
 
 export const RETENTION_MS = WHISPER_RETENTION_DAYS * 24 * 60 * 60 * 1000;
 const LIST_LIMIT = 100;
+/** At most this many held Whispers in the tray (7 days of them; a flood is cut off, newest kept). */
+const HELD_LIMIT = 200;
 export const UNREAD_CAP = 99;
 
 type Db = ReturnType<typeof getDb>;
@@ -68,6 +72,35 @@ const toWire = (m: MessageRow, userId: string): WhisperMessage => ({
 
 /** Messages the person may see: everything sent to them or by them, but never words held back from them. */
 const visibleTo = (userId: string) => or(eq(messages.status, 'sent'), eq(messages.senderId, userId));
+
+/**
+ * A Whisper as a report needs it (ADR-025): who sent it and its words. Only for its recipient — a participant of the
+ * thread who did NOT send it — for a message that reached them, or one held back from them that they can read in their
+ * held tray (ADR-026). It
+ * deliberately does not require that they can still exchange Whispers: someone who blocked their harasser must still be
+ * able to report what was said. Anything else is null, the same as a message that does not exist.
+ */
+export async function messageForReport(
+  userId: string,
+  messageId: string,
+): Promise<{ id: string; senderId: string; body: string } | null> {
+  await enforceRateLimit(`whisper:read:${userId}`, RATE.read);
+  if (!idParamSchema.safeParse(messageId).success) return null;
+  const [row] = await getDb()
+    .select({ id: messages.id, senderId: messages.senderId, body: messages.body })
+    .from(messages)
+    .innerJoin(conversations, eq(conversations.id, messages.conversationId))
+    .where(
+      and(
+        eq(messages.id, messageId),
+        inArray(messages.status, ['sent', 'held']),
+        sql`${messages.senderId} <> ${userId}`,
+        or(eq(conversations.userLow, userId), eq(conversations.userHigh, userId)),
+      ),
+    )
+    .limit(1);
+  return row ?? null;
+}
 
 interface Access {
   other: PersonCard;
@@ -116,6 +149,7 @@ export async function sendWhisper(
 ): Promise<{ message: WhisperMessage; created: boolean }> {
   await enforceRateLimit(`whisper:burst:${userId}`, RATE.sendBurst);
   await enforceRateLimit(`whisper:send:${userId}`, RATE.sendUser);
+  await enforceNewAccountLimit(userId, 'whisper');
   const acc = await access(userId, handle);
   if (!acc) throw new AppError('NOT_FOUND');
   await enforceRateLimit(`whisper:thread:${userId}:${acc.other.userId}`, RATE.sendPerThread);
@@ -368,6 +402,60 @@ export async function listThreads(userId: string): Promise<ThreadSummary[]> {
       },
     ];
   });
+}
+
+export interface HeldWhisper {
+  id: string;
+  body: string;
+  createdAt: string;
+  from: { handle: string; displayName: string; portraitTint: PortraitTint };
+}
+
+/**
+ * The held tray (ADR-026): Whispers kept back from me because I restricted their sender, newest first. Only words sent
+ * TO me. Reading them changes nothing — no read position, no "Seen", no event — so the sender cannot tell; to them the
+ * Whispers still look delivered. Shown whether or not I still restrict them, or can still exchange Whispers with them
+ * (after a block the tray is where the evidence is). Senders whose accounts are gone or suspended are left out, as in
+ * every member-facing list. The 7-day retention empties it like any thread.
+ */
+export async function listHeld(userId: string): Promise<HeldWhisper[]> {
+  await enforceRateLimit(`whisper:read:${userId}`, RATE.read);
+  const rows = await getDb()
+    .select({
+      id: messages.id,
+      body: messages.body,
+      createdAt: messages.createdAt,
+      senderId: messages.senderId,
+    })
+    .from(messages)
+    .innerJoin(conversations, eq(conversations.id, messages.conversationId))
+    .where(
+      and(
+        eq(messages.status, 'held'),
+        sql`${messages.senderId} <> ${userId}`,
+        or(eq(conversations.userLow, userId), eq(conversations.userHigh, userId)),
+      ),
+    )
+    .orderBy(desc(messages.createdAt), desc(messages.id))
+    .limit(HELD_LIMIT);
+  const cards = await getCards([...new Set(rows.map((r) => r.senderId))]);
+  return rows.flatMap((r) => {
+    const card = cards.get(r.senderId);
+    if (!card) return [];
+    return [
+      {
+        id: r.id,
+        body: r.body,
+        createdAt: r.createdAt.toISOString(),
+        from: { handle: card.handle, displayName: card.displayName, portraitTint: card.portraitTint },
+      },
+    ];
+  });
+}
+
+/** How many Whispers are waiting in my held tray (for the link on the Whispers list; never a badge or a Chime). */
+export async function countHeld(userId: string): Promise<number> {
+  return (await listHeld(userId)).length;
 }
 
 /** How many threads have something new for me (muted people and closed threads do not count), capped at 99. */

@@ -140,6 +140,19 @@ export async function signedInUser(kit: TestKit, u = uniqueUser(), opts: CallOpt
   return { ...u, cookie: l.cookie };
 }
 
+/**
+ * Sign up, verify and log in, then move the account's creation date back a month. Use it where a test is about
+ * everyone's rules, so the tighter first-week budgets (ADR-024) do not trip first.
+ */
+export async function settledUser(kit: TestKit, u = uniqueUser(), opts: CallOpts = {}) {
+  const p = await signedInUser(kit, u, opts);
+  await getDb()
+    .update(users)
+    .set({ createdAt: sql`now() - interval '30 days'` })
+    .where(eq(users.email, u.email));
+  return p;
+}
+
 export const me = (cookie?: string) =>
   call(authHandlers.me, 'GET', '/api/auth/me', undefined, cookie ? { cookie } : {});
 

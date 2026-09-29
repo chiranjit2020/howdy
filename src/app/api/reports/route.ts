@@ -13,6 +13,6 @@ export const POST = route(async ({ req }) => {
   const { user } = await requireSession(req);
   const body = await readJson(req, reportSchema);
   const target = await targetFor(body.handle);
-  await createReport(user.id, target.userId, body.reason, body.details);
+  await createReport(user.id, target.userId, { reason: body.reason, details: body.details });
   return json({ ok: true }, { status: 202 });
 });

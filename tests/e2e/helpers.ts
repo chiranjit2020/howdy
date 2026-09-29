@@ -3,6 +3,8 @@ import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { join } from 'node:path';
 import { expect, type Browser, type BrowserContext, type Page } from '@playwright/test';
+import { parse } from 'dotenv';
+import { Pool } from 'pg';
 
 const OUTBOX = join(process.cwd(), '.dev', 'e2e-outbox');
 
@@ -112,6 +114,19 @@ export const pathOf = (link: string): string => {
   const u = new URL(link);
   return `${u.pathname}${u.search}`;
 };
+
+/**
+ * Move an account's creation date back a month, past the first-week budgets (ADR-024). For tests about everyone's
+ * rules — e.g. one owner starting two Town Halls, which a brand-new account may do only once a day.
+ */
+export async function settleAccount(handle: string): Promise<void> {
+  const db = new Pool({ connectionString: parse(readFileSync('.env.local')).E2E_DATABASE_URL, max: 1 });
+  try {
+    await db.query("update users set created_at = now() - interval '30 days' where handle = $1", [handle]);
+  } finally {
+    await db.end();
+  }
+}
 
 export async function signUpVia(page: Page, a: { handle: string; email: string; password: string }) {
   await page.goto('/stake-a-claim');

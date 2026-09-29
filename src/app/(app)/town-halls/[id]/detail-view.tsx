@@ -8,6 +8,7 @@ import { handleParamSchema } from '@/shared/validation/profile';
 import { apiRequest, postJson } from '@/ui/auth/api';
 import { FormMessage } from '@/ui/auth/form-parts';
 import { TownHallCard } from '@/ui/howdy';
+import { ReportDialog } from '@/ui/howdy/report-dialog';
 import { Avatar, Button, ClayCard, ConfirmationDialog, EmptyState, Input, useToast } from '@/ui/primitives';
 
 export function TownHallDetailView({
@@ -25,6 +26,7 @@ export function TownHallDetailView({
   const [next, setNext] = useState<string | null>(initialMembers?.nextCursor ?? null);
   const [deleting, setDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [reporting, setReporting] = useState(false);
   // The list is this component's own state (it grows with "More members"), so a removal is applied here as well as
   // on the server; refreshing the page alone would not reset it.
   const removed = (handle: string) => {
@@ -134,6 +136,12 @@ export function TownHallDetailView({
         </ClayCard>
       )}
 
+      {!townHall.isOwner && (
+        <Button variant="ghost" size="sm" onClick={() => setReporting(true)} className="self-start">
+          Flag this Town Hall…
+        </Button>
+      )}
+
       {townHall.isOwner && (
         <>
           <InviteForm townHallId={townHall.id} onInvited={() => router.refresh()} />
@@ -149,6 +157,13 @@ export function TownHallDetailView({
         </>
       )}
 
+      <ReportDialog
+        open={reporting}
+        title="Flag this Town Hall"
+        endpoint={`/api/reports/town-hall/${townHall.id}`}
+        onClose={() => setReporting(false)}
+        onDone={() => toast({ title: 'Thanks. We will take a look.', tone: 'success' })}
+      />
       <ConfirmationDialog
         open={confirmDelete}
         destructive

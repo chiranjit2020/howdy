@@ -182,6 +182,7 @@ export default async function RanchPage({ params }: { params: Promise<{ handle: 
             displayName={ranch.displayName}
             initial={rel}
             official={ranch.verified}
+            hasPhoto={Boolean(photo)}
           />
         </div>
       )}

@@ -218,6 +218,9 @@ describe('sign-up validation is enforced on the server', () => {
     ],
     ['invalid email', { email: 'nope' }, 'email'],
     ['reserved handle', { handle: 'admin' }, 'handle'],
+    // Fixed words under /whispers/… (a call sign there would share its URL with the page): ADR-026.
+    ['reserved handle: held', { handle: 'held' }, 'handle'],
+    ['reserved handle: unread', { handle: 'unread' }, 'handle'],
     ['bad handle characters', { handle: 'a b!' }, 'handle'],
   ])('%s → 422 on the right field, and nothing is created', async (_n, patch, field) => {
     const r = await call(authHandlers.signup, 'POST', '/api/auth/signup', { ...uniqueUser(), ...patch });
@@ -262,7 +265,9 @@ describe('account status', () => {
     expect((await me(u.cookie)).status).toBe(401);
     const r = await loginAs(u);
     expect(r.status).toBe(403);
-    expect(r.data.error?.code).toBe('ACCOUNT_UNAVAILABLE');
+    // Only after the password is proven, a suspended person is told so (ADR-023; details in suspensions.test.ts).
+    expect(r.data.error?.code).toBe('ACCOUNT_SUSPENDED');
+    expect(r.cookie).toBeUndefined();
   });
 
   it('a suspended account gets no password-reset email', async () => {

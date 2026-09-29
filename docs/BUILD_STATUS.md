@@ -1,14 +1,17 @@
 # Howdy Build Status
 
-_Last updated: 2026-09-27_
+_Last updated: 2026-09-29_
 
 ## Current Phase
 
-**P0 — Legal Foundation** (ADR-019) is **complete**. It is a security/legal foundation item done ahead of Phase 11.
-Phases 0–10 are complete. Next: **Phase 11 — Moderation + Anti-Abuse Expansion**. A first slice of it (the
-moderation queue) was built on 2026-09-27 and is parked in `git stash` ("moderation queue (ADR-018)"), awaiting a
-keep-or-drop decision. Open follow-ups: photos on Post Cards, image moderation, account deletion, a real R2 bucket CORS
-rule. Every shipped feature now has e2e coverage (Tributes, Marks and Town Halls since 2026-09-27).
+**Phase 11 — Moderation + Anti-Abuse Expansion** is **in progress**, and most of it is built (2026-09-29, local, not yet
+committed): the moderation queue (ADR-018, restored from `git stash`), suspension reasons + timed suspensions +
+appeals (ADR-023), first-week budgets + auto-hold after many reports (ADR-024), reporting photos, Whispers and Town
+Halls (ADR-025), and the held-Whispers tray (ADR-026). Migrations `0019`–`0021` are on the local test and e2e databases only: `howdy_dev` and `howdy_prod`
+need them **before** this code is pushed. **Full e2e 2026-09-30: 87 of 87 pass** (run in three chunks to fit the
+machine's memory), incl. the new `moderation.spec.ts` (suspended sign-in + appeal + moderator lifts it; `/moderation`
+404 for members and 44 px touch targets on a phone; the held tray). Still to come in Phase 11: see "Next Task". Open follow-ups outside Phase
+11: photos on Post Cards, account deletion, a real R2 bucket CORS rule.
 
 Also shipped on 2026-09-27 (all live): the Vibe Matrix's five traits, Post Card reactions, a Whisper button on Pals rows
 (Close Pal moved into ⋯), the Chime bell clearing when Chimes is opened, and the fixes below. Migrations `0014` and `0015`
@@ -131,6 +134,68 @@ Ran the "Email Validation Security Test (P0)" brief against sign-up, with the fo
 | 9 — Tributes + Marks | DONE (e2e coverage for both since 2026-09-27) |
 | 10 — Town Halls | DONE (directory + membership only, no shared feed; e2e coverage since 2026-09-27) |
 | P0 — Legal Foundation | DONE (documents need a lawyer's review before launch — see ADR-019 "Before launch") |
+| 11 — Moderation + Anti-Abuse | IN PROGRESS (queue, suspensions + appeals, anti-spam layers, report subjects, held tray done; image moderation + evidence retention period need decisions) |
+
+## Fixed 2026-09-30 — two "flaky" tests were real
+
+- **Marks cooldown race (a real bug).** `giveMark` relied on one `insert … where not exists` statement, which under
+  read committed lets two racing requests both insert: two Marks inside the 30-day cooldown. The race test failed
+  about 1 run in 4 and had been written off as flaky. The pair is now locked (`pg_advisory_xact_lock`) for the
+  insert's transaction: 12 of 12 runs pass.
+- **Upload-token test.** It "altered" a signature by setting its last character to `A`, a no-op when it already was
+  (1 in 64). It now picks a different character.
+- **Report retention decided:** closed reports are deleted 1 year after closing (`purgeClosedReports`, daily job).
+  Privacy `acceptVersion` raised to 1.1.0, so every existing account is asked once.
+
+## Completed in Phase 11 — suspensions, appeals, anti-spam, report subjects (ADR-023/024/025), 2026-09-29
+
+Decisions taken with you: tell a suspended person the **reason and end date, with an in-app appeal**; suspensions are
+**7 days / 30 days / indefinite**; build **all three** anti-spam layers; make **photos, Whispers and Town Halls**
+reportable.
+
+- [x] **Suspensions (ADR-023):** `suspensions` table (migration `0019`, existing suspended accounts backfilled). A
+      moderator must pick a reason (shown to the person) and a length. Sign-in says why and until when, but only after
+      the password is proven (`403 ACCOUNT_SUSPENDED` + `data`). Timed ones lift at sign-in and in the daily purge.
+- [x] **Appeals:** one per suspension, from the sign-in page, re-checked with the password and the same login limits.
+      Appeals section on `/moderation` (oldest first). Grant lifts; uphold stands and sign-in says so. Answered once (409).
+- [x] **First-week budgets (ADR-024):** accounts under 7 days old get extra daily caps on cards, replies, reactions, Pal
+      requests, Whispers and Town Halls. Each is spent before any lookup, and lifts by itself on day 8.
+- [x] **Auto-hold (ADR-024):** 3+ different reporters (open reports, last 7 days) → that person's cards and replies on
+      OTHER Fences are `held` for the owner (invisible to them). Lifts as soon as a moderator closes the reports. Queue
+      badge "Writing held for review". Migration `0020` (index).
+- [x] **Link safety:** already in place since Phase 5 (public text refuses links; nothing is ever a clickable link).
+      A draft "hold new accounts' links" was dead code and was removed. Now pinned by a test.
+- [x] **Report subjects (ADR-025):** photo (exact version; moderator sees it; `remove_portrait`), one received Whisper
+      (works after a block; only that message reaches the moderator; `remove_whisper`), Town Hall (`remove_town_hall`).
+      Migration `0021`. Entry points: Porch ⋯ "Flag their photo…", thread "Flag a Whisper", Town Hall "Flag this Town Hall…".
+- [x] **Held tray (ADR-026):** `/whispers/held` shows Whispers held back from people I restricted; reading it tells the
+      sender nothing; each can be flagged; old held Whispers stay held after unrestricting. `held` and `unread` are now
+      reserved call signs (the latter was a latent URL collision with `/api/whispers/unread`).
+- [x] **Documents:** Terms, Campfire Rules and Privacy 1.1.0 (in-app appeals and lengths, suspension records, reported
+      Whisper evidence). `acceptVersion` unchanged: nobody is asked to agree again.
+- [x] **Tests:** `suspensions` (24), `anti-spam` (13), `report-subjects` (15), `held-tray` (6). Mutation runs
+      `.dev/mutate13/14/15/16.mjs`: 14 + 15 + 12 + 5 protections, all caught (after strengthening tests for 5 that first escaped). Tests about everyone's
+      general limits now use `settledUser` (a month-old account).
+
+## Completed in Phase 11 — the moderation queue (ADR-018), 2026-09-27 (restored 2026-09-29)
+
+An earlier pass had left migration `0012` (`users.role`, and `reports.card_id` / `reviewed_by` / `reviewed_at`) and the
+service functions in place, but they were not wired up and not tested. This pass finished them.
+
+- [x] **API**: `GET /api/moderation/reports` (status filter, keyset paging), `POST /api/moderation/reports/[id]`
+      (`dismiss` / `remove_card` / `suspend`), `GET/POST /api/moderation/accounts/[handle]` (look up, `suspend` /
+      `reinstate`). A non-moderator gets the plain 404 everywhere.
+- [x] **Service fixes**: a report is closed atomically, first, inside each action's transaction (a closed report
+      answers 409 and a racing loser rolls back). Suspension revokes every session. Staff (the actor included) cannot
+      be suspended from here. A `pending_deletion` account is never overwritten. The queue's `= any(${array})`
+      queries were replaced with `inArray`, because they answered 500 the first time anything called them.
+- [x] **UI**: `/moderation` (the queue with an Open / Acted on / Dismissed filter, a confirm step before suspending,
+      and an account lookup with suspend/reinstate), plus a sidebar-only Moderation link shown to moderators. No
+      `loading.tsx`, on purpose.
+- [x] **`pnpm set-role <call sign> <member|moderator|admin>`**: the only way to grant a role. It is audited.
+- [x] **Tests**: `tests/security/moderation.test.ts` (22). Mutation run `.dev/mutate11.mjs`: 11 of 11 caught.
+- [x] Also fixed along the way: a pre-existing lint error (`console.log` in `tests/e2e/helpers.ts`) and Prettier
+      drift in `src/app/porch/[handle]/loading.tsx`. Both made `pnpm check` fail on `main`.
 
 ## Completed in P0 — Legal Foundation (ADR-019), 2026-09-27
 
@@ -423,13 +488,16 @@ layers covered for them); direct tests of the recorder now catch both. All 15 ca
 
 ## Next Task
 
-**Moderation + Anti-Abuse Expansion** (master prompt §61 Phase 11). Media follow-ups still open: photos on Post Cards
-(per-card media with the Fence's privacy rules), showing Portraits in lists / cards / Chimes (needs a per-viewer
-decision per row), reporting a photo, image moderation, and the account-deletion flow calling `deleteAllMediaFor`.
+**The rest of Phase 11:** image moderation (automatic detection needs an outside service and its own privacy
+decision); a fixed retention period for report evidence (legal decision). Check production for existing accounts
+called `held` or `unread` (now reserved; ADR-026). Before pushing ADR-023/024/025: apply migrations `0019`–`0021`
+to `howdy_dev` and `howdy_prod`. Media follow-ups still open: photos on Post Cards (per-card media with the Fence's
+privacy rules), showing Portraits in lists / cards / Chimes (needs a per-viewer decision per row), and the
+account-deletion flow calling `deleteAllMediaFor`.
 Tributes/Marks/Town Halls follow-ups: revisit whether Tribute/Mark giving should ever
 widen beyond Posse-only; a Town Hall shared feed if the need becomes real; Town Hall roles beyond owner/member.
 
 ## Architectural Decisions
 
-ADR-001 … ADR-017 and ADR-019 in `docs/decisions/`; lifecycle and deletion design in `docs/DATA_LIFECYCLE.md`.
+ADR-001 … ADR-026 in `docs/decisions/`; lifecycle and deletion design in `docs/DATA_LIFECYCLE.md`.
 

@@ -5,13 +5,16 @@
  */
 export {
   burnThread,
+  countHeld,
+  listHeld,
   getThread,
   listThreads,
   markThreadRead,
+  messageForReport,
   mayOpenThread,
   messageForDelivery,
   purgeOldWhispers,
   sendWhisper,
   unreadThreads,
 } from './service';
-export type { ThreadPage, ThreadSummary } from './service';
+export type { HeldWhisper, ThreadPage, ThreadSummary } from './service';

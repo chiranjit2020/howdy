@@ -1,6 +1,7 @@
 import { posseLinks, scouts, userControls } from '@db/schema';
 import { and, count, desc, eq, inArray, or } from 'drizzle-orm';
 import { can } from '@/modules/authz';
+import { enforceNewAccountLimit } from '@/modules/moderation';
 import { getDb } from '@/platform/db';
 import { AppError } from '@/platform/errors';
 import { emit } from '@/platform/events';
@@ -246,6 +247,7 @@ export async function getRelationshipView(
  */
 export async function spendRequestBudget(actorId: string): Promise<void> {
   await enforceRateLimit(`rel:request:${actorId}`, RATE.request);
+  await enforceNewAccountLimit(actorId, 'palRequest');
   const [{ n } = { n: 0 }] = await getDb()
     .select({ n: count() })
     .from(posseLinks)

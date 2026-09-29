@@ -3,7 +3,7 @@ import { POST as askRoute } from '@/app/api/pals/ask/route';
 import { getPool } from '@/platform/db';
 import { MAX_PENDING_OUTGOING, RATE } from '@/modules/relationships/service';
 import { MemoryRateLimiter, setRateLimiter } from '@/platform/rate-limit';
-import { call, freshAuthState, signedInUser, stable, uniqueUser, type TestKit } from '../helpers/auth';
+import { call, freshAuthState, settledUser, stable, uniqueUser, type TestKit } from '../helpers/auth';
 import { patchRanch, viewRanch } from '../helpers/ranch';
 import { doAct, insertUser, myLists, q, userId } from '../helpers/social';
 
@@ -15,7 +15,8 @@ afterAll(async () => {
   await getPool().end();
 });
 
-const person = (tag: string) => signedInUser(kit, uniqueUser(tag));
+// Settled accounts: these tests are about everyone's rules, not the first-week budgets (ADR-024).
+const person = (tag: string) => settledUser(kit, uniqueUser(tag));
 const as = (p: { cookie: string }) => ({ cookie: p.cookie });
 const ask = (handle: unknown, opts: { cookie?: string; origin?: string | null } = {}) =>
   call(askRoute, 'POST', '/api/pals/ask', { handle }, opts);

@@ -5,7 +5,7 @@ import { mayOpenThread } from '@/modules/whispers';
 import { flushBackground } from '@/platform/background';
 import { getPool } from '@/platform/db';
 import { subscribe, type DomainEvent } from '@/platform/events';
-import { freshAuthState, signedInUser, uniqueUser, type TestKit } from '../helpers/auth';
+import { freshAuthState, settledUser, uniqueUser, type TestKit } from '../helpers/auth';
 import { patchRanch, viewRanch } from '../helpers/ranch';
 import { doAct, q, userId } from '../helpers/social';
 import { create, invite } from '../helpers/town-halls';
@@ -22,7 +22,8 @@ afterAll(async () => {
   await getPool().end();
 });
 
-const person = (tag: string) => signedInUser(kit, uniqueUser(tag));
+// Settled accounts: these tests are about everyone's rules, not the first-week budgets (ADR-024).
+const person = (tag: string) => settledUser(kit, uniqueUser(tag));
 type P = Awaited<ReturnType<typeof person>>;
 const as = (p: { cookie: string }) => ({ cookie: p.cookie });
 async function pals(a: P, b: P) {

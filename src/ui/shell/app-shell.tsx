@@ -39,6 +39,7 @@ export function AppShell({
   unread = 0,
   unreadWhispers = 0,
   townHallInvites = 0,
+  moderator = false,
   waysIn = true,
   children,
 }: {
@@ -46,6 +47,8 @@ export function AppShell({
   unread?: number;
   unreadWhispers?: number;
   townHallInvites?: number;
+  /** Adds the sidebar-only Moderation link. Only a hint: the page and API check the role themselves. */
+  moderator?: boolean;
   /** Signed out: offer Step Inside / Stake a Claim in the top bar. Off on the sign-in pages: just the logo, centred. */
   waysIn?: boolean;
   children: ReactNode;
@@ -62,6 +65,7 @@ export function AppShell({
         // The phone tab bar shows its own short list (see ShellBottomNav); these are sidebar-only.
         { key: 'workshop', href: '/workshop', label: 'Workshop' },
         { key: 'town-halls', href: '/town-halls', label: 'Town Halls', badge: townHallInvites },
+        ...(moderator ? [{ key: 'moderation', href: '/moderation', label: 'Moderation' } as const] : []),
       ]
     : [];
 

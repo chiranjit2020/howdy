@@ -1,13 +1,34 @@
-/** Public surface of the moderation module (reports from Phase 4; the queue and actions from Phase 11). */
+/** Public surface of the moderation module (reports from Phase 4; the queue, actions and appeals from Phase 11). */
 export {
   createReport,
+  decideAppeal,
   dismissReport,
+  fileAppeal,
   findAccountForModeration,
   isModerator,
+  liftExpiredSuspensions,
+  listAppeals,
   listQueue,
+  purgeClosedReports,
   reinstateAccount,
   removeReportedCard,
+  removeReportedPortrait,
+  removeReportedTownHall,
+  removeReportedWhisper,
+  reportedPortrait,
   suspendAccount,
   suspendFromReport,
+  suspensionAtSignIn,
 } from './service';
-export type { ModPersonRef, ModerationAuditEvent, QueueItem, QueuePage } from './service';
+export { enforceNewAccountLimit, isNewAccount, isUnderReview, shouldHoldForOthers } from './anti-spam';
+export type {
+  AppealItem,
+  AppealsPage,
+  ModAccount,
+  ModPersonRef,
+  ModerationAuditEvent,
+  QueueItem,
+  QueuePage,
+  ReportAbout,
+  SuspensionNotice,
+} from './service';

@@ -1,7 +1,7 @@
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { flushBackground } from '@/platform/background';
 import { getPool } from '@/platform/db';
-import { freshAuthState, signedInUser, uniqueUser, type TestKit } from '../helpers/auth';
+import { freshAuthState, settledUser, uniqueUser, type TestKit } from '../helpers/auth';
 import { doAct, insertUser, q, userId } from '../helpers/social';
 import {
   act,
@@ -25,7 +25,8 @@ afterAll(async () => {
   await getPool().end();
 });
 
-const person = (tag: string) => signedInUser(kit, uniqueUser(tag));
+// Settled accounts: these tests are about everyone's rules, not the first-week budgets (ADR-024).
+const person = (tag: string) => settledUser(kit, uniqueUser(tag));
 const as = (p: { cookie: string }) => ({ cookie: p.cookie });
 const count = async () => (await q('select count(*)::int n from town_halls')).rows[0].n as number;
 const memberCount = async () =>

@@ -39,7 +39,7 @@ Howdy is run by {{operator}}, an individual based in {{country}} ("Howdy", "we",
 - **To run Howdy:** show your Porch and posts to the people you allow, deliver Whispers and Chimes, and connect you with your Pals.
 - **To keep your account safe:** sign you in, keep you signed in, send confirmation and password-reset emails, and let you see and end your sessions.
 - **To prevent abuse:** rate limits, blocking and muting, and reviewing reports against the [Campfire Rules](/campfire-rules).
-- **To moderate:** when something is reported, a moderator may look at the report and the words it is about, and may remove content or suspend an account under the [Terms](/terms).
+- **To moderate:** when something is reported, a moderator may look at the report and the words it is about, and may remove content or suspend an account under the [Terms](/terms). We keep a record of a suspension (the reason, how long, and any appeal you write) for as long as your account exists.
 - **To keep it working:** find and fix errors and slowness. Our logs are written so that they do not contain passwords, session tokens, cookies, Whisper text or Signal text.
 - **To talk to you:** send emails about your account (confirmation, password resets, and important changes such as updates to these documents). We do not send marketing emails.
 
@@ -54,7 +54,7 @@ Your settings decide most of it.
 - **Whispers** are only ever between the two people in the conversation.
 - **Town Halls:** the list of who is in a Town Hall is visible only to its members.
 - **Blocks, mutes and restrictions** are private to you, and a block hides the two of you from each other.
-- **Moderators** can see reports and the content they are about, and may act on them.
+- **Moderators** can see reports and the content they are about (a Post Card, a photo, one reported Whisper, a Town Hall's name and description), and may act on them.
 
 ## Tracks and Shadow Walk
 
@@ -69,6 +69,7 @@ Tracks tell you who has recently stopped by your Porch. They are built to be vag
 ## Whispers
 
 - **Private:** a Whisper can be read only by the two people in the conversation. You can only Whisper someone who is in your Pals, and a block or leaving Pals closes the conversation.
+- **If a Whisper is reported:** the person who received it can report that one Whisper, even after blocking you. Our moderators then see only that Whisper's words, never the rest of the conversation, and those words are kept with the report as evidence after the Whisper itself is deleted.
 - **No read receipts:** the other person is never told whether or when you read their message.
 - **Short-lived:** Whispers are deleted 7 days after they are sent. Either person can also Burn a Thread, which deletes it for both of you at once.
 - **Stored securely, not end-to-end encrypted.** Whispers travel over encrypted connections and are stored on our servers, so they are not end-to-end encrypted. Please do not use Whispers for passwords, financial details or anything you would not want stored for a week.
@@ -76,7 +77,7 @@ Tracks tell you who has recently stopped by your Porch. They are built to be vag
 ## How long we keep things
 
 - **Signal:** 12 hours after you set it.
-- **Whispers:** 7 days after they are sent (or sooner, if a thread is burned).
+- **Whispers:** 7 days after they are sent (or sooner, if a thread is burned). The words of a Whisper someone reported are kept with the report (see below).
 - **Tracks:** 7 days.
 - **Chimes:** 30 days after you read them, or 90 days if you never do.
 - **Post Cards waiting for approval, and waiting Tributes:** 30 days, if they are not approved.
@@ -84,12 +85,13 @@ Tracks tell you who has recently stopped by your Porch. They are built to be vag
 - **Sessions:** until you sign out, or after 14 days without use (60 days at most), plus 30 days of records so we can help with account problems.
 - **Email links:** confirmation links work for 24 hours and reset links for 1 hour. Used and expired links are kept for 7 days.
 - **Your account, Porch, posts, Pals, Marks and Town Halls:** for as long as you keep your account, or until you or the person they are on removes them.
-- **Security records and reports:** kept after an account is deleted, with the link to the account removed, because they are needed to investigate abuse.
+- **Reports:** while a report is open, and for 1 year after a moderator closes it, then deleted, including the words it was about and who reported whom. If an account is deleted first, its reports stay for that time with the link to the account removed.
+- **Security records:** kept after an account is deleted, with the link to the account removed, because they are needed to investigate abuse.
 - **Rate-limit counters:** up to one hour.
 
 Deleted data may remain in encrypted backups kept by our database provider for a short time before those backups expire.
 
-> **Needs legal review:** decide and publish a fixed retention period for security records (audit log) and report evidence. Neither is limited today.
+> **Needs legal review:** decide and publish a fixed retention period for security records (audit log), which is not limited today, and confirm 1 year for closed reports.
 
 ## Service providers
 

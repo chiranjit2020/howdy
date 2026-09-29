@@ -40,6 +40,6 @@ If someone is in danger, contact your local emergency services first. In India, 
 
 ## When rules are broken
 
-A person reviews every report. Depending on what happened, we may remove the content, limit what an account can do, or suspend it, and serious or repeated breaks can mean losing the account for good. If you think we got it wrong, write to [{{contactEmail}}](mailto:{{contactEmail}}) and someone will look again. The [Terms](/terms) explain this in more detail.
+A person reviews every report. Depending on what happened, we may remove the content, limit what an account can do, or suspend it, and serious or repeated breaks can mean losing the account for good. If your account is suspended, signing in tells you why and until when, and you can appeal once from there. For anything else you think we got wrong, write to [{{contactEmail}}](mailto:{{contactEmail}}) and someone will look again. The [Terms](/terms) explain this in more detail.
 
 These rules will grow as the campfire does. Thank you for keeping it warm.

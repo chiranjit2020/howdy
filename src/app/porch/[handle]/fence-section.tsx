@@ -8,7 +8,7 @@ import { apiRequest, postJson } from '@/ui/auth/api';
 import { FormMessage } from '@/ui/auth/form-parts';
 import { Fence, PostCard, PostCardComposer, PostCardReply } from '@/ui/howdy';
 import { Button, ConfirmationDialog, Dropdown, IconButton, useToast } from '@/ui/primitives';
-import { ReportDialog } from './report-dialog';
+import { ReportDialog } from '@/ui/howdy/report-dialog';
 
 /** The parts of a page this component uses. Dates arrive as Date objects (first paint) or ISO strings (later pages). */
 type WireReply = Omit<ReplyView, 'createdAt'> & { createdAt: Date | string };

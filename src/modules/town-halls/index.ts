@@ -12,6 +12,7 @@ export {
   listMyInvites,
   mayOpenTownHall,
   removeMember,
+  townHallForReport,
   updateTownHall,
   RATE,
 } from './service';
