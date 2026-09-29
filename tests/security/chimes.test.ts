@@ -482,6 +482,7 @@ describe('preferences', () => {
       whispers: true,
       tributes: true,
       townhalls: true,
+      capsules: true,
     });
     expect(
       (await patchPrefs({ yo: false, extra: 1, userId: await userId(other.handle) }, as(me))).data.prefs,
@@ -493,6 +494,7 @@ describe('preferences', () => {
       whispers: true,
       tributes: true,
       townhalls: true,
+      capsules: true,
     });
     expect((await getPrefs(as(other))).data.prefs).toEqual({
       posse: true,
@@ -502,6 +504,7 @@ describe('preferences', () => {
       whispers: true,
       tributes: true,
       townhalls: true,
+      capsules: true,
     });
     for (const body of [{}, { yo: 'no' }, { posse: null }, { yo: 1 }]) {
       expect((await patchPrefs(body, as(me))).status, JSON.stringify(body)).toBe(422);

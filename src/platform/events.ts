@@ -35,7 +35,9 @@ export type DomainEvent =
   | { type: 'mark.given'; raterId: string; targetId: string }
   /** The owner invited someone; they are not a member until they accept. */
   | { type: 'townhall.invited'; townHallId: string; ownerId: string; inviteeId: string }
-  | { type: 'townhall.invite_accepted'; townHallId: string; ownerId: string; inviteeId: string };
+  | { type: 'townhall.invite_accepted'; townHallId: string; ownerId: string; inviteeId: string }
+  /** A Time Capsule opened (ADR-028). Author and recipient are the same person for a capsule to one's future self. */
+  | { type: 'capsule.opened'; capsuleId: string; authorId: string; recipientId: string };
 
 export type EventHandler = (event: DomainEvent) => Promise<void>;
 

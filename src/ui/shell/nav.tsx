@@ -5,13 +5,22 @@ import { usePathname } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { Art, type ArtName } from '../art/glyph';
 import { cn } from '../cn';
-import { ShieldIcon } from '../icons';
+import { CapsuleIcon, ShieldIcon } from '../icons';
 import { Avatar } from '../primitives/avatar';
 import { BottomNavigation, type NavItem } from '../primitives/navigation';
 import type { ShellMe } from './app-shell';
 
 export type ShellNavKey =
-  'home' | 'ranch' | 'posse' | 'tracks' | 'whispers' | 'chimes' | 'workshop' | 'town-halls' | 'moderation';
+  | 'home'
+  | 'ranch'
+  | 'posse'
+  | 'tracks'
+  | 'whispers'
+  | 'chimes'
+  | 'workshop'
+  | 'town-halls'
+  | 'capsules'
+  | 'moderation';
 
 export interface ShellNavItem {
   key: ShellNavKey;
@@ -21,7 +30,7 @@ export interface ShellNavItem {
   badge?: number;
 }
 
-const ART: Record<Exclude<ShellNavKey, 'moderation'>, ArtName> = {
+const ART: Record<Exclude<ShellNavKey, 'moderation' | 'capsules'>, ArtName> = {
   home: 'nav-home',
   ranch: 'nav-porch',
   posse: 'nav-pals',
@@ -38,7 +47,8 @@ const ICON: Record<ShellNavKey, ReactNode> = {
     keyof typeof ART,
     ReactNode
   >),
-  // Staff-only, so it has no clay artwork: a plain line icon at the same size.
+  // No clay artwork for these yet: a plain line icon at the same size.
+  capsules: <CapsuleIcon className="size-7" />,
   moderation: <ShieldIcon className="size-7" />,
 };
 

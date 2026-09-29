@@ -1,4 +1,5 @@
 import { purgeExpiredAuthData, purgeFreedHandles } from '@/modules/auth';
+import { openDue } from '@/modules/capsules';
 import { purgeDeletedAccounts } from './account-deletion';
 import { purgeStaleWaiting } from '@/modules/fence';
 import { purgeStaleMedia } from '@/modules/media';
@@ -34,6 +35,8 @@ export async function runAllPurges() {
   // Accounts whose 14-day grace period is over (ADR-027): files first, then the account.
   const accounts = await purgeDeletedAccounts();
   const handles = await purgeFreedHandles();
+  // Not retention: Time Capsules whose day has come open (and ring) even if their recipient has not looked (ADR-028).
+  const capsules = await openDue();
   return {
     ...devices,
     ...auth,
@@ -49,5 +52,6 @@ export async function runAllPurges() {
     ...reportsDone,
     ...accounts,
     ...handles,
+    ...capsules,
   };
 }

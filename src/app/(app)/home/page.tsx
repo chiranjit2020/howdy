@@ -2,12 +2,14 @@ import Link from 'next/link';
 import { withCards } from '@/app/_lib/social';
 import { Glyph } from '@/ui/art/glyph';
 import { listMySessions, requireUser } from '@/modules/auth';
+import { memoriesToday } from '@/modules/memories';
 import { getOwnRanch, getTeamAnnouncement } from '@/modules/profiles';
 import { listMyRelationships } from '@/modules/relationships';
 import { cn } from '@/ui/cn';
 import { VerifiedBadge } from '@/ui/howdy';
 import { Badge, buttonClasses, ClayCard } from '@/ui/primitives';
 import { HitTheTrail, HitTheTrailEverywhere, OpenGates } from './home-actions';
+import { MemoriesCard } from './memories-card';
 
 export const metadata = { title: 'Home' };
 
@@ -17,13 +19,15 @@ const SMALL = buttonClasses({ variant: 'secondary', size: 'sm', compact: true })
 export default async function HomePage() {
   const user = await requireUser();
   // Independent lookups, asked for together rather than one after another.
-  const [ranch, lists, sessions, news] = await Promise.all([
+  const [ranch, lists, sessions, news, memories] = await Promise.all([
     getOwnRanch(user.id),
     // Only requests from people who are still active count (a suspended account's request is not shown or counted).
     listMyRelationships(user.id).then(withCards),
     listMySessions(),
     // Best-effort: Home never fails because the announcement could not be read.
     getTeamAnnouncement().catch(() => null),
+    // Best-effort as well: a memory is a nice extra, never a reason for Home to fail.
+    memoriesToday(user.id).catch(() => null),
   ]);
   const requests = lists.incoming.length;
   // The Howdy team's current Signal ("what's new"), unless this person has turned the team's noise down.
@@ -103,6 +107,7 @@ export default async function HomePage() {
             </p>
           </section>
         )}
+        {memories && <MemoriesCard memories={memories} handle={user.handle} />}
         {/* Technical, and rarely needed: a quiet folded line instead of a card of its own. */}
         <OpenGates initial={gates} />
       </main>

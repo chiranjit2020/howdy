@@ -269,7 +269,10 @@ export function FenceRulesForm({
 export function ChimePrefsForm({
   initial,
 }: {
-  initial: Record<'posse' | 'fence' | 'replies' | 'yo' | 'whispers' | 'tributes' | 'townhalls', boolean>;
+  initial: Record<
+    'posse' | 'fence' | 'replies' | 'yo' | 'whispers' | 'tributes' | 'townhalls' | 'capsules',
+    boolean
+  >;
 }) {
   const toast = useToast();
   const [prefs, setPrefs] = useState(initial);
@@ -334,6 +337,12 @@ export function ChimePrefsForm({
         hint="An invite, or someone accepting yours."
         checked={prefs.townhalls}
         onCheckedChange={(v) => set('townhalls', v)}
+      />
+      <Switch
+        label="Time Capsules"
+        hint="A Time Capsule opening, from a Pal or from your past self."
+        checked={prefs.capsules}
+        onCheckedChange={(v) => set('capsules', v)}
       />
     </ClayCard>
   );

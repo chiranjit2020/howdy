@@ -30,6 +30,7 @@ const ITEM: Record<ChimeType, ItemType> = {
   mark_given: 'MARK_AWARDED',
   townhall_invited: 'TOWNHALL_INVITED',
   townhall_invite_accepted: 'TOWNHALL_ACCEPTED',
+  capsule_opened: 'CAPSULE_OPENED',
 };
 
 /**

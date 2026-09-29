@@ -66,9 +66,10 @@ describe('upload tokens (the local driver’s signed URL)', () => {
       JSON.stringify({ ...CLAIMS, size: 999_999_999, exp: Date.now() + 1e9 }),
     ).toString('base64url');
     expect(verifyUploadToken(SECRET, `${changed}.${sig}`)).toBeNull(); // new claims, old signature
-    // Change the last character to one it is not (swapping in a fixed 'A' was a no-op 1 time in 64: a flaky test).
-    const last = sig!.slice(-1) === 'A' ? 'B' : 'A';
-    expect(verifyUploadToken(SECRET, `${payload}.${sig!.slice(0, -1)}${last}`)).toBeNull();
+    // Change the FIRST character. The last one of a 43-character base64url signature carries only 4 real bits (2 are
+    // padding the decoder ignores), so changing it can leave the bytes identical — which made this test flaky.
+    const first = sig![0] === 'A' ? 'B' : 'A';
+    expect(verifyUploadToken(SECRET, `${payload}.${first}${sig!.slice(1)}`)).toBeNull();
     for (const junk of ['', '.', 'a.b', 'a.b.c', `${payload}`, `${payload}.`, '💥.💥']) {
       expect(verifyUploadToken(SECRET, junk), junk).toBeNull();
     }

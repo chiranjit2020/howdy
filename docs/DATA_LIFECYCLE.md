@@ -27,6 +27,7 @@ users ──┬─< credentials      ON DELETE CASCADE   (1:1, password hash)
         ├─< town_halls       ON DELETE CASCADE   (owner_id only — deleting the owner deletes the whole Town Hall)
         ├─< town_hall_members ON DELETE CASCADE  (user_id; also cascades from town_halls.id)
         ├─< legal_acceptances ON DELETE CASCADE  (which Terms / Privacy versions were agreed to, and when; append-only)
+        ├─< time_capsules    ON DELETE CASCADE   (both author_id and recipient_id — Phase 12, ADR-028)
         ├─< suspensions      ON DELETE CASCADE   (user_id; created_by / lifted_by / appeal_reviewed_by SET NULL — ADR-023)
         ├─< audit_log        ON DELETE SET NULL  (trail survives, anonymised)
         └─< reports          ON DELETE SET NULL  (reporter and target; evidence survives, identifiers go; card_id,
@@ -107,6 +108,8 @@ recorded as a `retired` row in the same transaction that makes the new photo liv
 | Town Halls and memberships (incl. unanswered invites) | **kept indefinitely** — no sensitive detail to expire (two ids, a role, a status) | people (owner deletion cascades the whole Town Hall); no retention job |
 | Report evidence snapshot (`reports.evidence_text`, ≤ 600 chars: a card, ONE reported Whisper, a Town Hall's name + description) | open reports: kept; closed reports: **deleted 1 year after closing** (row, words, reporter/target) — outlives the thing, including a Whisper past its 7 days (disclosed in the Privacy Policy) | `purgeClosedReports()` (in `pnpm jobs:purge`) |
 | Suspensions and appeals (`suspensions`) | for the life of the account (disclosed in the Privacy Policy) | account deletion (CASCADE) |
+| Time Capsules (`time_capsules`) | sealed: until the day (then opened, or deleted if the two are no longer Pals / there is a block) or taken back by the writer; opened: until the recipient deletes it | people; `openDue()` (in `pnpm jobs:purge`); deleted with either account |
+| Memories | nothing stored — worked out when read | — |
 | Closing accounts (`users.status = 'pending_deletion'`) | 14 days from the request, then deleted for good | `purgeDeletedAccounts()` (in `pnpm jobs:purge`) |
 | Held-back call signs (`retired_handles`, a keyed hash only) | 90 days after the account is deleted | `purgeFreedHandles()` (in `pnpm jobs:purge`) |
 | Tracks / typing / presence (future) | seconds → days, per ADR-006 | their own jobs |

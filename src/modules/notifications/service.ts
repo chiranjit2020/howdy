@@ -46,7 +46,8 @@ export type ChimeType =
   | 'tribute_approved'
   | 'mark_given'
   | 'townhall_invited'
-  | 'townhall_invite_accepted';
+  | 'townhall_invite_accepted'
+  | 'capsule_opened';
 
 const CATEGORY: Record<ChimeType, ChimeCategory> = {
   posse_requested: 'posse',
@@ -63,6 +64,7 @@ const CATEGORY: Record<ChimeType, ChimeCategory> = {
   mark_given: 'tributes',
   townhall_invited: 'townhalls',
   townhall_invite_accepted: 'townhalls',
+  capsule_opened: 'capsules',
 };
 
 /** Chimes the recipient needs in order to act (the owner decides what waits), so a restricted writer still rings them. */
@@ -83,6 +85,7 @@ const DEFAULT_PREFS: ChimePrefs = {
   whispers: true,
   tributes: true,
   townhalls: true,
+  capsules: true,
 };
 
 // ─── writing Chimes (from domain events) ─────────────────────────────────────────────────────────────────────────────
@@ -98,6 +101,7 @@ async function prefsOf(userId: string): Promise<ChimePrefs> {
         whispers: row.whispers,
         tributes: row.tributes,
         townhalls: row.townhalls,
+        capsules: row.capsules,
       }
     : DEFAULT_PREFS;
 }
@@ -114,7 +118,8 @@ async function deliver(
   cardId: string | null,
   opts: { bump?: boolean } = {},
 ): Promise<void> {
-  if (recipientId === actorId) return;
+  // Nobody is Chimed about their own actions — except a Time Capsule from their past self opening (ADR-028).
+  if (recipientId === actorId && type !== 'capsule_opened') return;
   const people = await getCards([recipientId, actorId]);
   if (!people.has(recipientId) || !people.has(actorId)) return;
   if ((await hiddenAuthors(recipientId, [actorId])).has(actorId)) return;
@@ -220,6 +225,9 @@ export async function handleEvent(event: DomainEvent): Promise<void> {
       return deliver(event.inviteeId, event.ownerId, 'townhall_invited', null, { bump: true });
     case 'townhall.invite_accepted':
       return deliver(event.ownerId, event.inviteeId, 'townhall_invite_accepted', null, { bump: true });
+    case 'capsule.opened':
+      // The words are never in the Chime (or the push): only that one opened, and from whom.
+      return deliver(event.recipientId, event.authorId, 'capsule_opened', null, { bump: true });
   }
 }
 
@@ -354,6 +362,14 @@ function describe(userId: string, s: Shown, myHandle: string): { text: string; h
       return { text: `${name} invited you to a Town Hall.`, href: '/town-halls' };
     case 'townhall_invite_accepted':
       return { text: `${name} accepted your Town Hall invite.`, href: '/town-halls' };
+    case 'capsule_opened':
+      return {
+        text:
+          s.row.actorId === userId
+            ? 'A Time Capsule from your past self just opened.'
+            : `A Time Capsule from ${name} just opened.`,
+        href: '/capsules',
+      };
   }
 }
 

@@ -25,6 +25,7 @@ export const NEW_ACCOUNT_RATE = {
   whisper: rule(200, 86_400),
   townHallCreate: rule(1, 86_400),
   townHallInvite: rule(15, 86_400),
+  capsule: rule(3, 86_400),
 } as const;
 export type NewAccountAction = keyof typeof NEW_ACCOUNT_RATE;
 

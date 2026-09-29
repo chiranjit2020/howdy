@@ -4,6 +4,11 @@ _Last updated: 2026-09-29_
 
 ## Current Phase
 
+**Phase 12 — Memories / Time Capsules** (ADR-028) is **built** (2026-09-30), not yet deployed: migration `0023` must go
+on `howdy_dev` and `howdy_prod` before its code is pushed. Next per the master prompt: **Phase 13 — Performance +
+Scaling + Advanced Intelligence**.
+
+
 **Phase 11 — Moderation + Anti-Abuse Expansion** is **in progress**, and most of it is built (2026-09-29, local, not yet
 committed): the moderation queue (ADR-018, restored from `git stash`), suspension reasons + timed suspensions +
 appeals (ADR-023), first-week budgets + auto-hold after many reports (ADR-024), reporting photos, Whispers and Town
@@ -135,6 +140,25 @@ Ran the "Email Validation Security Test (P0)" brief against sign-up, with the fo
 | 10 — Town Halls | DONE (directory + membership only, no shared feed; e2e coverage since 2026-09-27) |
 | P0 — Legal Foundation | DONE (documents need a lawyer's review before launch — see ADR-019 "Before launch") |
 | 11 — Moderation + Anti-Abuse | IN PROGRESS (queue, suspensions + appeals, anti-spam layers, report subjects, held tray done; image moderation + evidence retention period need decisions) |
+
+## Completed in Phase 12 — Memories and Time Capsules (ADR-028), 2026-09-30
+
+Decisions taken with you: a Time Capsule is for **me or one Pal**; the Pal **sees that one is coming and when**; it
+**never opens if we are no longer Pals** (or there is a block) on the day; Memories = **on this day**, **Pal
+anniversaries**, **Tribute anniversaries**.
+
+- [x] `/capsules` (sidebar "Time Capsules"): seal for my future self or a Pal (tomorrow … 5 years, 500 characters);
+      opened ones to read and delete; "coming to you" (who + when); "sealed by you" (to whom + when, take back).
+      Sealed words are returned to nobody, the writer included.
+- [x] Opening on the day, when the recipient looks or in the daily job: both active, still Pals, no block — else
+      deleted. A "Time Capsules" Chime (with its own Workshop switch); a capsule to myself rings me too.
+- [x] Home "On this day": cards on my Fence, the day we became Pals, Tributes to me — from earlier years, only what is
+      still there and visible to me. Nothing stored.
+- [x] One calendar for dates: Asia/Kolkata (`src/shared/calendar.ts`).
+- [x] Privacy 1.3.0 (Time Capsules and Memories). Migration `0023`.
+- [x] Tests: `capsules` (18), `memories` (7), `calendar` (4) + e2e `capsules.spec.ts`; mutation `.dev/mutate18.mjs` 22/22.
+- Fixed on the way: the upload-token test was STILL flaky after the first fix — the last character of a 43-character
+  base64url signature carries only 4 real bits, so changing it can decode to the same bytes. It now changes the first.
 
 ## Added 2026-09-30 — account deletion, "Burn the Deed" (ADR-027)
 
@@ -507,11 +531,11 @@ layers covered for them); direct tests of the recorder now catch both. All 15 ca
 **Phase 11 is done** except what you deferred: image moderation (2026-09-30: not now) and an audit-log retention
 period (a legal decision). Media follow-ups still open: photos on Post Cards (per-card media with the Fence's privacy
 rules), showing Portraits in lists / cards / Chimes (needs a per-viewer decision per row). Next phase per the master
-prompt: **Phase 12 — Memories / Time Capsules**.
+prompt: **Phase 13 — Performance + Scaling + Advanced Intelligence** (Phase 12 is built, ADR-028).
 Tributes/Marks/Town Halls follow-ups: revisit whether Tribute/Mark giving should ever
 widen beyond Posse-only; a Town Hall shared feed if the need becomes real; Town Hall roles beyond owner/member.
 
 ## Architectural Decisions
 
-ADR-001 … ADR-027 in `docs/decisions/`; lifecycle and deletion design in `docs/DATA_LIFECYCLE.md`.
+ADR-001 … ADR-028 in `docs/decisions/`; lifecycle and deletion design in `docs/DATA_LIFECYCLE.md`.
 

@@ -28,13 +28,14 @@ export const notifications = pgTable(
   (t) => [
     check(
       'notifications_type_check',
-      sql`${t.type} in ('posse_requested', 'posse_accepted', 'card_created', 'card_waiting', 'card_approved', 'reply_created', 'reply_waiting', 'yo_given', 'whisper_received', 'tribute_waiting', 'tribute_approved', 'mark_given', 'townhall_invited', 'townhall_invite_accepted')`,
+      sql`${t.type} in ('posse_requested', 'posse_accepted', 'card_created', 'card_waiting', 'card_approved', 'reply_created', 'reply_waiting', 'yo_given', 'whisper_received', 'tribute_waiting', 'tribute_approved', 'mark_given', 'townhall_invited', 'townhall_invite_accepted', 'capsule_opened')`,
     ),
-    check('notifications_not_self', sql`${t.recipientId} <> ${t.actorId}`),
-    // Posse, Whisper, Tribute, Mark and Town Hall Chimes are about a person; every card/reply/Yo Chime is about a card.
+    // A Time Capsule to yourself is the one Chime whose sender is its recipient (Phase 12, ADR-028).
+    check('notifications_not_self', sql`${t.recipientId} <> ${t.actorId} or ${t.type} = 'capsule_opened'`),
+    // Posse, Whisper, Tribute, Mark, Town Hall and Time Capsule Chimes are about a person; every card/reply/Yo Chime is about a card.
     check(
       'notifications_card_iff_card_type',
-      sql`(${t.type} in ('posse_requested', 'posse_accepted', 'whisper_received', 'tribute_waiting', 'tribute_approved', 'mark_given', 'townhall_invited', 'townhall_invite_accepted')) = (${t.cardId} is null)`,
+      sql`(${t.type} in ('posse_requested', 'posse_accepted', 'whisper_received', 'tribute_waiting', 'tribute_approved', 'mark_given', 'townhall_invited', 'townhall_invite_accepted', 'capsule_opened')) = (${t.cardId} is null)`,
     ),
     // One Chime per person per thing: a repeat (switching a Yo off and on, a second reply) cannot ring the bell again.
     uniqueIndex('notifications_once_per_card')
@@ -64,5 +65,6 @@ export const notificationPrefs = pgTable('notification_prefs', {
   whispers: boolean('whispers').notNull().default(true),
   tributes: boolean('tributes').notNull().default(true),
   townhalls: boolean('townhalls').notNull().default(true),
+  capsules: boolean('capsules').notNull().default(true),
   updatedAt: tstz('updated_at').notNull().defaultNow(),
 });

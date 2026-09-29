@@ -65,6 +65,7 @@ export function AppShell({
         // The phone tab bar shows its own short list (see ShellBottomNav); these are sidebar-only.
         { key: 'workshop', href: '/workshop', label: 'Workshop' },
         { key: 'town-halls', href: '/town-halls', label: 'Town Halls', badge: townHallInvites },
+        { key: 'capsules', href: '/capsules', label: 'Time Capsules' },
         ...(moderator ? [{ key: 'moderation', href: '/moderation', label: 'Moderation' } as const] : []),
       ]
     : [];

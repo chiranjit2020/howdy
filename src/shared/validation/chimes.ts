@@ -15,6 +15,7 @@ export const CHIME_CATEGORIES = [
   'whispers',
   'tributes',
   'townhalls',
+  'capsules',
 ] as const;
 export type ChimeCategory = (typeof CHIME_CATEGORIES)[number];
 
@@ -41,6 +42,7 @@ export const chimePrefsSchema = z
     whispers: z.boolean().optional(),
     tributes: z.boolean().optional(),
     townhalls: z.boolean().optional(),
+    capsules: z.boolean().optional(),
   })
   .refine((v) => Object.values(v).some((x) => x !== undefined), 'Nothing to change.');
 

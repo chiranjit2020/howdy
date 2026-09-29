@@ -50,6 +50,10 @@ const MODULE_DEPENDENCIES = {
   media: [],
   // Owns devices and sending; what deserves a push is the notifications module's call.
   push: [],
+  // Time Capsules (Phase 12): the first-week budget, names, and who is still a Pal. Nothing depends on it.
+  capsules: ['moderation', 'profiles', 'relationships'],
+  // Memories (Phase 12): read-only; who I can still see decides what comes back.
+  memories: ['profiles', 'relationships'],
 };
 const moduleRules = Object.entries(MODULE_DEPENDENCIES).map(([name, allowed]) => {
   const forbidden = Object.keys(MODULE_DEPENDENCIES).filter((m) => m !== name && !allowed.includes(m));

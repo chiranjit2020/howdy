@@ -20,7 +20,7 @@ Howdy is run by {{operator}}, an individual based in {{country}} ("Howdy", "we",
 
 **Photos.** When you add a Portrait we re-make the picture ourselves as a small square image. Anything hidden inside the original file, such as the location where it was taken or the camera used, is thrown away and never stored.
 
-**What you post and do.** Post Cards and replies, Yos, Tributes you write or receive, Marks you give, Whispers you send, Town Halls you start or join, and reports you file.
+**What you post and do.** Post Cards and replies, Yos, Tributes you write or receive, Marks you give, Whispers you send, Time Capsules you seal, Town Halls you start or join, and reports you file.
 
 **Your connections.** Who is in your Pals, and requests between you. Also the private choices you make about others: Close Pals, Scouting, Mute, Restrict and Block. Those last ones are visible only to you. The other person is never told.
 
@@ -66,6 +66,11 @@ Tracks tell you who has recently stopped by your Porch. They are built to be vag
 - **Nothing for signed-out visitors,** blocked people, or suspended accounts.
 - **How long:** 7 days. After that the visit is gone.
 
+## Time Capsules and Memories
+
+- **Time Capsules:** words you seal for your future self or for one of your Pals, to open on a day you choose. Until that day nobody can read them in Howdy, not even you (you can take one back, which deletes it). They are stored on our servers, not end-to-end encrypted. On the day, a capsule to a Pal opens only if you are still Pals and neither of you has blocked the other; otherwise it is deleted. Once open it belongs to the person it was for, and stays until they delete it.
+- **Memories:** "On this day" on your Home page shows Post Cards on your own Fence, the day you became Pals with someone, and Tributes written to you, from earlier years. Only you see them. Nothing extra is stored for this: they are worked out from what is still there, and something removed, or someone you have blocked or muted, does not come back as a memory.
+
 ## Whispers
 
 - **Private:** a Whisper can be read only by the two people in the conversation. You can only Whisper someone who is in your Pals, and a block or leaving Pals closes the conversation.
@@ -77,6 +82,7 @@ Tracks tell you who has recently stopped by your Porch. They are built to be vag
 ## How long we keep things
 
 - **Signal:** 12 hours after you set it.
+- **Time Capsules:** until the day they open (or until you take one back); after that, until the person it was for deletes it.
 - **Whispers:** 7 days after they are sent (or sooner, if a thread is burned). The words of a Whisper someone reported are kept with the report (see below).
 - **Tracks:** 7 days.
 - **Chimes:** 30 days after you read them, or 90 days if you never do.
