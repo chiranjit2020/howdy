@@ -29,18 +29,26 @@ export const FAILED_LOGINS_PER_HOUR = 20;
 const since = (start: number) => Math.round(performance.now() - start);
 const message = (err: unknown) => (err instanceof Error ? err.message : String(err)).slice(0, 160);
 
-/** Can we reach Postgres, and how fast? */
+/**
+ * Can we reach Postgres, and how fast? The first query also pays for a new connection and, after a quiet spell, for Neon
+ * waking the database up (about half a second on the free plan), so it is reported but only the second, awake query
+ * decides "slow". Otherwise the morning digest warned every day about a database that was merely asleep.
+ */
 export async function checkDatabase(): Promise<CheckResult> {
   const start = performance.now();
   try {
     await getPool().query('select 1');
-    const ms = since(start);
+    const wake = since(start);
+    const awake = performance.now();
+    await getPool().query('select 1');
+    const ms = since(awake);
     const slow = ms > SLOW_MS.database;
+    const first = wake > SLOW_MS.database ? ` (the first, which woke it up, took ${wake} ms)` : '';
     return {
       id: 'database',
       label: 'Database',
       status: slow ? 'warn' : 'ok',
-      detail: slow ? `Answering, but slowly (${ms} ms).` : `Answering in ${ms} ms.`,
+      detail: slow ? `Answering, but slowly (${ms} ms).` : `Answering in ${ms} ms${first}.`,
       ms,
     };
   } catch (err) {
