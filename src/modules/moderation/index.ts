@@ -16,6 +16,7 @@ export {
   removeReportedPortrait,
   removeReportedTownHall,
   removeReportedWhisper,
+  reportedCardPhoto,
   reportedPortrait,
   suspendAccount,
   suspendFromReport,

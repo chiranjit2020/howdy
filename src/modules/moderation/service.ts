@@ -179,6 +179,8 @@ export interface QueueItem {
   canRemove: boolean;
   /** `canRemove` for a Post Card (kept for the card flow's callers). */
   canRemoveCard: boolean;
+  /** The reported card is still there and carries a photo (ADR-031): the moderator can look at it. */
+  cardHasPhoto: boolean;
   status: ReportStatus;
   createdAt: Date;
   /** Null when the reporter's account is since gone — the report itself is kept regardless. */
@@ -246,7 +248,18 @@ export async function listQueue(
   const peopleIds = page.flatMap((r) =>
     [r.reporterId, r.targetUserId, r.reviewedBy].filter((x) => x !== null),
   );
-  const [people, live] = await Promise.all([modCards(peopleIds), stillThere(page)]);
+  const liveCardIds = page.flatMap((r) => (r.subject === 'card' && r.cardId ? [r.cardId] : []));
+  const [people, live, cardPhotos] = await Promise.all([
+    modCards(peopleIds),
+    stillThere(page),
+    liveCardIds.length
+      ? getDb()
+          .select({ cardId: media.cardId })
+          .from(media)
+          .where(and(inArray(media.cardId, liveCardIds), eq(media.status, 'ready')))
+      : Promise.resolve([] as { cardId: string | null }[]),
+  ]);
+  const withPhoto = new Set(cardPhotos.map((p) => p.cardId));
   const targets = [...new Set(page.flatMap((r) => (r.targetUserId ? [r.targetUserId] : [])))];
   const held = new Set(
     (await Promise.all(targets.map(async (t) => ((await isUnderReview(t)) ? t : null)))).filter(
@@ -264,6 +277,7 @@ export async function listQueue(
       evidenceText: r.evidenceText,
       canRemove: live.has(r.id),
       canRemoveCard: r.subject === 'card' && live.has(r.id),
+      cardHasPhoto: r.subject === 'card' && r.cardId !== null && withPhoto.has(r.cardId),
       status: r.status as ReportStatus,
       createdAt: r.createdAt,
       reporter: r.reporterId ? (people.get(r.reporterId) ?? null) : null,
@@ -486,6 +500,23 @@ export async function removeReportedPortrait(
     }
   });
   await auditModAction('portrait_removed', moderatorId, { reportId, mediaId });
+}
+
+/**
+ * For showing a moderator the photo on a reported Post Card (ADR-031): its media id while the card is still there.
+ * Null unless the report is about a card that carries a photo. Moderator only.
+ */
+export async function reportedCardPhoto(moderatorId: string, reportId: string): Promise<string | null> {
+  await requireModerator(moderatorId);
+  await enforceRateLimit(`moderation:read:${moderatorId}`, RATE.read);
+  const row = await loadReport(reportId);
+  if (!row || row.subject !== 'card' || !row.cardId) return null;
+  const [photo] = await getDb()
+    .select({ id: media.id })
+    .from(media)
+    .where(and(eq(media.cardId, row.cardId), eq(media.kind, 'card_photo'), eq(media.status, 'ready')))
+    .limit(1);
+  return photo?.id ?? null;
 }
 
 /**

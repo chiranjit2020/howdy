@@ -2,7 +2,7 @@ import { purgeExpiredAuthData, purgeFreedHandles } from '@/modules/auth';
 import { openDue } from '@/modules/capsules';
 import { purgeDeletedAccounts } from './account-deletion';
 import { purgeStaleWaiting } from '@/modules/fence';
-import { purgeStaleMedia } from '@/modules/media';
+import { purgeDetachedCardPhotos, purgeStaleMedia } from '@/modules/media';
 import { liftExpiredSuspensions, purgeClosedReports } from '@/modules/moderation';
 import { purgeOldChimes } from '@/modules/notifications';
 import { clearExpiredSignals } from '@/modules/profiles';
@@ -26,6 +26,8 @@ export async function runAllPurges() {
   const whispers = await purgeOldWhispers();
   const trackRows = await purgeOldTracks();
   const files = await purgeStaleMedia();
+  // Card photos never nailed within the hour, or whose card has since been removed (ADR-031).
+  const cardPhotos = await purgeDetachedCardPhotos();
   const tributeRows = await purgeStaleTributes();
   // Not retention, but daily upkeep that belongs with it: Trusted ticks nobody has looked at lately are checked again.
   const trust = await recheckStaleTrust();
@@ -46,6 +48,7 @@ export async function runAllPurges() {
     whispers,
     ...trackRows,
     ...files,
+    ...cardPhotos,
     ...tributeRows,
     ...trust,
     ...suspensionsDone,

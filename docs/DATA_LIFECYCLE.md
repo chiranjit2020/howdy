@@ -101,6 +101,7 @@ recorded as a `retired` row in the same transaction that makes the new photo liv
 | **Whispers** (`messages`) | **7 days** from being sent, or at once by "Burn Thread" (either person, both sides) | `purgeOldWhispers()` (in `pnpm jobs:purge`); threads left empty are dropped with them |
 | Chimes (`notifications`) | read: 30 days after being read; unread: 90 days after being rung | `purgeOldChimes()` (in `pnpm jobs:purge`) |
 | **Portrait files** (`media`) | a live Portrait until replaced/removed or the account is deleted; an **unfinished upload 60 minutes**; a replaced/removed file is deleted at once and, if storage failed, retried by the job | `purgeStaleMedia()` (in `pnpm jobs:purge`); removal deletes the object first, then the row |
+| Post Card photos (`media` kind `card_photo`, ADR-031) | with their card; never served once the card is gone (its `card_id` goes to null) and the file is deleted by the job; a photo never nailed: 60 minutes | `purgeDetachedCardPhotos()` (in `pnpm jobs:purge`); `deleteAllMediaFor` on account deletion |
 | Waiting cards / replies (`status` pending or held) | 30 days from being written, then dropped if the owner never answered | `purgeStaleWaiting()` (in `pnpm jobs:purge`) |
 | Published cards, replies, Yos | until removed by their writer / the Fence owner, or an account is deleted | people; account deletion |
 | Waiting Tributes (`status` pending) | 30 days from being written, then dropped if the owner never answered | `purgeStaleTributes()` (in `pnpm jobs:purge`) |

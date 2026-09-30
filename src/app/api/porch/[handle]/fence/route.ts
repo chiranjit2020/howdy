@@ -36,6 +36,6 @@ export const GET = route(async ({ req, requestId, params }) => {
  */
 export const POST = route(async ({ req, params }) => {
   const { user } = await requireSession(req);
-  const { body } = await readJson(req, postCardSchema);
-  return json({ card: await postCard(user.id, (await params).handle ?? '', body) }, { status: 201 });
+  const { body, photoId } = await readJson(req, postCardSchema);
+  return json({ card: await postCard(user.id, (await params).handle ?? '', body, photoId) }, { status: 201 });
 });

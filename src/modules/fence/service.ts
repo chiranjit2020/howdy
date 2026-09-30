@@ -1,5 +1,5 @@
-import { cardReplies, postCards, yos } from '@db/schema';
-import { and, asc, count, desc, eq, inArray, lt, or, sql } from 'drizzle-orm';
+import { cardReplies, media, postCards, yos } from '@db/schema';
+import { and, asc, count, desc, eq, gt, inArray, isNull, lt, or, sql } from 'drizzle-orm';
 import { canFence, holdFor, type Actor, type FenceContext, type FenceResource } from '@/modules/authz';
 import { enforceNewAccountLimit, shouldHoldForOthers } from '@/modules/moderation';
 import { getCards, getFenceResource, resolveHandle, type PersonCard } from '@/modules/profiles';
@@ -99,6 +99,11 @@ export interface CardView {
   /** The viewer's own reaction, if any. */
   myReaction: ReactionKind | null;
   replies: ReplyView[];
+  /**
+   * The card's photo (ADR-031), or null. `url` is served only to someone who may see this card, by the same rules as
+   * its words; the version in it changes if the photo does, so a browser never shows a stale one.
+   */
+  photo: { url: string; width: number; height: number } | null;
 }
 
 export interface FencePage {
@@ -109,6 +114,8 @@ export interface FencePage {
   canPost: boolean;
   /** Cards from other people wait for the owner (told to would-be writers so it is not a surprise). */
   review: boolean;
+  /** May the viewer add a photo to a card here? The owner, or one of their Pals who may post (ADR-031). */
+  canAddPhoto: boolean;
 }
 
 const toRef = (p: PersonCard): AuthorRef => ({
@@ -176,7 +183,7 @@ async function hydrate(
   const canPostHere = canFence(viewer, 'fence:post', fence, ctx).allow;
   const canReactHere = canFence(viewer, 'fence:react', fence, ctx).allow;
 
-  const [counts, mine, replyRows] = await Promise.all([
+  const [counts, mine, replyRows, photos] = await Promise.all([
     db
       .select({ cardId: yos.cardId, kind: yos.kind, n: count() })
       .from(yos)
@@ -202,7 +209,12 @@ async function hydrate(
       .orderBy(asc(cardReplies.createdAt), asc(cardReplies.id))
       // Replies per card are capped at write time; this only bounds the read.
       .limit(ids.length * (REPLIES_PER_CARD + 5)),
+    db
+      .select({ id: media.id, cardId: media.cardId, width: media.width, height: media.height })
+      .from(media)
+      .where(and(inArray(media.cardId, ids), eq(media.kind, 'card_photo'), eq(media.status, 'ready'))),
   ]);
+  const photoByCard = new Map(photos.map((p) => [p.cardId!, p]));
 
   const replyAuthorIds = replyRows.map((r: ReplyRow) => r.authorId);
   const [replyAuthors, hidden] = await Promise.all([
@@ -255,10 +267,19 @@ async function hydrate(
         canReply: published && canPostHere,
         ...reactionFields(reactionsByCard.get(row.id) ?? emptyReactions(), myReaction.get(row.id) ?? null),
         replies: repliesByCard.get(row.id) ?? [],
+        photo: photoOf(row.id, photoByCard.get(row.id)),
       },
     ];
   });
 }
+
+const photoOf = (
+  cardId: string,
+  p: { id: string; width: number | null; height: number | null } | undefined,
+): CardView['photo'] =>
+  p && p.width && p.height
+    ? { url: `/api/cards/${cardId}/photo?v=${p.id}`, width: p.width, height: p.height }
+    : null;
 
 /**
  * One page of a Fence, newest first, or null when the viewer may not read it (missing, inactive and hidden are the same).
@@ -347,6 +368,9 @@ export async function listFence(
     nextCursor: next ? encodeCursor(next) : null,
     isOwner: viewerId === ownerId,
     canPost: canFence(viewer, 'fence:post', fence, ctx).allow,
+    canAddPhoto:
+      canFence(viewer, 'fence:post', fence, ctx).allow &&
+      (viewerId === ownerId || ctx.relationship === 'POSSE' || ctx.relationship === 'CLOSE_POSSE'),
     review: fence.fenceReview && viewerId !== ownerId,
   };
 }
@@ -393,7 +417,15 @@ async function statusFor(
 }
 
 /** Nail a Post Card on the Fence of the person with call sign `handle`. */
-export async function postCard(userId: string, handle: string, body: string): Promise<CardView> {
+/** A photo can be nailed only while it is younger than this (the clean-up job takes unattached ones at 60 minutes). */
+const PHOTO_ATTACH_WINDOW_MS = 55 * 60_000;
+
+export async function postCard(
+  userId: string,
+  handle: string,
+  body: string,
+  photoId?: string,
+): Promise<CardView> {
   // Spent before the handle is looked up: the same limit trips whether the Fence exists, is hidden or is a made-up name.
   await enforceRateLimit(`fence:post:${userId}`, RATE.postUser);
   await enforceNewAccountLimit(userId, 'card');
@@ -411,20 +443,50 @@ export async function postCard(userId: string, handle: string, body: string): Pr
     await enforceRateLimit(`fence:post:${userId}:${ownerId}`, RATE.postPerFence);
     await enforceRateLimit(`fence:into:${ownerId}`, RATE.postIntoFence);
   }
+  // A photo on SOMEONE ELSE's Fence needs their Pal (ADR-031); on my own Fence I may always add one.
+  if (photoId && userId !== ownerId && ctx.relationship !== 'POSSE' && ctx.relationship !== 'CLOSE_POSSE') {
+    throw new AppError('FORBIDDEN', { message: 'Only their Pals can add a photo to a card on this Fence.' });
+  }
   const status = await statusFor(actor, 'card', fence, ctx, userId);
-  // Written with millisecond precision so cursors compare exactly (see cursor.ts).
-  const [row] = await getDb()
-    .insert(postCards)
-    .values({ fenceOwnerId: ownerId, authorId: userId, body, status, createdAt: new Date() })
-    .returning();
+  const row = await getDb().transaction(async (tx) => {
+    // Written with millisecond precision so cursors compare exactly (see cursor.ts).
+    const [card] = await tx
+      .insert(postCards)
+      .values({ fenceOwnerId: ownerId, authorId: userId, body, status, createdAt: new Date() })
+      .returning();
+    if (photoId) {
+      // Only MY finished photo, on no card yet, and young enough that the clean-up job cannot take it meanwhile.
+      const attached = await tx
+        .update(media)
+        .set({ cardId: card!.id, updatedAt: sql`now()` })
+        .where(
+          and(
+            eq(media.id, photoId),
+            eq(media.ownerId, userId),
+            eq(media.kind, 'card_photo'),
+            eq(media.status, 'ready'),
+            isNull(media.cardId),
+            gt(media.createdAt, new Date(Date.now() - PHOTO_ATTACH_WINDOW_MS)),
+          ),
+        )
+        .returning({ id: media.id });
+      if (attached.length === 0) {
+        throw new AppError('VALIDATION_FAILED', {
+          message: 'That photo is no longer available. Add it again.',
+          fields: { photo: 'That photo is no longer available. Add it again.' },
+        });
+      }
+    }
+    return card!;
+  });
   emit({
     type: status === 'published' ? 'card.created' : 'card.waiting',
-    cardId: row!.id,
+    cardId: row.id,
     ownerId,
     authorId: userId,
   });
   const authors = await authorsFor([userId]);
-  const [view] = await hydrate(actor, fence, ctx, [row!], authors);
+  const [view] = await hydrate(actor, fence, ctx, [row], authors);
   if (!view) throw new AppError('INTERNAL');
   return view;
 }
@@ -613,6 +675,8 @@ export interface WaitingCard {
   body: string;
   createdAt: Date;
   author: AuthorRef;
+  /** A waiting card's photo, so the owner sees what they are approving (ADR-031). Never on a reply. */
+  photo?: CardView['photo'];
 }
 export interface WaitingReply extends WaitingCard {
   onCard: string;
@@ -646,7 +710,18 @@ export async function listWaiting(ownerId: string): Promise<Waiting> {
       .limit(QUEUE_LIMIT),
   ]);
   const ids = [...cards.map((c) => c.authorId), ...replies.map((r) => r.reply.authorId)];
-  const [authors, hidden] = await Promise.all([authorsFor(ids), hiddenAuthors(ownerId, ids)]);
+  const cardIds = cards.map((c) => c.id);
+  const [authors, hidden, photos] = await Promise.all([
+    authorsFor(ids),
+    hiddenAuthors(ownerId, ids),
+    cardIds.length
+      ? db
+          .select({ id: media.id, cardId: media.cardId, width: media.width, height: media.height })
+          .from(media)
+          .where(and(inArray(media.cardId, cardIds), eq(media.kind, 'card_photo'), eq(media.status, 'ready')))
+      : Promise.resolve([]),
+  ]);
+  const photoByCard = new Map(photos.map((p) => [p.cardId!, p]));
   const ok = (id: string) => authors.has(id) && !hidden.has(id);
   return {
     cards: cards
@@ -656,6 +731,7 @@ export async function listWaiting(ownerId: string): Promise<Waiting> {
         body: c.body,
         createdAt: c.createdAt,
         author: toRef(authors.get(c.authorId)!),
+        photo: photoOf(c.id, photoByCard.get(c.id)),
       })),
     replies: replies
       .filter((r) => ok(r.reply.authorId))
@@ -667,6 +743,33 @@ export async function listWaiting(ownerId: string): Promise<Waiting> {
         onCard: r.cardBody,
       })),
   };
+}
+
+/**
+ * The photo of a card, for someone who may see that card right now — the same rules as its words (the Fence is
+ * readable to them; a waiting card only to its writer and the Fence owner; not someone they have hidden; an active
+ * author). Signed-out visitors too, where the Fence is open to everyone. Null otherwise, and for a card with no photo.
+ */
+export async function cardPhotoFor(viewer: Actor, cardId: string): Promise<string | null> {
+  if (!idParamSchema.safeParse(cardId).success) return null;
+  const [card] = await getDb().select().from(postCards).where(eq(postCards.id, cardId)).limit(1);
+  if (!card) return null;
+  const acc = await access(viewer, card.fenceOwnerId);
+  if (!acc) return null;
+  const viewerId = viewer.kind === 'user' ? viewer.id : null;
+  if (card.status !== 'published' && card.authorId !== viewerId && viewerId !== card.fenceOwnerId)
+    return null;
+  const [hidden, authors, photo] = await Promise.all([
+    viewerId ? hiddenAuthors(viewerId, [card.authorId]) : Promise.resolve(new Set<string>()),
+    authorsFor([card.authorId]),
+    getDb()
+      .select({ id: media.id })
+      .from(media)
+      .where(and(eq(media.cardId, card.id), eq(media.kind, 'card_photo'), eq(media.status, 'ready')))
+      .limit(1),
+  ]);
+  if (hidden.has(card.authorId) || !authors.has(card.authorId)) return null;
+  return photo[0]?.id ?? null;
 }
 
 /** A card the reader may see, in the shape a report needs (the writer and a snapshot of the text). Null otherwise. */

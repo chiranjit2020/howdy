@@ -6,6 +6,7 @@ import type { Waiting } from '@/modules/fence';
 import type { WaitingTribute } from '@/modules/tributes';
 import { apiRequest } from '@/ui/auth/api';
 import { FormMessage } from '@/ui/auth/form-parts';
+import { Img } from '@/ui/art/img';
 import { RelativeTime } from '@/ui/howdy';
 import { Button, ClayCard } from '@/ui/primitives';
 
@@ -16,6 +17,7 @@ type Item = {
   handle: string;
   createdAt: Date | string;
   onCard?: string;
+  photo?: { url: string; width: number; height: number } | null;
 };
 
 const ROUTE: Record<Item['kind'], string> = { cards: 'cards', replies: 'replies', tributes: 'tributes' };
@@ -33,6 +35,7 @@ export function WaitingQueue({ waiting, tributes = [] }: { waiting: Waiting; tri
       body: c.body,
       handle: c.author.handle,
       createdAt: c.createdAt,
+      photo: c.photo,
     })),
     ...waiting.replies.map((r) => ({
       kind: 'replies' as const,
@@ -80,6 +83,15 @@ export function WaitingQueue({ waiting, tributes = [] }: { waiting: Waiting; tri
               {item.onCard ? ` · reply to “${item.onCard}”` : ''}
             </p>
             <p className="text-body break-words text-text-primary">{item.body}</p>
+            {item.photo && (
+              <Img
+                src={item.photo.url}
+                width={item.photo.width}
+                height={item.photo.height}
+                alt={`Photo on the waiting card from @${item.handle}`}
+                className="h-auto max-h-60 w-full rounded-md bg-surface-sunken object-contain"
+              />
+            )}
             <div className="flex gap-2">
               <Button size="sm" loading={busy === `${item.id}:approve`} onClick={() => run(item, 'approve')}>
                 Approve

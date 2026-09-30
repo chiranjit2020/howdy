@@ -8,6 +8,20 @@ _Last updated: 2026-09-29_
 migration `0024` must go on `howdy_dev` and `howdy_prod` before its code is pushed. Phases 0–12 are live. This was the
 last phase in the master prompt's build order (§61).
 
+## Added 2026-09-30 — one photo on a Post Card (ADR-031)
+
+Decisions taken with you: **one photo per card**; on someone else's Fence **only their Pals** may add one; **no
+automatic image checks yet**.
+
+- [x] Nail composer: "Add a photo" → preview → Nail. Same upload pipeline as Portraits (decoded and re-made on the
+      server, EXIF dropped, at most 1280 px). Attached in the card's own transaction; one per card.
+- [x] Served only to people who can see the card (same rules as its words); goes with its card; the daily job deletes
+      detached files. The owner sees it in the waiting queue; moderators see it on a reported card.
+- [x] Fixed: starting a Portrait upload no longer discards an unfinished card photo.
+- [x] Also: a phone "More" menu (a410a8b) and clay icons for Time Capsules and Moderation.
+- [x] Tests: `card-photos` (13) + e2e; mutation `.dev/mutate20.mjs` 13/13 (mutants now type-checked first).
+      Migration `0025`. Privacy 1.5.0.
+
 ## Completed in Phase 13 — performance at 20k people, and "Pals you may know" (ADR-029, ADR-030), 2026-09-30
 
 Decisions taken with you: size for **~20,000 people**; "Advanced Intelligence" = **Pals you may know** (no ML).
@@ -527,9 +541,6 @@ layers covered for them); direct tests of the recorder now catch both. All 15 ca
 
 ## Known Issues / Deferred
 
-- **Tributes/Marks/Town Halls have no Playwright (e2e) coverage yet** — `pnpm e2e` needs a production build and was
-  skipped every pass this session because the machine had very little free RAM throughout (see the ledger's machine
-  constraint); run it before trusting real-browser behaviour (axe, 320px, 44px targets, CSP) for any of the three.
 - Town Halls have no shared post feed yet (directory + membership only, ADR-017); `members` visibility is today
   identical in effect to `open` (self-serve either way) — only the label differs, in case a real approval-gated join
   flow is wanted later.
@@ -545,11 +556,11 @@ layers covered for them); direct tests of the recorder now catch both. All 15 ca
 
 **All thirteen phases of the master prompt's build order are built** (Phase 13, 2026-09-30). What is left is your
 call or waits for real use: moving to Singapore (runbook); image moderation (deferred); an audit-log retention period
-(legal); a self-service data export; photos on Post Cards; Portraits in lists / cards / Chimes; capsules to a Town Hall.
+(legal); a self-service data export; Portraits in lists / cards / Chimes; capsules to a Town Hall.
 Tributes/Marks/Town Halls follow-ups: revisit whether Tribute/Mark giving should ever
 widen beyond Posse-only; a Town Hall shared feed if the need becomes real; Town Hall roles beyond owner/member.
 
 ## Architectural Decisions
 
-ADR-001 … ADR-030 in `docs/decisions/`; lifecycle and deletion design in `docs/DATA_LIFECYCLE.md`.
+ADR-001 … ADR-031 in `docs/decisions/`; lifecycle and deletion design in `docs/DATA_LIFECYCLE.md`.
 

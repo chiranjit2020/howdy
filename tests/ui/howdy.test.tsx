@@ -235,7 +235,7 @@ describe('PostCardComposer', () => {
     render(<PostCardComposer kind="card" onSubmit={onSubmit} />);
     await user.type(screen.getByRole('textbox'), '  hello fence  ');
     await user.click(screen.getByRole('button', { name: 'Nail to Fence' }));
-    expect(onSubmit).toHaveBeenCalledExactlyOnceWith('hello fence');
+    expect(onSubmit).toHaveBeenCalledExactlyOnceWith('hello fence', undefined);
     expect(screen.getByRole('textbox')).toHaveValue('');
   });
 });

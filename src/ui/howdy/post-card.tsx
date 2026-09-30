@@ -1,15 +1,18 @@
 'use client';
 
-import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ChangeEvent, type FormEvent, type ReactNode } from 'react';
 import { LIMITS } from '@/shared/limits';
 import type { ReactionKind } from '@/shared/validation/fence';
 import type { PortraitTint } from '@/shared/validation/profile';
 import { Art } from '../art/glyph';
+import { Img } from '../art/img';
 import { cn } from '../cn';
 import { FlipIcon } from '../icons';
 import { Avatar } from '../primitives/avatar';
 import { Button } from '../primitives/button';
 import { Textarea } from '../primitives/field';
+import { FormMessage } from '../auth/form-parts';
+import type { PhotoUpload } from '../media/upload-photo';
 import { RelativeTime } from './time';
 import { NameBadge } from './verified-badge';
 import { ReactionBar, ReactionSummary } from './reactions';
@@ -65,29 +68,61 @@ export function PostCardReply({
   );
 }
 
-/** Composer for a Post Card (160) or a reply (80). Limits come from LIMITS; the server is the authority. */
+/**
+ * Composer for a Post Card (160) or a reply (80). Limits come from LIMITS; the server is the authority. A card composer
+ * given `onPhoto` also offers one photo (ADR-031): it uploads as soon as it is chosen, shows a local preview, and its id
+ * goes with the words when the card is nailed.
+ */
 export function PostCardComposer({
   kind,
   onSubmit,
+  onPhoto,
   disabled,
 }: {
   kind: 'card' | 'reply';
   /** Return `false` to keep what was typed (e.g. the server refused it); anything else clears the box. */
-  onSubmit: (body: string) => boolean | void | Promise<boolean | void>;
+  onSubmit: (body: string, photoId?: string) => boolean | void | Promise<boolean | void>;
+  /** Upload a chosen photo; only offered when given (the server decides who may add one). */
+  onPhoto?: (file: File) => Promise<PhotoUpload>;
   disabled?: boolean;
 }) {
   const max = kind === 'card' ? LIMITS.POST_CARD_MAX : LIMITS.REPLY_MAX;
   const [body, setBody] = useState('');
   const [busy, setBusy] = useState(false);
+  const [photo, setPhoto] = useState<{ preview: string; id?: string } | undefined>();
+  const [photoError, setPhotoError] = useState<string | undefined>();
+  const uploading = photo !== undefined && photo.id === undefined;
   const trimmed = body.trim();
+
+  // Free the temporary preview address when it is replaced or the composer goes away.
+  const previewUrl = photo?.preview;
+  useEffect(() => () => (previewUrl ? URL.revokeObjectURL(previewUrl) : undefined), [previewUrl]);
+
+  async function choose(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // so choosing the same file again still triggers a change
+    if (!file || !onPhoto) return;
+    setPhotoError(undefined);
+    const preview = URL.createObjectURL(file);
+    setPhoto({ preview });
+    const res = await onPhoto(file);
+    if (res.ok) setPhoto((p) => (p?.preview === preview ? { preview, id: res.mediaId } : p));
+    else {
+      setPhoto(undefined);
+      setPhotoError(res.message);
+    }
+  }
 
   async function submit(e: FormEvent) {
     e.preventDefault();
-    if (!trimmed || busy) return;
+    if (!trimmed || busy || uploading) return;
     setBusy(true);
     try {
-      const ok = await onSubmit(trimmed);
-      if (ok !== false) setBody('');
+      const ok = await onSubmit(trimmed, photo?.id);
+      if (ok !== false) {
+        setBody('');
+        setPhoto(undefined);
+      }
     } finally {
       setBusy(false);
     }
@@ -104,10 +139,53 @@ export function PostCardComposer({
         rows={kind === 'card' ? 3 : 2}
         placeholder={kind === 'card' ? 'Short and sweet…' : 'One or two lines. Longer? Take it to a Whisper.'}
       />
-      <Button type="submit" size="sm" loading={busy} disabled={disabled || !trimmed} className="self-end">
-        <Art name={kind === 'card' ? 'nav-nail' : 'nav-scribble'} />
-        {kind === 'card' ? 'Nail to Fence' : 'Scribble'}
-      </Button>
+      {photoError && <FormMessage tone="error">{photoError}</FormMessage>}
+      {photo && (
+        <div className="relative self-start">
+          {/* A local preview (blob:) of the chosen file, before or while it uploads. */}
+          {/* eslint-disable-next-line @next/next/no-img-element -- a blob: preview; see ui/art/img.tsx */}
+          <img
+            src={photo.preview}
+            alt="The photo you chose for this card"
+            className={cn('max-h-40 rounded-md object-contain', uploading && 'opacity-60')}
+          />
+          {uploading && <p className="text-metadata text-text-secondary">Uploading…</p>}
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => setPhoto(undefined)}
+            aria-label="Remove the photo"
+          >
+            Remove photo
+          </Button>
+        </div>
+      )}
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        {onPhoto && !photo ? (
+          <label className="inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-pill px-3 text-caption font-semibold text-text-secondary hover:bg-surface-sunken focus-within:outline-2 focus-within:outline-focus">
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="sr-only"
+              onChange={choose}
+            />
+            <span aria-hidden="true">📷</span> Add a photo
+          </label>
+        ) : (
+          <span />
+        )}
+        <Button
+          type="submit"
+          size="sm"
+          loading={busy}
+          disabled={disabled || !trimmed || uploading}
+          className="self-end"
+        >
+          <Art name={kind === 'card' ? 'nav-nail' : 'nav-scribble'} />
+          {kind === 'card' ? 'Nail to Fence' : 'Scribble'}
+        </Button>
+      </div>
     </form>
   );
 }
@@ -134,6 +212,8 @@ export interface PostCardProps {
   replyComposer?: ReactNode;
   /** Owner/author actions, e.g. Scrape Clean menu. */
   actions?: ReactNode;
+  /** The card's photo (ADR-031), served only to people who may see the card. */
+  photo?: { url: string; width: number; height: number } | null;
 }
 
 /**
@@ -156,6 +236,7 @@ export function PostCard({
   replyCount = 0,
   replyComposer,
   actions,
+  photo,
 }: PostCardProps) {
   const [flipped, setFlipped] = useState(false);
   const [hasFlipped, setHasFlipped] = useState(false); // no animation / focus move on first paint
@@ -216,6 +297,15 @@ export function PostCard({
             {actions}
           </header>
           <p className="text-body break-words whitespace-pre-wrap text-text-primary">{body}</p>
+          {photo && (
+            <Img
+              src={photo.url}
+              width={photo.width}
+              height={photo.height}
+              alt={`Photo on this card from ${author.name}`}
+              className="h-auto max-h-[28rem] w-full rounded-md bg-surface-sunken object-contain"
+            />
+          )}
           {notice && <p className="text-caption font-semibold text-text-secondary">{notice}</p>}
           <footer className="flex flex-wrap items-center justify-between gap-2">
             {canReact || myReaction ? (

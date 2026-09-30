@@ -3,7 +3,11 @@
  * file, never who may SEE it. The app layer composes it with the profile rules (`mayViewRanch`) before serving anything.
  */
 export {
+  completeCardPhoto,
   completePortrait,
+  purgeDetachedCardPhotos,
+  readCardPhoto,
+  startCardPhotoUpload,
   deleteAllMediaFor,
   getPortraitVersion,
   getPortraitVersions,

@@ -11,6 +11,7 @@ import {
   uuid,
 } from 'drizzle-orm/pg-core';
 import { users } from './auth';
+import { postCards } from './fence';
 
 const tstz = (name: string) => timestamp(name, { withTimezone: true, mode: 'date' });
 
@@ -31,7 +32,13 @@ export const media = pgTable(
     ownerId: uuid('owner_id')
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
+    /** portrait (a Porch photo) | card_photo (one photo on a Post Card, Phase 13+ / ADR-031). */
     kind: text('kind').notNull().default('portrait'),
+    /**
+     * The Post Card a `card_photo` belongs to. Null while it waits to be nailed (thrown away after an hour), and again
+     * once its card is removed (SET NULL): a detached card photo is never served, and its file is deleted by the job.
+     */
+    cardId: uuid('card_id').references(() => postCards.id, { onDelete: 'set null' }),
     status: text('status').notNull().default('pending'),
     /** Where the bytes are in storage. Random; never derived from the owner or the file name. */
     objectKey: text('object_key').notNull().unique(),
@@ -44,12 +51,17 @@ export const media = pgTable(
     updatedAt: tstz('updated_at').notNull().defaultNow(),
   },
   (t) => [
-    check('media_kind_check', sql`${t.kind} in ('portrait')`),
+    check('media_kind_check', sql`${t.kind} in ('portrait', 'card_photo')`),
+    check('media_card_only_for_card_photos', sql`${t.cardId} is null or ${t.kind} = 'card_photo'`),
     check('media_status_check', sql`${t.status} in ('pending', 'ready', 'retired')`),
     // One live Portrait per person, enforced by the database, not just by the code.
     uniqueIndex('media_one_ready_per_owner_idx')
       .on(t.ownerId, t.kind)
-      .where(sql`${t.status} = 'ready'`),
+      .where(sql`${t.status} = 'ready' and ${t.kind} = 'portrait'`),
+    // One photo per card.
+    uniqueIndex('media_one_per_card_idx')
+      .on(t.cardId)
+      .where(sql`${t.cardId} is not null`),
     index('media_owner_idx').on(t.ownerId),
     // The retention job looks for stale pending rows and for retired ones.
     index('media_status_created_idx').on(t.status, t.createdAt),

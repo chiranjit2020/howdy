@@ -26,3 +26,8 @@ export const portraitUploadSchema = z.object({
 });
 
 export const portraitCompleteSchema = z.object({ mediaId: z.uuid() });
+
+/** A photo on a Post Card (ADR-031): the same accepted types and size as a Portrait, kept within this box, never enlarged. */
+export const CARD_PHOTO_MAX_PX = 1280;
+export const cardPhotoUploadSchema = portraitUploadSchema;
+export const cardPhotoCompleteSchema = portraitCompleteSchema;

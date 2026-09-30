@@ -25,7 +25,8 @@ const fenceText = (max: number, emptyMessage: string, what: string) =>
 export const cardBodySchema = fenceText(LIMITS.POST_CARD_MAX, 'Write something to nail up.', 'A Post Card');
 export const replyBodySchema = fenceText(LIMITS.REPLY_MAX, 'Write a reply.', 'A reply');
 
-export const postCardSchema = z.object({ body: cardBodySchema });
+/** A card's words, and optionally one finished photo of mine (ADR-031) to nail with them. */
+export const postCardSchema = z.object({ body: cardBodySchema, photoId: z.uuid().optional() });
 export const postReplySchema = z.object({ body: replyBodySchema });
 
 /** Page size for the Fence. */

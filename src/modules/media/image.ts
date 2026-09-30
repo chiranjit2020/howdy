@@ -1,6 +1,6 @@
 import sharp from 'sharp';
 import { AppError } from '@/platform/errors';
-import { PORTRAIT_SIZE_PX } from '@/shared/validation/media';
+import { CARD_PHOTO_MAX_PX, PORTRAIT_SIZE_PX } from '@/shared/validation/media';
 
 /** The most pixels we will even try to decode (a 24-megapixel photo). A "pixel bomb" is small on disk and huge in memory. */
 export const MAX_INPUT_PIXELS = 24_000_000;
@@ -38,6 +38,29 @@ export async function processPortrait(input: Buffer): Promise<ProcessedPortrait>
       .rotate() // apply the EXIF orientation, then no metadata is kept
       .resize(PORTRAIT_SIZE_PX, PORTRAIT_SIZE_PX, { fit: 'cover', position: 'centre' })
       .webp({ quality: 82 })
+      .toBuffer({ resolveWithObject: true });
+    return { data, width: info.width, height: info.height };
+  } catch (err) {
+    if (err instanceof AppError) throw err;
+    throw UNUSABLE();
+  }
+}
+
+/**
+ * A Post Card photo (ADR-031): the same decode -> re-encode control as a Portrait (only pixels survive; EXIF, location
+ * and anything hidden are dropped; the phone's rotation is applied), but the whole picture is kept, fitted inside
+ * CARD_PHOTO_MAX_PX and never enlarged.
+ */
+export async function processCardPhoto(input: Buffer): Promise<ProcessedPortrait> {
+  try {
+    const base = () => sharp(input, { limitInputPixels: MAX_INPUT_PIXELS, failOn: 'error', animated: false });
+    const meta = await base().metadata();
+    if (!meta.format || !ACCEPTED.has(meta.format)) throw UNUSABLE();
+    if (!meta.width || !meta.height) throw UNUSABLE();
+    const { data, info } = await base()
+      .rotate()
+      .resize(CARD_PHOTO_MAX_PX, CARD_PHOTO_MAX_PX, { fit: 'inside', withoutEnlargement: true })
+      .webp({ quality: 80 })
       .toBuffer({ resolveWithObject: true });
     return { data, width: info.width, height: info.height };
   } catch (err) {

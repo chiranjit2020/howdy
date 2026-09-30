@@ -7,6 +7,7 @@ export {
   approveCard,
   approveReply,
   cardForReport,
+  cardPhotoFor,
   listFence,
   listWaiting,
   postCard,

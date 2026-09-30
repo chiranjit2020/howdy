@@ -9,6 +9,7 @@ import { FormMessage } from '@/ui/auth/form-parts';
 import { Fence, PostCard, PostCardComposer, PostCardReply } from '@/ui/howdy';
 import { Button, ConfirmationDialog, Dropdown, IconButton, useToast } from '@/ui/primitives';
 import { ReportDialog } from '@/ui/howdy/report-dialog';
+import { uploadPhoto } from '@/ui/media/upload-photo';
 
 /** The parts of a page this component uses. Dates arrive as Date objects (first paint) or ISO strings (later pages). */
 type WireReply = Omit<ReplyView, 'createdAt'> & { createdAt: Date | string };
@@ -57,15 +58,23 @@ export function FenceSection({
   const patchCard = (id: string, fn: (c: WireCard) => WireCard) =>
     setCards((all) => all.map((c) => (c.id === id ? fn(c) : c)));
 
-  async function nail(body: string): Promise<boolean> {
+  async function nail(body: string, photoId?: string): Promise<boolean> {
     setError(undefined);
-    const res = await postJson<{ card: WireCard }>(`/api/porch/${handle}/fence`, { body });
+    const res = await postJson<{ card: WireCard }>(`/api/porch/${handle}/fence`, {
+      body,
+      ...(photoId ? { photoId } : {}),
+    });
     if (res.ok && res.data) {
       const card = res.data.card;
       setCards((all) => [card, ...all]);
       return true;
     }
-    setError(res.error?.fields?.body ?? res.error?.message ?? 'That did not work. Try again.');
+    setError(
+      res.error?.fields?.body ??
+        res.error?.fields?.photo ??
+        res.error?.message ??
+        'That did not work. Try again.',
+    );
     return false;
   }
 
@@ -172,7 +181,11 @@ export function FenceSection({
           Cards on this Fence wait for {ownerName} to approve them before others see them.
         </p>
       )}
-      <PostCardComposer kind="card" onSubmit={nail} />
+      <PostCardComposer
+        kind="card"
+        onSubmit={nail}
+        {...(initial.canAddPhoto ? { onPhoto: (file: File) => uploadPhoto('/api/me/card-photo', file) } : {})}
+      />
     </div>
   ) : undefined;
 
@@ -238,6 +251,7 @@ export function FenceSection({
               ? { replyComposer: <PostCardComposer kind="reply" onSubmit={(b) => reply(c.id, b)} /> }
               : {})}
             actions={cardMenu(c)}
+            photo={c.photo}
           />
         ))}
       </Fence>

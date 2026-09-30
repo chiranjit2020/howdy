@@ -1,13 +1,13 @@
 import { randomUUID } from 'node:crypto';
 import { media } from '@db/schema';
-import { and, count, eq, inArray, lt, sql } from 'drizzle-orm';
+import { and, count, eq, inArray, isNull, lt, sql } from 'drizzle-orm';
 import { getDb } from '@/platform/db';
 import { AppError } from '@/platform/errors';
 import { logger } from '@/platform/logger';
 import { enforceRateLimit } from '@/platform/rate-limit';
 import { getObjectStore, type UploadTarget } from '@/platform/storage';
 import { PORTRAIT_MAX_BYTES, type PortraitType } from '@/shared/validation/media';
-import { processPortrait } from './image';
+import { processCardPhoto, processPortrait } from './image';
 
 const rule = (limit: number, windowSec: number) => ({ limit, windowSec });
 export const RATE = {
@@ -85,7 +85,7 @@ export async function startPortraitUpload(
   const stale = await db
     .select({ id: media.id, objectKey: media.objectKey })
     .from(media)
-    .where(and(eq(media.ownerId, userId), eq(media.status, 'pending')));
+    .where(and(eq(media.ownerId, userId), eq(media.status, 'pending'), eq(media.kind, 'portrait')));
   await destroy(stale);
 
   // A random key: it says nothing about who owns the file.
@@ -193,6 +193,147 @@ export async function completePortrait(userId: string, mediaId: string): Promise
   // Clean up after the fact: the raw upload and the Portrait that was replaced (each: object first, then its row).
   await destroy(retired);
   return { version: pending.id };
+}
+
+// --- Post Card photos (ADR-031) ---------------------------------------------------------------------------------------
+
+/** Card photos waiting to be nailed are thrown away after this long (the same as an unfinished upload). */
+export const UNATTACHED_TTL_MINUTES = 60;
+
+/**
+ * Step 1 of a card photo: reserve an id and a signed upload URL. One unfinished card photo at a time: asking again
+ * discards the previous one (a Porch photo upload is left alone).
+ */
+export async function startCardPhotoUpload(
+  userId: string,
+  file: { contentType: PortraitType; size: number },
+): Promise<StartedUpload> {
+  await enforceRateLimit(`media:start:${userId}`, RATE.start);
+  if (file.size > PORTRAIT_MAX_BYTES) throw new AppError('VALIDATION_FAILED');
+  const db = getDb();
+  const stale = await db
+    .select({ id: media.id, objectKey: media.objectKey })
+    .from(media)
+    .where(and(eq(media.ownerId, userId), eq(media.status, 'pending'), eq(media.kind, 'card_photo')));
+  await destroy(stale);
+  const objectKey = `incoming/${randomUUID()}`;
+  const [row] = await db
+    .insert(media)
+    .values({ ownerId: userId, kind: 'card_photo', status: 'pending', objectKey })
+    .returning({ id: media.id });
+  const upload = await store().createUpload(objectKey, file);
+  return { mediaId: row!.id, upload };
+}
+
+/**
+ * Step 2: read the upload back, decode and re-encode it, and keep the result ready to be nailed (on no card yet). The
+ * uploaded original is deleted either way. Someone else's id, a finished one and a missing one are the same 404.
+ */
+export async function completeCardPhoto(
+  userId: string,
+  mediaId: string,
+): Promise<{ mediaId: string; width: number; height: number }> {
+  await enforceRateLimit(`media:complete:${userId}`, RATE.complete);
+  const db = getDb();
+  const [pending] = await db
+    .select({ id: media.id, objectKey: media.objectKey })
+    .from(media)
+    .where(
+      and(
+        eq(media.id, mediaId),
+        eq(media.ownerId, userId),
+        eq(media.kind, 'card_photo'),
+        eq(media.status, 'pending'),
+      ),
+    )
+    .limit(1);
+  if (!pending) throw new AppError('NOT_FOUND');
+  const reject = async (message: string): Promise<never> => {
+    await destroy([pending]);
+    throw new AppError('VALIDATION_FAILED', { message, fields: { file: message } });
+  };
+  const size = await store().size(pending.objectKey);
+  if (size === null) return reject('We did not receive your photo. Please try again.');
+  if (size > PORTRAIT_MAX_BYTES) return reject('Photos can be at most 5 MB.');
+  const original = await store().get(pending.objectKey, PORTRAIT_MAX_BYTES);
+  if (!original) return reject('We did not receive your photo. Please try again.');
+  let processed;
+  try {
+    processed = await processCardPhoto(original);
+  } catch (err) {
+    await destroy([pending]);
+    throw err;
+  }
+  const finalKey = `cards/${randomUUID()}.webp`;
+  await store().put(finalKey, processed.data, 'image/webp');
+  let raw: { id: string; objectKey: string };
+  try {
+    raw = await db.transaction(async (tx) => {
+      const promoted = await tx
+        .update(media)
+        .set({
+          status: 'ready',
+          objectKey: finalKey,
+          contentType: 'image/webp',
+          byteSize: processed.data.length,
+          width: processed.width,
+          height: processed.height,
+          updatedAt: sql`now()`,
+        })
+        .where(and(eq(media.id, pending.id), eq(media.status, 'pending')))
+        .returning({ id: media.id });
+      if (promoted.length === 0) throw new AppError('NOT_FOUND');
+      // The raw upload gets a row of its own, marked for deletion, in the same step (see completePortrait).
+      const [r] = await tx
+        .insert(media)
+        .values({ ownerId: userId, kind: 'card_photo', status: 'retired', objectKey: pending.objectKey })
+        .returning({ id: media.id, objectKey: media.objectKey });
+      return r!;
+    });
+  } catch (err) {
+    await store()
+      .delete(finalKey)
+      .catch(() => undefined);
+    throw err;
+  }
+  await destroy([raw]);
+  return { mediaId: pending.id, width: processed.width, height: processed.height };
+}
+
+/**
+ * The bytes of a card photo. This does NOT decide who may look: the caller has already applied the card's own rules
+ * (fence.cardPhotoFor) and passes the id it got from there.
+ */
+export async function readCardPhoto(mediaId: string): Promise<Buffer | null> {
+  const [row] = await getDb()
+    .select({ objectKey: media.objectKey })
+    .from(media)
+    .where(and(eq(media.id, mediaId), eq(media.kind, 'card_photo'), eq(media.status, 'ready')))
+    .limit(1);
+  if (!row) return null;
+  return store().get(row.objectKey, SERVE_MAX_BYTES);
+}
+
+/**
+ * Throw away card photos that are on no card: never nailed within the hour, or whose card has been removed (its
+ * `card_id` went to null). Object first, then row. Safe to call right after a card is removed, and daily.
+ */
+export async function purgeDetachedCardPhotos(
+  now: Date = new Date(),
+): Promise<{ cardPhotosRemoved: number }> {
+  const cutoff = new Date(now.getTime() - UNATTACHED_TTL_MINUTES * 60_000);
+  const rows = await getDb()
+    .select({ id: media.id, objectKey: media.objectKey })
+    .from(media)
+    .where(
+      and(
+        eq(media.kind, 'card_photo'),
+        eq(media.status, 'ready'),
+        isNull(media.cardId),
+        lt(media.createdAt, cutoff),
+      ),
+    );
+  return { cardPhotosRemoved: await destroy(rows, ['ready']) };
 }
 
 /** Remove my Portrait (the initials avatar comes back). Returns whether there was one. */

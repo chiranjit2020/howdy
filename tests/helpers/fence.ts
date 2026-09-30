@@ -45,6 +45,7 @@ export interface Card {
   myReaction: string | null;
   replies: Reply[];
   author: { handle: string; displayName: string };
+  photo: { url: string; width: number; height: number } | null;
 }
 
 async function dynamic(

@@ -265,6 +265,15 @@ function Queue({ initial }: { initial: QueuePage }) {
                   <Person who={r.reporter} gone="A former member" /> reported{' '}
                   <Person who={r.target} gone="an account that no longer exists" />
                 </p>
+                {r.cardHasPhoto && (
+                  <Img
+                    src={`/api/moderation/reports/${r.id}/card-photo`}
+                    width={240}
+                    height={240}
+                    alt={`The photo on the reported card by @${r.target?.handle ?? 'someone'}`}
+                    className="max-h-60 w-auto max-w-full rounded-md object-contain"
+                  />
+                )}
                 {r.subject === 'portrait' && r.canRemove && (
                   <Img
                     src={`/api/moderation/reports/${r.id}/portrait`}
