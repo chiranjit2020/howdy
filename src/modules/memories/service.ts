@@ -17,7 +17,8 @@ import type { PortraitTint } from '@/shared/validation/profile';
 const READ: RateLimitRule = { limit: 120, windowSec: 60 };
 const MAX_EACH = 20;
 
-type Person = { handle: string; displayName: string; portraitTint: PortraitTint };
+/** `portraitUrl` is filled in by the app layer only when the viewer may see it. */
+type Person = { handle: string; displayName: string; portraitTint: PortraitTint; portraitUrl?: string };
 const personOf = (c: PersonCard): Person => ({
   handle: c.handle,
   displayName: c.displayName,

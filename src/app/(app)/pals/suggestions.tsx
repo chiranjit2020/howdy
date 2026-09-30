@@ -54,7 +54,7 @@ export function Suggestions({ initial }: { initial: PalSuggestion[] }) {
         <ul className="flex flex-col gap-3">
           {list.map((s) => (
             <li key={s.handle} className="flex flex-wrap items-center gap-3">
-              <Avatar name={s.displayName} tint={s.portraitTint} size="sm" />
+              <Avatar name={s.displayName} tint={s.portraitTint} src={s.portraitUrl} size="sm" />
               <span className="min-w-0 flex-1">
                 <Link href={`/porch/${s.handle}`} className="block font-semibold [overflow-wrap:anywhere]">
                   {s.displayName}

@@ -8,6 +8,13 @@ _Last updated: 2026-09-29_
 migration `0024` must go on `howdy_dev` and `howdy_prod` before its code is pushed. Phases 0–12 are live. This was the
 last phase in the master prompt's build order (§61).
 
+## 2026-10-01 — Portraits everywhere
+
+People's photos now show wherever they are listed: Post Cards and replies, Whispers (list, thread, held tray), Chimes
+(photo with the Chime's icon in its corner), Tracks, Town Hall members, "Pals you may know", Memories and Time Capsules —
+only when the viewer may open that person's Porch (ADR-015 updated). Tests: `portraits-in-lists` (3) + batch
+equivalence + e2e `portraits-in-lists`; mutation 3 of 4 caught, the 4th covered by a second layer.
+
 ## 2026-10-01 — moved to Singapore
 
 Database (Neon `howdy-sg`, `aws-ap-southeast-1`), Redis (Upstash, Singapore) and the app servers (`sin1`) now sit
@@ -562,7 +569,7 @@ layers covered for them); direct tests of the recorder now catch both. All 15 ca
 
 **All thirteen phases of the master prompt's build order are built** (Phase 13, 2026-09-30). What is left is your
 call or waits for real use: moving to Singapore (runbook); image moderation (deferred); an audit-log retention period
-(legal); a self-service data export; Portraits in lists / cards / Chimes; capsules to a Town Hall.
+(legal); a self-service data export; capsules to a Town Hall.
 Tributes/Marks/Town Halls follow-ups: revisit whether Tribute/Mark giving should ever
 widen beyond Posse-only; a Town Hall shared feed if the need becomes real; Town Hall roles beyond owner/member.
 

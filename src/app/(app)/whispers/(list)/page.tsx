@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { attachPortraits } from '@/app/_lib/social';
 import { requireUser } from '@/modules/auth';
 import { getOwnRanch } from '@/modules/profiles';
 import { countHeld, listThreads } from '@/modules/whispers';
@@ -17,6 +18,7 @@ export default async function WhispersPage() {
     // Best-effort: the tray link is a convenience, never a reason for the list to fail.
     countHeld(user.id).catch(() => 0),
   ]);
+  await attachPortraits(user.id, threads);
   return (
     <>
       <main id="main" className="mx-auto flex w-full max-w-xl flex-col gap-4 py-4 sm:gap-6 sm:py-8">
@@ -40,7 +42,7 @@ export default async function WhispersPage() {
                   href={`/whispers/${t.handle}`}
                   className="flex min-h-11 items-center gap-3 rounded-lg bg-surface p-3 no-underline shadow-clay-sm"
                 >
-                  <Avatar name={t.displayName} tint={t.portraitTint} />
+                  <Avatar name={t.displayName} tint={t.portraitTint} src={t.portraitUrl} />
                   <span className="min-w-0 flex-1">
                     <span className="block text-body font-semibold [overflow-wrap:anywhere] text-text-primary">
                       {t.displayName}

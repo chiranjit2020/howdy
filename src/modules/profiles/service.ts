@@ -1,7 +1,7 @@
 import { profiles, users } from '@db/schema';
 import { and, desc, eq, gt, inArray, isNotNull, lte, sql } from 'drizzle-orm';
 import { can, type Actor, type FenceResource } from '@/modules/authz';
-import { relationshipOf } from '@/modules/relationships';
+import { fenceStandings, relationshipOf } from '@/modules/relationships';
 import { getDb } from '@/platform/db';
 import { AppError } from '@/platform/errors';
 import { emit } from '@/platform/events';
@@ -383,6 +383,40 @@ export async function mayViewRanch(viewerId: string, ownerId: string): Promise<b
     { ownerId, ranchVisibility, signalVisibility },
     { relationship: await relationshipOf(ownerId, viewerId) },
   ).allow;
+}
+
+/**
+ * `mayViewRanch` for many people at once, by handle, in three queries whatever their number: which of `handles` could
+ * `viewerId` open right now? Answers handle → user id for those only (the viewer's own handle included). Built from the
+ * batched lookups already proven equal to the single ones, then the same policy call, so every answer matches
+ * `mayViewRanch` (tests/security/batch-equivalence.test.ts). Used to decide whose Portrait a list may show.
+ */
+export async function viewableRanches(viewerId: string, handles: string[]): Promise<Map<string, string>> {
+  const wanted = [...new Set(handles)];
+  if (wanted.length === 0) return new Map();
+  const rows = await getDb()
+    .select({ userId: users.id, handle: users.handle })
+    .from(users)
+    .where(and(inArray(users.handle, wanted), eq(users.status, 'active')));
+  const ids = rows.map((r) => r.userId);
+  const [resources, standings] = await Promise.all([getFenceResources(ids), fenceStandings(ids, viewerId)]);
+  const out = new Map<string, string>();
+  for (const { userId, handle } of rows) {
+    const resource = resources.get(userId);
+    const standing = standings.get(userId);
+    if (!resource || !standing) continue;
+    const { ranchVisibility, signalVisibility } = resource;
+    const allowed =
+      userId === viewerId ||
+      can(
+        { kind: 'user', id: viewerId, status: 'active' },
+        'profile:view',
+        { ownerId: userId, ranchVisibility, signalVisibility },
+        { relationship: standing.relationship },
+      ).allow;
+    if (allowed) out.set(handle, userId);
+  }
+  return out;
 }
 
 /** Owner-only actions still go through the policy so there is exactly one place where "who may do what" is decided. */

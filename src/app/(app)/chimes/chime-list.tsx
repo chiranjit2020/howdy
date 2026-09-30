@@ -97,6 +97,9 @@ export function ChimeList({ initial, seenAt }: { initial: Page; seenAt: string }
             createdAt={c.at}
             unread={c.unread}
             href={c.href}
+            {...(c.actor.portraitUrl
+              ? { photo: { name: c.actor.displayName, src: c.actor.portraitUrl } }
+              : {})}
           />
         ))}
       </ul>

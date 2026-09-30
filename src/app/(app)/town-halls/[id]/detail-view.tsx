@@ -106,7 +106,7 @@ export function TownHallDetailView({
             <ul className="flex flex-col gap-3">
               {members.map((m) => (
                 <li key={m.handle} className="flex items-center gap-3">
-                  <Avatar name={m.displayName} tint={m.portraitTint} size="sm" />
+                  <Avatar name={m.displayName} tint={m.portraitTint} src={m.portraitUrl} size="sm" />
                   <span className="min-w-0 flex-1 text-body text-text-primary">
                     {m.displayName} <span className="text-text-secondary">@{m.handle}</span>
                   </span>

@@ -30,7 +30,8 @@ export const RATE = {
 export const MAX_SEALED = 20;
 export const MAX_SEALED_PER_PAL = 3;
 
-type Person = { handle: string; displayName: string; portraitTint: PortraitTint };
+/** `portraitUrl` is filled in by the app layer only when the viewer may see it. */
+type Person = { handle: string; displayName: string; portraitTint: PortraitTint; portraitUrl?: string };
 const personOf = (c: PersonCard): Person => ({
   handle: c.handle,
   displayName: c.displayName,

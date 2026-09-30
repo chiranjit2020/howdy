@@ -47,12 +47,15 @@ export function ThreadView({
   handle,
   displayName,
   portraitTint,
+  portraitUrl,
   initial,
   wsUrl,
 }: {
   handle: string;
   displayName: string;
   portraitTint: PortraitTint;
+  /** Their Portrait, only when I may see it. */
+  portraitUrl?: string | undefined;
   initial: { messages: WhisperMessage[]; hasMore: boolean; seenUpTo?: number | undefined };
   wsUrl: string | undefined;
 }) {
@@ -306,7 +309,7 @@ export function ThreadView({
   return (
     <>
       <header className="flex flex-wrap items-center gap-3">
-        <Avatar name={displayName} tint={portraitTint} />
+        <Avatar name={displayName} tint={portraitTint} src={portraitUrl} />
         <div className="min-w-0 flex-1">
           <h1 className="text-title [overflow-wrap:anywhere] text-text-primary">{displayName}</h1>
           <p className="text-caption text-text-secondary">

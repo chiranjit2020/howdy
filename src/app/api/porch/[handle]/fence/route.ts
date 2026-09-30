@@ -1,6 +1,7 @@
 import { optionalSession, requestContext, requireSession } from '@/modules/auth';
 import type { Actor } from '@/modules/authz';
 import { listFence, postCard } from '@/modules/fence';
+import { attachPortraits } from '@/app/_lib/social';
 import { AppError } from '@/platform/errors';
 import { readJson } from '@/platform/http/body';
 import { json, route } from '@/platform/http/route';
@@ -27,6 +28,10 @@ export const GET = route(async ({ req, requestId, params }) => {
     limit: query.data.limit,
   });
   if (!page) throw new AppError('NOT_FOUND');
+  await attachPortraits(
+    session?.user.id,
+    page.cards.flatMap((c) => [c.author, ...c.replies.map((reply) => reply.author)]),
+  );
   return json(page);
 });
 
@@ -37,5 +42,7 @@ export const GET = route(async ({ req, requestId, params }) => {
 export const POST = route(async ({ req, params }) => {
   const { user } = await requireSession(req);
   const { body, photoId } = await readJson(req, postCardSchema);
-  return json({ card: await postCard(user.id, (await params).handle ?? '', body, photoId) }, { status: 201 });
+  const card = await postCard(user.id, (await params).handle ?? '', body, photoId);
+  await attachPortraits(user.id, [card.author]);
+  return json({ card }, { status: 201 });
 });

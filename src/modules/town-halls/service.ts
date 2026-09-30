@@ -40,6 +40,8 @@ export interface MemberRef {
   handle: string;
   displayName: string;
   portraitTint: PortraitTint;
+  /** Filled in by the app layer only when the viewer may see it. */
+  portraitUrl?: string;
   role: 'owner' | 'member';
 }
 

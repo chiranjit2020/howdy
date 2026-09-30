@@ -1,5 +1,5 @@
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
-import { getFenceResource, getFenceResources } from '@/modules/profiles';
+import { getFenceResource, getFenceResources, mayViewRanch, viewableRanches } from '@/modules/profiles';
 import { fenceStanding, fenceStandings } from '@/modules/relationships';
 import { getPool } from '@/platform/db';
 import { setRateLimiter } from '@/platform/rate-limit';
@@ -78,6 +78,18 @@ describe('batched lookups give exactly the single-owner answers', () => {
       expect(fences.get(id) ?? null, `fence for ${id}`).toEqual(await getFenceResource(id));
       seen.add((await fenceStanding(id, meId)).relationship);
     }
+    // Whose Portrait a list may show (viewableRanches) must be exactly who could open that Porch (mayViewRanch).
+    const handles = [me.handle, ...Object.values(o).map((p) => p.handle)];
+    const viewable = await viewableRanches(meId, [...handles, 'nobody-by-this-name']);
+    for (const handle of handles) {
+      const id = await userId(handle);
+      const single = id === meId || (await mayViewRanch(meId, id));
+      expect(viewable.has(handle), `viewable ${handle}`).toBe(single);
+      if (single) expect(viewable.get(handle)).toBe(id);
+    }
+    // Both answers occur in the fixture (a Porch I may open, and ones I may not).
+    expect(new Set(handles.map((h) => viewable.has(h)))).toEqual(new Set([true, false]));
+    expect(viewable.has('nobody-by-this-name')).toBe(false);
     // The fixture really covers every state the policy distinguishes.
     expect([...seen].sort()).toEqual(
       [
@@ -101,5 +113,7 @@ describe('batched lookups give exactly the single-owner answers', () => {
     expect(await fenceStandings([], meId)).toEqual(new Map());
     expect(await getFenceResources([])).toEqual(new Map());
     expect((await fenceStandings([otherId, otherId], meId)).size).toBe(1);
+    expect(await viewableRanches(meId, [])).toEqual(new Map());
+    expect((await viewableRanches(meId, [other.handle, other.handle])).size).toBe(1);
   });
 });

@@ -207,6 +207,7 @@ export function FenceSection({
               name: c.author.displayName,
               handle: c.author.handle,
               tint: c.author.portraitTint,
+              avatarUrl: c.author.portraitUrl,
               verified: c.author.verified,
               trusted: c.author.trusted,
             }}
@@ -227,6 +228,7 @@ export function FenceSection({
                   name: r.author.displayName,
                   handle: r.author.handle,
                   tint: r.author.portraitTint,
+                  avatarUrl: r.author.portraitUrl,
                   verified: r.author.verified,
                   trusted: r.author.trusted,
                 }}

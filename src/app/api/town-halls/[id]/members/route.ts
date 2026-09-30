@@ -1,5 +1,6 @@
 import { requireSession } from '@/modules/auth';
 import { listMembers } from '@/modules/town-halls';
+import { attachPortraits } from '@/app/_lib/social';
 import { AppError } from '@/platform/errors';
 import { json, route } from '@/platform/http/route';
 import { townHallsQuerySchema } from '@/shared/validation/town-halls';
@@ -16,5 +17,6 @@ export const GET = route(async ({ req, params }) => {
     limit: query.data.limit,
   });
   if (!page) throw new AppError('NOT_FOUND');
+  await attachPortraits(user.id, page.members);
   return json(page);
 });

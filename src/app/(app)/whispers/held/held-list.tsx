@@ -19,7 +19,12 @@ export function HeldList({ held }: { held: HeldWhisper[] }) {
           <li key={w.id}>
             <ClayCard className="flex flex-col gap-2">
               <div className="flex items-center gap-3">
-                <Avatar name={w.from.displayName} tint={w.from.portraitTint} size="sm" />
+                <Avatar
+                  name={w.from.displayName}
+                  tint={w.from.portraitTint}
+                  src={w.from.portraitUrl}
+                  size="sm"
+                />
                 <span className="min-w-0 flex-1 text-body [overflow-wrap:anywhere]">
                   <span className="font-semibold text-text-primary">{w.from.displayName}</span>{' '}
                   <span className="text-text-secondary">@{w.from.handle}</span>

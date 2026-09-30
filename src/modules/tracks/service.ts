@@ -62,6 +62,8 @@ export interface TrackPerson {
   handle: string;
   displayName: string;
   portraitTint: PortraitTint;
+  /** Filled in by the app layer only when the viewer may see it. */
+  portraitUrl?: string;
   when: When;
 }
 

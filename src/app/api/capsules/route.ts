@@ -1,4 +1,5 @@
 import { requireSession } from '@/modules/auth';
+import { attachPortraits } from '@/app/_lib/social';
 import { myCapsules, sealCapsule } from '@/modules/capsules';
 import { readJson } from '@/platform/http/body';
 import { json, route } from '@/platform/http/route';
@@ -9,7 +10,12 @@ export const dynamic = 'force-dynamic';
 /** My Time Capsules: opened (with words), coming to me (who + when), and sealed by me (to whom + when). ADR-028. */
 export const GET = route(async ({ req }) => {
   const { user } = await requireSession(req);
-  return json(await myCapsules(user.id));
+  const capsules = await myCapsules(user.id);
+  await attachPortraits(
+    user.id,
+    capsules.coming.flatMap((c) => (c.from ? [c.from] : [])),
+  );
+  return json(capsules);
 });
 
 /** Seal one, for me or one of my Pals. The words are not shown again until it opens — not even to me. */

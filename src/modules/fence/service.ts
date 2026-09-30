@@ -65,6 +65,8 @@ export interface AuthorRef {
   verified: boolean;
   /** Has earned the Trusted tick. */
   trusted: boolean;
+  /** Their Portrait, filled in by the app layer only when the viewer may see it. */
+  portraitUrl?: string;
 }
 
 export interface ReplyView {

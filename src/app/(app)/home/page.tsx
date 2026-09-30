@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { withCards } from '@/app/_lib/social';
+import { attachPortraits, withCards } from '@/app/_lib/social';
 import { Glyph } from '@/ui/art/glyph';
 import { listMySessions, requireUser } from '@/modules/auth';
 import { memoriesToday } from '@/modules/memories';
@@ -29,6 +29,11 @@ export default async function HomePage() {
     // Best-effort as well: a memory is a nice extra, never a reason for Home to fail.
     memoriesToday(user.id).catch(() => null),
   ]);
+  if (memories)
+    await attachPortraits(
+      user.id,
+      memories.pals.map((p) => p.pal),
+    );
   const requests = lists.incoming.length;
   // The Howdy team's current Signal ("what's new"), unless this person has turned the team's noise down.
   const announcement = news && !lists.muted.some((m) => m.handle === news.author.handle) ? news : null;

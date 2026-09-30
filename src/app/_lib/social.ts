@@ -1,5 +1,5 @@
 import { getPortraitVersions } from '@/modules/media';
-import { getCards, resolveHandle, type PersonCard } from '@/modules/profiles';
+import { getCards, resolveHandle, viewableRanches, type PersonCard } from '@/modules/profiles';
 import type { MyRelationships, PersonRef } from '@/modules/relationships';
 import { AppError } from '@/platform/errors';
 import { portraitUrl } from '@/shared/portrait';
@@ -14,6 +14,46 @@ export async function targetFor(handle: string | undefined): Promise<PersonCard>
   const person = handle ? await resolveHandle(handle) : null;
   if (!person) throw new AppError('NOT_FOUND');
   return person;
+}
+
+/**
+ * Portrait addresses for the people in a list, by handle, but ONLY for those whose Porch the viewer may open: the same
+ * rule the Portrait route applies, decided per viewer and per person. Leaving everyone else out (rather than giving an
+ * address that would 404) means a list never reveals who has a photo behind a hidden Porch. Best-effort: if anything
+ * fails, the map is empty and initials show.
+ */
+export async function portraitsFor(viewerId: string, handles: string[]): Promise<Map<string, string>> {
+  try {
+    const viewable = await viewableRanches(viewerId, handles);
+    const versions = await getPortraitVersions([...viewable.values()]);
+    const out = new Map<string, string>();
+    for (const [handle, id] of viewable) {
+      const version = versions.get(id);
+      if (version) out.set(handle, portraitUrl(handle, version));
+    }
+    return out;
+  } catch {
+    return new Map();
+  }
+}
+
+/**
+ * Fill in `portraitUrl` on every person in `people` whose Portrait `viewerId` may see (see `portraitsFor`); everyone else
+ * keeps their initials. Signed out, nobody's photo shows (the Portrait route needs a session), so nothing is looked up.
+ */
+export async function attachPortraits(
+  viewerId: string | undefined,
+  people: { handle: string; portraitUrl?: string }[],
+): Promise<void> {
+  if (!viewerId || people.length === 0) return;
+  const urls = await portraitsFor(
+    viewerId,
+    people.map((p) => p.handle),
+  );
+  for (const p of people) {
+    const url = urls.get(p.handle);
+    if (url) p.portraitUrl = url;
+  }
 }
 
 /** What a list entry looks like on the wire: a name and handle, never an id. */

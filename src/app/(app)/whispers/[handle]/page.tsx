@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import { attachPortraits } from '@/app/_lib/social';
 import { requireUser } from '@/modules/auth';
 import { getThread } from '@/modules/whispers';
 import { getEnv } from '@/platform/config/env';
@@ -35,6 +36,7 @@ export default async function ThreadPage({ params }: { params: Promise<{ handle:
     throw err;
   }
   if (!page) notFound();
+  await attachPortraits(user.id, [page.person]);
   return (
     <>
       <main id="main" className="mx-auto flex w-full max-w-xl flex-col gap-4 py-4 sm:py-6">
@@ -42,6 +44,7 @@ export default async function ThreadPage({ params }: { params: Promise<{ handle:
           handle={page.person.handle}
           displayName={page.person.displayName}
           portraitTint={page.person.portraitTint}
+          portraitUrl={page.person.portraitUrl}
           initial={{ messages: page.messages, hasMore: page.hasMore, seenUpTo: page.seenUpTo }}
           wsUrl={getEnv().WS_PUBLIC_URL}
         />

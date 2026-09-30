@@ -1,3 +1,4 @@
+import { attachPortraits } from '@/app/_lib/social';
 import { requireUser } from '@/modules/auth';
 import { listChimes } from '@/modules/notifications';
 import { pushPublicKey } from '@/modules/push';
@@ -12,6 +13,10 @@ export default async function ChimesPage() {
   const user = await requireUser();
   const seenAt = new Date().toISOString(); // what this page shows; anything newer stays unread
   const page = await listChimes(user.id, {});
+  await attachPortraits(
+    user.id,
+    page.chimes.map((c) => c.actor),
+  );
   return (
     <>
       <main id="main" className="mx-auto flex w-full max-w-xl flex-col gap-4 py-4 sm:gap-6 sm:py-8">

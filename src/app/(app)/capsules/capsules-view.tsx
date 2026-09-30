@@ -120,7 +120,12 @@ export function CapsulesView({
               <li key={`${c.from?.handle ?? 'me'}-${c.openOn}-${i}`}>
                 <ClayCard className="flex items-center gap-3">
                   {c.from ? (
-                    <Avatar name={c.from.displayName} tint={c.from.portraitTint} size="sm" />
+                    <Avatar
+                      name={c.from.displayName}
+                      tint={c.from.portraitTint}
+                      src={c.from.portraitUrl}
+                      size="sm"
+                    />
                   ) : (
                     <span aria-hidden="true" className="text-title">
                       💌

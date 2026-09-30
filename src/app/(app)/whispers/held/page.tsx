@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { attachPortraits } from '@/app/_lib/social';
 import { requireUser } from '@/modules/auth';
 import { listHeld } from '@/modules/whispers';
 import { ClayCard, EmptyState } from '@/ui/primitives';
@@ -13,6 +14,10 @@ export const metadata = { title: 'Held back', robots: { index: false, follow: fa
 export default async function HeldPage() {
   const user = await requireUser();
   const held = await listHeld(user.id);
+  await attachPortraits(
+    user.id,
+    held.map((w) => w.from),
+  );
   return (
     <main id="main" className="mx-auto flex w-full max-w-xl flex-col gap-4 py-4 sm:gap-6 sm:py-8">
       <div className="flex flex-col gap-1">

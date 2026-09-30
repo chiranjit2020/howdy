@@ -27,6 +27,8 @@ export interface PalSuggestion {
   handle: string;
   displayName: string;
   portraitTint: PortraitTint;
+  /** Filled in by the app layer only when the viewer may see it. */
+  portraitUrl?: string;
   /** How many of my Pals are their Pals too. */
   shared: number;
   /** Up to two of those shared Pals, to say why. They are my own Pals, so I may see them. */

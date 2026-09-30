@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Glyph } from '../art/glyph';
 import { cn } from '../cn';
+import { Avatar } from '../primitives/avatar';
 import { RelativeTime } from './time';
 
 export type ChimeType =
@@ -46,6 +47,7 @@ export function ChimeItem({
   unread,
   href,
   onOpen,
+  photo,
 }: {
   type: ChimeType;
   text: string;
@@ -54,15 +56,26 @@ export function ChimeItem({
   href?: string;
   /** Called when the link is followed (e.g. to mark the Chime read). */
   onOpen?: () => void;
+  /** The person it is about, when the viewer may see their Portrait: shown with the Chime's icon in its corner. */
+  photo?: { name: string; src: string };
 }) {
   const content = (
     <>
-      <span
-        aria-hidden="true"
-        className="inline-flex size-11 shrink-0 items-center justify-center rounded-pill bg-surface-sunken text-title"
-      >
-        <Glyph emoji={ICON[type]} size="badge" />
-      </span>
+      {photo ? (
+        <span aria-hidden="true" className="relative inline-flex shrink-0">
+          <Avatar name={photo.name} src={photo.src} />
+          <span className="absolute -right-1 -bottom-1 inline-flex size-6 items-center justify-center rounded-pill bg-surface text-caption shadow-clay-sm">
+            <Glyph emoji={ICON[type]} size="free" className="size-4" />
+          </span>
+        </span>
+      ) : (
+        <span
+          aria-hidden="true"
+          className="inline-flex size-11 shrink-0 items-center justify-center rounded-pill bg-surface-sunken text-title"
+        >
+          <Glyph emoji={ICON[type]} size="badge" />
+        </span>
+      )}
       <span className="min-w-0 flex-1">
         <span className="block text-body text-text-primary">
           {unread && <span className="sr-only">Unread: </span>}

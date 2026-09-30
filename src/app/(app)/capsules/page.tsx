@@ -1,4 +1,4 @@
-import { withCards } from '@/app/_lib/social';
+import { attachPortraits, withCards } from '@/app/_lib/social';
 import { requireUser } from '@/modules/auth';
 import { myCapsules } from '@/modules/capsules';
 import { listMyRelationships } from '@/modules/relationships';
@@ -18,6 +18,10 @@ export default async function CapsulesPage() {
     myCapsules(user.id),
     listMyRelationships(user.id).then(withCards),
   ]);
+  await attachPortraits(
+    user.id,
+    capsules.coming.flatMap((c) => (c.from ? [c.from] : [])),
+  );
   const today = dayOf();
   return (
     <main id="main" className="mx-auto flex w-full max-w-xl flex-col gap-4 py-4 sm:gap-6 sm:py-8">

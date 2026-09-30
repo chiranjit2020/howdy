@@ -1,3 +1,4 @@
+import { attachPortraits } from '@/app/_lib/social';
 import { requireSession } from '@/modules/auth';
 import { postReply } from '@/modules/fence';
 import { readJson } from '@/platform/http/body';
@@ -10,5 +11,7 @@ export const dynamic = 'force-dynamic';
 export const POST = route(async ({ req, params }) => {
   const { user } = await requireSession(req);
   const { body } = await readJson(req, postReplySchema);
-  return json({ reply: await postReply(user.id, (await params).id ?? '', body) }, { status: 201 });
+  const reply = await postReply(user.id, (await params).id ?? '', body);
+  await attachPortraits(user.id, [reply.author]);
+  return json({ reply }, { status: 201 });
 });

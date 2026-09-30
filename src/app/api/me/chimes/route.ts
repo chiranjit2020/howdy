@@ -1,3 +1,4 @@
+import { attachPortraits } from '@/app/_lib/social';
 import { requireSession } from '@/modules/auth';
 import { listChimes } from '@/modules/notifications';
 import { AppError } from '@/platform/errors';
@@ -14,5 +15,10 @@ export const GET = route(async ({ req }) => {
   const { user } = await requireSession(req);
   const query = chimeQuerySchema.safeParse(Object.fromEntries(new URL(req.url).searchParams));
   if (!query.success) throw new AppError('BAD_REQUEST');
-  return json(await listChimes(user.id, query.data));
+  const page = await listChimes(user.id, query.data);
+  await attachPortraits(
+    user.id,
+    page.chimes.map((c) => c.actor),
+  );
+  return json(page);
 });

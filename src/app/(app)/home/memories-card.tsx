@@ -22,7 +22,7 @@ export function MemoriesCard({ memories, handle }: { memories: MemoriesToday; ha
       <ul className="flex flex-col gap-3">
         {pals.map((p) => (
           <li key={`pal-${p.pal.handle}`} className="flex items-center gap-3">
-            <Avatar name={p.pal.displayName} tint={p.pal.portraitTint} size="sm" />
+            <Avatar name={p.pal.displayName} tint={p.pal.portraitTint} src={p.pal.portraitUrl} size="sm" />
             <p className="min-w-0 text-body [overflow-wrap:anywhere] text-text-primary">
               You and{' '}
               <Link href={`/porch/${p.pal.handle}`} className="font-semibold">

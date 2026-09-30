@@ -1,4 +1,4 @@
-import { withCards } from '@/app/_lib/social';
+import { attachPortraits, withCards } from '@/app/_lib/social';
 import { requireUser } from '@/modules/auth';
 import { listMyRelationships } from '@/modules/relationships';
 import { palSuggestions } from '@/modules/suggestions';
@@ -17,6 +17,7 @@ export default async function PossePage() {
     // Best-effort: suggestions are an extra, never a reason for the Pals page to fail.
     palSuggestions(user.id).catch(() => []),
   ]);
+  await attachPortraits(user.id, suggestions);
   return (
     <>
       <main id="main" className="mx-auto flex max-w-xl flex-col gap-4 py-4 sm:gap-6 sm:py-8">

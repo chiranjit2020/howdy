@@ -251,7 +251,8 @@ export interface ChimeView {
   text: string;
   /** Where tapping it goes. Always an in-app path. */
   href: string;
-  actor: { handle: string; displayName: string; portraitTint: PortraitTint };
+  /** `portraitUrl` is filled in by the app layer only when the viewer may see it. */
+  actor: { handle: string; displayName: string; portraitTint: PortraitTint; portraitUrl?: string };
   at: Date;
   unread: boolean;
 }

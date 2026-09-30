@@ -1,3 +1,4 @@
+import { attachPortraits } from '@/app/_lib/social';
 import { requireUser } from '@/modules/auth';
 import { getOwnRanch } from '@/modules/profiles';
 import { listTracks } from '@/modules/tracks';
@@ -13,6 +14,8 @@ const ORDER: CoarseWhen[] = ['today', 'yesterday', 'this-week'];
 export default async function TracksPage() {
   const user = await requireUser();
   const [tracks, ranch] = await Promise.all([listTracks(user.id), getOwnRanch(user.id)]);
+  // Named visitors only: the hidden ones stay counts, with nothing to attach a photo to.
+  await attachPortraits(user.id, tracks.people);
   const hiddenTotal = ORDER.reduce((n, w) => n + tracks.hidden[w], 0);
   return (
     <>
@@ -52,7 +55,7 @@ export default async function TracksPage() {
                   {tracks.people.map((p) => (
                     <TrackItem
                       key={p.handle}
-                      visitor={{ name: p.displayName, handle: p.handle }}
+                      visitor={{ name: p.displayName, handle: p.handle, avatarUrl: p.portraitUrl ?? null }}
                       href={`/porch/${p.handle}`}
                       when={p.when}
                     />

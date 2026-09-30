@@ -220,7 +220,8 @@ export async function sendWhisper(
 // ─── reading a thread ────────────────────────────────────────────────────────────────────────────────────────────────
 
 export interface ThreadPage {
-  person: { handle: string; displayName: string; portraitTint: PortraitTint };
+  /** `portraitUrl` is filled in by the app layer only when the viewer may see it. */
+  person: { handle: string; displayName: string; portraitTint: PortraitTint; portraitUrl?: string };
   /** Oldest first. */
   messages: WhisperMessage[];
   /** More messages exist in the direction that was asked for. */
@@ -329,6 +330,8 @@ export interface ThreadSummary {
   handle: string;
   displayName: string;
   portraitTint: PortraitTint;
+  /** Filled in by the app layer only when the viewer may see it. */
+  portraitUrl?: string;
   last: { body: string; mine: boolean; at: string };
   unread: number;
   /** I have muted them: their Whispers arrive but do not ring or count in the badge. */
@@ -408,7 +411,8 @@ export interface HeldWhisper {
   id: string;
   body: string;
   createdAt: string;
-  from: { handle: string; displayName: string; portraitTint: PortraitTint };
+  /** `portraitUrl` is filled in by the app layer only when the viewer may see it. */
+  from: { handle: string; displayName: string; portraitTint: PortraitTint; portraitUrl?: string };
 }
 
 /**

@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import { attachPortraits } from '@/app/_lib/social';
 import { requireUser } from '@/modules/auth';
 import { getTownHall, listMembers } from '@/modules/town-halls';
 import { TownHallDetailView } from './detail-view';
@@ -12,6 +13,7 @@ export default async function TownHallPage({ params }: { params: Promise<{ id: s
   const townHall = await getTownHall(user.id, id);
   if (!townHall) notFound();
   const members = townHall.membership === 'active' ? await listMembers(user.id, id, {}) : null;
+  if (members) await attachPortraits(user.id, members.members);
 
   return (
     <main id="main" className="mx-auto flex max-w-2xl flex-col gap-4 py-4 sm:gap-6 sm:py-8">

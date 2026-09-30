@@ -54,8 +54,11 @@ from core request handling. The scope decided for this phase is **Portrait (avat
 - The bucket needs a **CORS rule allowing `PUT` from `APP_URL`** (documented in `.env.example`). This was **not exercised against a real
   R2 bucket**: the signing is unit-tested (the URL signs type and length, expires in 300 s, never contains the secret; commands and
   "not found" handling against a fake client), but the first real upload happens when credentials exist.
-- Photos show on your own avatar (top bar, Workshop) and on the Ranch header for people allowed to open it. Lists, Post Cards, Chimes
-  and Whispers still show the coloured initials: showing a photo there needs a per-viewer decision for every row and is a follow-up.
+- Photos show on your own avatar (top bar, Workshop) and on the Ranch header for people allowed to open it. **Since 2026-10-01
+  they also show everywhere people are listed** (Post Cards and replies, Whispers, Chimes, Tracks, Town Hall members, "Pals
+  you may know", Memories, Time Capsules): `viewableRanches` (profiles) decides per viewer and per person, in bulk, with the
+  same answers as `mayViewRanch` (batch-equivalence test), and `attachPortraits` (app layer) gives an address only then —
+  so a list never reveals who has a photo behind a hidden Porch, a block or a suspension.
 - No image moderation (nudity/violence detection) and no reporting of a photo yet; the report flow (Phase 11) should learn a `portrait` subject.
 - Portraits are visible only to signed-in people, even for a Ranch that is open to everyone.
 

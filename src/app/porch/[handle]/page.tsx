@@ -10,7 +10,7 @@ import { getRanchForViewer, resolveHandle, type RanchView } from '@/modules/prof
 import { getRelationshipView, listMyRelationships } from '@/modules/relationships';
 import { listTributes, listWaitingTributes } from '@/modules/tributes';
 import { recheckTrust } from '@/modules/trust';
-import { withCards } from '@/app/_lib/social';
+import { attachPortraits, withCards } from '@/app/_lib/social';
 import { getEnv } from '@/platform/config/env';
 import { AppError } from '@/platform/errors';
 import { clientIp } from '@/platform/http/client-ip';
@@ -135,6 +135,11 @@ export default async function RanchPage({ params }: { params: Promise<{ handle: 
     // Only the owner sees their own Trusted-tick checklist. Checking also brings the stored tick up to date.
     isOwner && user ? recheckTrust(user.id) : null,
   ]);
+  // Photos for everyone on the Fence whom this viewer may see (initials for the rest).
+  await attachPortraits(
+    user?.id,
+    (fence?.cards ?? []).flatMap((c) => [c.author, ...c.replies.map((reply) => reply.author)]),
+  );
   const badge = !rel
     ? undefined
     : rel.posse === 'member'

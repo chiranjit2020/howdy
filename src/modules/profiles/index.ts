@@ -20,5 +20,6 @@ export {
   resolveHandle,
   setSignal,
   updateRanch,
+  viewableRanches,
 } from './service';
 export type { OwnRanch, PersonCard, RanchPatch, RanchView } from './service';
