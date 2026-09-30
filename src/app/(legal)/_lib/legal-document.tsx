@@ -2,23 +2,24 @@ import Link from 'next/link';
 import { Fragment } from 'react';
 import { formatLegalDate, LEGAL_DOCS, LEGAL_SLUGS, type LegalSlug } from '@/shared/legal';
 import type { Block, Inline } from '@/shared/legal-markdown';
+import { Art, type ArtName } from '@/ui/art/glyph';
 import { cn } from '@/ui/cn';
 import { Badge, ClayCard } from '@/ui/primitives';
 import { loadLegal } from './load';
 import { LegalContents, ReadingProgress } from './reading-aids';
 
 /** A little picture per Campfire Rule, so the rules read as a set of friendly cards rather than a wall of text. */
-const CAMPFIRE_ICON: Record<string, string> = {
-  'respect-the-campfire': '🔥',
-  'no-harassment': '🛑',
-  'no-hate': '🤝',
-  'no-doxxing': '🔒',
-  'no-spam': '📭',
-  'no-impersonation': '🪪',
-  'respect-boundaries': '🚧',
-  'keep-it-safe-and-legal': '⚖️',
-  'look-after-each-other': '💛',
-  'when-rules-are-broken': '🧭',
+const CAMPFIRE_ICON: Record<string, ArtName> = {
+  'respect-the-campfire': 'rule-respect-the-campfire',
+  'no-harassment': 'rule-no-harassment',
+  'no-hate': 'rule-no-hate',
+  'no-doxxing': 'rule-no-doxxing',
+  'no-spam': 'rule-no-spam',
+  'no-impersonation': 'rule-no-impersonation',
+  'respect-boundaries': 'rule-respect-boundaries',
+  'keep-it-safe-and-legal': 'rule-keep-it-safe-and-legal',
+  'look-after-each-other': 'rule-look-after-each-other',
+  'when-rules-are-broken': 'rule-when-rules-are-broken',
 };
 
 const LINK = 'font-medium text-link underline underline-offset-4 hover:text-text-primary';
@@ -163,34 +164,30 @@ export function LegalDocument({ slug }: { slug: LegalSlug }) {
               ))}
             </ClayCard>
           )}
-          {sections.map((s) => (
-            <section key={s.id} aria-labelledby={s.id}>
-              <ClayCard className="flex flex-col gap-4 sm:p-7">
-                <h2
-                  id={s.id}
-                  tabIndex={-1}
-                  className="flex scroll-mt-24 items-center gap-3 font-display text-heading text-text-primary focus:outline-none"
-                >
-                  {campfire && CAMPFIRE_ICON[s.id] && (
-                    <span
-                      aria-hidden="true"
-                      className="grid size-11 shrink-0 place-items-center rounded-full bg-surface-sunken text-title"
-                    >
-                      {CAMPFIRE_ICON[s.id]}
-                    </span>
-                  )}
-                  <a href={`#${s.id}`} className="no-underline hover:underline hover:underline-offset-4">
-                    {s.title}
-                  </a>
-                </h2>
-                <div className="flex max-w-prose flex-col gap-4">
-                  {s.blocks.map((b, i) => (
-                    <BlockView key={i} block={b} />
-                  ))}
-                </div>
-              </ClayCard>
-            </section>
-          ))}
+          {sections.map((s) => {
+            const icon = campfire ? CAMPFIRE_ICON[s.id] : undefined;
+            return (
+              <section key={s.id} aria-labelledby={s.id}>
+                <ClayCard className="flex flex-col gap-4 sm:p-7">
+                  <h2
+                    id={s.id}
+                    tabIndex={-1}
+                    className="flex scroll-mt-24 items-center gap-3 font-display text-heading text-text-primary focus:outline-none"
+                  >
+                    {icon && <Art name={icon} size="free" className="size-12 shrink-0" />}
+                    <a href={`#${s.id}`} className="no-underline hover:underline hover:underline-offset-4">
+                      {s.title}
+                    </a>
+                  </h2>
+                  <div className="flex max-w-prose flex-col gap-4">
+                    {s.blocks.map((b, i) => (
+                      <BlockView key={i} block={b} />
+                    ))}
+                  </div>
+                </ClayCard>
+              </section>
+            );
+          })}
 
           <nav aria-label="Other documents" className="flex flex-wrap gap-2 pt-2">
             {others.map((s) => (

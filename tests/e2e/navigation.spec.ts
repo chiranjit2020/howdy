@@ -82,3 +82,27 @@ test('on a desktop the sidebar has them, and there is no "More" button', async (
   }
   await me.ctx.close();
 });
+
+test('every loading outline streams inside the shell (top bar first), never on a bare page', async ({
+  browser,
+}) => {
+  // The Workshop once added its shell in the page, not a layout, so its outline arrived with no top bar or sidebar.
+  const me = await person(browser, 'navload', { viewport: { width: 1280, height: 800 } });
+  for (const path of [
+    '/home',
+    '/pals',
+    '/chimes',
+    '/tracks',
+    '/whispers',
+    '/town-halls',
+    '/workshop',
+    `/porch/${me.handle}`,
+  ]) {
+    const html = await (await me.page.request.get(path)).text();
+    const outline = html.indexOf('aria-busy="true"');
+    expect(outline, `${path} streams a loading outline`).toBeGreaterThan(-1);
+    const header = html.indexOf('<header');
+    expect(header > -1 && header < outline, `${path}: the top bar comes before the outline`).toBe(true);
+  }
+  await me.ctx.close();
+});

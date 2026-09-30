@@ -170,7 +170,7 @@ export function PostCardComposer({
               className="sr-only"
               onChange={choose}
             />
-            <span aria-hidden="true">📷</span> Add a photo
+            <Art name="camera" size="free" className="size-6" /> Add a photo
           </label>
         ) : (
           <span />

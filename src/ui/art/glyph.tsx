@@ -51,6 +51,18 @@ const FILES = {
   /** From the user's second sheet (2026-09-30) by .dev/cut-nav2.mjs. */
   'nav-capsules': { w: 96, h: 96 },
   'nav-moderation': { w: 96, h: 96 },
+  /** From the user's third sheet (2026-09-30) by .dev/cut-rules.mjs: "Add a photo", and one per Campfire Rule. */
+  camera: { w: 96, h: 96 },
+  'rule-respect-the-campfire': { w: 96, h: 96 },
+  'rule-no-harassment': { w: 96, h: 96 },
+  'rule-no-hate': { w: 96, h: 96 },
+  'rule-no-doxxing': { w: 96, h: 96 },
+  'rule-no-spam': { w: 96, h: 96 },
+  'rule-no-impersonation': { w: 96, h: 96 },
+  'rule-respect-boundaries': { w: 96, h: 96 },
+  'rule-keep-it-safe-and-legal': { w: 96, h: 96 },
+  'rule-look-after-each-other': { w: 96, h: 96 },
+  'rule-when-rules-are-broken': { w: 96, h: 96 },
 } as const;
 
 export type ArtName = keyof typeof FILES;
