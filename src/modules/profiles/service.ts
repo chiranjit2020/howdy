@@ -81,6 +81,8 @@ export interface OwnRanch extends RanchView {
   fenceReview: boolean;
   shadowWalk: boolean;
   readReceipts: boolean;
+  /** May I be suggested to Pals of my Pals ("Pals you may know", Phase 13)? */
+  discoverable: boolean;
 }
 
 export interface RanchPatch {
@@ -93,6 +95,7 @@ export interface RanchPatch {
   fenceReview?: boolean | undefined;
   shadowWalk?: boolean | undefined;
   readReceipts?: boolean | undefined;
+  discoverable?: boolean | undefined;
 }
 
 /** Create the Ranch for a new account. Called inside the sign-up transaction so every user always has one. */
@@ -119,6 +122,7 @@ interface Row {
   fenceReview: boolean;
   shadowWalk: boolean;
   readReceipts: boolean;
+  discoverable: boolean;
   earnedTick: boolean;
 }
 
@@ -137,6 +141,7 @@ const SELECT = {
   fenceReview: profiles.fenceReview,
   shadowWalk: profiles.shadowWalk,
   readReceipts: profiles.readReceipts,
+  discoverable: profiles.discoverable,
   earnedTick,
 } as const;
 
@@ -212,6 +217,7 @@ export async function getOwnRanch(userId: string, now: Date = new Date()): Promi
     fenceReview: row.fenceReview,
     shadowWalk: row.shadowWalk,
     readReceipts: row.readReceipts,
+    discoverable: row.discoverable,
   };
 }
 
@@ -233,6 +239,31 @@ export async function getFenceResource(ownerId: string): Promise<FenceResource |
     fencePosting: row.fencePosting as FencePosting,
     fenceReview: row.fenceReview,
   };
+}
+
+/**
+ * `getFenceResource` for many owners in ONE query (Phase 13): only active owners appear in the map. Same fields and the
+ * same effective visibility as the single version, so callers get identical decisions with one round trip.
+ */
+export async function getFenceResources(ownerIds: string[]): Promise<Map<string, FenceResource>> {
+  const ids = [...new Set(ownerIds)];
+  if (ids.length === 0) return new Map();
+  const rows = await getDb()
+    .select(SELECT)
+    .from(users)
+    .innerJoin(profiles, eq(profiles.userId, users.id))
+    .where(and(inArray(users.id, ids), eq(users.status, 'active')));
+  return new Map(
+    rows.map((row) => [
+      row.userId,
+      {
+        ownerId: row.userId,
+        ...effectiveVisibility(row),
+        fencePosting: row.fencePosting as FencePosting,
+        fenceReview: row.fenceReview,
+      },
+    ]),
+  );
 }
 
 /** A person as other modules and pages need to show them. Never includes email, status or privacy settings. */
@@ -379,6 +410,7 @@ export async function updateRanch(userId: string, patch: RanchPatch): Promise<Ow
   if (patch.fenceReview !== undefined) set.fenceReview = patch.fenceReview;
   if (patch.shadowWalk !== undefined) set.shadowWalk = patch.shadowWalk;
   if (patch.readReceipts !== undefined) set.readReceipts = patch.readReceipts;
+  if (patch.discoverable !== undefined) set.discoverable = patch.discoverable;
   await getDb().update(profiles).set(set).where(eq(profiles.userId, userId));
   return getOwnRanch(userId);
 }

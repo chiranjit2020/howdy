@@ -110,10 +110,13 @@ export function TendForm({
 export function BoundaryForm({
   ranchVisibility,
   signalVisibility,
+  discoverable,
   official = false,
 }: {
   ranchVisibility: Visibility;
   signalVisibility: Visibility;
+  /** Suggest me to Pals of my Pals (ADR-029). */
+  discoverable: boolean;
   /** The Howdy team account: these settings are overridden to "everyone", so say so rather than pretend. */
   official?: boolean;
 }) {
@@ -121,6 +124,7 @@ export function BoundaryForm({
   const toast = useToast();
   const [ranch, setRanch] = useState(ranchVisibility);
   const [signal, setSignal] = useState(signalVisibility);
+  const [suggestMe, setSuggestMe] = useState(discoverable);
   const [formError, setFormError] = useState<string | undefined>();
   const [busy, setBusy] = useState(false);
 
@@ -131,6 +135,7 @@ export function BoundaryForm({
     const res = await apiRequest('PATCH', '/api/me/porch', {
       ranchVisibility: ranch,
       signalVisibility: signal,
+      discoverable: suggestMe,
     });
     setBusy(false);
     if (res.ok) {
@@ -174,6 +179,12 @@ export function BoundaryForm({
             </option>
           ))}
         </Select>
+        <Switch
+          label="Suggest me to Pals of my Pals"
+          hint="People who share at least two Pals with you may see you under “Pals you may know”. Never shown to anyone you have blocked, muted or restricted, or who did the same to you."
+          checked={suggestMe}
+          onCheckedChange={setSuggestMe}
+        />
         <Button type="submit" loading={busy}>
           Save Boundary Lines
         </Button>

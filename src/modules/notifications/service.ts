@@ -1,9 +1,9 @@
 import { notificationPrefs, notifications, postCards } from '@db/schema';
 import { and, desc, eq, inArray, isNotNull, isNull, lt, lte, or, sql } from 'drizzle-orm';
 import { canFence } from '@/modules/authz';
-import { getCards, getFenceResource, type PersonCard } from '@/modules/profiles';
+import { getCards, getFenceResources, type PersonCard } from '@/modules/profiles';
 import { pushTo } from '@/modules/push';
-import { fenceStanding, hiddenAuthors, posseMembersAmong } from '@/modules/relationships';
+import { fenceStanding, fenceStandings, hiddenAuthors, posseMembersAmong } from '@/modules/relationships';
 import { decodeCursor, encodeCursor, type Cursor } from '@/platform/cursor';
 import { getDb } from '@/platform/db';
 import { AppError } from '@/platform/errors';
@@ -275,13 +275,21 @@ const SELECT = {
   cardStatus: postCards.status,
 } as const;
 
-/** May `userId` read `ownerId`'s Fence right now? Same policy as the Fence itself. */
-async function mayReadFence(userId: string, ownerId: string): Promise<boolean> {
-  if (userId === ownerId) return true;
-  const fence = await getFenceResource(ownerId);
-  if (!fence) return false;
-  const ctx = await fenceStanding(ownerId, userId);
-  return canFence({ kind: 'user', id: userId, status: 'active' }, 'fence:read', fence, ctx).allow;
+/**
+ * Which of these Fences may `userId` read right now? Same policy as the Fence itself. Batched (Phase 13): four queries
+ * however many owners — this runs for the bell on every page, and one lookup per owner was ~30 round trips.
+ */
+async function readableFences(userId: string, ownerIds: string[]): Promise<Set<string>> {
+  const others = [...new Set(ownerIds)].filter((id) => id !== userId);
+  const [fences, standings] = await Promise.all([getFenceResources(others), fenceStandings(others, userId)]);
+  const actor = { kind: 'user' as const, id: userId, status: 'active' as const };
+  const ok = new Set(ownerIds.includes(userId) ? [userId] : []);
+  for (const id of others) {
+    const fence = fences.get(id);
+    const ctx = standings.get(id);
+    if (fence && ctx && canFence(actor, 'fence:read', fence, ctx).allow) ok.add(id);
+  }
+  return ok;
 }
 
 interface Shown {
@@ -302,17 +310,16 @@ async function visible(userId: string, rows: Row[]): Promise<Shown[]> {
   const [people, hidden, readable, openThreads] = await Promise.all([
     getCards([...actorIds, ...ownerIds, userId]),
     hiddenAuthors(userId, actorIds),
-    Promise.all(ownerIds.map(async (id) => [id, await mayReadFence(userId, id)] as const)),
+    readableFences(userId, ownerIds),
     posseMembersAmong(userId, actorIds),
   ]);
-  const canRead = new Map(readable);
   return rows.flatMap((row) => {
     const actor = people.get(row.actorId);
     if (!actor || hidden.has(row.actorId)) return [];
     // A Whisper Chime only shows while the thread is still open (still in each other's Posse, no block).
     if (row.type === 'whisper_received' && !openThreads.has(row.actorId)) return [];
     if (row.cardId !== null) {
-      if (!row.fenceOwnerId || !canRead.get(row.fenceOwnerId)) return [];
+      if (!row.fenceOwnerId || !readable.has(row.fenceOwnerId)) return [];
       if (NEEDS_PUBLISHED.has(row.type as ChimeType) && row.cardStatus !== 'published') return [];
     }
     const owner = row.fenceOwnerId ? people.get(row.fenceOwnerId) : undefined;

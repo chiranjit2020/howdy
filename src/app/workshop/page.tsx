@@ -36,6 +36,7 @@ export default async function WorkshopPage() {
         <BoundaryForm
           ranchVisibility={ranch.ranchVisibility}
           signalVisibility={ranch.signalVisibility}
+          discoverable={ranch.discoverable}
           official={ranch.verified}
         />
         <FenceRulesForm

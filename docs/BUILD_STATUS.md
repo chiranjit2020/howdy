@@ -4,9 +4,24 @@ _Last updated: 2026-09-29_
 
 ## Current Phase
 
-**Phase 12 — Memories / Time Capsules** (ADR-028) is **built** (2026-09-30), not yet deployed: migration `0023` must go
-on `howdy_dev` and `howdy_prod` before its code is pushed. Next per the master prompt: **Phase 13 — Performance +
-Scaling + Advanced Intelligence**.
+**Phase 13 — Performance + Scaling + Advanced Intelligence** is **built** (2026-09-30, ADR-029/030), not yet deployed:
+migration `0024` must go on `howdy_dev` and `howdy_prod` before its code is pushed. Phases 0–12 are live. This was the
+last phase in the master prompt's build order (§61).
+
+## Completed in Phase 13 — performance at 20k people, and "Pals you may know" (ADR-029, ADR-030), 2026-09-30
+
+Decisions taken with you: size for **~20,000 people**; "Advanced Intelligence" = **Pals you may know** (no ML).
+
+- [x] A local 20k-person database (`.dev/perf/seed.sql`) and a benchmark of the real reads (`.dev/perf/bench.ts`,
+      `RTT_MS=10` simulates the production network). No statement was slow; round trips were the cost.
+- [x] The bell (every page): 35 → 9 queries, 93 → 31 ms simulated; Chimes page 91 → 19 queries, 231 → 93 ms —
+      batched `getFenceResources` / `fenceStandings`, proven identical to the single lookups for every relationship.
+- [x] Fence / Tributes / Vibe Matrix: independent lookups in parallel (139 → 108, 93 → 79, 78 → 47 ms simulated).
+- [x] Pals you may know (Pals page): Pals of ≥ 2 of my Pals; never across a block/mute/restrict, any ask or decline,
+      a Pals-only Porch, an opt-out or a dismissal. Workshop switch "Suggest me to Pals of my Pals". Migration `0024`.
+- [x] Privacy 1.4.0. Tests: `suggestions` (10), `batch-equivalence` (2) + e2e; mutation `.dev/mutate19.mjs`.
+- [ ] **Your call: move to Singapore** (`docs/RUNBOOK-move-to-singapore.md`) — the biggest remaining speed-up for people in
+      India, bigger than any code change here.
 
 
 **Phase 11 — Moderation + Anti-Abuse Expansion** is **in progress**, and most of it is built (2026-09-29, local, not yet
@@ -528,14 +543,13 @@ layers covered for them); direct tests of the recorder now catch both. All 15 ca
 
 ## Next Task
 
-**Phase 11 is done** except what you deferred: image moderation (2026-09-30: not now) and an audit-log retention
-period (a legal decision). Media follow-ups still open: photos on Post Cards (per-card media with the Fence's privacy
-rules), showing Portraits in lists / cards / Chimes (needs a per-viewer decision per row). Next phase per the master
-prompt: **Phase 13 — Performance + Scaling + Advanced Intelligence** (Phase 12 is built, ADR-028).
+**All thirteen phases of the master prompt's build order are built** (Phase 13, 2026-09-30). What is left is your
+call or waits for real use: moving to Singapore (runbook); image moderation (deferred); an audit-log retention period
+(legal); a self-service data export; photos on Post Cards; Portraits in lists / cards / Chimes; capsules to a Town Hall.
 Tributes/Marks/Town Halls follow-ups: revisit whether Tribute/Mark giving should ever
 widen beyond Posse-only; a Town Hall shared feed if the need becomes real; Town Hall roles beyond owner/member.
 
 ## Architectural Decisions
 
-ADR-001 … ADR-028 in `docs/decisions/`; lifecycle and deletion design in `docs/DATA_LIFECYCLE.md`.
+ADR-001 … ADR-030 in `docs/decisions/`; lifecycle and deletion design in `docs/DATA_LIFECYCLE.md`.
 

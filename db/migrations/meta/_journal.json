@@ -169,6 +169,13 @@
       "when": 1790713786680,
       "tag": "0023_time_capsules",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1790737007810,
+      "tag": "0024_pal_suggestions",
+      "breakpoints": true
     }
   ]
 }

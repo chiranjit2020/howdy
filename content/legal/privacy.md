@@ -71,6 +71,10 @@ Tracks tell you who has recently stopped by your Porch. They are built to be vag
 - **Time Capsules:** words you seal for your future self or for one of your Pals, to open on a day you choose. Until that day nobody can read them in Howdy, not even you (you can take one back, which deletes it). They are stored on our servers, not end-to-end encrypted. On the day, a capsule to a Pal opens only if you are still Pals and neither of you has blocked the other; otherwise it is deleted. Once open it belongs to the person it was for, and stays until they delete it.
 - **Memories:** "On this day" on your Home page shows Post Cards on your own Fence, the day you became Pals with someone, and Tributes written to you, from earlier years. Only you see them. Nothing extra is stored for this: they are worked out from what is still there, and something removed, or someone you have blocked or muted, does not come back as a memory.
 
+## Pals you may know
+
+On your Pals page we may suggest people who are Pals with at least two of your Pals, and show which of your Pals you share. In the same way, you may be suggested to people who share at least two Pals with you. This is worked out from Pal connections only, when the page is opened; nothing else about you is used, and no profile of you is built for it. Nobody is suggested to anyone they have blocked, muted or restricted (or who did so to them), or whom they have asked or been asked by before, and nobody whose Porch is set to Pals only. You can turn this off in the Workshop ("Suggest me to Pals of my Pals"), and "Not now" stops a suggestion for good.
+
 ## Whispers
 
 - **Private:** a Whisper can be read only by the two people in the conversation. You can only Whisper someone who is in your Pals, and a block or leaving Pals closes the conversation.

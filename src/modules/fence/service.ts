@@ -121,19 +121,19 @@ const toRef = (p: PersonCard): AuthorRef => ({
 
 const actorOf = (userId: string): Actor => ({ kind: 'user', id: userId, status: 'active' });
 
-async function contextFor(viewer: Actor, fence: FenceResource): Promise<FenceContext> {
-  if (viewer.kind !== 'user') return { relationship: 'UNKNOWN', restricted: false };
-  return fenceStanding(fence.ownerId, viewer.id);
-}
-
 /** Load the Fence and the viewer's standing on it, or null when they may not read it (hidden ≡ missing). */
 async function access(
   viewer: Actor,
   ownerId: string,
 ): Promise<{ fence: FenceResource; ctx: FenceContext } | null> {
-  const fence = await getFenceResource(ownerId);
+  // Both at once (one round trip, not two): the standing needs only the owner's id, not the Fence.
+  const [fence, ctx] = await Promise.all([
+    getFenceResource(ownerId),
+    viewer.kind === 'user'
+      ? fenceStanding(ownerId, viewer.id)
+      : Promise.resolve<FenceContext>({ relationship: 'UNKNOWN', restricted: false }),
+  ]);
   if (!fence) return null;
-  const ctx = await contextFor(viewer, fence);
   return canFence(viewer, 'fence:read', fence, ctx).allow ? { fence, ctx } : null;
 }
 
@@ -204,13 +204,11 @@ async function hydrate(
       .limit(ids.length * (REPLIES_PER_CARD + 5)),
   ]);
 
-  const replyAuthors = await authorsFor(replyRows.map((r: ReplyRow) => r.authorId));
-  const hidden = viewerId
-    ? await hiddenAuthors(
-        viewerId,
-        replyRows.map((r: ReplyRow) => r.authorId),
-      )
-    : new Set<string>();
+  const replyAuthorIds = replyRows.map((r: ReplyRow) => r.authorId);
+  const [replyAuthors, hidden] = await Promise.all([
+    authorsFor(replyAuthorIds),
+    viewerId ? hiddenAuthors(viewerId, replyAuthorIds) : Promise.resolve(new Set<string>()),
+  ]);
   const reactionsByCard = new Map<string, Record<ReactionKind, number>>();
   for (const c of counts) {
     if (!isReactionKind(c.kind)) continue;
@@ -317,13 +315,11 @@ export async function listFence(
       .limit(limit + 1);
     const more = rows.length > limit;
     const page = rows.slice(0, limit);
-    const authors = await authorsFor(page.map((r) => r.authorId));
-    const hidden = viewerId
-      ? await hiddenAuthors(
-          viewerId,
-          page.map((r) => r.authorId),
-        )
-      : new Set<string>();
+    const pageAuthors = page.map((r) => r.authorId);
+    const [authors, hidden] = await Promise.all([
+      authorsFor(pageAuthors),
+      viewerId ? hiddenAuthors(viewerId, pageAuthors) : Promise.resolve(new Set<string>()),
+    ]);
 
     let last: CardRow | undefined;
     let consumed = 0;

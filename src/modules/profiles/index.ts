@@ -9,6 +9,7 @@ export {
   createProfile,
   getCards,
   getFenceResource,
+  getFenceResources,
   getOwnRanch,
   getRanchForViewer,
   getTeamAnnouncement,

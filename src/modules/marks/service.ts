@@ -27,12 +27,14 @@ async function access(
   viewer: Actor,
   ownerId: string,
 ): Promise<{ ranch: RanchResource; relationship: Awaited<ReturnType<typeof fenceStanding>> } | null> {
-  const ranch = await getFenceResource(ownerId);
-  if (!ranch) return null;
-  const relationship =
+  // Both at once (one round trip, not two): the standing needs only the owner's id.
+  const [ranch, relationship] = await Promise.all([
+    getFenceResource(ownerId),
     viewer.kind === 'user'
-      ? await fenceStanding(ownerId, viewer.id)
-      : { relationship: 'UNKNOWN' as const, restricted: false };
+      ? fenceStanding(ownerId, viewer.id)
+      : Promise.resolve({ relationship: 'UNKNOWN' as const, restricted: false }),
+  ]);
+  if (!ranch) return null;
   return can(viewer, 'profile:view', ranch, { relationship: relationship.relationship }).allow
     ? { ranch, relationship }
     : null;
@@ -84,11 +86,19 @@ export async function getVibeMatrix(
   const acc = await access(viewer, ownerId);
   if (!acc) return null;
 
-  const rows = await getDb()
-    .select({ kind: marks.kind, n: sql<number>`count(*)::int` })
-    .from(marks)
-    .where(eq(marks.targetId, ownerId))
-    .groupBy(marks.kind);
+  const viewerId = viewer.kind === 'user' ? viewer.id : null;
+  const posseAllowed = can(viewer, 'mark:give', acc.ranch, {
+    relationship: acc.relationship.relationship,
+  }).allow;
+  // The counts and my cooldown are independent: one round trip for both.
+  const [rows, last] = await Promise.all([
+    getDb()
+      .select({ kind: marks.kind, n: sql<number>`count(*)::int` })
+      .from(marks)
+      .where(eq(marks.targetId, ownerId))
+      .groupBy(marks.kind),
+    posseAllowed && viewerId ? lastGivenAt(viewerId, ownerId) : Promise.resolve(null),
+  ]);
   const counts = EMPTY_COUNTS();
   let total = 0;
   for (const r of rows) {
@@ -97,17 +107,10 @@ export async function getVibeMatrix(
     total += r.n;
   }
 
-  const viewerId = viewer.kind === 'user' ? viewer.id : null;
-  const posseAllowed = can(viewer, 'mark:give', acc.ranch, {
-    relationship: acc.relationship.relationship,
-  }).allow;
   let cooldownEndsAt: Date | null = null;
-  if (posseAllowed && viewerId) {
-    const last = await lastGivenAt(viewerId, ownerId);
-    if (last) {
-      const ends = new Date(last.getTime() + COOLDOWN_MS);
-      if (ends > new Date()) cooldownEndsAt = ends;
-    }
+  if (last) {
+    const ends = new Date(last.getTime() + COOLDOWN_MS);
+    if (ends > new Date()) cooldownEndsAt = ends;
   }
 
   return {

@@ -6,6 +6,7 @@
 export {
   act,
   fenceStanding,
+  fenceStandings,
   getRelationshipView,
   hiddenAuthors,
   listMyRelationships,

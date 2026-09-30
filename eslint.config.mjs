@@ -54,6 +54,8 @@ const MODULE_DEPENDENCIES = {
   capsules: ['moderation', 'profiles', 'relationships'],
   // Memories (Phase 12): read-only; who I can still see decides what comes back.
   memories: ['profiles', 'relationships'],
+  // Pals you may know (Phase 13): the Porch policy, and names. Nothing depends on it.
+  suggestions: ['authz', 'profiles'],
 };
 const moduleRules = Object.entries(MODULE_DEPENDENCIES).map(([name, allowed]) => {
   const forbidden = Object.keys(MODULE_DEPENDENCIES).filter((m) => m !== name && !allowed.includes(m));

@@ -26,3 +26,6 @@ export const relationshipActionSchema = z.object({ action: z.enum(RELATIONSHIP_A
 
 /** "Ask by call sign": the handle is shape-checked and lower-cased before it goes anywhere near a query. */
 export const askByHandleSchema = z.object({ handle: z.string().pipe(handleParamSchema) });
+
+/** "Not now" on a Pal suggestion (ADR-029). */
+export const dismissSuggestionSchema = z.object({ handle: z.string().pipe(handleParamSchema) });

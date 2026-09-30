@@ -88,6 +88,79 @@ export async function relationshipOf(ownerId: string, viewerId: string): Promise
 }
 
 /**
+ * `fenceStanding(ownerId, actorId)` for many owners at once, in three queries whatever their number (Phase 13). Built
+ * from the same rules as `relationshipOf` + the restrict check, in the same order of precedence, so every answer is
+ * identical to the single version (tests/security/batch-equivalence.test.ts compares them pair by pair).
+ */
+export async function fenceStandings(
+  ownerIds: string[],
+  actorId: string,
+): Promise<Map<string, { relationship: RelationshipState; restricted: boolean }>> {
+  const out = new Map<string, { relationship: RelationshipState; restricted: boolean }>();
+  const ids = [...new Set(ownerIds)];
+  for (const id of ids) if (id === actorId) out.set(id, { relationship: 'UNKNOWN', restricted: false });
+  const others = ids.filter((id) => id !== actorId);
+  if (others.length === 0) return out;
+  const db = getDb();
+  const [controls, links, scouting] = await Promise.all([
+    db
+      .select({ actorId: userControls.actorId, targetId: userControls.targetId, kind: userControls.kind })
+      .from(userControls)
+      .where(
+        or(
+          // what each owner set on the actor…
+          and(inArray(userControls.actorId, others), eq(userControls.targetId, actorId)),
+          // …and any block the actor set on an owner
+          and(
+            eq(userControls.actorId, actorId),
+            inArray(userControls.targetId, others),
+            eq(userControls.kind, 'block'),
+          ),
+        ),
+      ),
+    db
+      .select()
+      .from(posseLinks)
+      .where(
+        or(
+          and(eq(posseLinks.userLow, actorId), inArray(posseLinks.userHigh, others)),
+          and(eq(posseLinks.userHigh, actorId), inArray(posseLinks.userLow, others)),
+        ),
+      ),
+    db
+      .select({ scouteeId: scouts.scouteeId })
+      .from(scouts)
+      .where(and(eq(scouts.scoutId, actorId), inArray(scouts.scouteeId, others))),
+  ]);
+  const scouted = new Set(scouting.map((s) => s.scouteeId));
+  for (const ownerId of others) {
+    const mine = controls.filter(
+      (c) =>
+        (c.actorId === ownerId && c.targetId === actorId) ||
+        (c.actorId === actorId && c.targetId === ownerId),
+    );
+    const link = links.find(
+      (l) =>
+        (l.userLow === ownerId && l.userHigh === actorId) ||
+        (l.userHigh === ownerId && l.userLow === actorId),
+    );
+    const ownerSet = (kind: string) => mine.some((c) => c.actorId === ownerId && c.kind === kind);
+    let relationship: RelationshipState;
+    if (mine.some((c) => c.kind === 'block')) relationship = 'BLOCKED';
+    else if (link?.status === 'accepted') {
+      const ownerMarksClose = order(ownerId, actorId).aIsLow ? link.lowMarksClose : link.highMarksClose;
+      relationship = ownerMarksClose ? 'CLOSE_POSSE' : 'POSSE';
+    } else if (ownerSet('restrict')) relationship = 'RESTRICTED';
+    else if (ownerSet('mute')) relationship = 'MUTED';
+    else if (link?.status === 'requested') relationship = 'REQUESTED';
+    else if (scouted.has(ownerId)) relationship = 'SCOUTING';
+    else relationship = 'PASSERBY';
+    out.set(ownerId, { relationship, restricted: ownerSet('restrict') });
+  }
+  return out;
+}
+
+/**
  * What the Fence policy needs to know about `actorId` as seen by the Fence owner `ownerId`: the state for the policy plus
  * whether the owner has restricted them (a restricted Posse member is still POSSE, so it cannot ride on the state).
  */

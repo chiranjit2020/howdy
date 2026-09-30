@@ -66,12 +66,14 @@ async function access(
   viewer: Actor,
   ownerId: string,
 ): Promise<{ ranch: RanchResource; relationship: Awaited<ReturnType<typeof fenceStanding>> } | null> {
-  const ranch = await getFenceResource(ownerId);
-  if (!ranch) return null;
-  const relationship =
+  // Both at once (one round trip, not two): the standing needs only the owner's id.
+  const [ranch, relationship] = await Promise.all([
+    getFenceResource(ownerId),
     viewer.kind === 'user'
-      ? await fenceStanding(ownerId, viewer.id)
-      : { relationship: 'UNKNOWN' as const, restricted: false };
+      ? fenceStanding(ownerId, viewer.id)
+      : Promise.resolve({ relationship: 'UNKNOWN' as const, restricted: false }),
+  ]);
+  if (!ranch) return null;
   return can(viewer, 'profile:view', ranch, { relationship: relationship.relationship }).allow
     ? { ranch, relationship }
     : null;
