@@ -12,7 +12,7 @@ last phase in the master prompt's build order (§61).
 
 Decisions taken with you: size for **~20,000 people**; "Advanced Intelligence" = **Pals you may know** (no ML).
 
-- [x] A local 20k-person database (`.dev/perf/seed.sql`) and a benchmark of the real reads (`.dev/perf/bench.ts`,
+- [x] A local 20k-person database (`scripts/perf/seed.sql`) and a benchmark of the real reads (`scripts/perf/bench.ts`,
       `RTT_MS=10` simulates the production network). No statement was slow; round trips were the cost.
 - [x] The bell (every page): 35 → 9 queries, 93 → 31 ms simulated; Chimes page 91 → 19 queries, 231 → 93 ms —
       batched `getFenceResources` / `fenceStandings`, proven identical to the single lookups for every relationship.

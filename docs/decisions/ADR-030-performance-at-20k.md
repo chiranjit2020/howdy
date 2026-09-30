@@ -4,11 +4,11 @@ Status: accepted (Phase 13, 2026-09-30). Master prompt §51: "optimize after mea
 
 ## How it was measured
 
-- `.dev/perf/seed.sql` builds a local `howdy_perf` database at the scale chosen with you (~20k people): 98k Pal links,
+- `scripts/perf/seed.sql` (run with `node scripts/perf/run-sql.mjs scripts/perf/seed.sql`) builds a local `howdy_perf` database at the scale chosen with you (~20k people): 98k Pal links,
   300k Post Cards, 150k replies, 500k reactions, 298k Chimes (90 days), 200k Whispers in 34k threads, 49k Tracks, 20k
   Tributes, 39k Marks, 500 Town Halls, 4.8k Time Capsules. Clustered in communities of ~200, so friends-of-friends is
   realistic. Never run against dev or prod.
-- `.dev/perf/bench.ts` calls the real service functions for a typical and a busy person, counts SQL statements, records
+- `scripts/perf/bench.ts` calls the real service functions for a typical and a busy person, counts SQL statements, records
   any statement over 20 ms, and with `RTT_MS=10` adds a delay to every statement to simulate the network between the
   app (Vercel `iad1`, Washington) and the database (Neon `us-east-2`, Ohio).
 
