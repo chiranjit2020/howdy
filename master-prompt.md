@@ -527,7 +527,7 @@ Initial palette:
 ```text
 Canvas Cream       #F8F5EE
 Clay White         #FFFFFF
-Sherbet Peach      #FFB4A2
+Sherbet Pink       #F4A2B3
 Pistachio Mint     #B7E4C7
 Buttercup Gold     #FFEAA7
 Lavender Mist      #D8B4E2
@@ -564,7 +564,7 @@ The underlying palette may change later without rewriting components.
 Primary:
 
 ```text
-Plus Jakarta Sans
+Google Sans
 ```
 
 Monospace:

@@ -44,13 +44,13 @@ implementation priorities; this file preserves the useful product ideas and reco
 
 ## 3. UI / design decisions carried forward
 
-- Palette (semantic tokens over it): Canvas Cream `#F8F5EE`, Clay White `#FFFFFF`, Sherbet Peach `#FFB4A2`,
+- Palette (semantic tokens over it): Canvas Cream `#F8F5EE`, Clay White `#FFFFFF`, Sherbet Pink `#F4A2B3`,
   Pistachio Mint `#B7E4C7`, Buttercup Gold `#FFEAA7`, Lavender Mist `#D8B4E2`, Sky Tint `#BEE1E6`,
   Deep Charcoal `#2B2D42`, Muted Slate `#8D99AE`. Shadow Walk tint `#E8E3F0`; card-back parchment `#FDFBF7`.
 - Clay surface: radius 20–28px, soft outer shadow + inner top-left highlight + inner bottom-right shade.
 - Motion: card press 2px translateY with spring; Yo pop; Y-axis card flip (front = message, back = scribbles);
   all gated by `prefers-reduced-motion`.
-- Fonts: Plus Jakarta Sans (UI), JetBrains Mono (stamps/timestamps), Fraunces (Tributes/headings).
+- Fonts: Google Sans (UI), JetBrains Mono (stamps/timestamps), Fraunces (Tributes/headings).
 - Dusk/Daylight theme pair.
 - Ranch layout: avatar + presence dot, name/handle, Signal pill, action row (Tip / Yo / Whisper), Pinned Tribute, Fence.
 - Fence composer visibility: public vs Posse-only; owner may enable a review gate for incoming cards.

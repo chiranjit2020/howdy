@@ -586,7 +586,7 @@ Soft, warm background hues balanced with vivid yet gentle pastel accents that pr
 | --- | --- | --- | --- |
 | **Canvas Cream** | `#F8F5EE` | Primary App Background | Warm off-white; feels like unbleached stationary. |
 | **Clay White** | `#FFFFFF` | Primary Card Surfaces | Pure base for clay lighting effects. |
-| **Sherbet Peach** | `#FFB4A2` | Primary Accent / Highlights | Friendly, energetic, warm greeting. |
+| **Sherbet Pink** | `#F4A2B3` | Primary Accent / Highlights | Friendly, energetic, warm greeting. |
 | **Pistachio Mint** | `#B7E4C7` | Success / Active Presence / "Chill" | Calm, soothing, non-aggressive. |
 | **Buttercup Gold** | `#FFEAA7` | Stamps / "Yo" Badges / Tributes | Nostalgic paper tone, achievement, warm gold. |
 | **Lavender Mist** | `#D8B4E2` | Mystery Traces / Secondary Cards | Curious, dreamy, k-anonymous cards. |
@@ -697,7 +697,7 @@ Three equal-width clay buttons placed horizontally:
 * Instead of text percentages, it renders a sleek, segmented pill bar in pastel shades:
 * 💎 Gem (Sky Tint)
 * 🧊 Chill (Pistachio Mint)
-* 🍿 Cinema (Sherbet Peach)
+* 🍿 Cinema (Sherbet Pink)
 
 
 * Friends can tap any icon on the bar to cast their vote once every 30 days.
@@ -992,7 +992,7 @@ The chat UI maintains your pastel claymorphism language:
 * **Burn Thread (🔥):** Either person can tap the latch icon to instantly purge the conversation history from both devices and the server.
 * **Soft Pastel Bubbles:**
 * Incoming: `#FFFFFF` (Clay White with soft dual inner shadows).
-* Outgoing: `#FFB4A2` (Sherbet Peach) or `#B7E4C7` (Pistachio Mint).
+* Outgoing: `#F4A2B3` (Sherbet Pink) or `#B7E4C7` (Pistachio Mint).
 
 
 

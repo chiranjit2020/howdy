@@ -42,12 +42,12 @@ test.describe('design kit (production build, real CSP)', () => {
       body: getComputedStyle(document.body).fontFamily,
       display: getComputedStyle(document.querySelector('h1')!).fontFamily,
     }));
-    expect(families.body).toMatch(/Jakarta/);
+    expect(families.body).toMatch(/Google Sans/);
     expect(families.display).toMatch(/Fraunces/);
     const loaded = await page.evaluate(() =>
       [...document.fonts].filter((f) => f.status === 'loaded').map((f) => f.family),
     );
-    expect(loaded.join(' ')).toMatch(/Jakarta/);
+    expect(loaded.join(' ')).toMatch(/Google Sans/);
   });
 
   test('follows the system colour scheme, and the toggle forces Daylight/Dusk and persists across reload', async ({

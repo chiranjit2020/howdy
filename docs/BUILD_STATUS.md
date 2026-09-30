@@ -8,6 +8,12 @@ _Last updated: 2026-09-29_
 migration `0024` must go on `howdy_dev` and `howdy_prod` before its code is pushed. Phases 0–12 are live. This was the
 last phase in the master prompt's build order (§61).
 
+## 2026-10-01 — moved to Singapore
+
+Database (Neon `howdy-sg`, `aws-ap-southeast-1`), Redis (Upstash, Singapore) and the app servers (`sin1`) now sit
+together near India, following `docs/RUNBOOK-move-to-singapore.md`. The copy matched production table for table. The old
+Ohio project stays for 1–2 weeks as the way back.
+
 ## Added 2026-09-30 — one photo on a Post Card (ADR-031)
 
 Decisions taken with you: **one photo per card**; on someone else's Fence **only their Pals** may add one; **no
@@ -536,7 +542,7 @@ layers covered for them); direct tests of the recorder now catch both. All 15 ca
 2. **Neon dev branch** — still none; local Postgres used. Two processes hold DB pools (site + realtime).
 3. **First commit** — not made (not requested).
 4. ~~Schedule `pnpm jobs:purge`~~ **Done 2026-09-27**: daily Vercel Cron `/api/jobs/purge` (ADR-019). Still open: decide the audit-log and report-evidence retention periods (flagged in the Privacy Policy).
-5. **Cloudflare R2 (deploy blocker for photos):** create a private bucket, an Object Read & Write API token for it, and a bucket CORS rule allowing `PUT` from `APP_URL`; set `STORAGE_DRIVER=r2` and the four `R2_*` variables (see `.env.example`). The R2 driver is tested against a fake client only.
+5. ~~Cloudflare R2~~ **Done:** bucket `howdy` is live and its CORS rule allows `PUT` from the site (checked 2026-10-01).
 6. **Deploying `pnpm ws`** (see ADR-013): long-lived Node process, `NODE_ENV=production`, `WS_PUBLIC_URL=wss://<same host as the site>`, Redis.
 
 ## Known Issues / Deferred

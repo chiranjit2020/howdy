@@ -3,7 +3,7 @@
 **Context.** Master prompt §12–19 requires a real design system (semantic tokens, primitives, Howdy components,
 accessibility, 320px-up responsiveness, reduced motion) built before product UI. Constraints discovered in Phase 0/1:
 the production CSP is nonce-based (`style-src` has no `'unsafe-inline'`), and the brand palette fails WCAG for some text uses
-(Muted Slate `#8D99AA` is 2.6:1 on Canvas Cream; white on Sherbet Peach is 1.7:1).
+(Muted Slate `#8D99AA` is 2.6:1 on Canvas Cream; white on Sherbet Pink is 2.0:1).
 
 **Decision.**
 1. **One source of truth for colour:** `src/ui/styles/tokens.css`. Every semantic colour is declared once as
@@ -20,7 +20,7 @@ the production CSP is nonce-based (`style-src` has no `'unsafe-inline'`), and th
    WAI-ARIA implementations for Tabs, menu (Dropdown), Popover, Tooltip and Toast. No Radix/Headless UI/etc.
 5. **No inline `style` attributes** in components (blocked by the CSP); all styling is classes/tokens.
 6. **Tokenised typography** (display/heading/title/body/caption/metadata/code) via `next/font` (self-hosted, no runtime
-   Google request): Plus Jakarta Sans, JetBrains Mono, Fraunces.
+   Google request): Google Sans (UI; was Plus Jakarta Sans until 2026-10-01, changed at the user's request), JetBrains Mono, Fraunces.
 7. **Motion** communicates state only and is removed globally under `prefers-reduced-motion`. The Post Card "flip" renders
    only the visible face (entrance animation) rather than a two-sided 3D card, so height follows content and hidden content is
    never reachable by keyboard/screen reader.

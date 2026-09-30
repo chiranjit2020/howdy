@@ -1,12 +1,12 @@
 import type { Metadata, Viewport } from 'next';
-import { Fraunces, JetBrains_Mono, Plus_Jakarta_Sans } from 'next/font/google';
+import { Fraunces, Google_Sans, JetBrains_Mono } from 'next/font/google';
 import { cookies } from 'next/headers';
 import type { ReactNode } from 'react';
 import { ToastProvider } from '@/ui/primitives';
 import { parseTheme, THEME_COOKIE } from '@/ui/theme';
 import './globals.css';
 
-const jakarta = Plus_Jakarta_Sans({ subsets: ['latin'], variable: '--font-jakarta', display: 'swap' });
+const googleSans = Google_Sans({ subsets: ['latin'], variable: '--font-google-sans', display: 'swap' });
 const jetbrains = JetBrains_Mono({ subsets: ['latin'], variable: '--font-jetbrains', display: 'swap' });
 const fraunces = Fraunces({ subsets: ['latin'], variable: '--font-fraunces', display: 'swap' });
 export const metadata: Metadata = {
@@ -31,7 +31,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
     <html
       lang="en"
       data-theme={theme}
-      className={`${jakarta.variable} ${jetbrains.variable} ${fraunces.variable}`}
+      className={`${googleSans.variable} ${jetbrains.variable} ${fraunces.variable}`}
     >
       <body>
         <a

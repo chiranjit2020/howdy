@@ -81,7 +81,7 @@ export async function getPortrait(handle: string, opts: Opts = {}) {
 }
 
 // ─── test images ─────────────────────────────────────────────────────────────
-const solid = (width: number, height: number, background = '#ffb4a2') =>
+const solid = (width: number, height: number, background = '#f4a2b3') =>
   sharp({ create: { width, height, channels: 3, background } });
 
 export const jpeg = (w = 1200, h = 800) => solid(w, h).jpeg().toBuffer();

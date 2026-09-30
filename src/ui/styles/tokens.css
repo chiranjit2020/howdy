@@ -17,7 +17,7 @@
   /* -- Brand palette (decorative use; prefer semantic tokens) -- */
   --palette-canvas-cream: #f8f5ee;
   --palette-clay-white: #ffffff;
-  --palette-sherbet-peach: #ffb4a2;
+  --palette-sherbet-pink: #f4a2b3;
   --palette-pistachio-mint: #b7e4c7;
   --palette-buttercup-gold: #ffeaa7;
   --palette-lavender-mist: #d8b4e2;
@@ -58,9 +58,9 @@
   --color-link: light-dark(#1b6a80, #9ad7e6);
   --color-focus: light-dark(#6a83a6, #9ad7e6);
 
-  --color-accent: #ffb4a2;
-  --color-accent-hover: light-dark(#ffa48f, #ffc3b5);
-  --color-accent-soft: light-dark(#ffe7e0, #4a3040);
+  --color-accent: #f4a2b3;
+  --color-accent-hover: light-dark(#f291a5, #f6b3c1);
+  --color-accent-soft: light-dark(#fbd9e0, #4a3040);
   --color-on-accent: #2b2d42;
 
   --color-success: #b7e4c7;
@@ -258,7 +258,8 @@
 
 /* next/font sets these variables on <html>; `inline` keeps the var() reference intact. */
 @theme inline {
-  --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-sans:
+    var(--font-google-sans), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --font-mono: var(--font-jetbrains), ui-monospace, 'Roboto Mono', Menlo, monospace;
   --font-display: var(--font-fraunces), 'Newsreader', Georgia, serif;
 }
