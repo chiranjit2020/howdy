@@ -1,11 +1,12 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { Art, type ArtName } from '../art/glyph';
 import { cn } from '../cn';
-import { CapsuleIcon, ShieldIcon } from '../icons';
+import { MoreIcon } from '../icons';
+import { Dropdown } from '../primitives/dropdown';
 import { Avatar } from '../primitives/avatar';
 import { BottomNavigation, type NavItem } from '../primitives/navigation';
 import type { ShellMe } from './app-shell';
@@ -30,7 +31,7 @@ export interface ShellNavItem {
   badge?: number;
 }
 
-const ART: Record<Exclude<ShellNavKey, 'moderation' | 'capsules'>, ArtName> = {
+const ART: Record<ShellNavKey, ArtName> = {
   home: 'nav-home',
   ranch: 'nav-porch',
   posse: 'nav-pals',
@@ -39,18 +40,15 @@ const ART: Record<Exclude<ShellNavKey, 'moderation' | 'capsules'>, ArtName> = {
   chimes: 'nav-chimes',
   workshop: 'nav-wordshop',
   'town-halls': 'nav-town-halls',
+  capsules: 'nav-capsules',
+  moderation: 'nav-moderation',
 };
 // Loaded at once (not lazily): the navigation is on screen from the first paint.
 const navArt = (name: ArtName) => <Art name={name} size="free" className="size-7" loading="eager" />;
-const ICON: Record<ShellNavKey, ReactNode> = {
-  ...(Object.fromEntries(Object.entries(ART).map(([key, name]) => [key, navArt(name)])) as Record<
-    keyof typeof ART,
-    ReactNode
-  >),
-  // No clay artwork for these yet: a plain line icon at the same size.
-  capsules: <CapsuleIcon className="size-7" />,
-  moderation: <ShieldIcon className="size-7" />,
-};
+const ICON = Object.fromEntries(Object.entries(ART).map(([key, name]) => [key, navArt(name)])) as Record<
+  ShellNavKey,
+  ReactNode
+>;
 
 const isCurrent = (pathname: string, href: string) => pathname === href || pathname.startsWith(`${href}/`);
 const badgeText = (n: number) => (n > 99 ? '99+' : String(n));
@@ -106,6 +104,44 @@ export function ShellSidebarNav({ items }: { items: ShellNavItem[] }) {
  * still lists everything.
  */
 const PHONE_TABS: ShellNavKey[] = ['home', 'posse', 'whispers', 'ranch'];
+
+/**
+ * Phones only (hidden from `md` up, where the sidebar lists everything): a "More" menu in the top bar for every page
+ * that is neither a tab nor the bell — Tracks, Workshop, Town Halls, Time Capsules, Moderation for staff. Without it
+ * those pages had no way in on a phone.
+ */
+export function ShellMoreMenu({ items }: { items: ShellNavItem[] }) {
+  const router = useRouter();
+  const more = items.filter((it) => !PHONE_TABS.includes(it.key) && it.key !== 'chimes');
+  if (more.length === 0) return null;
+  const waiting = more.reduce((n, it) => n + (it.badge ?? 0), 0);
+  return (
+    <div className="md:hidden">
+      <Dropdown
+        label="More"
+        align="end"
+        items={more.map((it) => ({
+          id: it.key,
+          label: it.badge ? `${it.label} (${badgeText(it.badge)} new)` : it.label,
+          onSelect: () => router.push(it.href),
+        }))}
+        trigger={(props) => (
+          <button
+            type="button"
+            {...props}
+            aria-label={waiting > 0 ? `More pages, ${waiting} new` : 'More pages'}
+            className="relative grid size-11 place-items-center rounded-pill bg-surface text-heading text-text-primary shadow-clay-sm"
+          >
+            <MoreIcon className="size-6" />
+            {waiting > 0 && (
+              <span aria-hidden="true" className="absolute -top-1 -right-1 size-3 rounded-pill bg-accent" />
+            )}
+          </button>
+        )}
+      />
+    </div>
+  );
+}
 
 /** The phone form of the same navigation: a fixed tab bar (hidden from `md` up by the primitive itself). */
 export function ShellBottomNav({ items, me }: { items: ShellNavItem[]; me: ShellMe }) {

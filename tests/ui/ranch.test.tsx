@@ -8,7 +8,7 @@ import { AppShell } from '@/ui/shell/app-shell';
 import { axeViolations } from './setup';
 
 // The navigation marks the current page from the URL; there is no router in a unit test.
-vi.mock('next/navigation', () => ({ usePathname: () => '/workshop' }));
+vi.mock('next/navigation', () => ({ usePathname: () => '/workshop', useRouter: () => ({ push: () => {} }) }));
 
 const XSS = '<img src=x onerror=alert(1)><script>alert(2)</script>';
 
@@ -95,6 +95,8 @@ describe('AppShell', () => {
     // The top bar: a bell that says how many are unread, and the way to your own Ranch.
     expect(screen.getByRole('link', { name: 'Notifications, 3 unread' })).toHaveAttribute('href', '/chimes');
     expect(screen.getByRole('link', { name: 'Your Porch' })).toHaveAttribute('href', '/porch/chiru');
+    // Phones: the pages that are not tabs are behind "More" (CSS hides it from md up).
+    expect(screen.getByRole('button', { name: 'More pages' })).toHaveAttribute('aria-haspopup', 'menu');
   });
   it('signed out: only a way in, and no handle-based links', () => {
     render(

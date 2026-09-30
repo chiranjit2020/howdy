@@ -6,7 +6,7 @@ import { cn } from '../cn';
 import { HowdyLogo } from '../logo';
 import { Avatar } from '../primitives/avatar';
 import { BirdVisitor } from './bird-visitor';
-import { ShellBottomNav, ShellSidebarNav, type ShellNavItem } from './nav';
+import { ShellBottomNav, ShellMoreMenu, ShellSidebarNav, type ShellNavItem } from './nav';
 import { SiteFooter } from './site-footer';
 
 // The signed-out top bar's two ways in: equal widths, never wrapping, sized to fit beside the logo on a 320 px phone.
@@ -62,7 +62,7 @@ export function AppShell({
         { key: 'tracks', href: '/tracks', label: 'Tracks' },
         { key: 'whispers', href: '/whispers', label: 'Whispers', badge: unreadWhispers },
         { key: 'chimes', href: '/chimes', label: 'Chimes', badge: unread },
-        // The phone tab bar shows its own short list (see ShellBottomNav); these are sidebar-only.
+        // Sidebar-only on wide screens; on a phone these are in the top bar's "More" menu (ShellMoreMenu).
         { key: 'workshop', href: '/workshop', label: 'Workshop' },
         { key: 'town-halls', href: '/town-halls', label: 'Town Halls', badge: townHallInvites },
         { key: 'capsules', href: '/capsules', label: 'Time Capsules' },
@@ -115,6 +115,7 @@ export function AppShell({
               >
                 <Avatar name={me.displayName} src={me.portraitUrl} tint={me.portraitTint} size="md" />
               </Link>
+              <ShellMoreMenu items={items} />
             </div>
           ) : (
             // Two equal pills: the Howdy name, and underneath what it plainly means.

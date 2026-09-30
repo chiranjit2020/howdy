@@ -48,6 +48,9 @@ const FILES = {
   'nav-chimes': { w: 96, h: 96 },
   'nav-wordshop': { w: 96, h: 96 },
   'nav-town-halls': { w: 96, h: 96 },
+  /** From the user's second sheet (2026-09-30) by .dev/cut-nav2.mjs. */
+  'nav-capsules': { w: 96, h: 96 },
+  'nav-moderation': { w: 96, h: 96 },
 } as const;
 
 export type ArtName = keyof typeof FILES;

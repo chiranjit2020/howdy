@@ -65,17 +65,6 @@ export const BoltIcon = (p: IconProps) => <Svg d="M13 2 4 14h7l-1 8 9-12h-7z" {.
 export const ToolsIcon = (p: IconProps) => (
   <Svg d="M14.7 6.3a4 4 0 0 0-5.2 5.2L3 18l3 3 6.5-6.5a4 4 0 0 0 5.2-5.2L15 12l-3-3z" {...p} />
 );
-// An envelope with a heart on its flap: a Time Capsule (Phase 12).
-export const CapsuleIcon = (p: IconProps) => (
-  <Svg
-    d="M3 7h18v12H3zM3 7l9 7 9-7M12 9.5c-.6-1-2.2-.8-2.2.4 0 .9 2.2 2.1 2.2 2.1s2.2-1.2 2.2-2.1c0-1.2-1.6-1.4-2.2-.4z"
-    {...p}
-  />
-);
-// A shield with a check: the moderation queue (only moderators ever see it).
-export const ShieldIcon = (p: IconProps) => (
-  <Svg d="M12 3l8 3v6c0 4.5-3.4 8.2-8 9-4.6-.8-8-4.5-8-9V6zM8.5 12l2.5 2.5 4.5-5" {...p} />
-);
 // A simple columned building: pediment, four columns, base — reads as "Town Hall" at nav-icon size.
 export const TownHallIcon = (p: IconProps) => (
   <Svg d="M4 10L12 4L20 10M6 10v9M10 10v9M14 10v9M18 10v9M3 21h18" {...p} />
