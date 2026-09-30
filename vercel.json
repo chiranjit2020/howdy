@@ -1,6 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
+  "regions": ["sin1"],
   "crons": [
     { "path": "/api/health/report?mode=digest", "schedule": "30 3 * * *" },
     { "path": "/api/jobs/purge", "schedule": "0 4 * * *" }
