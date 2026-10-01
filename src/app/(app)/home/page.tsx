@@ -2,14 +2,17 @@ import Link from 'next/link';
 import { attachPortraits, withCards } from '@/app/_lib/social';
 import { Glyph } from '@/ui/art/glyph';
 import { listMySessions, requireUser } from '@/modules/auth';
+import { litPals, myLight } from '@/modules/lights';
 import { memoriesToday } from '@/modules/memories';
 import { getOwnRanch, getTeamAnnouncement } from '@/modules/profiles';
 import { listMyRelationships } from '@/modules/relationships';
 import { cn } from '@/ui/cn';
 import { VerifiedBadge } from '@/ui/howdy';
 import { Badge, buttonClasses, ClayCard } from '@/ui/primitives';
+import { clockOf } from '@/shared/calendar';
 import { HitTheTrail, HitTheTrailEverywhere, OpenGates } from './home-actions';
 import { MemoriesCard } from './memories-card';
+import { PorchLightCard } from './porch-light-card';
 
 export const metadata = { title: 'Home' };
 
@@ -19,7 +22,7 @@ const SMALL = buttonClasses({ variant: 'secondary', size: 'sm', compact: true })
 export default async function HomePage() {
   const user = await requireUser();
   // Independent lookups, asked for together rather than one after another.
-  const [ranch, lists, sessions, news, memories] = await Promise.all([
+  const [ranch, lists, sessions, news, memories, lit, mine] = await Promise.all([
     getOwnRanch(user.id),
     // Only requests from people who are still active count (a suspended account's request is not shown or counted).
     listMyRelationships(user.id).then(withCards),
@@ -28,12 +31,16 @@ export default async function HomePage() {
     getTeamAnnouncement().catch(() => null),
     // Best-effort as well: a memory is a nice extra, never a reason for Home to fail.
     memoriesToday(user.id).catch(() => null),
+    // Porch Lights (ADR-032): best-effort too — without them Home just shows the switch.
+    litPals(user.id).catch(() => []),
+    myLight(user.id).catch(() => null),
   ]);
-  if (memories)
-    await attachPortraits(
-      user.id,
-      memories.pals.map((p) => p.pal),
-    );
+  // One look-up for every photo on the page, whoever it belongs to.
+  await attachPortraits(user.id, [...(memories?.pals.map((p) => p.pal) ?? []), ...lit.map((l) => l.pal)]);
+  const litRows = lit.map((l) => ({ ...l.pal, note: l.note, untilLabel: clockOf(l.until) }));
+  const myLightState = mine
+    ? { audience: mine.audience, note: mine.note, untilLabel: clockOf(mine.until) }
+    : null;
   const requests = lists.incoming.length;
   // The Howdy team's current Signal ("what's new"), unless this person has turned the team's noise down.
   const announcement = news && !lists.muted.some((m) => m.handle === news.author.handle) ? news : null;
@@ -95,6 +102,7 @@ export default async function HomePage() {
             <HitTheTrailEverywhere />
           </div>
         </ClayCard>
+        <PorchLightCard lit={litRows} mine={myLightState} />
         {announcement && (
           <section aria-labelledby="whats-new" className="clay flex flex-col gap-2 bg-info/25 p-4 sm:p-5">
             <h2

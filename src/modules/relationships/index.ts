@@ -12,6 +12,7 @@ export {
   listMyRelationships,
   relationshipOf,
   spendRequestBudget,
+  palsReaching,
   posseMembersAmong,
 } from './service';
 export type { MyRelationships, PersonRef, RelationshipView } from './service';

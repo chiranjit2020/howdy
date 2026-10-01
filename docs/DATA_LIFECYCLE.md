@@ -29,6 +29,7 @@ users ──┬─< credentials      ON DELETE CASCADE   (1:1, password hash)
         ├─< legal_acceptances ON DELETE CASCADE  (which Terms / Privacy versions were agreed to, and when; append-only)
         ├─< suggestion_dismissals ON DELETE CASCADE (both user_id and dismissed_id — Phase 13, ADR-029)
         ├─< time_capsules    ON DELETE CASCADE   (both author_id and recipient_id — Phase 12, ADR-028)
+        ├─< porch_lights     ON DELETE CASCADE   (user_id; at most one row, only while the light is on — ADR-032)
         ├─< suspensions      ON DELETE CASCADE   (user_id; created_by / lifted_by / appeal_reviewed_by SET NULL — ADR-023)
         ├─< audit_log        ON DELETE SET NULL  (trail survives, anonymised)
         └─< reports          ON DELETE SET NULL  (reporter and target; evidence survives, identifiers go; card_id,
@@ -112,6 +113,7 @@ recorded as a `retired` row in the same transaction that makes the new photo liv
 | Suspensions and appeals (`suspensions`) | for the life of the account (disclosed in the Privacy Policy) | account deletion (CASCADE) |
 | Time Capsules (`time_capsules`) | sealed: until the day (then opened, or deleted if the two are no longer Pals / there is a block) or taken back by the writer; opened: until the recipient deletes it | people; `openDue()` (in `pnpm jobs:purge`); deleted with either account |
 | Memories | nothing stored — worked out when read | — |
+| Porch Light (`porch_lights`: audience, ≤ 60-char note, lit/until times) | only while on (≤ 2 hours); switching off deletes it; one that went out is deleted within a day — no history of when someone was around | the person; `purgeExpiredLights()` (in `pnpm jobs:purge`); account deletion |
 | Closing accounts (`users.status = 'pending_deletion'`) | 14 days from the request, then deleted for good | `purgeDeletedAccounts()` (in `pnpm jobs:purge`) |
 | Held-back call signs (`retired_handles`, a keyed hash only) | 90 days after the account is deleted | `purgeFreedHandles()` (in `pnpm jobs:purge`) |
 | Tracks / typing / presence (future) | seconds → days, per ADR-006 | their own jobs |

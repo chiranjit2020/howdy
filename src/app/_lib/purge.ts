@@ -2,6 +2,7 @@ import { purgeExpiredAuthData, purgeFreedHandles } from '@/modules/auth';
 import { openDue } from '@/modules/capsules';
 import { purgeDeletedAccounts } from './account-deletion';
 import { purgeStaleWaiting } from '@/modules/fence';
+import { purgeExpiredLights } from '@/modules/lights';
 import { purgeDetachedCardPhotos, purgeStaleMedia } from '@/modules/media';
 import { liftExpiredSuspensions, purgeClosedReports } from '@/modules/moderation';
 import { purgeOldChimes } from '@/modules/notifications';
@@ -21,6 +22,8 @@ export async function runAllPurges() {
   const devices = await purgeDeadSubscriptions();
   const auth = await purgeExpiredAuthData();
   const signals = await clearExpiredSignals();
+  // Porch Lights that went out (ADR-032): already treated as off; deleting them keeps no trace of when someone was around.
+  const lights = await purgeExpiredLights();
   const waiting = await purgeStaleWaiting();
   const chimes = await purgeOldChimes();
   const whispers = await purgeOldWhispers();
@@ -43,6 +46,7 @@ export async function runAllPurges() {
     ...devices,
     ...auth,
     signals,
+    ...lights,
     waiting,
     ...chimes,
     whispers,

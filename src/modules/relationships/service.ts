@@ -252,6 +252,66 @@ export async function hiddenAuthors(viewerId: string, authorIds: string[]): Prom
   return new Set(rows.map((r) => (r.actorId === viewerId ? r.targetId : r.actorId)));
 }
 
+/**
+ * The Pals whose invitations to talk (a Porch Light, ADR-032) may reach `viewerId`: accepted Pals with no block either
+ * way, who have NOT restricted the viewer, and whom the viewer has not muted. Restrict limits interaction, and a light is
+ * nothing but an invitation, so a restricted Pal is left out (they cannot tell: a light for Close Pals looks the same).
+ * For each, whether they privately marked the viewer as Close — only ever used to decide, never shown. `among` narrows
+ * it to some people (one Porch); without it, all of the viewer's Pals. Two queries.
+ */
+export async function palsReaching(
+  viewerId: string,
+  among?: string[],
+): Promise<Map<string, { marksMeClose: boolean }>> {
+  const ids = among ? [...new Set(among)].filter((id) => id !== viewerId) : undefined;
+  if (ids && ids.length === 0) return new Map();
+  const db = getDb();
+  const [links, controls] = await Promise.all([
+    db
+      .select({
+        low: posseLinks.userLow,
+        high: posseLinks.userHigh,
+        lowClose: posseLinks.lowMarksClose,
+        highClose: posseLinks.highMarksClose,
+      })
+      .from(posseLinks)
+      .where(
+        and(
+          eq(posseLinks.status, 'accepted'),
+          or(
+            and(eq(posseLinks.userLow, viewerId), ids ? inArray(posseLinks.userHigh, ids) : undefined),
+            and(eq(posseLinks.userHigh, viewerId), ids ? inArray(posseLinks.userLow, ids) : undefined),
+          ),
+        ),
+      ),
+    db
+      .select({ actorId: userControls.actorId, targetId: userControls.targetId })
+      .from(userControls)
+      .where(
+        or(
+          and(
+            eq(userControls.actorId, viewerId),
+            inArray(userControls.kind, ['block', 'mute']),
+            ids ? inArray(userControls.targetId, ids) : undefined,
+          ),
+          and(
+            eq(userControls.targetId, viewerId),
+            inArray(userControls.kind, ['block', 'restrict']),
+            ids ? inArray(userControls.actorId, ids) : undefined,
+          ),
+        ),
+      ),
+  ]);
+  const shut = new Set(controls.map((c) => (c.actorId === viewerId ? c.targetId : c.actorId)));
+  const out = new Map<string, { marksMeClose: boolean }>();
+  for (const l of links) {
+    // The other side's own Close mark is the one that counts: their light, their Close Pals.
+    const [other, marksMeClose] = l.low === viewerId ? [l.high, l.highClose] : [l.low, l.lowClose];
+    if (!shut.has(other)) out.set(other, { marksMeClose });
+  }
+  return out;
+}
+
 interface Flags {
   view: RelationshipView;
   /** They blocked me. Never surfaced: callers treat the person as not found. */

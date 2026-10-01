@@ -1,12 +1,26 @@
 # Howdy Build Status
 
-_Last updated: 2026-09-29_
+_Last updated: 2026-10-01_
 
 ## Current Phase
 
 **Phase 13 — Performance + Scaling + Advanced Intelligence** is **built** (2026-09-30, ADR-029/030), not yet deployed:
 migration `0024` must go on `howdy_dev` and `howdy_prod` before its code is pushed. Phases 0–12 are live. This was the
 last phase in the master prompt's build order (§61).
+
+## 2026-10-01 — Porch Light (ADR-032)
+
+Decisions taken with you: **pick All Pals or Close Pals each time**; **30 min / 1 h / 2 h**; **no Chime or push**;
+**optional note ≤ 60 characters**.
+
+- [x] Home: a "Porch Lights" card lists Pals whose light is on for me (photo, "free until 8:30 pm", note, Whisper
+      button) and holds my own switch. A lit Porch shows a "Porch Light on" card to those Pals, and to its owner.
+- [x] Who sees it is decided when read (`palsReaching`): Pals now, no block either way, not restricted by the owner,
+      not muting the owner; Close-only uses the owner's own Close mark. No ids or audience in the answer.
+- [x] No history: off deletes the row; expired rows mean nothing and `purgeExpiredLights` deletes them daily. The
+      database refuses a light longer than 2 hours.
+- [x] Tests: `lights` (15) + calendar `clockOf`; mutation `.dev/mutate-lights.mjs` 16/16 caught. Migration `0026`.
+      Privacy 1.6.0 (no re-acceptance).
 
 ## 2026-10-01 — Portraits everywhere
 

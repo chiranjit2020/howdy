@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { addDays, addYears, anniversaryDays, dayOf } from '@/shared/calendar';
+import { addDays, addYears, anniversaryDays, clockOf, dayOf } from '@/shared/calendar';
 
 describe("Howdy's calendar (Asia/Kolkata)", () => {
   it('a UTC evening is already the next day in India', () => {
@@ -24,5 +24,11 @@ describe("Howdy's calendar (Asia/Kolkata)", () => {
     expect(anniversaryDays('2028-02-28')).toEqual(['02-28']);
     expect(anniversaryDays('2028-02-29')).toEqual(['02-29']);
     expect(anniversaryDays('2026-09-30')).toEqual(['09-30']);
+  });
+
+  it('clock times are India time, lower-case, with a plain space (Porch Light)', () => {
+    expect(clockOf('2026-10-01T15:00:00Z')).toBe('8:30 pm');
+    expect(clockOf(new Date('2026-10-01T03:35:00Z'))).toBe('9:05 am');
+    expect(clockOf('2026-10-01T18:40:00Z')).toBe('12:10 am');
   });
 });

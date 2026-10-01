@@ -56,6 +56,8 @@ const MODULE_DEPENDENCIES = {
   memories: ['profiles', 'relationships'],
   // Pals you may know (Phase 13): the Porch policy, and names. Nothing depends on it.
   suggestions: ['authz', 'profiles'],
+  // Porch Light (ADR-032): names, and which Pals a light reaches. Nothing depends on it.
+  lights: ['profiles', 'relationships'],
 };
 const moduleRules = Object.entries(MODULE_DEPENDENCIES).map(([name, allowed]) => {
   const forbidden = Object.keys(MODULE_DEPENDENCIES).filter((m) => m !== name && !allowed.includes(m));

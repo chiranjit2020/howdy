@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { getCurrentUser } from '@/modules/auth';
 import type { Actor } from '@/modules/authz';
 import { listFence, listWaiting } from '@/modules/fence';
+import { lightFor, myLight, type LightView, type MyLight } from '@/modules/lights';
 import { getVibeMatrix } from '@/modules/marks';
 import { getPortraitVersion } from '@/modules/media';
 import { getRanchForViewer, resolveHandle, type RanchView } from '@/modules/profiles';
@@ -14,13 +15,14 @@ import { attachPortraits, withCards } from '@/app/_lib/social';
 import { getEnv } from '@/platform/config/env';
 import { AppError } from '@/platform/errors';
 import { clientIp } from '@/platform/http/client-ip';
+import { clockOf } from '@/shared/calendar';
 import { portraitUrl } from '@/shared/portrait';
 import { RanchCover, RanchHeader } from '@/ui/howdy';
 import { buttonClasses, ClayCard, EmptyState } from '@/ui/primitives';
 import { RelationshipBar } from './relationship-bar';
 import { FenceSection } from './fence-section';
 import { SignalEditor } from './signal-editor';
-import { PosseCard, SignalCard, TracksCard } from './side-cards';
+import { PorchLightNotice, PosseCard, SignalCard, TracksCard } from './side-cards';
 import { TributesSection } from './tributes-section';
 import { TrustCard } from './trust-card';
 import { VibeMatrixSection } from './vibe-matrix-section';
@@ -98,7 +100,7 @@ export default async function RanchPage({ params }: { params: Promise<{ handle: 
   const r = ranch;
   const isOwner = Boolean(user && r.isOwner);
   const [
-    { rel, photo },
+    { rel, photo, light },
     { value: fence, limited: fenceBusy },
     waiting,
     waitingTributes,
@@ -110,14 +112,22 @@ export default async function RanchPage({ params }: { params: Promise<{ handle: 
     // A signed-in visitor also sees how they relate to this person (and can act on it). The photo is offered only to
     // signed-in viewers (the picture itself needs a session), and only on a Porch they may open, which this page has
     // already established. Best-effort: a problem finding it just means the initials show.
+    // The Porch Light (ADR-032) comes along too: the owner's own, or this person's if it is on for this viewer.
     (async () => {
       const person = user && !r.isOwner ? await resolveHandle(r.handle) : null;
       const ownerId = r.isOwner ? user?.id : person?.userId;
-      const [rel, photo] = await Promise.all([
+      const [rel, photo, light] = await Promise.all([
         user && person ? getRelationshipView(user.id, person.userId) : null,
         user && ownerId ? getPortraitVersion(ownerId).catch(() => null) : null,
+        // Best-effort: without it the Porch simply shows no light.
+        (user && person
+          ? lightFor(user.id, person.userId)
+          : user && r.isOwner
+            ? myLight(user.id)
+            : Promise.resolve(null)
+        ).catch((): MyLight | LightView | null => null),
       ]);
-      return { rel, photo };
+      return { rel, photo, light };
     })(),
     // The Fence is judged separately: it can be narrower than the Porch (e.g. Pals only), and then it is not shown.
     unlessRateLimited(listFence(viewer, r.handle, { rateKey })),
@@ -196,6 +206,16 @@ export default async function RanchPage({ params }: { params: Promise<{ handle: 
         aria-label="Signal, Pals and Tracks"
         className="flex flex-col gap-6 lg:col-start-2 lg:row-span-3 lg:row-start-1"
       >
+        {light && (
+          <PorchLightNotice
+            owner={ranch.isOwner}
+            displayName={ranch.displayName}
+            handle={ranch.handle}
+            untilLabel={clockOf(light.until)}
+            note={light.note}
+            {...('audience' in light ? { audience: light.audience } : {})}
+          />
+        )}
         {ranch.signal && (
           <SignalCard text={ranch.signal.text} expiresLabel={hoursLeft(ranch.signal.expiresAt)} />
         )}

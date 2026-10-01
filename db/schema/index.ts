@@ -16,3 +16,4 @@ export * from './trust';
 export * from './push';
 export * from './capsules';
 export * from './suggestions';
+export * from './lights';

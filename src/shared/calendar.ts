@@ -37,3 +37,16 @@ export function anniversaryDays(today: string): string[] {
   const leap = (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
   return md === '02-28' && !leap ? ['02-28', '02-29'] : [md];
 }
+
+/** A clock time in Howdy's calendar, like "8:30 pm" (Porch Light, ADR-032). */
+export function clockOf(at: Date | string): string {
+  return new Intl.DateTimeFormat('en-IN', {
+    timeZone: APP_TIME_ZONE,
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  })
+    .format(new Date(at))
+    .replace(/\s/g, ' ') // ICU puts a narrow no-break space before "pm"
+    .toLowerCase();
+}

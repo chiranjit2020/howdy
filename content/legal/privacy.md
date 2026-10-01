@@ -16,7 +16,7 @@ Howdy is run by {{operator}}, an individual based in {{country}} ("Howdy", "we",
 
 **Account information.** Your email address, your call sign (handle), your display name and your password. We never store your password itself, only a one-way scrambled form of it (a hash) that cannot be turned back into the password. We also record when you confirmed your email.
 
-**Your Porch.** Your display name, the colour of your portrait, your Portrait photo if you add one, your Signal (a short status), and your settings: who can see your Porch and Signal, who can write on your Fence, and which Chimes you want.
+**Your Porch.** Your display name, the colour of your portrait, your Portrait photo if you add one, your Signal (a short status), your Porch Light while it is on, and your settings: who can see your Porch and Signal, who can write on your Fence, and which Chimes you want.
 
 **Photos.** When you add a Portrait, or a photo to a Post Card, we re-make the picture ourselves (a small square for a Portrait; for a card, the whole picture at most 1280 pixels across). Anything hidden inside the original file, such as the location where it was taken or the camera used, is thrown away and never stored. A card's photo is shown only to the people who can see that card.
 
@@ -71,6 +71,12 @@ Tracks tell you who has recently stopped by your Porch. They are built to be vag
 - **Time Capsules:** words you seal for your future self or for one of your Pals, to open on a day you choose. Until that day nobody can read them in Howdy, not even you (you can take one back, which deletes it). They are stored on our servers, not end-to-end encrypted. On the day, a capsule to a Pal opens only if you are still Pals and neither of you has blocked the other; otherwise it is deleted. Once open it belongs to the person it was for, and stays until they delete it.
 - **Memories:** "On this day" on your Home page shows Post Cards on your own Fence, the day you became Pals with someone, and Tributes written to you, from earlier years. Only you see them. Nothing extra is stored for this: they are worked out from what is still there, and something removed, or someone you have blocked or muted, does not come back as a memory.
 
+## Porch Light
+
+- **What it is:** a light you switch on for 30 minutes, 1 hour or 2 hours to show you are free to talk, with a short note if you like. It turns itself off.
+- **Who sees it:** your Pals, or only the Pals you marked as Close, as you choose each time. Nobody is notified when it comes on: it is only seen by Pals who look at their Home page or your Porch. It is not shown to anyone you have blocked or restricted, or who has blocked or muted you.
+- **No history:** we keep only the light that is on now. When you switch it off it is deleted, and a light that has gone out is deleted within a day, so nobody can see when you were last around.
+
 ## Pals you may know
 
 On your Pals page we may suggest people who are Pals with at least two of your Pals, and show which of your Pals you share. In the same way, you may be suggested to people who share at least two Pals with you. This is worked out from Pal connections only, when the page is opened; nothing else about you is used, and no profile of you is built for it. Nobody is suggested to anyone they have blocked, muted or restricted (or who did so to them), or whom they have asked or been asked by before, and nobody whose Porch is set to Pals only. You can turn this off in the Workshop ("Suggest me to Pals of my Pals"), and "Not now" stops a suggestion for good.
@@ -86,6 +92,7 @@ On your Pals page we may suggest people who are Pals with at least two of your P
 ## How long we keep things
 
 - **Signal:** 12 hours after you set it.
+- **Porch Light:** until you switch it off, and within a day of it going out on its own.
 - **Time Capsules:** until the day they open (or until you take one back); after that, until the person it was for deletes it.
 - **Whispers:** 7 days after they are sent (or sooner, if a thread is burned). The words of a Whisper someone reported are kept with the report (see below).
 - **Tracks:** 7 days.

@@ -98,9 +98,13 @@ test.describe('Ranch, Signal and Workshop (production build, real CSP)', () => {
     await expect(b.page.getByRole('link', { name: 'Tend your Porch' })).toHaveCount(0);
 
     // A signed-out visitor gets the SAME screen for a hidden Ranch and one that does not exist.
+    // Read each page only once it has streamed in: right after goto, `main` may still be the "Loading…" outline.
+    const settled = () => expect(anonPage.getByRole('main')).not.toContainText('Loading…');
     const hidden = await anonPage.goto(`/porch/${a.handle}`);
+    await settled();
     const hiddenText = await anonPage.getByRole('main').innerText();
     const missing = await anonPage.goto('/porch/nobody_home_zzz');
+    await settled();
     const missingText = await anonPage.getByRole('main').innerText();
     expect(hidden?.status()).toBe(missing?.status());
     expect(hiddenText).toBe(missingText);

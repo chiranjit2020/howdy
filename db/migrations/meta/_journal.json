@@ -183,6 +183,13 @@
       "when": 1790743000715,
       "tag": "0025_card_photos",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1790822694295,
+      "tag": "0026_porch_lights",
+      "breakpoints": true
     }
   ]
 }
