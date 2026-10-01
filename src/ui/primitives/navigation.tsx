@@ -16,7 +16,7 @@ export interface NavItem {
 /** The raised button in the middle of the phone tab bar (the app's main action). */
 export interface NavAction {
   href: string;
-  /** The short word shown inside the circle. */
+  /** Its short name (not shown: the icon fills the circle); screen readers hear it when there is no description. */
   label: string;
   /** What screen readers hear, when the short word needs more (e.g. "Nail a card to your Fence"). */
   description?: string;
@@ -116,16 +116,18 @@ function Tab({ it }: { it: NavItem }) {
   );
 }
 
-/** The raised circle in the notch. Its label sits inside the circle, under the icon. */
+/**
+ * The raised circle in the notch: a glossy, softly embossed button filled by its icon. The label is not shown — the
+ * picture says it — but it (or the longer description) is the link's name.
+ */
 function ActionButton({ action }: { action: NavAction }) {
   return (
     <Link
       href={action.href}
-      aria-label={action.description}
-      className="group absolute -top-8 left-1/2 flex size-16 -translate-x-1/2 flex-col items-center justify-center gap-0.5 rounded-full bg-accent text-on-accent no-underline shadow-float transition-transform duration-150 hover:bg-accent-hover active:scale-92"
+      aria-label={action.description ?? action.label}
+      className="group nav-action-gloss absolute -top-8 left-1/2 grid size-16 -translate-x-1/2 place-items-center rounded-full no-underline transition-[transform,box-shadow] duration-150 hover:-translate-y-0.5 active:translate-y-0 active:scale-92"
     >
       <ActionIcon>{action.icon}</ActionIcon>
-      <span className="text-tab font-bold">{action.label}</span>
     </Link>
   );
 }
@@ -133,7 +135,13 @@ function ActionButton({ action }: { action: NavAction }) {
 function ActionIcon({ children }: { children: ReactNode }) {
   const { pending } = useLinkStatus();
   return (
-    <span aria-hidden="true" className={cn('text-title', pending && 'animate-shimmer')}>
+    <span
+      aria-hidden="true"
+      className={cn(
+        'flex size-full items-center justify-center overflow-hidden rounded-full transition-transform duration-150 group-active:scale-95 [&_img]:size-full',
+        pending && 'animate-shimmer',
+      )}
+    >
       {children}
     </span>
   );

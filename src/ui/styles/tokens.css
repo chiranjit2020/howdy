@@ -342,6 +342,50 @@
 }
 
 /*
+ * The phone tab bar's raised action (Nail): soft neumorphism with a gloss. The icon fills an accent dome; over it, a
+ * glass layer (::after) carries a sheen on the top-left and an inner light and shade that make it bulge. An outer pair
+ * of shadows (light up-left, accent-tinted down-right) lifts it off the bar. Pressing sinks it and dims the sheen.
+ */
+@utility nav-action-gloss {
+  background: linear-gradient(
+    155deg,
+    color-mix(in oklab, var(--color-accent), white 35%),
+    var(--color-accent) 55%,
+    color-mix(in oklab, var(--color-accent), black 8%)
+  );
+  border: 2px solid light-dark(rgb(255 255 255 / 0.85), rgb(255 255 255 / 0.2));
+  box-shadow:
+    -4px -4px 10px light-dark(rgb(255 255 255 / 0.9), rgb(255 255 255 / 0.05)),
+    6px 10px 22px color-mix(in oklab, color-mix(in oklab, var(--color-accent), black 45%) 60%, transparent);
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background:
+      radial-gradient(ellipse 62% 36% at 38% 17%, rgb(255 255 255 / 0.75), rgb(255 255 255 / 0) 72%),
+      linear-gradient(to bottom, rgb(255 255 255 / 0.16), rgb(255 255 255 / 0) 50%);
+    box-shadow:
+      inset 3px 4px 6px rgb(255 255 255 / 0.5),
+      inset -3px -5px 9px
+        color-mix(in oklab, color-mix(in oklab, var(--color-accent), black 40%) 55%, transparent);
+    transition: opacity 150ms;
+  }
+
+  &:active {
+    box-shadow:
+      -2px -2px 5px light-dark(rgb(255 255 255 / 0.8), rgb(255 255 255 / 0.04)),
+      2px 4px 10px color-mix(in oklab, color-mix(in oklab, var(--color-accent), black 45%) 50%, transparent);
+  }
+
+  &:active::after {
+    opacity: 0.6;
+  }
+}
+
+/*
  * -- Phones: one step denser. --
  * The type scale above reads well on a laptop but crowds a 360 px screen. Below `sm` every text role drops a notch; the
  * utilities read these variables, so the whole app follows without per-page changes. Touch targets (min-h-11) are kept.
