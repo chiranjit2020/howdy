@@ -115,7 +115,11 @@ export const auditLog = pgTable(
       .default(sql`'{}'::jsonb`),
     createdAt: tstz('created_at').notNull().defaultNow(),
   },
-  (t) => [index('audit_log_user_created_idx').on(t.userId, t.createdAt)],
+  (t) => [
+    index('audit_log_user_created_idx').on(t.userId, t.createdAt),
+    // The daily job deletes rows older than AUDIT_RETENTION_DAYS (12 months).
+    index('audit_log_created_idx').on(t.createdAt),
+  ],
 );
 
 /**

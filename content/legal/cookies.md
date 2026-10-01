@@ -25,7 +25,7 @@ If that ever changes, we will update this policy first. For anything that is not
 
 ## Other ways we remember things
 
-Howdy does not use your browser's local storage or similar tools to track you. While you are using the site, your browser may keep pages you just visited in memory for up to 30 seconds, so that switching tabs is quick. That memory is cleared when you close the tab.
+Howdy does not use your browser's local storage or similar tools to track you. It keeps one small note there: when you dismissed the "Get the Howdy app" offer, so it is not shown again on that device for 14 days. While you are using the site, your browser may keep pages you just visited in memory for up to 30 seconds, so that switching tabs is quick. That memory is cleared when you close the tab.
 
 ## Controlling cookies
 

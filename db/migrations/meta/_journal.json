@@ -197,6 +197,13 @@
       "when": 1790873832712,
       "tag": "0027_town_hall_feed",
       "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1790878715772,
+      "tag": "0028_audit_log_retention",
+      "breakpoints": true
     }
   ]
 }

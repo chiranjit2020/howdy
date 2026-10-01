@@ -56,7 +56,7 @@ export async function horizontalOverflow(page: Page): Promise<number> {
 
 /**
  * A fresh browser context with its own client address, so rate limits never carry over between tests or runs. The
- * Dynamic Island's install offer is snoozed (it floats over the page on phones); `island.spec.ts` tests it with `island: true`.
+ * Dynamic Island's install and Chimes offers are snoozed (it floats over the page on phones); `island.spec.ts` tests it with `island: true`.
  */
 export async function newContext(
   browser: Browser,
@@ -72,6 +72,7 @@ export async function newContext(
     await ctx.addInitScript(() => {
       try {
         localStorage.setItem('howdy.island.install.dismissedAt', String(Date.now()));
+        localStorage.setItem('howdy.island.chimes.dismissedAt', String(Date.now()));
       } catch {
         /* about:blank has no storage */
       }

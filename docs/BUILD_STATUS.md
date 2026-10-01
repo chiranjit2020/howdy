@@ -4,9 +4,20 @@ _Last updated: 2026-10-01_
 
 ## Current Phase
 
-**Phase 13 — Performance + Scaling + Advanced Intelligence** is **built** (2026-09-30, ADR-029/030), not yet deployed:
-migration `0024` must go on `howdy_dev` and `howdy_prod` before its code is pushed. Phases 0–12 are live. This was the
-last phase in the master prompt's build order (§61).
+**All 13 phases of the master prompt's build order (§61) are built and live**, plus everything added since (latest:
+Town Hall feed ADR-033, Dynamic Island ADR-034). Production: Vercel `sin1` + Neon `howdy-sg` (`howdy_prod`), Resend
+mail, R2 photos, Upstash Redis; a push to `main` deploys. Production does not migrate on deploy: apply new migrations
+to `howdy_dev` and the Singapore `howdy_prod` first.
+
+## 2026-10-01 — audit-log retention, policy updates, Chimes in the island
+
+- [x] Security records (`audit_log`) kept **12 months**, then deleted by the daily job (`purgeOldAuditLog`; migration
+      `0028` adds the `created_at` index). Privacy Policy 1.7.0 states it (no re-acceptance: shorter retention), and
+      its "decide a period" review note is gone. Town Hall posts are now in the policy; the Cookie Policy (1.1.0) names
+      the island's one local-storage note.
+- [x] Dynamic Island: "Get Chimes on this phone" (signed in, phone, not yet asked; iPhone only once installed); the
+      browser's dialog comes only after a tap. Tests: `tests/ui/chimes-island.test.tsx` (headless browsers report
+      notifications as already denied, so this is unit-tested, not e2e).
 
 ## 2026-10-01 — Town Hall feed (ADR-033)
 
@@ -570,10 +581,13 @@ layers covered for them); direct tests of the recorder now catch both. All 15 ca
 
 ## Blockers / Open questions
 
-1. **Mail provider (deploy blocker)** — unchanged.
-2. **Neon dev branch** — still none; local Postgres used. Two processes hold DB pools (site + realtime).
-3. **First commit** — not made (not requested).
-4. ~~Schedule `pnpm jobs:purge`~~ **Done 2026-09-27**: daily Vercel Cron `/api/jobs/purge` (ADR-019). Still open: decide the audit-log and report-evidence retention periods (flagged in the Privacy Policy).
+1. ~~Mail provider~~ **Done:** Resend, domain verified.
+2. ~~Neon dev branch~~ **Done:** `howdy_dev` on the old Ohio project's `dev` branch is what local dev uses. The Ohio
+   project (`dry-mode-62941068`) is otherwise only a rollback since the Singapore move — delete it ~2 weeks after
+   2026-10-01 (your call), and remove the unused `KV_*` Vercel variables that point at the old Redis.
+3. ~~First commit~~ **Done:** everything is on GitHub; pushing `main` deploys.
+4. ~~Schedule `pnpm jobs:purge`~~ **Done 2026-09-27**; ~~retention periods~~ **Done 2026-10-01**: audit log 12 months,
+   closed reports 1 year.
 5. ~~Cloudflare R2~~ **Done:** bucket `howdy` is live and its CORS rule allows `PUT` from the site (checked 2026-10-01).
 6. **Deploying `pnpm ws`** (see ADR-013): long-lived Node process, `NODE_ENV=production`, `WS_PUBLIC_URL=wss://<same host as the site>`, Redis.
 
@@ -594,7 +608,8 @@ layers covered for them); direct tests of the recorder now catch both. All 15 ca
 
 **All thirteen phases of the master prompt's build order are built** (Phase 13, 2026-09-30). What is left is your
 call or waits for real use: moving to Singapore (runbook); image moderation (deferred); an audit-log retention period
-(legal); a self-service data export; capsules to a Town Hall. (The Town Hall feed is built: ADR-033.)
+(legal, done 2026-10-01: 12 months); a self-service data export; capsules to a Town Hall; deploying the realtime
+server (blocker 6). (The Town Hall feed is built: ADR-033; the Dynamic Island: ADR-034.)
 Tributes/Marks/Town Halls follow-ups: revisit whether Tribute/Mark giving should ever
 widen beyond Posse-only; a Town Hall shared feed if the need becomes real; Town Hall roles beyond owner/member.
 

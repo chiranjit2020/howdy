@@ -20,7 +20,7 @@ Howdy is run by {{operator}}, an individual based in {{country}} ("Howdy", "we",
 
 **Photos.** When you add a Portrait, or a photo to a Post Card, we re-make the picture ourselves (a small square for a Portrait; for a card, the whole picture at most 1280 pixels across). Anything hidden inside the original file, such as the location where it was taken or the camera used, is thrown away and never stored. A card's photo is shown only to the people who can see that card.
 
-**What you post and do.** Post Cards and replies, Yos, Tributes you write or receive, Marks you give, Whispers you send, Time Capsules you seal, Town Halls you start or join, and reports you file.
+**What you post and do.** Post Cards and replies, Yos, Tributes you write or receive, Marks you give, Whispers you send, Time Capsules you seal, Town Halls you start or join, posts, replies and reactions in Town Halls, and reports you file.
 
 **Your connections.** Who is in your Pals, and requests between you. Also the private choices you make about others: Close Pals, Scouting, Mute, Restrict and Block. Those last ones are visible only to you. The other person is never told.
 
@@ -52,9 +52,9 @@ Your settings decide most of it.
 - **Your Porch and Signal** can be visible to everyone, to signed-in members (the default), or to your Pals only.
 - **Your Fence** follows your settings for who may read it and who may write on it. You can review cards before they appear, and remove anything on your own Fence.
 - **Whispers** are only ever between the two people in the conversation.
-- **Town Halls:** the list of who is in a Town Hall is visible only to its members.
+- **Town Halls:** the list of who is in a Town Hall, and its posts, replies and reactions, are visible only to its members. Its owner can remove any post in it.
 - **Blocks, mutes and restrictions** are private to you, and a block hides the two of you from each other.
-- **Moderators** can see reports and the content they are about (a Post Card, a photo, one reported Whisper, a Town Hall's name and description), and may act on them.
+- **Moderators** can see reports and the content they are about (a Post Card, a photo, one reported Whisper, a Town Hall's name and description, a Town Hall post), and may act on them.
 
 ## Tracks and Shadow Walk
 
@@ -97,18 +97,16 @@ On your Pals page we may suggest people who are Pals with at least two of your P
 - **Whispers:** 7 days after they are sent (or sooner, if a thread is burned). The words of a Whisper someone reported are kept with the report (see below).
 - **Tracks:** 7 days.
 - **Chimes:** 30 days after you read them, or 90 days if you never do.
-- **Post Cards waiting for approval, and waiting Tributes:** 30 days, if they are not approved.
+- **Post Cards waiting for approval, waiting Tributes, and Town Hall posts waiting for the owner:** 30 days, if they are not approved.
 - **Unfinished photo uploads:** about an hour (a photo chosen for a card but never nailed goes too). A replaced or removed Portrait is deleted straight away; a card's photo stops being shown the moment its card is removed, and its file is deleted within a day.
 - **Sessions:** until you sign out, or after 14 days without use (60 days at most), plus 30 days of records so we can help with account problems.
 - **Email links:** confirmation links work for 24 hours and reset links for 1 hour. Used and expired links are kept for 7 days.
 - **Your account, Porch, posts, Pals, Marks and Town Halls:** for as long as you keep your account, or until you or the person they are on removes them.
 - **Reports:** while a report is open, and for 1 year after a moderator closes it, then deleted, including the words it was about and who reported whom. If an account is deleted first, its reports stay for that time with the link to the account removed.
-- **Security records:** kept after an account is deleted, with the link to the account removed, because they are needed to investigate abuse.
+- **Security records:** 12 months, then deleted. If an account is deleted first, its records stay for the rest of that time with the link to the account removed, because they are needed to investigate abuse.
 - **Rate-limit counters:** up to one hour.
 
 Deleted data may remain in encrypted backups kept by our database provider for a short time before those backups expire.
-
-> **Needs legal review:** decide and publish a fixed retention period for security records (audit log), which is not limited today, and confirm 1 year for closed reports.
 
 ## Service providers
 

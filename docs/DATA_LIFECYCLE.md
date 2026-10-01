@@ -96,7 +96,7 @@ recorded as a `retired` row in the same transaction that makes the new photo liv
 | Session (`sessions`) | idle 14 d / absolute 60 d; dead rows kept 30 d after revoke/expiry for support | `purgeExpiredAuthData()` |
 | Push devices (`push_subscriptions`, ADR-022) | while the session that subscribed is live; a push service's 404/410 forgets it at once | session delete cascades; `purgeDeadSubscriptions()` (in `pnpm jobs:purge`) for revoked/expired sessions; unsubscribing |
 | Email tokens (`email_tokens`) | verify 24 h, reset 1 h; spent/expired rows kept 7 d | `purgeExpiredAuthData()` |
-| Audit log (`audit_log`) | **not yet limited** — needs a retention period decided (proposed 12 months) | — (gap) |
+| Audit log (`audit_log`) | **12 months**, then deleted (kept that long after an account is deleted, anonymised) | `purgeOldAuditLog()` (in `pnpm jobs:purge`) |
 | Rate-limit counters (Redis) | ≤ 1 hour, expire on their own | Redis TTL |
 | **Tracks** (`tracks`) | **7 days**: a row holds only the UTC date of the latest visit; reads ignore older rows at once | `purgeOldTracks()` (in `pnpm jobs:purge`); also deleted with either person |
 | **Whispers** (`messages`) | **7 days** from being sent, or at once by "Burn Thread" (either person, both sides) | `purgeOldWhispers()` (in `pnpm jobs:purge`); threads left empty are dropped with them |

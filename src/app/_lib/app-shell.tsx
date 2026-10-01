@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { getCurrentUser, pendingAcceptances } from '@/modules/auth';
 import { getPortraitVersion } from '@/modules/media';
+import { pushPublicKey } from '@/modules/push';
 import { isModerator } from '@/modules/moderation';
 import { unreadCount } from '@/modules/notifications';
 import { getOwnRanch } from '@/modules/profiles';
@@ -52,7 +53,7 @@ export async function AppFrame({
   if (pending.length > 0) redirect('/agree');
   return (
     <>
-      <PwaBoot signedIn unread={unread} />
+      <PwaBoot signedIn unread={unread} vapidKey={pushPublicKey()} />
       <AppShell
         me={{
           handle: user.handle,

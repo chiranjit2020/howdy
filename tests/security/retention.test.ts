@@ -1,6 +1,6 @@
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { hashToken, newToken } from '@/modules/auth/crypto';
-import { purgeExpiredAuthData } from '@/modules/auth';
+import { purgeExpiredAuthData, purgeOldAuditLog } from '@/modules/auth';
 import { clearExpiredSignals } from '@/modules/profiles';
 import { getPool } from '@/platform/db';
 import { freshAuthState, signedInUser, uniqueUser, type TestKit } from '../helpers/auth';
@@ -125,5 +125,18 @@ describe('authentication data retention', () => {
     expect(await count('users')).toBe(users);
     expect(await count('profiles')).toBe(profiles);
     expect(await count('audit_log')).toBe(audit);
+  });
+});
+
+describe('security records (audit log) retention: 12 months', () => {
+  it('deletes entries older than 365 days, keeps younger ones, and is idempotent', async () => {
+    await sql(`insert into audit_log (event, created_at) values
+      ('old', now() - interval '366 days'),
+      ('edge', now() - interval '364 days'),
+      ('new', now())`);
+    expect(await purgeOldAuditLog()).toEqual({ auditEntries: 1 });
+    const left = (await sql('select event from audit_log order by event')).rows.map((r) => r.event);
+    expect(left).toEqual(['edge', 'new']);
+    expect(await purgeOldAuditLog()).toEqual({ auditEntries: 0 });
   });
 });

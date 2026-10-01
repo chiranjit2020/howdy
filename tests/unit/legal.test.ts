@@ -159,6 +159,10 @@ describe('the legal documents', () => {
     const { WHISPER_RETENTION_DAYS } = await import('@/shared/validation/whispers');
     const { RETENTION_DAYS: TRACK_DAYS } = await import('@/modules/tracks/service');
     const { READ_RETENTION_MS, UNREAD_RETENTION_MS } = await import('@/modules/notifications/service');
+    const { AUDIT_RETENTION_DAYS } = await import('@/modules/auth/retention');
+    expect(AUDIT_RETENTION_DAYS).toBe(365);
+    expect(text).toContain('**Security records:** 12 months, then deleted.');
+    expect(text).not.toContain('fixed retention period for security records');
     expect(text).toContain(`**Signal:** ${SIGNAL_TTL_MS / 3_600_000} hours`);
     expect(text).toContain(`**Whispers:** ${WHISPER_RETENTION_DAYS} days`);
     expect(text).toContain(`**Tracks:** ${TRACK_DAYS} days`);

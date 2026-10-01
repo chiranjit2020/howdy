@@ -36,7 +36,7 @@ export const LEGAL_DOCS: Record<LegalSlug, LegalDoc> = {
     short: 'Privacy',
     description:
       'What Howdy collects, why, how long it is kept, who can see it, and the choices and rights you have.',
-    version: '1.6.0',
+    version: '1.7.0',
     acceptVersion: '1.1.0',
     effective: '2026-10-01',
     updated: '2026-10-01',
@@ -65,9 +65,9 @@ export const LEGAL_DOCS: Record<LegalSlug, LegalDoc> = {
     title: 'Cookie Policy',
     short: 'Cookies',
     description: 'The two small cookies Howdy uses, what each one is for, and how to control them.',
-    version: '1.0.0',
-    effective: '2026-09-27',
-    updated: '2026-09-27',
+    version: '1.1.0',
+    effective: '2026-10-01',
+    updated: '2026-10-01',
   },
 };
 

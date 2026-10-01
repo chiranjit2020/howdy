@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { DynamicIsland } from '../island/island';
+import { ChimesIsland } from './chimes-island';
 import { InstallIsland } from './install-island';
 import { captureInstallPrompt, registerServiceWorker, resyncPush, tidyNotifications } from './pwa';
 
@@ -10,7 +11,16 @@ import { captureInstallPrompt, registerServiceWorker, resyncPush, tidyNotificati
  * Signed in: re-sends this device's push subscription (so it follows the current session) and, whenever Howdy is looked at,
  * clears the notifications it left behind and sets the app-icon badge.
  */
-export function PwaBoot({ signedIn, unread = 0 }: { signedIn: boolean; unread?: number }) {
+export function PwaBoot({
+  signedIn,
+  unread = 0,
+  vapidKey,
+}: {
+  signedIn: boolean;
+  unread?: number;
+  /** Web Push's public key; signed in, the island offers to turn Chimes on for this phone. */
+  vapidKey?: string | undefined;
+}) {
   useEffect(() => captureInstallPrompt(), []);
 
   useEffect(() => {
@@ -31,6 +41,7 @@ export function PwaBoot({ signedIn, unread = 0 }: { signedIn: boolean; unread?: 
     <>
       <DynamicIsland />
       <InstallIsland />
+      {signedIn && <ChimesIsland vapidKey={vapidKey} />}
     </>
   );
 }

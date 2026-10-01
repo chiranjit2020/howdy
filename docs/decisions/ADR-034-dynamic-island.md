@@ -36,12 +36,18 @@ after a dismissal; iPhones never do. So on most phones nothing ever said "you ca
 - **Time Capsule opened today** — "A capsule from Ana opened 💌".
 - **Back online / offline** — "You're offline — we'll send it when you're back".
 - **Pal is on their Porch** — a Pal just lit their Porch Light (only to people their light reaches).
-- **Turn on Chimes** — after installing, a one-tap "Get Chimes on this phone" (the push opt-in from ADR-022).
 
 Each would be a few lines: decide when to call `showActivity`, with a priority above install for anything live.
 
+## Built since
+
+- **"Get Chimes on this phone"** (`ChimesIsland`, priority 5, below install): signed in, on a phone, push key set,
+  and the browser has not been asked yet (`Notification.permission === 'default'`); on an iPhone only once Howdy is
+  installed (Safari allows push only there). The browser's permission dialog appears only after tapping **Turn on
+  Chimes** — never on landing. A refusal or × snoozes it for 14 days.
+
 ## Consequences
 
-- E2E contexts snooze the install activity by default (`newContext`), since it floats over the page; `island.spec.ts`
+- E2E contexts snooze the install and Chimes activities by default (`newContext`), since it floats over the page; `island.spec.ts`
   turns it on with `island: true`.
 - Desktop browsers that do not offer to install see nothing.
