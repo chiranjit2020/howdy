@@ -8,6 +8,7 @@ import { liftExpiredSuspensions, purgeClosedReports } from '@/modules/moderation
 import { purgeOldChimes } from '@/modules/notifications';
 import { clearExpiredSignals } from '@/modules/profiles';
 import { purgeDeadSubscriptions } from '@/modules/push';
+import { purgeStaleHeld } from '@/modules/town-halls';
 import { purgeOldTracks } from '@/modules/tracks';
 import { purgeStaleTributes } from '@/modules/tributes';
 import { recheckStaleTrust } from '@/modules/trust';
@@ -25,6 +26,8 @@ export async function runAllPurges() {
   // Porch Lights that went out (ADR-032): already treated as off; deleting them keeps no trace of when someone was around.
   const lights = await purgeExpiredLights();
   const waiting = await purgeStaleWaiting();
+  // Town Hall posts and replies held for an owner who never answered (ADR-033), on the same 30 days.
+  const hallHeld = await purgeStaleHeld();
   const chimes = await purgeOldChimes();
   const whispers = await purgeOldWhispers();
   const trackRows = await purgeOldTracks();
@@ -48,6 +51,7 @@ export async function runAllPurges() {
     signals,
     ...lights,
     waiting,
+    hallHeld,
     ...chimes,
     whispers,
     ...trackRows,

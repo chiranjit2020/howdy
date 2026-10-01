@@ -3,7 +3,7 @@ import { check, index, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizz
 import { users } from './auth';
 import { postCards } from './fence';
 import { media } from './media';
-import { townHalls } from './town-halls';
+import { townHallPosts, townHalls } from './town-halls';
 import { messages } from './whispers';
 
 const tstz = (name: string) => timestamp(name, { withTimezone: true, mode: 'date' });
@@ -22,7 +22,7 @@ export const reports = pgTable(
     reporterId: uuid('reporter_id').references(() => users.id, { onDelete: 'set null' }),
     targetUserId: uuid('target_user_id').references(() => users.id, { onDelete: 'set null' }),
     reason: text('reason').notNull(),
-    /** person | card | portrait | whisper | town_hall. */
+    /** person | card | portrait | whisper | town_hall | hall_post. */
     subject: text('subject').notNull().default('person'),
     details: text('details'),
     /** Snapshot of the reported words (a card, a Whisper, a Town Hall's name and description): evidence outlives them. */
@@ -33,6 +33,8 @@ export const reports = pgTable(
     mediaId: uuid('media_id').references(() => media.id, { onDelete: 'set null' }),
     messageId: uuid('message_id').references(() => messages.id, { onDelete: 'set null' }),
     townHallId: uuid('town_hall_id').references(() => townHalls.id, { onDelete: 'set null' }),
+    /** A post in a Town Hall's feed (ADR-033). */
+    hallPostId: uuid('hall_post_id').references(() => townHallPosts.id, { onDelete: 'set null' }),
     status: text('status').notNull().default('open'),
     /** Who last changed the status, and when. Full history of moderator actions lives in `audit_log`. */
     reviewedBy: uuid('reviewed_by').references(() => users.id, { onDelete: 'set null' }),
@@ -49,7 +51,7 @@ export const reports = pgTable(
     check('reports_evidence_len', sql`${t.evidenceText} is null or char_length(${t.evidenceText}) <= 600`),
     check(
       'reports_subject_check',
-      sql`${t.subject} in ('person', 'card', 'portrait', 'whisper', 'town_hall')`,
+      sql`${t.subject} in ('person', 'card', 'portrait', 'whisper', 'town_hall', 'hall_post')`,
     ),
     check(
       'reports_not_self',

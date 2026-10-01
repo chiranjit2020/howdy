@@ -10,7 +10,7 @@ const tstz = (name: string) => timestamp(name, { withTimezone: true, mode: 'date
  * - `members`  any active member may join instantly (same as open); listed in the directory — the distinct label is
  *              for the owner's messaging, not a different join rule
  * - `invite`   never listed; reachable only through an invite from the owner, which the invitee must accept
- * Directory + membership only this phase: no shared post feed yet (see ADR-017). Deleting the owner deletes the whole
+ * Members share a post feed (`town_hall_posts`, ADR-033; ADR-017 for the rest). Deleting the owner deletes the whole
  * Town Hall (no ownership transfer yet); deleting any other member just removes their row.
  */
 export const townHalls = pgTable(
@@ -64,5 +64,79 @@ export const townHallMembers = pgTable(
       .on(t.townHallId)
       .where(sql`${t.role} = 'owner'`),
     index('town_hall_members_user_idx').on(t.userId, t.status),
+  ],
+);
+
+/**
+ * A post in a Town Hall's shared feed (ADR-033). Only active members read or write the feed. Deleting the Town Hall or
+ * the author removes the post (and its replies and reactions with it). Status:
+ * - `published`  visible to every active member
+ * - `held`       the author has open reports from several people lately (ADR-024); waits for the owner's OK but looks
+ *                posted to its author (never told)
+ * Leaving a Town Hall keeps what you posted there; the owner (or you) can still take it down.
+ */
+export const townHallPosts = pgTable(
+  'town_hall_posts',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    townHallId: uuid('town_hall_id')
+      .notNull()
+      .references(() => townHalls.id, { onDelete: 'cascade' }),
+    authorId: uuid('author_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    body: text('body').notNull(),
+    status: text('status').notNull().default('published'),
+    createdAt: tstz('created_at').notNull().defaultNow(),
+  },
+  (t) => [
+    check('town_hall_posts_body_len', sql`char_length(${t.body}) between 1 and 280`),
+    check('town_hall_posts_status_check', sql`${t.status} in ('published', 'held')`),
+    // Keyset pagination: newest first, ties broken by id.
+    index('town_hall_posts_feed_idx').on(t.townHallId, t.status, t.createdAt.desc(), t.id.desc()),
+    index('town_hall_posts_author_idx').on(t.authorId),
+  ],
+);
+
+/** A reply on a Town Hall post. Same hold rule as posts; capped per post like a Post Card's scribbles. */
+export const townHallReplies = pgTable(
+  'town_hall_replies',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    postId: uuid('post_id')
+      .notNull()
+      .references(() => townHallPosts.id, { onDelete: 'cascade' }),
+    authorId: uuid('author_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    body: text('body').notNull(),
+    status: text('status').notNull().default('published'),
+    createdAt: tstz('created_at').notNull().defaultNow(),
+  },
+  (t) => [
+    check('town_hall_replies_body_len', sql`char_length(${t.body}) between 1 and 80`),
+    check('town_hall_replies_status_check', sql`${t.status} in ('published', 'held')`),
+    index('town_hall_replies_post_idx').on(t.postId, t.createdAt, t.id),
+    index('town_hall_replies_author_idx').on(t.authorId),
+  ],
+);
+
+/** A reaction to a Town Hall post: one per person per post, the same five kinds as Post Cards. Counts only are shown. */
+export const townHallReactions = pgTable(
+  'town_hall_reactions',
+  {
+    postId: uuid('post_id')
+      .notNull()
+      .references(() => townHallPosts.id, { onDelete: 'cascade' }),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    kind: text('kind').notNull().default('yo'),
+    createdAt: tstz('created_at').notNull().defaultNow(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.postId, t.userId] }),
+    index('town_hall_reactions_user_idx').on(t.userId),
+    check('town_hall_reactions_kind_check', sql`${t.kind} in ('yo', 'laugh', 'fire', 'popcorn', 'love')`),
   ],
 );

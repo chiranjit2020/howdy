@@ -7,6 +7,7 @@ import {
   reports,
   sessions,
   suspensions,
+  townHallPosts,
   townHalls,
   users,
 } from '@db/schema';
@@ -48,7 +49,8 @@ export type ReportAbout =
   | { subject: 'card'; cardId: string; evidence: string }
   | { subject: 'portrait'; mediaId: string }
   | { subject: 'whisper'; messageId: string; evidence: string }
-  | { subject: 'town_hall'; townHallId: string; evidence: string };
+  | { subject: 'town_hall'; townHallId: string; evidence: string }
+  | { subject: 'hall_post'; hallPostId: string; evidence: string };
 
 const EVIDENCE_MAX = 600;
 
@@ -80,6 +82,7 @@ export async function createReport(
       mediaId: about?.subject === 'portrait' ? about.mediaId : null,
       messageId: about?.subject === 'whisper' ? about.messageId : null,
       townHallId: about?.subject === 'town_hall' ? about.townHallId : null,
+      hallPostId: about?.subject === 'hall_post' ? about.hallPostId : null,
     })
     .onConflictDoNothing();
 }
@@ -119,7 +122,8 @@ export type ModerationAuditEvent =
   | 'appeal_upheld'
   | 'whisper_removed'
   | 'town_hall_removed'
-  | 'portrait_removed';
+  | 'portrait_removed'
+  | 'hall_post_removed';
 
 /** Append to the shared security audit trail (`audit_log`). `moderatorId` is the actor; everything else is `meta`. */
 async function auditModAction(
@@ -210,6 +214,7 @@ interface Row {
   mediaId: string | null;
   messageId: string | null;
   townHallId: string | null;
+  hallPostId: string | null;
   status: string;
   reviewedBy: string | null;
   reviewedAt: Date | null;
@@ -295,10 +300,10 @@ export async function listQueue(
  * Town Hall that is gone, or a Portrait that has since been replaced or removed, is not. One query per kind.
  */
 async function stillThere(rows: Row[]): Promise<Set<string>> {
-  const ids = (key: 'cardId' | 'messageId' | 'townHallId' | 'mediaId') =>
+  const ids = (key: 'cardId' | 'messageId' | 'townHallId' | 'mediaId' | 'hallPostId') =>
     rows.flatMap((r) => (r[key] ? [r[key]] : []));
   const db = getDb();
-  const [cards, msgs, halls, photos] = await Promise.all([
+  const [cards, msgs, halls, photos, hallPosts] = await Promise.all([
     ids('cardId').length
       ? db
           .select({ id: postCards.id })
@@ -323,12 +328,23 @@ async function stillThere(rows: Row[]): Promise<Set<string>> {
           .from(media)
           .where(and(inArray(media.id, ids('mediaId')), eq(media.status, 'ready')))
       : [],
+    ids('hallPostId').length
+      ? db
+          .select({ id: townHallPosts.id })
+          .from(townHallPosts)
+          .where(inArray(townHallPosts.id, ids('hallPostId')))
+      : [],
   ]);
-  const alive = new Set([...cards, ...msgs, ...halls, ...photos].map((x) => x.id));
+  const alive = new Set([...cards, ...msgs, ...halls, ...photos, ...hallPosts].map((x) => x.id));
   const pointer = (r: Row) =>
-    ({ card: r.cardId, whisper: r.messageId, town_hall: r.townHallId, portrait: r.mediaId, person: null })[
-      r.subject as ReportSubject
-    ] ?? null;
+    ({
+      card: r.cardId,
+      whisper: r.messageId,
+      town_hall: r.townHallId,
+      portrait: r.mediaId,
+      hall_post: r.hallPostId,
+      person: null,
+    })[r.subject as ReportSubject] ?? null;
   return new Set(
     rows.flatMap((r) => {
       const p = pointer(r);
@@ -444,9 +460,16 @@ export async function removeReportedCard(moderatorId: string, reportId: string):
 }
 
 /** The report must be about this kind of thing, and still point at it; otherwise 400 with a plain reason. */
-function pointerFor(row: Row, subject: 'whisper' | 'town_hall' | 'portrait'): string {
-  const id = { whisper: row.messageId, town_hall: row.townHallId, portrait: row.mediaId }[subject];
-  const what = { whisper: 'a Whisper', town_hall: 'a Town Hall', portrait: 'a photo' }[subject];
+function pointerFor(row: Row, subject: 'whisper' | 'town_hall' | 'portrait' | 'hall_post'): string {
+  const id = {
+    whisper: row.messageId,
+    town_hall: row.townHallId,
+    portrait: row.mediaId,
+    hall_post: row.hallPostId,
+  }[subject];
+  const what = { whisper: 'a Whisper', town_hall: 'a Town Hall', portrait: 'a photo', hall_post: 'a post' }[
+    subject
+  ];
   if (row.subject !== subject)
     throw new AppError('BAD_REQUEST', { message: `This report is not about ${what}.` });
   if (!id) throw new AppError('BAD_REQUEST', { message: `That ${what.slice(2)} is already gone.` });
@@ -476,6 +499,17 @@ export async function removeReportedTownHall(moderatorId: string, reportId: stri
     await tx.delete(townHalls).where(eq(townHalls.id, townHallId));
   });
   await auditModAction('town_hall_removed', moderatorId, { reportId, townHallId });
+}
+
+/** Take down the Town Hall post a report is about (its replies and reactions go with it), and close the report. */
+export async function removeReportedHallPost(moderatorId: string, reportId: string): Promise<void> {
+  const row = await reportToActOn(moderatorId, reportId);
+  const hallPostId = pointerFor(row, 'hall_post');
+  await getDb().transaction(async (tx) => {
+    await closeReport(tx, moderatorId, reportId, 'actioned');
+    await tx.delete(townHallPosts).where(eq(townHallPosts.id, hallPostId));
+  });
+  await auditModAction('hall_post_removed', moderatorId, { reportId, hallPostId });
 }
 
 /**

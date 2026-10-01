@@ -8,15 +8,20 @@ import { handleParamSchema } from '@/shared/validation/profile';
 import { apiRequest, postJson } from '@/ui/auth/api';
 import { FormMessage } from '@/ui/auth/form-parts';
 import { TownHallCard } from '@/ui/howdy';
+import { FeedSection, type InitialFeed, type InitialHeld } from './feed-section';
 import { ReportDialog } from '@/ui/howdy/report-dialog';
 import { Avatar, Button, ClayCard, ConfirmationDialog, EmptyState, Input, useToast } from '@/ui/primitives';
 
 export function TownHallDetailView({
   townHall,
   initialMembers,
+  initialFeed,
+  initialHeld,
 }: {
   townHall: TownHallDetail;
   initialMembers: MemberPage | null;
+  initialFeed: InitialFeed | null;
+  initialHeld: InitialHeld | null;
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -96,6 +101,15 @@ export function TownHallDetailView({
         action={primaryAction}
       />
       {error && <FormMessage tone="error">{error}</FormMessage>}
+
+      {townHall.membership === 'active' && initialFeed && (
+        <FeedSection
+          townHallId={townHall.id}
+          isOwner={townHall.isOwner}
+          initial={initialFeed}
+          initialHeld={initialHeld}
+        />
+      )}
 
       {townHall.membership === 'active' && (
         <ClayCard className="flex flex-col gap-4">

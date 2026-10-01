@@ -108,6 +108,8 @@ recorded as a `retired` row in the same transaction that makes the new photo liv
 | Waiting Tributes (`status` pending) | 30 days from being written, then dropped if the owner never answered | `purgeStaleTributes()` (in `pnpm jobs:purge`) |
 | Published Tributes | until removed by their author or the Ranch owner, or an account is deleted | people; account deletion |
 | Marks (`marks`) | **kept indefinitely** — the row is two ids, a kind and a date, and is the aggregate itself | people (deleted with either side); no retention job |
+| Held Town Hall posts / replies (ADR-033) | 30 days from being written, then dropped if the owner never answered | `purgeStaleHeld()` (in `pnpm jobs:purge`) |
+| Published Town Hall posts, replies, reactions | until removed by their writer / the Town Hall's owner / a moderator, or the Town Hall or the writer's account is deleted (leaving keeps them) | people; cascades |
 | Town Halls and memberships (incl. unanswered invites) | **kept indefinitely** — no sensitive detail to expire (two ids, a role, a status) | people (owner deletion cascades the whole Town Hall); no retention job |
 | Report evidence snapshot (`reports.evidence_text`, ≤ 600 chars: a card, ONE reported Whisper, a Town Hall's name + description) | open reports: kept; closed reports: **deleted 1 year after closing** (row, words, reporter/target) — outlives the thing, including a Whisper past its 7 days (disclosed in the Privacy Policy) | `purgeClosedReports()` (in `pnpm jobs:purge`) |
 | Suspensions and appeals (`suspensions`) | for the life of the account (disclosed in the Privacy Policy) | account deletion (CASCADE) |
@@ -215,4 +217,7 @@ recorded as a `retired` row in the same transaction that makes the new photo liv
   `accept`/`decline` changes it. Nobody else — not even other members — can see someone's pending invite to a Town
   Hall they have not joined.
 - Deleting the owner's account deletes the whole Town Hall (and every membership in it); deleting anyone else's
-  account only ever removes their own membership row.
+  account only ever removes their own membership row (and their posts, replies and reactions in its feed).
+- **The feed is member-only (ADR-033):** posts, replies and reactions are readable only by current active members;
+  everyone else gets the same 404. Blocks and mutes hide posts as on the Fence; held posts are seen only by their
+  writer (as if posted) and the owner. Feed Chimes vanish once the recipient is no longer a member.

@@ -34,7 +34,7 @@ export const reportSchema = z.object({
     .optional(),
 });
 
-/** Flag one thing (a Post Card, a photo, a Whisper, a Town Hall): it is named in the URL, so only reason + details. */
+/** Flag one thing (a Post Card, a photo, a Whisper, a Town Hall, a Town Hall post): it is named in the URL, so only reason + details. */
 export const cardReportSchema = reportSchema.omit({ handle: true });
 export const thingReportSchema = cardReportSchema;
 
@@ -61,7 +61,7 @@ export const SUSPENSION_DAYS: Record<SuspensionLength, number | null> = {
 };
 
 /** What a report can be about (ADR-025): the person, or one thing of theirs. */
-export const REPORT_SUBJECTS = ['person', 'card', 'portrait', 'whisper', 'town_hall'] as const;
+export const REPORT_SUBJECTS = ['person', 'card', 'portrait', 'whisper', 'town_hall', 'hall_post'] as const;
 export type ReportSubject = (typeof REPORT_SUBJECTS)[number];
 
 /** Acting on one report. Each `remove_*` only makes sense when the report is about that kind of thing. */
@@ -71,13 +71,21 @@ export const REPORT_ACTIONS = [
   'remove_portrait',
   'remove_whisper',
   'remove_town_hall',
+  'remove_hall_post',
   'suspend',
 ] as const;
 export type ReportAction = (typeof REPORT_ACTIONS)[number];
 /** Suspending from a report must say for how long; the reason defaults to the report's own. */
 export const reportActionSchema = z.discriminatedUnion('action', [
   z.object({
-    action: z.enum(['dismiss', 'remove_card', 'remove_portrait', 'remove_whisper', 'remove_town_hall']),
+    action: z.enum([
+      'dismiss',
+      'remove_card',
+      'remove_portrait',
+      'remove_whisper',
+      'remove_town_hall',
+      'remove_hall_post',
+    ]),
   }),
   z.object({
     action: z.literal('suspend'),

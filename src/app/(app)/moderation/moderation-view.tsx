@@ -63,6 +63,12 @@ const SUBJECT: Record<
     gone: 'The Town Hall has already been removed.',
     remove: { action: 'remove_town_hall', label: 'Remove Town Hall' },
   },
+  hall_post: {
+    label: 'Town Hall post',
+    said: 'The reported Town Hall post said:',
+    gone: 'The post has already been removed.',
+    remove: { action: 'remove_hall_post', label: 'Remove post' },
+  },
 };
 
 const LENGTH_LABEL: Record<SuspensionLength, string> = {

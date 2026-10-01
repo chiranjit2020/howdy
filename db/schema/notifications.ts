@@ -2,6 +2,7 @@ import { sql } from 'drizzle-orm';
 import { boolean, check, index, pgTable, timestamp, text, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
 import { users } from './auth';
 import { postCards } from './fence';
+import { townHallPosts } from './town-halls';
 
 const tstz = (name: string) => timestamp(name, { withTimezone: true, mode: 'date' });
 
@@ -22,33 +23,44 @@ export const notifications = pgTable(
       .references(() => users.id, { onDelete: 'cascade' }),
     type: text('type').notNull(),
     cardId: uuid('card_id').references(() => postCards.id, { onDelete: 'cascade' }),
+    /** Set only for Town Hall feed Chimes (ADR-033): the post replied to or reacted to. */
+    hallPostId: uuid('hall_post_id').references(() => townHallPosts.id, { onDelete: 'cascade' }),
     createdAt: tstz('created_at').notNull().defaultNow(),
     readAt: tstz('read_at'),
   },
   (t) => [
     check(
       'notifications_type_check',
-      sql`${t.type} in ('posse_requested', 'posse_accepted', 'card_created', 'card_waiting', 'card_approved', 'reply_created', 'reply_waiting', 'yo_given', 'whisper_received', 'tribute_waiting', 'tribute_approved', 'mark_given', 'townhall_invited', 'townhall_invite_accepted', 'capsule_opened')`,
+      sql`${t.type} in ('posse_requested', 'posse_accepted', 'card_created', 'card_waiting', 'card_approved', 'reply_created', 'reply_waiting', 'yo_given', 'whisper_received', 'tribute_waiting', 'tribute_approved', 'mark_given', 'townhall_invited', 'townhall_invite_accepted', 'capsule_opened', 'hall_reply_created', 'hall_reaction_given')`,
     ),
     // A Time Capsule to yourself is the one Chime whose sender is its recipient (Phase 12, ADR-028).
     check('notifications_not_self', sql`${t.recipientId} <> ${t.actorId} or ${t.type} = 'capsule_opened'`),
-    // Posse, Whisper, Tribute, Mark, Town Hall and Time Capsule Chimes are about a person; every card/reply/Yo Chime is about a card.
+    // Person-shaped and Town Hall feed Chimes have no card; every card/reply/Yo Chime is about one. Feed Chimes are about
+    // a post instead (ADR-033).
     check(
       'notifications_card_iff_card_type',
-      sql`(${t.type} in ('posse_requested', 'posse_accepted', 'whisper_received', 'tribute_waiting', 'tribute_approved', 'mark_given', 'townhall_invited', 'townhall_invite_accepted', 'capsule_opened')) = (${t.cardId} is null)`,
+      sql`(${t.type} in ('posse_requested', 'posse_accepted', 'whisper_received', 'tribute_waiting', 'tribute_approved', 'mark_given', 'townhall_invited', 'townhall_invite_accepted', 'capsule_opened', 'hall_reply_created', 'hall_reaction_given')) = (${t.cardId} is null)`,
+    ),
+    check(
+      'notifications_hall_post_iff_hall_type',
+      sql`(${t.type} in ('hall_reply_created', 'hall_reaction_given')) = (${t.hallPostId} is not null)`,
     ),
     // One Chime per person per thing: a repeat (switching a Yo off and on, a second reply) cannot ring the bell again.
     uniqueIndex('notifications_once_per_card')
       .on(t.recipientId, t.actorId, t.type, t.cardId)
       .where(sql`${t.cardId} is not null`),
+    uniqueIndex('notifications_once_per_hall_post')
+      .on(t.recipientId, t.actorId, t.type, t.hallPostId)
+      .where(sql`${t.hallPostId} is not null`),
     uniqueIndex('notifications_once_per_person')
       .on(t.recipientId, t.actorId, t.type)
-      .where(sql`${t.cardId} is null`),
+      .where(sql`${t.cardId} is null and ${t.hallPostId} is null`),
     index('notifications_page_idx').on(t.recipientId, t.createdAt.desc(), t.id.desc()),
     index('notifications_unread_idx')
       .on(t.recipientId, t.createdAt.desc())
       .where(sql`${t.readAt} is null`),
     index('notifications_card_idx').on(t.cardId),
+    index('notifications_hall_post_idx').on(t.hallPostId),
     index('notifications_actor_idx').on(t.actorId),
   ],
 );

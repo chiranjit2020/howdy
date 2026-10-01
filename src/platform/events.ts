@@ -36,6 +36,9 @@ export type DomainEvent =
   /** The owner invited someone; they are not a member until they accept. */
   | { type: 'townhall.invited'; townHallId: string; ownerId: string; inviteeId: string }
   | { type: 'townhall.invite_accepted'; townHallId: string; ownerId: string; inviteeId: string }
+  /** A published reply on a Town Hall post (ADR-033). Held replies emit nothing: only the owner sees them, in the feed. */
+  | { type: 'hall.reply_created'; postId: string; postAuthorId: string; authorId: string }
+  | { type: 'hall.reaction_given'; postId: string; postAuthorId: string; actorId: string }
   /** A Time Capsule opened (ADR-028). Author and recipient are the same person for a capsule to one's future self. */
   | { type: 'capsule.opened'; capsuleId: string; authorId: string; recipientId: string };
 

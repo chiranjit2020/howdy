@@ -68,8 +68,36 @@ export function PostCardReply({
   );
 }
 
+/** What a composer writes: a Post Card, a reply on one, or a post in a Town Hall's feed (ADR-033). */
+const COMPOSER = {
+  card: {
+    max: LIMITS.POST_CARD_MAX,
+    label: 'Nail a Post Card',
+    placeholder: 'Short and sweet…',
+    rows: 3,
+    art: 'nav-nail',
+    submit: 'Nail to Fence',
+  },
+  reply: {
+    max: LIMITS.REPLY_MAX,
+    label: 'Scribble a reply',
+    placeholder: 'One or two lines. Longer? Take it to a Whisper.',
+    rows: 2,
+    art: 'nav-scribble',
+    submit: 'Scribble',
+  },
+  post: {
+    max: LIMITS.TOWNHALL_POST_MAX,
+    label: 'Post to this Town Hall',
+    placeholder: 'Say howdy, ask something, share news…',
+    rows: 3,
+    art: 'nav-town-halls',
+    submit: 'Post',
+  },
+} as const;
+
 /**
- * Composer for a Post Card (160) or a reply (80). Limits come from LIMITS; the server is the authority. A card composer
+ * Composer for a Post Card (160), a reply (80) or a Town Hall post (280). Limits come from LIMITS; the server is the authority. A card composer
  * given `onPhoto` also offers one photo (ADR-031): it uploads as soon as it is chosen, shows a local preview, and its id
  * goes with the words when the card is nailed.
  */
@@ -79,14 +107,14 @@ export function PostCardComposer({
   onPhoto,
   disabled,
 }: {
-  kind: 'card' | 'reply';
+  kind: keyof typeof COMPOSER;
   /** Return `false` to keep what was typed (e.g. the server refused it); anything else clears the box. */
   onSubmit: (body: string, photoId?: string) => boolean | void | Promise<boolean | void>;
   /** Upload a chosen photo; only offered when given (the server decides who may add one). */
   onPhoto?: (file: File) => Promise<PhotoUpload>;
   disabled?: boolean;
 }) {
-  const max = kind === 'card' ? LIMITS.POST_CARD_MAX : LIMITS.REPLY_MAX;
+  const { max, label, placeholder, rows, art, submit: submitLabel } = COMPOSER[kind];
   const [body, setBody] = useState('');
   const [busy, setBusy] = useState(false);
   const [photo, setPhoto] = useState<{ preview: string; id?: string } | undefined>();
@@ -131,13 +159,13 @@ export function PostCardComposer({
   return (
     <form onSubmit={submit} className="flex flex-col gap-2">
       <Textarea
-        label={kind === 'card' ? 'Nail a Post Card' : 'Scribble a reply'}
+        label={label}
         value={body}
         onChange={(e) => setBody(e.target.value)}
         maxLength={max}
         showCount
-        rows={kind === 'card' ? 3 : 2}
-        placeholder={kind === 'card' ? 'Short and sweet…' : 'One or two lines. Longer? Take it to a Whisper.'}
+        rows={rows}
+        placeholder={placeholder}
       />
       {photoError && <FormMessage tone="error">{photoError}</FormMessage>}
       {photo && (
@@ -182,8 +210,8 @@ export function PostCardComposer({
           disabled={disabled || !trimmed || uploading}
           className="self-end"
         >
-          <Art name={kind === 'card' ? 'nav-nail' : 'nav-scribble'} />
-          {kind === 'card' ? 'Nail to Fence' : 'Scribble'}
+          <Art name={art} />
+          {submitLabel}
         </Button>
       </div>
     </form>
@@ -214,6 +242,8 @@ export interface PostCardProps {
   actions?: ReactNode;
   /** The card's photo (ADR-031), served only to people who may see the card. */
   photo?: { url: string; width: number; height: number } | null;
+  /** What it is called to a screen reader ("Post Card from …"); a Town Hall post says "Post". */
+  noun?: string;
 }
 
 /**
@@ -237,6 +267,7 @@ export function PostCard({
   replyComposer,
   actions,
   photo,
+  noun = 'Post Card',
 }: PostCardProps) {
   const [flipped, setFlipped] = useState(false);
   const [hasFlipped, setHasFlipped] = useState(false); // no animation / focus move on first paint
@@ -256,7 +287,7 @@ export function PostCard({
   const face = cn('clay flex flex-col gap-3 p-5', hasFlipped && 'animate-flip-in');
 
   return (
-    <article aria-label={`Post Card from ${author.name}`} className="[perspective:1200px]">
+    <article aria-label={`${noun} from ${author.name}`} className="[perspective:1200px]">
       {flipped ? (
         <div className={cn(face, 'bg-parchment')}>
           <div className="flex items-center justify-between">

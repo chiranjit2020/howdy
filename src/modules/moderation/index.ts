@@ -13,6 +13,7 @@ export {
   purgeClosedReports,
   reinstateAccount,
   removeReportedCard,
+  removeReportedHallPost,
   removeReportedPortrait,
   removeReportedTownHall,
   removeReportedWhisper,

@@ -3,6 +3,7 @@ import { retirePortrait } from '@/modules/media';
 import {
   dismissReport,
   removeReportedCard,
+  removeReportedHallPost,
   removeReportedPortrait,
   removeReportedTownHall,
   removeReportedWhisper,
@@ -16,7 +17,7 @@ export const dynamic = 'force-dynamic';
 
 /**
  * Act on one open report: `{ action }` from a closed set — dismiss, remove the reported thing (`remove_card`,
- * `remove_portrait`, `remove_whisper`, `remove_town_hall`, each only for a report about that kind of thing), or suspend
+ * `remove_portrait`, `remove_whisper`, `remove_town_hall`, `remove_hall_post`, each only for a report about that kind of thing), or suspend
  * (with a `length` and optionally a `reason`). Every action closes the report; a report someone already closed answers
  * 409. Moderators only; 404 to anyone else.
  */
@@ -40,6 +41,9 @@ export const POST = route(async ({ req, params }) => {
       break;
     case 'remove_town_hall':
       await removeReportedTownHall(user.id, id);
+      break;
+    case 'remove_hall_post':
+      await removeReportedHallPost(user.id, id);
       break;
     case 'dismiss':
       await dismissReport(user.id, id);

@@ -1,4 +1,4 @@
-import { notificationPrefs, notifications, postCards } from '@db/schema';
+import { notificationPrefs, notifications, postCards, townHallMembers, townHallPosts } from '@db/schema';
 import { and, desc, eq, inArray, isNotNull, isNull, lt, lte, or, sql } from 'drizzle-orm';
 import { canFence } from '@/modules/authz';
 import { getCards, getFenceResources, type PersonCard } from '@/modules/profiles';
@@ -47,7 +47,9 @@ export type ChimeType =
   | 'mark_given'
   | 'townhall_invited'
   | 'townhall_invite_accepted'
-  | 'capsule_opened';
+  | 'capsule_opened'
+  | 'hall_reply_created'
+  | 'hall_reaction_given';
 
 const CATEGORY: Record<ChimeType, ChimeCategory> = {
   posse_requested: 'posse',
@@ -65,6 +67,8 @@ const CATEGORY: Record<ChimeType, ChimeCategory> = {
   townhall_invited: 'townhalls',
   townhall_invite_accepted: 'townhalls',
   capsule_opened: 'capsules',
+  hall_reply_created: 'townhalls',
+  hall_reaction_given: 'townhalls',
 };
 
 /** Chimes the recipient needs in order to act (the owner decides what waits), so a restricted writer still rings them. */
@@ -116,7 +120,7 @@ async function deliver(
   actorId: string,
   type: ChimeType,
   cardId: string | null,
-  opts: { bump?: boolean } = {},
+  opts: { bump?: boolean; hallPostId?: string } = {},
 ): Promise<void> {
   // Nobody is Chimed about their own actions — except a Time Capsule from their past self opening (ADR-028).
   if (recipientId === actorId && type !== 'capsule_opened') return;
@@ -128,29 +132,36 @@ async function deliver(
 
   const now = new Date(); // whole milliseconds, so paging cursors compare exactly
   const db = getDb();
-  if (opts.bump && cardId === null) {
+  const hallPostId = opts.hallPostId ?? null;
+  if (opts.bump && cardId === null && hallPostId === null) {
     // A fresh ask (or accept) between the same two people rings again; the ask budget already bounds how often that can be.
     await db.execute(sql`
       insert into notifications (recipient_id, actor_id, type, created_at)
       values (${recipientId}, ${actorId}, ${type}, ${now})
-      on conflict (recipient_id, actor_id, type) where card_id is null
+      on conflict (recipient_id, actor_id, type) where card_id is null and hall_post_id is null
       do update set created_at = excluded.created_at, read_at = null`);
   } else {
     const stored = await db
       .insert(notifications)
-      .values({ recipientId, actorId, type, cardId, createdAt: now })
+      .values({ recipientId, actorId, type, cardId, hallPostId, createdAt: now })
       .onConflictDoNothing()
       .returning({ id: notifications.id });
     if (stored.length === 0) return; // a repeat never rings again, so it never pushes again either
   }
-  await pushChime(recipientId, actorId, type, cardId);
+  await pushChime(recipientId, actorId, type, cardId, hallPostId);
 }
 
 /**
  * Send the Chime that was just stored to the person's devices. The words come from the SAME read-time filter and wording as
  * the Chimes list, so a push can never say more than the bell would — and a Chime the list would hide is not pushed at all.
  */
-async function pushChime(recipientId: string, actorId: string, type: ChimeType, cardId: string | null) {
+async function pushChime(
+  recipientId: string,
+  actorId: string,
+  type: ChimeType,
+  cardId: string | null,
+  hallPostId: string | null,
+) {
   const [row] = await base()
     .where(
       and(
@@ -158,6 +169,7 @@ async function pushChime(recipientId: string, actorId: string, type: ChimeType, 
         eq(notifications.actorId, actorId),
         eq(notifications.type, type),
         cardId === null ? isNull(notifications.cardId) : eq(notifications.cardId, cardId),
+        hallPostId === null ? isNull(notifications.hallPostId) : eq(notifications.hallPostId, hallPostId),
       ),
     )
     .limit(1);
@@ -174,7 +186,7 @@ async function pushChime(recipientId: string, actorId: string, type: ChimeType, 
     tag:
       type === 'whisper_received'
         ? `whisper:${shown.actor.handle}`
-        : `${type}:${cardId ?? shown.actor.handle}`,
+        : `${type}:${cardId ?? hallPostId ?? shown.actor.handle}`,
     badge: await unreadCount(recipientId),
   });
 }
@@ -228,6 +240,15 @@ export async function handleEvent(event: DomainEvent): Promise<void> {
     case 'capsule.opened':
       // The words are never in the Chime (or the push): only that one opened, and from whom.
       return deliver(event.recipientId, event.authorId, 'capsule_opened', null, { bump: true });
+    case 'hall.reply_created':
+      // Only the post's writer hears it (ADR-033): a busy Town Hall must not ring every member for every reply.
+      return deliver(event.postAuthorId, event.authorId, 'hall_reply_created', null, {
+        hallPostId: event.postId,
+      });
+    case 'hall.reaction_given':
+      return deliver(event.postAuthorId, event.actorId, 'hall_reaction_given', null, {
+        hallPostId: event.postId,
+      });
   }
 }
 
@@ -243,6 +264,9 @@ interface Row {
   fenceOwnerId: string | null;
   cardAuthorId: string | null;
   cardStatus: string | null;
+  hallPostId: string | null;
+  townHallId: string | null;
+  hallPostStatus: string | null;
 }
 
 export interface ChimeView {
@@ -274,6 +298,9 @@ const SELECT = {
   fenceOwnerId: postCards.fenceOwnerId,
   cardAuthorId: postCards.authorId,
   cardStatus: postCards.status,
+  hallPostId: notifications.hallPostId,
+  townHallId: townHallPosts.townHallId,
+  hallPostStatus: townHallPosts.status,
 } as const;
 
 /**
@@ -308,11 +335,13 @@ async function visible(userId: string, rows: Row[]): Promise<Shown[]> {
   if (rows.length === 0) return [];
   const actorIds = rows.map((r) => r.actorId);
   const ownerIds = [...new Set(rows.flatMap((r) => (r.fenceOwnerId ? [r.fenceOwnerId] : [])))];
-  const [people, hidden, readable, openThreads] = await Promise.all([
+  const hallIds = [...new Set(rows.flatMap((r) => (r.townHallId ? [r.townHallId] : [])))];
+  const [people, hidden, readable, openThreads, halls] = await Promise.all([
     getCards([...actorIds, ...ownerIds, userId]),
     hiddenAuthors(userId, actorIds),
     readableFences(userId, ownerIds),
     posseMembersAmong(userId, actorIds),
+    hallsIAmIn(userId, hallIds),
   ]);
   return rows.flatMap((row) => {
     const actor = people.get(row.actorId);
@@ -323,9 +352,29 @@ async function visible(userId: string, rows: Row[]): Promise<Shown[]> {
       if (!row.fenceOwnerId || !readable.has(row.fenceOwnerId)) return [];
       if (NEEDS_PUBLISHED.has(row.type as ChimeType) && row.cardStatus !== 'published') return [];
     }
+    // A Town Hall feed Chime shows only while its post is up and published, and I am still a member (ADR-033).
+    if (row.hallPostId !== null) {
+      if (!row.townHallId || !halls.has(row.townHallId) || row.hallPostStatus !== 'published') return [];
+    }
     const owner = row.fenceOwnerId ? people.get(row.fenceOwnerId) : undefined;
     return [{ row, actor, ownerHandle: owner?.handle ?? null }];
   });
+}
+
+/** Which of these Town Halls am I an active member of right now? */
+async function hallsIAmIn(userId: string, hallIds: string[]): Promise<Set<string>> {
+  if (hallIds.length === 0) return new Set();
+  const rows = await getDb()
+    .select({ id: townHallMembers.townHallId })
+    .from(townHallMembers)
+    .where(
+      and(
+        eq(townHallMembers.userId, userId),
+        eq(townHallMembers.status, 'active'),
+        inArray(townHallMembers.townHallId, hallIds),
+      ),
+    );
+  return new Set(rows.map((r) => r.id));
 }
 
 function describe(userId: string, s: Shown, myHandle: string): { text: string; href: string } {
@@ -378,6 +427,16 @@ function describe(userId: string, s: Shown, myHandle: string): { text: string; h
             : `A Time Capsule from ${name} just opened.`,
         href: '/capsules',
       };
+    case 'hall_reply_created':
+      return {
+        text: `${name} replied to your post in a Town Hall.`,
+        href: `/town-halls/${s.row.townHallId}`,
+      };
+    case 'hall_reaction_given':
+      return {
+        text: `${name} reacted to your post in a Town Hall.`,
+        href: `/town-halls/${s.row.townHallId}`,
+      };
   }
 }
 
@@ -385,7 +444,11 @@ const cursorWhere = (c: Cursor | null) =>
   c ? sql`(${notifications.createdAt}, ${notifications.id}) < (${c.at}, ${c.id})` : undefined;
 
 const base = () =>
-  getDb().select(SELECT).from(notifications).leftJoin(postCards, eq(postCards.id, notifications.cardId));
+  getDb()
+    .select(SELECT)
+    .from(notifications)
+    .leftJoin(postCards, eq(postCards.id, notifications.cardId))
+    .leftJoin(townHallPosts, eq(townHallPosts.id, notifications.hallPostId));
 
 /** Unread Chimes the person can see, up to UNREAD_CAP. Uses the same filter as the list, so the two always agree. */
 export async function unreadCount(userId: string): Promise<number> {

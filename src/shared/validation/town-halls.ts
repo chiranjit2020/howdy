@@ -1,12 +1,12 @@
 import { z } from 'zod';
 import { LIMITS } from '../limits';
-import { cursorParamSchema, idParamSchema } from './fence';
+import { cursorParamSchema, idParamSchema, postReplySchema, yoSchema } from './fence';
 import { handleParamSchema, hasDisguisingChars, hasLink, normaliseText } from './profile';
 import './zod-setup'; // jitless Zod (no eval probe under our CSP)
 
 /**
- * Pure, browser-safe validation for Town Halls (communities). Directory + membership only this phase — no shared post
- * feed (ADR-017). Names and descriptions are shown to every signed-in member, so they get the same screening as a
+ * Pure, browser-safe validation for Town Halls (communities): directory and membership (ADR-017) and the members' feed
+ * (ADR-033). Names and descriptions are shown to every signed-in member, so they get the same screening as a
  * Tribute: normalised, no look-alike/bidi/zero-width tricks, and no links.
  */
 
@@ -75,3 +75,20 @@ export const townHallsQuerySchema = z.object({
 /** Roster page size (a Town Hall's own membership can outgrow a single response). */
 export const MEMBER_PAGE_SIZE = 50;
 export const MEMBER_MAX_PAGE_SIZE = 100;
+
+/**
+ * The feed (ADR-033): posts by members, short replies, reactions. Posts are screened exactly like a Post Card (no links,
+ * no disguising characters); replies reuse the Post Card reply rules.
+ */
+export const hallPostBodySchema = clean(LIMITS.TOWNHALL_POST_MAX, 'Write something to post.', 'A post');
+export const hallPostSchema = z.object({ body: hallPostBodySchema });
+export const hallReplySchema = postReplySchema;
+export const hallReactionSchema = yoSchema;
+export const hallActionSchema = z.object({ action: z.enum(['approve']) });
+
+export const HALL_FEED_PAGE_SIZE = 20;
+export const HALL_FEED_MAX_PAGE_SIZE = 50;
+export const hallFeedQuerySchema = z.object({
+  cursor: cursorParamSchema.optional(),
+  limit: z.coerce.number().int().min(1).max(HALL_FEED_MAX_PAGE_SIZE).optional(),
+});

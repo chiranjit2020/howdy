@@ -25,3 +25,26 @@ export type {
   TownHallDetail,
   TownHallSummary,
 } from './service';
+export {
+  approvePost,
+  approveReply,
+  createPost,
+  createReply,
+  hallPostForReport,
+  listFeed,
+  listHeld,
+  purgeStaleHeld,
+  removePost,
+  removeReply,
+  setReaction,
+  FEED_RATE,
+} from './feed';
+export type {
+  HallAuthor,
+  HallFeedPage,
+  HallPostView,
+  HallReplyView,
+  HeldItems,
+  HeldPost,
+  HeldReply,
+} from './feed';
