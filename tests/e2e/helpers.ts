@@ -54,16 +54,30 @@ export async function horizontalOverflow(page: Page): Promise<number> {
   return overflow;
 }
 
-/** A fresh browser context with its own client address, so rate limits never carry over between tests or runs. */
-export function newContext(
+/**
+ * A fresh browser context with its own client address, so rate limits never carry over between tests or runs. The
+ * Dynamic Island's install offer is snoozed (it floats over the page on phones); `island.spec.ts` tests it with `island: true`.
+ */
+export async function newContext(
   browser: Browser,
-  opts: Parameters<Browser['newContext']>[0] = {},
+  opts: Parameters<Browser['newContext']>[0] & { island?: boolean } = {},
 ): Promise<BrowserContext> {
+  const { island, ...rest } = opts;
   const ip = `10.${randomInt(1, 255)}.${randomInt(1, 255)}.${randomInt(1, 255)}`;
-  return browser.newContext({
-    ...opts,
-    extraHTTPHeaders: { 'x-forwarded-for': ip, ...(opts?.extraHTTPHeaders ?? {}) },
+  const ctx = await browser.newContext({
+    ...rest,
+    extraHTTPHeaders: { 'x-forwarded-for': ip, ...(rest?.extraHTTPHeaders ?? {}) },
   });
+  if (!island) {
+    await ctx.addInitScript(() => {
+      try {
+        localStorage.setItem('howdy.island.install.dismissedAt', String(Date.now()));
+      } catch {
+        /* about:blank has no storage */
+      }
+    });
+  }
+  return ctx;
 }
 
 export const uniqueAccount = (tag: string) => {

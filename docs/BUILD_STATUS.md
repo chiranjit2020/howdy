@@ -8,6 +8,17 @@ _Last updated: 2026-10-01_
 migration `0024` must go on `howdy_dev` and `howdy_prod` before its code is pushed. Phases 0–12 are live. This was the
 last phase in the master prompt's build order (§61).
 
+## 2026-10-01 — Town Hall feed (ADR-033)
+
+Built locally, **not yet deployed**: migration `0027_town_hall_feed` is applied to the local test and e2e databases
+only — it must go on `howdy_dev` and the Singapore `howdy_prod` before the code is pushed.
+- [x] Members-only feed: posts (280), replies (80, ≤ 20 per post), five reactions; writer or owner removes.
+- [x] Fence protections: blocks/mutes, inactive authors, fail-closed limits, first-week budgets, auto-hold + owner's
+      "Waiting for you" tray, held items purged after 30 days.
+- [x] Reports: subject `hall_post`, moderator `remove_hall_post`. Chimes: reply/reaction to the writer only.
+- [x] Tests: `tests/security/town-hall-feed.test.ts` (22; 7 mutations all caught), `tests/e2e/town-hall-feed.spec.ts`
+      (320 px phone, axe, 44 px targets, no overflow). Full vitest run: 1,304 tests.
+
 ## 2026-10-01 — Porch Light (ADR-032)
 
 Decisions taken with you: **pick All Pals or Close Pals each time**; **30 min / 1 h / 2 h**; **no Chime or push**;
@@ -569,7 +580,7 @@ layers covered for them); direct tests of the recorder now catch both. All 15 ca
 ## Known Issues / Deferred
 
 - Town Halls have no shared post feed yet (directory + membership only, ADR-017); `members` visibility is today
-  identical in effect to `open` (self-serve either way) — only the label differs, in case a real approval-gated join
+  identical in effect to `open` (self-serve either way; the feed is ADR-033) — only the label differs, in case a real approval-gated join
   flow is wanted later.
 - Posse members always see each other's visits unless the visitor chose Shadow Walk (disclosed on the page). A person with few non-Posse
   visitors may guess who a hidden one was from what they know.
@@ -583,7 +594,7 @@ layers covered for them); direct tests of the recorder now catch both. All 15 ca
 
 **All thirteen phases of the master prompt's build order are built** (Phase 13, 2026-09-30). What is left is your
 call or waits for real use: moving to Singapore (runbook); image moderation (deferred); an audit-log retention period
-(legal); a self-service data export; capsules to a Town Hall.
+(legal); a self-service data export; capsules to a Town Hall. (The Town Hall feed is built: ADR-033.)
 Tributes/Marks/Town Halls follow-ups: revisit whether Tribute/Mark giving should ever
 widen beyond Posse-only; a Town Hall shared feed if the need becomes real; Town Hall roles beyond owner/member.
 

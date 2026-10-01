@@ -84,6 +84,11 @@
   --color-trusted: #f2b33d;
   --color-trusted-edge: #8a5a12;
   --color-trusted-ink: #4a2f06;
+  /* The Dynamic Island: a near-black pill in both themes (it reads as hardware, like the phone's own). */
+  --color-island: #17161f;
+  --color-island-raised: #2a2836;
+  --color-on-island: #f6f2ea;
+  --color-on-island-muted: #b9b3c9;
 
   /* Soft colour shape used on the Ranch cover banner (Dusk variant dimmed so it does not glow). */
   --color-auth-blob-peach: light-dark(#fee8dd, #3a2c3f);
@@ -151,6 +156,19 @@
   --animate-slide-from-left: slide-from-left 0.25s ease-out;
   /* The phone tab bar: the icon of the tab you land on gives one small hop. */
   --animate-nav-pop: nav-pop 0.45s var(--ease-spring);
+  /* The Dynamic Island drops in from the top edge and settles. */
+  --animate-island-in: island-in 0.5s var(--ease-spring);
+
+  @keyframes island-in {
+    0% {
+      opacity: 0;
+      transform: translateY(-24px) scale(0.6);
+    }
+    100% {
+      opacity: 1;
+      transform: none;
+    }
+  }
 
   @keyframes nav-pop {
     0% {
