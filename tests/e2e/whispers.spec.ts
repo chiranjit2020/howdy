@@ -272,6 +272,10 @@ test.describe('Whispers: accessibility and layout in a real browser', () => {
       });
       expect(problems, `${path} layout`).toEqual([]);
     }
+    // The thread's name keeps a real width next to its buttons: it was once squeezed to a letter or two per line
+    // (a flex-1 item starts at width 0, so the row never wrapped). Reported from a phone, 2026-10-04.
+    const name = await a.page.getByRole('heading', { level: 1 }).boundingBox();
+    expect(name?.width ?? 0, 'thread name width at 320px').toBeGreaterThanOrEqual(160);
     await Promise.all([a.ctx.close(), b.ctx.close()]);
   });
 });

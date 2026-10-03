@@ -315,30 +315,36 @@ export function ThreadView({
 
   return (
     <>
-      <header className="flex flex-wrap items-center gap-3">
-        <Avatar name={displayName} tint={portraitTint} src={portraitUrl} />
-        <div className="min-w-0 flex-1">
-          <h1 className="text-title [overflow-wrap:anywhere] text-text-primary">{displayName}</h1>
-          <p className="text-caption text-text-secondary">
-            <Link href={`/porch/${handle}`} className="text-text-secondary no-underline hover:underline">
-              @{handle}
-            </Link>
-          </p>
+      {/* Phone: who you are talking to gets the whole first row and the actions sit under it (side by side, the
+          name was squeezed to a letter or two per line). From sm up there is room for one row. */}
+      <header className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-3">
+        <div className="flex min-w-0 items-center gap-3 sm:flex-1">
+          <Avatar name={displayName} tint={portraitTint} src={portraitUrl} />
+          <div className="min-w-0 flex-1">
+            <h1 className="text-title [overflow-wrap:anywhere] text-text-primary">{displayName}</h1>
+            <p className="text-caption [overflow-wrap:anywhere] text-text-secondary">
+              <Link href={`/porch/${handle}`} className="text-text-secondary no-underline hover:underline">
+                @{handle}
+              </Link>
+            </p>
+          </div>
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          aria-pressed={picking}
-          onClick={() => {
-            setPicking((p) => !p);
-            setFlagged(false);
-          }}
-        >
-          {picking ? 'Done flagging' : 'Flag a Whisper'}
-        </Button>
-        <Button variant="ghost" size="sm" onClick={() => setBurning(true)}>
-          Burn thread
-        </Button>
+        <div className="flex justify-end gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            aria-pressed={picking}
+            onClick={() => {
+              setPicking((p) => !p);
+              setFlagged(false);
+            }}
+          >
+            {picking ? 'Done flagging' : 'Flag a Whisper'}
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => setBurning(true)}>
+            Burn thread
+          </Button>
+        </div>
       </header>
       {picking && (
         <p className="text-caption text-text-secondary">
