@@ -94,15 +94,15 @@ export function PortraitForm({
   const shown = preview && preview.against === portraitSrc ? preview.url : portraitSrc;
   const accept = PORTRAIT_TYPES.join(',');
   return (
-    <ClayCard className="flex flex-col gap-4">
+    <ClayCard className="flex flex-col gap-3">
       <h2 className="text-title text-text-primary">Portrait</h2>
       {error && <FormMessage tone="error">{error}</FormMessage>}
-      <div className="flex flex-wrap items-center gap-4">
-        <Avatar name={displayName} src={shown} tint={portraitTint} size="xl" />
-        <div className="flex flex-col gap-2">
+      <div className="flex items-center gap-4">
+        <Avatar name={displayName} src={shown} tint={portraitTint} size="lg" />
+        <div className="flex min-w-0 flex-wrap items-center gap-1">
           {/* A real file input (keyboard and screen-reader friendly), dressed as a button. */}
           <label
-            className={`${buttonClasses({ variant: 'secondary' })} cursor-pointer has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-focus aria-disabled:cursor-not-allowed`}
+            className={`${buttonClasses({ variant: 'secondary', size: 'sm' })} cursor-pointer has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-focus aria-disabled:cursor-not-allowed`}
             aria-disabled={busy ? true : undefined}
           >
             <input
@@ -112,24 +112,25 @@ export function PortraitForm({
               disabled={Boolean(busy)}
               className="sr-only"
             />
-            {busy === 'uploading' ? 'Uploading…' : portraitSrc ? 'Choose a new photo' : 'Choose a photo'}
+            {busy === 'uploading' ? 'Uploading…' : portraitSrc ? 'Change photo' : 'Add a photo'}
           </label>
           {portraitSrc && (
             <Button
               variant="ghost"
               size="sm"
               onClick={remove}
+              aria-label="Remove photo"
               loading={busy === 'removing'}
               disabled={Boolean(busy)}
             >
-              Remove photo
+              Remove
             </Button>
           )}
         </div>
       </div>
       <p className="text-metadata text-text-muted">
-        JPEG, PNG or WebP, up to {PORTRAIT_MAX_BYTES / (1024 * 1024)} MB. It is cropped to a square. Only
-        people who can visit your Porch can see it, and location details in the photo are removed.
+        JPEG, PNG or WebP up to {PORTRAIT_MAX_BYTES / (1024 * 1024)} MB, cropped square. Only people who can
+        visit your Porch see it; location details are removed.
       </p>
     </ClayCard>
   );

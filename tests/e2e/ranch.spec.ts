@@ -61,19 +61,35 @@ test.describe('Ranch, Signal and Workshop (production build, real CSP)', () => {
     await a.page.getByRole('link', { name: 'Workshop', exact: true }).first().click();
     await expect(a.page).toHaveURL(/\/workshop$/);
     await a.page.getByLabel('Display name').fill('  Priya   Sharma ');
-    await a.page.getByLabel('Mint').check();
+    await a.page.getByLabel('Bio').fill('Chai lover.   Weekend cyclist <b>hi</b>');
+    // The colour is a circle you tap (its label); the radio inside is for screen readers.
+    await a.page.locator('label', { has: a.page.getByRole('radio', { name: 'Mint' }) }).click();
+    await expect(a.page.getByRole('radio', { name: 'Mint' })).toBeChecked();
     await a.page.getByRole('button', { name: 'Save', exact: true }).click();
     await expect(a.page.getByRole('status').filter({ hasText: 'Porch swept' })).toBeVisible();
 
     await a.page.goto(`/porch/${a.handle}`);
     await expect(a.page.getByRole('heading', { level: 1, name: 'Priya Sharma' })).toBeVisible(); // normalised
     await expect(a.page.getByText(`@${a.handle}`)).toBeVisible(); // the call sign never changes
+    // The bio shows under the name as plain text (normalised, markup shown as typed, never rendered).
+    await expect(a.page.getByText('Chai lover. Weekend cyclist <b>hi</b>', { exact: true })).toBeVisible();
 
-    // A link in the display name is refused too.
+    // A link in the display name or the bio is refused too, on its own field.
     await a.page.goto('/workshop');
     await a.page.getByLabel('Display name').fill('Visit win-prizes.com');
     await a.page.getByRole('button', { name: 'Save', exact: true }).click();
     await expect(a.page.getByText(/Links are not allowed/)).toBeVisible();
+    await a.page.getByLabel('Display name').fill('Priya Sharma');
+    await a.page.getByLabel('Bio').fill('find me at win-prizes.com');
+    await a.page.getByRole('button', { name: 'Save', exact: true }).click();
+    await expect(a.page.getByText('Links are not allowed in your bio.')).toBeVisible();
+
+    // Clearing the bio removes it from the Porch.
+    await a.page.getByLabel('Bio').fill('');
+    await a.page.getByRole('button', { name: 'Save', exact: true }).click();
+    await expect(a.page.getByRole('status').filter({ hasText: 'Porch swept' })).toBeVisible();
+    await a.page.goto(`/porch/${a.handle}`);
+    await expect(a.page.getByText('Chai lover.', { exact: false })).toHaveCount(0);
 
     expect(problems).toEqual([]);
     await a.ctx.close();

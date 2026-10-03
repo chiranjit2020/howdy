@@ -3,6 +3,7 @@ import { attachPortraits } from '@/app/_lib/social';
 import { requireUser } from '@/modules/auth';
 import { getThread } from '@/modules/whispers';
 import { getEnv } from '@/platform/config/env';
+import { liveChannelFor } from '@/platform/live-ping';
 import { AppError } from '@/platform/errors';
 import { ClayCard, EmptyState } from '@/ui/primitives';
 import { ThreadView } from './thread-view';
@@ -47,6 +48,7 @@ export default async function ThreadPage({ params }: { params: Promise<{ handle:
           portraitUrl={page.person.portraitUrl}
           initial={{ messages: page.messages, hasMore: page.hasMore, seenUpTo: page.seenUpTo }}
           wsUrl={getEnv().WS_PUBLIC_URL}
+          liveChannel={liveChannelFor(user.id)}
         />
       </main>
     </>

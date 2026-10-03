@@ -1,6 +1,6 @@
 # Howdy Build Status
 
-_Last updated: 2026-10-01_
+_Last updated: 2026-10-04_
 
 ## Current Phase
 
@@ -8,6 +8,37 @@ _Last updated: 2026-10-01_
 Town Hall feed ADR-033, Dynamic Island ADR-034). Production: Vercel `sin1` + Neon `howdy-sg` (`howdy_prod`), Resend
 mail, R2 photos, Upstash Redis; a push to `main` deploys. Production does not migrate on deploy: apply new migrations
 to `howdy_dev` and the Singapore `howdy_prod` first.
+
+## 2026-10-04 — Porch bio, Workshop tidy-up
+
+- [x] **Bio:** an optional line (≤ 150) under your name on the Porch, set in the Workshop's "Tend your Porch"; empty
+      clears it. Screened like display names (no links, no disguising characters, normalised spaces), shown as plain
+      text, and only to whoever may open the Porch. Migration `0029_profile_bio` on the local test/e2e DBs, `howdy_dev`
+      and the Singapore `howdy_prod` (applied before the push). Privacy Policy 1.8.0 mentions it (no re-acceptance).
+- [x] Workshop: Portrait colour is one row of tappable circles (real radios for screen readers); the Portrait card is
+      more compact. An empty Fence shows the user's "nail a postcard" art to someone who may nail the first card.
+- [x] Tests: `tests/security/ranch-edit.test.ts` (bio saved/shown/cleared; links, disguising characters, 151 chars
+      refused), `ranch-visibility` (bio is in what a viewer receives), `tests/e2e/ranch.spec.ts` (bio end to end).
+      Full e2e: 99 passed + the Ably spec run separately. The Tracks axe/layout tests now wait for the page to replace
+      its loading outline (`pageReady`), which they were missing.
+- Moderators have no "clear bio" action (display names do not have one either); a report + suspension covers abuse.
+
+## 2026-10-04 — Elixir/Phoenix Whisper service considered, deferred (ADR-036)
+
+- [x] `master-prompt-chat-service.md` reviewed against the repo: idempotency, ordering, block/Restrict, Seen, limits,
+      reconnect catch-up and offline Chimes already exist; realtime stays on Ably. Revisit triggers (peak Ably
+      connections > 150, p95 ring-to-screen > 1 s, a need for typing/presence or non-Pal Whispers) are in the ADR.
+
+## 2026-10-02 — instant Whispers through Ably (ADR-035)
+
+- [x] Word-free "ring" on a per-person, unguessable, listen-only Ably channel after each Whisper (recipient unless held,
+      plus the sender's other devices); Whispers pages fetch what is new from our own API. `GET /api/live/token`,
+      CSP allows Ably only when `ABLY_API_KEY` is set; Privacy Policy 1.8.0 lists Ably.
+- [x] Tests: `tests/security/live-ping.test.ts` (9; the Restrict rule mutation-checked), CSP test.
+- [x] `ABLY_API_KEY` set in `.env.local` and on Vercel (Production, sensitive) on 2026-10-04.
+- [x] Verified against the real Ably app: `E2E_ABLY=1 npx playwright test tests/e2e/live-ably.spec.ts` (our socket
+      server off; the Whisper arrives well under the 8 s fallback; Ably frames carry no words or call signs).
+      `whispers.spec.ts` 7/7 on the self-hosted path; vitest 1,330/1,330.
 
 ## 2026-10-01 — audit-log retention, policy updates, Chimes in the island
 
@@ -603,6 +634,8 @@ layers covered for them); direct tests of the recorder now catch both. All 15 ca
   wraps — already true at seven before this phase).
 - Earlier deferrals still stand (non-Posse Whispers, no MFA/passkeys, no self-service data export,
   fixed-window limiter, placeholder icons, e2e needs local Edge, no visual baselines, master prompt §49–50 items).
+- From the Whispers chat-service prompt (ADR-036), worth doing without Phoenix: a whole-of-Whispers threat-model
+  write-up (its §61) and a staged load test of the Ably ring path (100 → 1,000 listeners).
 
 ## Next Task
 
@@ -615,5 +648,5 @@ widen beyond Posse-only; a Town Hall shared feed if the need becomes real; Town 
 
 ## Architectural Decisions
 
-ADR-001 … ADR-031 in `docs/decisions/`; lifecycle and deletion design in `docs/DATA_LIFECYCLE.md`.
+ADR-001 … ADR-036 in `docs/decisions/`; lifecycle and deletion design in `docs/DATA_LIFECYCLE.md`.
 

@@ -4,6 +4,7 @@ import {
   horizontalOverflow,
   confirmEmailVia,
   newContext,
+  pageReady,
   signUpVia,
   stepInsideVia,
   uniqueAccount,
@@ -144,6 +145,7 @@ test.describe('Tracks: accessibility and layout in a real browser', () => {
       for (const shadow of [false, true]) {
         await api(a, '/api/me/porch', { shadowWalk: shadow }, 'PATCH');
         await a.page.goto('/tracks');
+        await pageReady(a.page); // axe must see the page, not its loading outline
         await a.page.evaluate(() => document.fonts.ready);
         await a.page.addScriptTag({ content: source });
         const violations = await a.page.evaluate(async () => {
@@ -178,6 +180,7 @@ test.describe('Tracks: accessibility and layout in a real browser', () => {
       viewport: { width: 320, height: 700 },
     });
     await a.page.goto('/tracks');
+    await pageReady(a.page);
     expect(await horizontalOverflow(a.page)).toBeLessThanOrEqual(0);
     const problems = await a.page.evaluate(() => {
       const out: string[] = [];

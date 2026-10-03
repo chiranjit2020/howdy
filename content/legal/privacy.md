@@ -16,7 +16,7 @@ Howdy is run by {{operator}}, an individual based in {{country}} ("Howdy", "we",
 
 **Account information.** Your email address, your call sign (handle), your display name and your password. We never store your password itself, only a one-way scrambled form of it (a hash) that cannot be turned back into the password. We also record when you confirmed your email.
 
-**Your Porch.** Your display name, the colour of your portrait, your Portrait photo if you add one, your Signal (a short status), your Porch Light while it is on, and your settings: who can see your Porch and Signal, who can write on your Fence, and which Chimes you want.
+**Your Porch.** Your display name, your bio if you write one (a short line shown under your name), the colour of your portrait, your Portrait photo if you add one, your Signal (a short status), your Porch Light while it is on, and your settings: who can see your Porch and Signal, who can write on your Fence, and which Chimes you want.
 
 **Photos.** When you add a Portrait, or a photo to a Post Card, we re-make the picture ourselves (a small square for a Portrait; for a card, the whole picture at most 1280 pixels across). Anything hidden inside the original file, such as the location where it was taken or the camera used, is thrown away and never stored. A card's photo is shown only to the people who can see that card.
 
@@ -117,6 +117,7 @@ We use a few companies to run Howdy. They process data only to provide their ser
 - **Cloudflare:** stores Portrait and Post Card photos (R2) and provides our domain's DNS.
 - **Resend:** sends account emails.
 - A managed **Redis** provider: holds short-lived rate-limit counters.
+- **Ably:** makes new Whispers appear at once. When a Whisper arrives, Howdy sends your browser a signal that simply says "something new" — never the words, never who sent it, and never your name. Ably sees your browser's connection (such as its IP address) while a Whispers page is open, but not who you are.
 
 These providers may store and process data outside {{country}}, including in the United States and Singapore.
 
@@ -136,7 +137,7 @@ No system is perfectly secure. If we learn of a breach that affects your persona
 
 ## Your rights and choices
 
-**In the app, at any time:** change your display name, Portrait and privacy settings in the Workshop; delete your own Post Cards (with their photos), replies and Tributes; burn Whisper threads; turn on Shadow Walk; mute, restrict or block people; choose which Chimes you get; and sign out other devices.
+**In the app, at any time:** change your display name, bio, Portrait and privacy settings in the Workshop; delete your own Post Cards (with their photos), replies and Tributes; burn Whisper threads; turn on Shadow Walk; mute, restrict or block people; choose which Chimes you get; and sign out other devices.
 
 **By writing to us at [{{contactEmail}}](mailto:{{contactEmail}}),** from the email address on your account, you can ask:
 

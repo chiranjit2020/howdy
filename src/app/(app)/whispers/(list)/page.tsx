@@ -5,6 +5,8 @@ import { getOwnRanch } from '@/modules/profiles';
 import { countHeld, listThreads } from '@/modules/whispers';
 import { formatRelative, GlossaryHint } from '@/ui/howdy';
 import { Avatar, Badge, ClayCard, EmptyState } from '@/ui/primitives';
+import { liveChannelFor } from '@/platform/live-ping';
+import { LiveRefresh } from '@/ui/live/live-refresh';
 import { ReadReceipts } from './read-receipts';
 
 export const metadata = { title: 'Whispers' };
@@ -74,6 +76,7 @@ export default async function WhispersPage() {
           </Link>
         )}
         <ReadReceipts initial={me.readReceipts} />
+        <LiveRefresh channel={liveChannelFor(user.id)} />
       </main>
     </>
   );

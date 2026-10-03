@@ -17,6 +17,8 @@ export const profiles = pgTable(
     displayName: text('display_name').notNull(),
     /** Stand-in Portrait until the Media module exists: a palette tint on the initials avatar. */
     portraitTint: text('portrait_tint').notNull().default('peach'),
+    /** A short line about yourself under your name on the Porch (null = none). Seen by whoever may open the Porch. */
+    bio: text('bio'),
     /** The Signal: a short status line that expires. Both columns are null together. */
     signal: text('signal'),
     signalSetAt: tstz('signal_set_at'),
@@ -56,6 +58,7 @@ export const profiles = pgTable(
     check('profiles_fence_visibility_check', sql`${t.fenceVisibility} in ('everyone', 'members', 'posse')`),
     check('profiles_fence_posting_check', sql`${t.fencePosting} in ('members', 'posse', 'nobody')`),
     check('profiles_signal_len', sql`${t.signal} is null or char_length(${t.signal}) between 1 and 80`),
+    check('profiles_bio_len', sql`${t.bio} is null or char_length(${t.bio}) between 1 and 150`),
     check('profiles_signal_pair', sql`(${t.signal} is null) = (${t.signalExpiresAt} is null)`),
   ],
 );

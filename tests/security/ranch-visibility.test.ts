@@ -126,6 +126,7 @@ describe('what a viewer receives', () => {
     const { a, b } = await twoUsers();
     const r = await viewRanch(b.handle, { cookie: a.cookie });
     expect(Object.keys(r.data.ranch!).sort()).toEqual([
+      'bio', // the short line the owner chose to show on their Porch
       'displayName',
       'handle',
       'isOwner',

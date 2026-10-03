@@ -29,7 +29,12 @@ export default async function WorkshopPage() {
         portraitTint={ranch.portraitTint}
         portraitSrc={photo ? portraitUrl(user.handle, photo) : null}
       />
-      <TendForm displayName={ranch.displayName} portraitTint={ranch.portraitTint} handle={user.handle} />
+      <TendForm
+        displayName={ranch.displayName}
+        bio={ranch.bio ?? ''}
+        portraitTint={ranch.portraitTint}
+        handle={user.handle}
+      />
       <BoundaryForm
         ranchVisibility={ranch.ranchVisibility}
         signalVisibility={ranch.signalVisibility}

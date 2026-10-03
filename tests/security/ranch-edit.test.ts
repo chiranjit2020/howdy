@@ -251,3 +251,33 @@ describe('edits are rate limited (and fail closed)', () => {
     expect((await myRanch(a.cookie)).data.ranch).toMatchObject({ displayName: a.handle });
   });
 });
+
+describe('the bio', () => {
+  it('is saved, shown on the Porch to whoever may open it, and cleared by an empty one', async () => {
+    const a = await signedInUser(kit, uniqueUser('alice'));
+    const b = await signedInUser(kit, uniqueUser('bob'));
+    const r = await patchRanch({ bio: '  Chai lover.   Weekend   cyclist 🚲 ' }, { cookie: a.cookie });
+    expect(r.status).toBe(200);
+    expect((r.data as { ranch: { bio: string } }).ranch.bio).toBe('Chai lover. Weekend cyclist 🚲');
+    expect((await viewRanch(a.handle, { cookie: b.cookie })).data.ranch).toMatchObject({
+      bio: 'Chai lover. Weekend cyclist 🚲',
+    });
+    // Private Porch: a stranger gets the same 404 as ever, so the bio goes nowhere it should not.
+    await patchRanch({ ranchVisibility: 'posse' }, { cookie: a.cookie });
+    expect((await viewRanch(a.handle, { cookie: b.cookie })).status).toBe(404);
+
+    expect((await patchRanch({ bio: '' }, { cookie: a.cookie })).status).toBe(200);
+    expect((await myRanch(a.cookie)).data.ranch).toMatchObject({ bio: null });
+  });
+
+  it('refuses links, disguising characters and more than 150 characters', async () => {
+    const a = await signedInUser(kit);
+    for (const bio of ['find me at example.com', `hi${u(0x202e)}there`, 'x'.repeat(151)]) {
+      const r = await patchRanch({ bio }, { cookie: a.cookie });
+      expect(r.status, JSON.stringify(bio)).toBe(422);
+      expect(r.data.error?.fields?.bio).toBeTruthy();
+    }
+    expect((await patchRanch({ bio: 'x'.repeat(150) }, { cookie: a.cookie })).status).toBe(200);
+    expect((await myRanch(a.cookie)).data.ranch).toMatchObject({ bio: 'x'.repeat(150) });
+  });
+});

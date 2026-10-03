@@ -2,7 +2,9 @@
 
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
+import { LIMITS } from '@/shared/limits';
 import {
+  bioSchema,
   displayNameSchema,
   FENCE_POSTING_LEVELS,
   PORTRAIT_TINTS,
@@ -13,7 +15,7 @@ import {
 } from '@/shared/validation/profile';
 import { apiRequest } from '@/ui/auth/api';
 import { FormMessage } from '@/ui/auth/form-parts';
-import { Avatar, Button, ClayCard, Input, Radio, Select, Switch, useToast } from '@/ui/primitives';
+import { Avatar, Button, ClayCard, Input, Select, Switch, Textarea, useToast } from '@/ui/primitives';
 
 const TINT_LABEL: Record<PortraitTint, string> = {
   peach: 'Peach',
@@ -29,47 +31,56 @@ const VISIBILITY_LABEL: Record<Visibility, string> = {
   posse: 'My Pals only',
 };
 
-/** Tend the Ranch: display name and Portrait. */
+/** Tend the Porch: display name, a short bio, and the colour your initials wear when there is no photo. */
 export function TendForm({
   displayName: initialName,
+  bio: initialBio,
   portraitTint: initialTint,
   handle,
 }: {
   displayName: string;
+  bio: string;
   portraitTint: PortraitTint;
   handle: string;
 }) {
   const router = useRouter();
   const toast = useToast();
   const [displayName, setDisplayName] = useState(initialName);
+  const [bio, setBio] = useState(initialBio);
   const [tint, setTint] = useState<PortraitTint>(initialTint);
   const [nameError, setNameError] = useState<string | undefined>();
+  const [bioError, setBioError] = useState<string | undefined>();
   const [formError, setFormError] = useState<string | undefined>();
   const [busy, setBusy] = useState(false);
 
   async function save(e: FormEvent) {
     e.preventDefault();
     setFormError(undefined);
-    const parsed = displayNameSchema.safeParse(displayName);
-    if (!parsed.success) {
-      setNameError(parsed.error.issues[0]?.message);
-      return;
-    }
-    setNameError(undefined);
+    const name = displayNameSchema.safeParse(displayName);
+    const about = bioSchema.safeParse(bio);
+    setNameError(name.success ? undefined : name.error.issues[0]?.message);
+    setBioError(about.success ? undefined : about.error.issues[0]?.message);
+    if (!name.success || !about.success) return;
     setBusy(true);
-    const res = await apiRequest('PATCH', '/api/me/porch', { displayName: parsed.data, portraitTint: tint });
+    const res = await apiRequest('PATCH', '/api/me/porch', {
+      displayName: name.data,
+      bio: about.data,
+      portraitTint: tint,
+    });
     setBusy(false);
     if (res.ok) {
-      setDisplayName(parsed.data);
+      setDisplayName(name.data);
+      setBio(about.data);
       toast({ title: 'Porch swept and looking sharp.', tone: 'success' });
       router.refresh();
     } else if (res.error?.fields?.displayName) setNameError(res.error.fields.displayName);
+    else if (res.error?.fields?.bio) setBioError(res.error.fields.bio);
     else setFormError(res.error?.message);
   }
 
   return (
     <ClayCard>
-      <form onSubmit={save} noValidate className="flex flex-col gap-5">
+      <form onSubmit={save} noValidate className="flex flex-col gap-4">
         <h2 className="text-title text-text-primary">Tend your Porch</h2>
         {formError && <FormMessage tone="error">{formError}</FormMessage>}
         <Input
@@ -79,24 +90,54 @@ export function TendForm({
           onChange={(e) => setDisplayName(e.target.value)}
           maxLength={60}
           error={nameError}
-          hint={`Shown on your Porch. Your call sign @${handle} stays the same.`}
+          hint={`Your call sign @${handle} stays the same.`}
           autoComplete="name"
         />
-        <fieldset className="flex flex-col">
-          <legend className="mb-1 text-caption font-semibold text-text-primary">Portrait colour</legend>
-          <div className="mb-2 flex items-center gap-3">
-            <Avatar name={displayName || handle} tint={tint} size="lg" />
-            <span className="text-caption text-text-secondary">Shown whenever you have no photo.</span>
+        <Textarea
+          label="Bio"
+          name="bio"
+          value={bio}
+          onChange={(e) => setBio(e.target.value)}
+          maxLength={LIMITS.BIO_MAX}
+          showCount
+          rows={2}
+          error={bioError}
+          placeholder="A line about you: what you love, what you are up to…"
+        />
+        <fieldset className="flex flex-col gap-2">
+          <legend className="mb-1 text-caption font-semibold text-text-primary">
+            Portrait colour{' '}
+            <span aria-hidden="true" className="font-normal text-text-secondary">
+              · {TINT_LABEL[tint]}
+            </span>
+          </legend>
+          {/* One row of colour circles (each a real radio, named for screen readers); fits a 320 px phone. */}
+          <div className="flex gap-2 sm:gap-3">
+            {PORTRAIT_TINTS.map((t) => (
+              <label
+                key={t}
+                className="grid size-12 cursor-pointer place-items-center rounded-full has-focus-visible:outline-2 has-focus-visible:outline-focus"
+              >
+                <input
+                  type="radio"
+                  name="portraitTint"
+                  value={t}
+                  checked={tint === t}
+                  onChange={() => setTint(t)}
+                  className="peer sr-only"
+                />
+                {/* The circle shows the colour on your initials; the option's name is for screen readers. */}
+                <span
+                  aria-hidden="true"
+                  className="inline-flex rounded-full ring-offset-2 ring-offset-surface peer-checked:ring-2 peer-checked:ring-text-primary"
+                >
+                  <Avatar name={displayName || handle} tint={t} size="sm" />
+                </span>
+                <span className="sr-only">{TINT_LABEL[t]}</span>
+              </label>
+            ))}
           </div>
-          {PORTRAIT_TINTS.map((t) => (
-            <Radio
-              key={t}
-              name="portraitTint"
-              label={TINT_LABEL[t]}
-              checked={tint === t}
-              onChange={() => setTint(t)}
-            />
-          ))}
+          <p className="text-metadata text-text-muted">Shown whenever you have no photo.</p>
         </fieldset>
         <Button type="submit" loading={busy}>
           Save
@@ -345,7 +386,7 @@ export function ChimePrefsForm({
       />
       <Switch
         label="Town Halls"
-        hint="An invite, or someone accepting yours."
+        hint="An invite, someone accepting yours, or a reply or reaction to your post."
         checked={prefs.townhalls}
         onCheckedChange={(v) => set('townhalls', v)}
       />

@@ -176,6 +176,7 @@ export default async function RanchPage({ params }: { params: Promise<{ handle: 
             trusted={trust ? trust.earned : ranch.trusted}
             displayName={ranch.displayName}
             handle={ranch.handle}
+            bio={ranch.bio}
             portraitTint={ranch.portraitTint}
             {...(photo ? { portraitUrl: portraitUrl(ranch.handle, photo) } : {})}
             {...(badge ? { relationship: badge } : {})}

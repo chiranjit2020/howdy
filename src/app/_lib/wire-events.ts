@@ -2,6 +2,7 @@ import { handleEvent } from '@/modules/notifications';
 import { handleEvent as handleTrackEvent } from '@/modules/tracks';
 import { handleEvent as handleTrustEvent } from '@/modules/trust';
 import { subscribe } from '@/platform/events';
+import { ringLive } from '@/platform/live-ping';
 import { publishToUser } from '@/platform/realtime';
 
 /**
@@ -21,5 +22,7 @@ subscribe(async (event) => {
   await Promise.all([
     event.held ? Promise.resolve() : publishToUser(event.recipientId, hint),
     publishToUser(event.senderId, hint),
+    // The same through Ably (ADR-035): a word-free ring, the recipient only when the words are not held back.
+    ringLive(event.held ? [event.senderId] : [event.recipientId, event.senderId]),
   ]);
 });

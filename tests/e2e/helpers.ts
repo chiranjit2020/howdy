@@ -68,6 +68,16 @@ export async function newContext(
     ...rest,
     extraHTTPHeaders: { 'x-forwarded-for': ip, ...(rest?.extraHTTPHeaders ?? {}) },
   });
+  // The fake client address is for OUR server only. Real browsers never send it, and other sites' CORS rightly refuses
+  // it (Ably, ADR-035), so it is taken off every request that leaves localhost.
+  await ctx.route(
+    (url) => url.hostname !== 'localhost',
+    (route) => {
+      const headers = { ...route.request().headers() };
+      delete headers['x-forwarded-for'];
+      return route.continue({ headers });
+    },
+  );
   if (!island) {
     await ctx.addInitScript(() => {
       try {

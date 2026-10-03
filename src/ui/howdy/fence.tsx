@@ -1,5 +1,6 @@
 import { Children, isValidElement, useId, type ReactNode } from 'react';
 import { Button } from '../primitives/button';
+import { Art } from '../art/glyph';
 import { EmptyState } from '../primitives/feedback';
 import { GlossaryHint } from './glossary-hint';
 
@@ -34,7 +35,12 @@ export function Fence({
       </div>
       {composer}
       {cards.length === 0 ? (
-        <EmptyState icon="🪵" title="Nothing nailed up yet" description={emptyHint} />
+        <EmptyState
+          // Someone who can nail the first card gets the invitation itself; a visitor who cannot, the quiet log.
+          icon={composer ? <Art name="nail-postcard" size="free" className="h-auto w-44" /> : '🪵'}
+          title="Nothing nailed up yet"
+          description={emptyHint}
+        />
       ) : (
         <ol className="flex flex-col gap-4">
           {cards.map((card, i) => (

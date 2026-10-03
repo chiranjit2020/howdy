@@ -32,6 +32,8 @@ export const RATE = {
 export interface RanchView {
   handle: string;
   displayName: string;
+  /** A short line about them, or null. */
+  bio: string | null;
   portraitTint: PortraitTint;
   signal: { text: string; expiresAt: Date } | null;
   isOwner: boolean;
@@ -87,6 +89,8 @@ export interface OwnRanch extends RanchView {
 
 export interface RanchPatch {
   displayName?: string | undefined;
+  /** Empty clears it. */
+  bio?: string | undefined;
   portraitTint?: PortraitTint | undefined;
   ranchVisibility?: Visibility | undefined;
   signalVisibility?: Visibility | undefined;
@@ -112,6 +116,7 @@ interface Row {
   handle: string;
   role: string;
   displayName: string;
+  bio: string | null;
   portraitTint: string;
   signal: string | null;
   signalExpiresAt: Date | null;
@@ -131,6 +136,7 @@ const SELECT = {
   handle: users.handle,
   role: users.role,
   displayName: profiles.displayName,
+  bio: profiles.bio,
   portraitTint: profiles.portraitTint,
   signal: profiles.signal,
   signalExpiresAt: profiles.signalExpiresAt,
@@ -150,6 +156,7 @@ function toView(row: Row, isOwner: boolean, now: Date, showSignal: boolean): Ran
   return {
     handle: row.handle,
     displayName: row.displayName,
+    bio: row.bio,
     portraitTint: row.portraitTint as PortraitTint,
     // An expired Signal is gone even before the retention job clears it.
     signal: live ? { text: row.signal!, expiresAt: row.signalExpiresAt! } : null,
@@ -436,6 +443,7 @@ export async function updateRanch(userId: string, patch: RanchPatch): Promise<Ow
   await enforceRateLimit(`ranch:edit:${userId}`, RATE.edit);
   const set: Record<string, unknown> = { updatedAt: new Date() };
   if (patch.displayName !== undefined) set.displayName = patch.displayName;
+  if (patch.bio !== undefined) set.bio = patch.bio === '' ? null : patch.bio;
   if (patch.portraitTint !== undefined) set.portraitTint = patch.portraitTint;
   if (patch.ranchVisibility !== undefined) set.ranchVisibility = patch.ranchVisibility;
   if (patch.signalVisibility !== undefined) set.signalVisibility = patch.signalVisibility;

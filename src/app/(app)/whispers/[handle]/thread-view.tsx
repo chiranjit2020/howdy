@@ -14,6 +14,7 @@ import {
 import { LIMITS } from '@/shared/limits';
 import type { PortraitTint } from '@/shared/validation/profile';
 import type { WhisperMessage } from '@/shared/ws';
+import { useLiveRing } from '@/ui/live/use-live-ring';
 import { Art } from '@/ui/art/glyph';
 import { apiRequest, postJson } from '@/ui/auth/api';
 import { FormMessage } from '@/ui/auth/form-parts';
@@ -50,6 +51,7 @@ export function ThreadView({
   portraitUrl,
   initial,
   wsUrl,
+  liveChannel,
 }: {
   handle: string;
   displayName: string;
@@ -58,6 +60,8 @@ export function ThreadView({
   portraitUrl?: string | undefined;
   initial: { messages: WhisperMessage[]; hasMore: boolean; seenUpTo?: number | undefined };
   wsUrl: string | undefined;
+  /** My own Ably channel for instant Whispers (ADR-035), when set up. */
+  liveChannel?: string | undefined;
 }) {
   const router = useRouter();
   const [messages, setMessages] = useState<Msg[]>(initial.messages);
@@ -182,15 +186,18 @@ export function ThreadView({
   // "Seen" is not pushed over the socket, so while my last Whisper waits for it the page keeps asking even when live.
   const awaitingSeen = seenUpTo !== undefined && lastMine !== undefined && lastMine.seq > seenUpTo;
 
+  // The doorbell (ADR-035): a ring means "something new", so fetch it now through the normal API.
+  const ring = useLiveRing(liveChannel, catchUp);
+
   // Without a live connection the page still stays current by asking now and then.
   useEffect(() => {
     if (live === 'ended') return;
-    if ((live === 'live' || live === 'connecting') && !awaitingSeen) return;
+    if ((live === 'live' || live === 'connecting' || ring === 'live') && !awaitingSeen) return;
     const id = setInterval(() => {
       if (document.visibilityState === 'visible') void catchUp();
     }, POLL_MS);
     return () => clearInterval(id);
-  }, [live, awaitingSeen, catchUp]);
+  }, [live, ring, awaitingSeen, catchUp]);
 
   useEffect(() => {
     markRead();
@@ -341,7 +348,8 @@ export function ThreadView({
       )}
       {flagged && <FormMessage tone="success">Thanks. We will take a look. They are not told.</FormMessage>}
       <p role="status" className="text-metadata text-text-secondary">
-        {status[live]}
+        {/* Without our own socket, the Ably doorbell (ADR-035) is what makes the thread live. */}
+        {live === 'off' && ring !== 'off' ? status[ring] : status[live]}
       </p>
 
       {hasMore && (

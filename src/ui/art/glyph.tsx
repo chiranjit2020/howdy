@@ -40,6 +40,7 @@ const FILES = {
   /** Navigation (cut from the user's icon sheet by .dev/cut-nav.mjs; 96 px = sharp at 32 px on a 3x phone). */
   'nav-home': { w: 96, h: 96 },
   'nav-pals': { w: 96, h: 96 },
+  /** The user's mint tap-pin (2026-10-02, .dev/cut-nail-icons.mjs), 192 px: it fills the 64 px tab-bar button. */
   'nav-nail': { w: 96, h: 96 },
   'nav-whispers': { w: 96, h: 96 },
   'nav-scribble': { w: 96, h: 96 },
@@ -63,6 +64,8 @@ const FILES = {
   'rule-keep-it-safe-and-legal': { w: 96, h: 96 },
   'rule-look-after-each-other': { w: 96, h: 96 },
   'rule-when-rules-are-broken': { w: 96, h: 96 },
+  /** "Nail a postcard" (the user's, 2026-10-02): the empty Fence, for someone who may nail the first card. */
+  'nail-postcard': { w: 360, h: 300 },
 } as const;
 
 export type ArtName = keyof typeof FILES;

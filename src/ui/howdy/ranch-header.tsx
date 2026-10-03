@@ -9,6 +9,8 @@ import { NameBadge } from './verified-badge';
 export interface RanchHeaderProps {
   displayName: string;
   handle: string;
+  /** A short line about them, under the name. Plain text only. */
+  bio?: string | null | undefined;
   portraitUrl?: string | null;
   portraitTint?: PortraitTint | undefined;
   online?: boolean;
@@ -29,6 +31,7 @@ export interface RanchHeaderProps {
 export function RanchHeader({
   displayName,
   handle,
+  bio,
   portraitUrl,
   portraitTint,
   online,
@@ -57,6 +60,7 @@ export function RanchHeader({
             <NameBadge verified={verified} trusted={trusted} className="ml-1.5" />
           </h1>
           <p className="font-mono text-code text-text-secondary">@{handle}</p>
+          {bio && <p className="mt-1.5 text-body break-words text-text-primary">{bio}</p>}
           {relationship && (
             <div className="mt-2">
               <PosseBadge state={relationship} />

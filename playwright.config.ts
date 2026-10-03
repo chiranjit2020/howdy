@@ -11,6 +11,11 @@ const e2eDatabase: Record<string, string> = e2eDatabaseUrl ? { DATABASE_URL: e2e
 
 const PORT = 3300;
 const WS_PORT = 3301;
+/**
+ * `E2E_ABLY=1`: run WITHOUT our own WebSocket server, so Whispers can only arrive instantly through Ably (ADR-035; the
+ * key comes from .env.local, which `next start` reads itself). `tests/e2e/live-ably.spec.ts` runs only then.
+ */
+const ablyRun = process.env.E2E_ABLY === '1';
 
 /**
  * E2E runs against a PRODUCTION build (`pnpm build` first — `pnpm e2e` does it) so the real CSP, minified
@@ -50,27 +55,31 @@ export default defineConfig({
         // The spec gives every browser context its own X-Forwarded-For, so per-IP rate limits never bleed between runs.
         TRUST_PROXY_HOPS: '1',
         // Where pages connect for live Whispers. Also the only socket origin the CSP allows.
-        WS_PUBLIC_URL: `ws://localhost:${WS_PORT}`,
+        ...(ablyRun ? {} : { WS_PUBLIC_URL: `ws://localhost:${WS_PORT}` }),
       },
     },
-    {
-      // The realtime process, run the way production runs it (NODE_ENV=production selects the same session cookie name).
-      command: 'pnpm exec tsx scripts/ws.ts',
-      url: `http://localhost:${WS_PORT}/health`,
-      reuseExistingServer: false,
-      timeout: 60_000,
-      env: {
-        NODE_ENV: 'production',
-        APP_URL: `http://localhost:${PORT}`,
-        ...e2eDatabase,
-        // The realtime process reads the same config (it never touches files or mail, but production still validates it).
-        ENABLE_TEST_STORAGE: '1',
-        ENABLE_TEST_MAILER: '1',
-        WS_PORT: String(WS_PORT),
-        WS_REVALIDATE_SECONDS: '2',
-        TRUST_PROXY_HOPS: '1',
-        LOG_LEVEL: 'warn',
-      },
-    },
+    ...(ablyRun
+      ? []
+      : [
+          {
+            // The realtime process, run the way production runs it (NODE_ENV=production selects the same session cookie name).
+            command: 'pnpm exec tsx scripts/ws.ts',
+            url: `http://localhost:${WS_PORT}/health`,
+            reuseExistingServer: false,
+            timeout: 60_000,
+            env: {
+              NODE_ENV: 'production',
+              APP_URL: `http://localhost:${PORT}`,
+              ...e2eDatabase,
+              // The realtime process reads the same config (it never touches files or mail, but production still validates it).
+              ENABLE_TEST_STORAGE: '1',
+              ENABLE_TEST_MAILER: '1',
+              WS_PORT: String(WS_PORT),
+              WS_REVALIDATE_SECONDS: '2',
+              TRUST_PROXY_HOPS: '1',
+              LOG_LEVEL: 'warn',
+            },
+          },
+        ]),
   ],
 });

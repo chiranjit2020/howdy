@@ -77,6 +77,18 @@ const cleanText = (max: number, emptyMessage: string, what: string) =>
 export const displayNameSchema = cleanText(DISPLAY_NAME_MAX, 'Enter a display name.', 'Your name');
 export const signalSchema = cleanText(LIMITS.SIGNAL_MAX, 'Say something, or clear your Signal.', 'A Signal');
 
+/** A short bio. Empty clears it. Screened like every public line: no links, no disguising characters. */
+export const bioSchema = z
+  .string()
+  .transform(normaliseText)
+  .pipe(
+    z
+      .string()
+      .max(LIMITS.BIO_MAX, `At most ${LIMITS.BIO_MAX} characters.`)
+      .refine((s) => !DISGUISING.test(s), 'Your bio contains characters that are not allowed.')
+      .refine((s) => !LINKISH.test(s), 'Links are not allowed in your bio.'),
+  );
+
 export const portraitTintSchema = z.enum(PORTRAIT_TINTS);
 export const visibilitySchema = z.enum(VISIBILITIES);
 export const fencePostingSchema = z.enum(FENCE_POSTING_LEVELS);
@@ -85,6 +97,7 @@ export const fencePostingSchema = z.enum(FENCE_POSTING_LEVELS);
 export const updateRanchSchema = z
   .object({
     displayName: displayNameSchema.optional(),
+    bio: bioSchema.optional(),
     portraitTint: portraitTintSchema.optional(),
     ranchVisibility: visibilitySchema.optional(),
     signalVisibility: visibilitySchema.optional(),

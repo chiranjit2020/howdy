@@ -3,10 +3,20 @@ import { uploadOrigin } from './platform/storage/origin';
 
 /**
  * Build the CSP header. Exported for tests. `wsOrigin` is the one WebSocket origin pages may connect to (WS_PUBLIC_URL) and
- * `storageOrigin` the one bucket origin they may upload photos to; nothing else is allowed, so injected script could not open a
- * socket to, or send data to, an attacker's server.
+ * `storageOrigin` the one bucket origin they may upload photos to; `live` adds Ably's own hosts (ADR-035, only when a key is
+ * set). Nothing else is allowed, so injected script could not open a socket to, or send data to, an attacker's server.
  */
-export function buildCsp(nonce: string, isDev: boolean, wsOrigin?: string, storageOrigin?: string): string {
+export const ABLY_ORIGINS =
+  'https://*.ably.net wss://*.ably.net https://*.ably-realtime.com wss://*.ably-realtime.com';
+
+export function buildCsp(
+  nonce: string,
+  isDev: boolean,
+  wsOrigin?: string,
+  storageOrigin?: string,
+  live = false,
+): string {
+  const extra = [wsOrigin, storageOrigin, live ? ABLY_ORIGINS : undefined].filter(Boolean).join(' ');
   const directives = [
     "default-src 'self'",
     // 'strict-dynamic' lets nonce'd scripts load their own chunks; dev needs eval for React refresh.
@@ -19,8 +29,8 @@ export function buildCsp(nonce: string, isDev: boolean, wsOrigin?: string, stora
     "worker-src 'self'",
     "manifest-src 'self'",
     isDev
-      ? `connect-src 'self' ws: wss:${storageOrigin ? ` ${storageOrigin}` : ''}`
-      : `connect-src 'self'${wsOrigin ? ` ${wsOrigin}` : ''}${storageOrigin ? ` ${storageOrigin}` : ''}`,
+      ? `connect-src 'self' ws: wss:${storageOrigin ? ` ${storageOrigin}` : ''}${live ? ` ${ABLY_ORIGINS}` : ''}`
+      : `connect-src 'self'${extra ? ` ${extra}` : ''}`,
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",
@@ -37,6 +47,7 @@ export function proxy(request: NextRequest): NextResponse {
     process.env.NODE_ENV === 'development',
     process.env.WS_PUBLIC_URL,
     uploadOrigin(process.env.STORAGE_DRIVER, process.env.R2_ACCOUNT_ID),
+    Boolean(process.env.ABLY_API_KEY),
   );
 
   const requestHeaders = new Headers(request.headers);
