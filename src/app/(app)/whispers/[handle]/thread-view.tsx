@@ -20,7 +20,8 @@ import { apiRequest, postJson } from '@/ui/auth/api';
 import { FormMessage } from '@/ui/auth/form-parts';
 import { WhisperBubble } from '@/ui/howdy';
 import { ReportDialog } from '@/ui/howdy/report-dialog';
-import { Avatar, Button, ConfirmationDialog, Textarea } from '@/ui/primitives';
+import { MoreIcon } from '@/ui/icons';
+import { Avatar, Button, ConfirmationDialog, Dropdown, Textarea } from '@/ui/primitives';
 
 type Msg = WhisperMessage & { state?: 'sending' | 'failed'; error?: string };
 type Live = 'live' | 'connecting' | 'offline' | 'ended' | 'off';
@@ -315,42 +316,57 @@ export function ThreadView({
 
   return (
     <>
-      {/* Phone: who you are talking to gets the whole first row and the actions sit under it (side by side, the
-          name was squeezed to a letter or two per line). From sm up there is room for one row. */}
-      <header className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-3">
-        <div className="flex min-w-0 items-center gap-3 sm:flex-1">
-          <Avatar name={displayName} tint={portraitTint} src={portraitUrl} />
-          <div className="min-w-0 flex-1">
-            <h1 className="text-title [overflow-wrap:anywhere] text-text-primary">{displayName}</h1>
-            <p className="text-caption [overflow-wrap:anywhere] text-text-secondary">
-              <Link href={`/porch/${handle}`} className="text-text-secondary no-underline hover:underline">
-                @{handle}
-              </Link>
-            </p>
-          </div>
+      {/* Who you are talking to, and the thread's rarer actions behind one ⋯ button (as on a Porch), so the name
+          keeps its width and nothing sits there unexplained. Not named "More": the phone top bar has that one. */}
+      <header className="flex items-center gap-3">
+        <Avatar name={displayName} tint={portraitTint} src={portraitUrl} />
+        <div className="min-w-0 flex-1">
+          <h1 className="text-title [overflow-wrap:anywhere] text-text-primary">{displayName}</h1>
+          <p className="text-caption [overflow-wrap:anywhere] text-text-secondary">
+            <Link href={`/porch/${handle}`} className="text-text-secondary no-underline hover:underline">
+              @{handle}
+            </Link>
+          </p>
         </div>
-        <div className="flex justify-end gap-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            aria-pressed={picking}
-            onClick={() => {
-              setPicking((p) => !p);
-              setFlagged(false);
-            }}
-          >
-            {picking ? 'Done flagging' : 'Flag a Whisper'}
-          </Button>
-          <Button variant="ghost" size="sm" onClick={() => setBurning(true)}>
-            Burn thread
-          </Button>
-        </div>
+        <Dropdown
+          label={`Thread with ${displayName}`}
+          align="end"
+          trigger={(p) => (
+            <button
+              type="button"
+              aria-label="Thread options"
+              title="Thread options"
+              className="-mr-2 inline-flex size-11 shrink-0 items-center justify-center rounded-pill text-title text-text-secondary hover:bg-surface-sunken"
+              {...p}
+            >
+              <MoreIcon />
+            </button>
+          )}
+          items={[
+            {
+              id: 'flag',
+              label: 'Flag a Whisper…',
+              // Only words they sent can be flagged; with none yet there is nothing to pick.
+              disabled: !messages.some((m) => !m.mine && !m.state),
+              onSelect: () => {
+                setPicking(true);
+                setFlagged(false);
+              },
+            },
+            { id: 'burn', label: 'Burn thread…', danger: true, onSelect: () => setBurning(true) },
+          ]}
+        />
       </header>
       {picking && (
-        <p className="text-caption text-text-secondary">
-          Pick the Whisper that is the problem. Only that one is sent to our team, never the rest of the
-          thread.
-        </p>
+        <div className="flex items-center gap-3 rounded-lg bg-surface-sunken p-3">
+          <p className="flex-1 text-caption text-text-secondary">
+            Tap <strong className="font-semibold text-text-primary">Flag this Whisper</strong> under the one
+            that is the problem. Only that Whisper goes to our team, never the rest of the thread.
+          </p>
+          <Button variant="secondary" size="sm" onClick={() => setPicking(false)}>
+            Done
+          </Button>
+        </div>
       )}
       {flagged && <FormMessage tone="success">Thanks. We will take a look. They are not told.</FormMessage>}
       <p role="status" className="text-metadata text-text-secondary">
@@ -399,7 +415,7 @@ export function ThreadView({
                     : {})}
             />
             {picking && !m.mine && !m.state && (
-              <Button size="sm" variant="ghost" className="self-start" onClick={() => setFlagId(m.id)}>
+              <Button size="sm" variant="secondary" className="self-start" onClick={() => setFlagId(m.id)}>
                 Flag this Whisper
               </Button>
             )}

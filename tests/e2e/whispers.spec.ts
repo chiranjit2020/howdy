@@ -100,12 +100,24 @@ test.describe('Whispers in a real browser (production build, real CSP, real WebS
       )
       .toBe(0);
 
+    // The thread's actions live behind "Thread options". Flagging explains itself, offers a button under their Whispers
+    // (never under mine), and Done puts things back.
+    const more = async (item: string) => {
+      await a.page.getByRole('button', { name: 'Thread options' }).click();
+      await a.page.getByRole('menuitem', { name: item }).click();
+    };
+    await more('Flag a Whisper…');
+    await expect(a.page.getByText(/under the one that is the problem/)).toBeVisible();
+    await expect(log(a.page).getByRole('button', { name: 'Flag this Whisper' }).first()).toBeVisible();
+    await a.page.getByRole('button', { name: 'Done', exact: true }).click();
+    await expect(log(a.page).getByRole('button', { name: 'Flag this Whisper' })).toHaveCount(0);
+
     // Burn Thread: confirmation first, then it is gone for both.
-    await a.page.getByRole('button', { name: 'Burn thread' }).click();
+    await more('Burn thread…');
     await expect(a.page.getByRole('alertdialog')).toBeVisible();
     await a.page.getByRole('button', { name: 'Cancel' }).click();
     await expect(log(a.page).getByText('Are you around?')).toBeVisible();
-    await a.page.getByRole('button', { name: 'Burn thread' }).click();
+    await more('Burn thread…');
     await a.page.getByRole('button', { name: 'Burn it' }).click();
     await expect(a.page).toHaveURL(/\/whispers$/);
     await expect(a.page.getByText('No Whispers yet')).toBeVisible();
