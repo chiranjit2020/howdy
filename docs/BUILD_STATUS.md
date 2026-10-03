@@ -9,6 +9,15 @@ Town Hall feed ADR-033, Dynamic Island ADR-034). Production: Vercel `sin1` + Neo
 mail, R2 photos, Upstash Redis; a push to `main` deploys. Production does not migrate on deploy: apply new migrations
 to `howdy_dev` and the Singapore `howdy_prod` first.
 
+## 2026-10-04 — Home redesign: "At a glance", plain sign-out
+
+- [x] Greeting card: your photo, "Howdy, name", @call sign; four tappable numbers — unread Whispers, new Chimes, Pals
+      (+ requests waiting), Porch visits today ("–" while on Shadow Walk) — each from the same function its own page
+      uses, so they agree with it; a compact "Visit your Porch". Pals / Workshop buttons removed (tab bar / ⋯ menu).
+- [x] "Hit the Trail" → **Sign out**, "Hit the Trail everywhere" → **Sign out everywhere…** (still asks first), both
+      inside an always-open Open Gates card. The phone ⋯ menu now ends with Sign out. Tests: auth, navigation e2e.
+- [x] The Whisper thread's actions moved into a "Thread options" ⋯ menu; the header no longer squeezes the name.
+
 ## 2026-10-04 — Porch bio, Workshop tidy-up
 
 - [x] **Bio:** an optional line (≤ 150) under your name on the Porch, set in the Workshop's "Tend your Porch"; empty

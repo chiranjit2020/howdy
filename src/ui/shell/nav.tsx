@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { Art, type ArtName } from '../art/glyph';
+import { postJson } from '../auth/api';
 import { cn } from '../cn';
 import { MoreIcon } from '../icons';
 import { Dropdown } from '../primitives/dropdown';
@@ -108,7 +109,7 @@ const PHONE_TABS: ShellNavKey[] = ['home', 'posse', 'whispers', 'ranch'];
 /**
  * Phones only (hidden from `md` up, where the sidebar lists everything): a "More" menu in the top bar for every page
  * that is neither a tab nor the bell — Tracks, Workshop, Town Halls, Time Capsules, Moderation for staff. Without it
- * those pages had no way in on a phone.
+ * those pages had no way in on a phone. It ends with Sign out.
  */
 export function ShellMoreMenu({ items }: { items: ShellNavItem[] }) {
   const router = useRouter();
@@ -120,11 +121,23 @@ export function ShellMoreMenu({ items }: { items: ShellNavItem[] }) {
       <Dropdown
         label="More"
         align="end"
-        items={more.map((it) => ({
-          id: it.key,
-          label: it.badge ? `${it.label} (${badgeText(it.badge)} new)` : it.label,
-          onSelect: () => router.push(it.href),
-        }))}
+        items={[
+          ...more.map((it) => ({
+            id: it.key,
+            label: it.badge ? `${it.label} (${badgeText(it.badge)} new)` : it.label,
+            onSelect: () => router.push(it.href),
+          })),
+          // Where people look for it on a phone. "Sign out everywhere" stays with Open Gates on Home (it asks first).
+          {
+            id: 'sign-out',
+            label: 'Sign out',
+            onSelect: async () => {
+              await postJson('/api/auth/logout', {});
+              router.push('/gate');
+              router.refresh();
+            },
+          },
+        ]}
         trigger={(props) => (
           <button
             type="button"

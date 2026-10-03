@@ -1,40 +1,63 @@
 import Link from 'next/link';
 import { attachPortraits, withCards } from '@/app/_lib/social';
-import { Glyph } from '@/ui/art/glyph';
+import { Art, type ArtName } from '@/ui/art/glyph';
 import { listMySessions, requireUser } from '@/modules/auth';
 import { litPals, myLight } from '@/modules/lights';
+import { getPortraitVersion } from '@/modules/media';
 import { memoriesToday } from '@/modules/memories';
+import { unreadCount } from '@/modules/notifications';
 import { getOwnRanch, getTeamAnnouncement } from '@/modules/profiles';
 import { listMyRelationships } from '@/modules/relationships';
+import { listTracks } from '@/modules/tracks';
+import { unreadThreads } from '@/modules/whispers';
+import { portraitUrl } from '@/shared/portrait';
 import { cn } from '@/ui/cn';
 import { VerifiedBadge } from '@/ui/howdy';
-import { Badge, buttonClasses, ClayCard } from '@/ui/primitives';
+import { Avatar, buttonClasses, ClayCard } from '@/ui/primitives';
 import { clockOf } from '@/shared/calendar';
-import { HitTheTrail, HitTheTrailEverywhere, OpenGates } from './home-actions';
+import { OpenGates } from './home-actions';
 import { MemoriesCard } from './memories-card';
 import { PorchLightCard } from './porch-light-card';
 
 export const metadata = { title: 'Home' };
 
-const SMALL = buttonClasses({ variant: 'secondary', size: 'sm', compact: true });
+const SECTION_TITLE =
+  'flex items-center gap-1.5 text-metadata font-semibold tracking-wider text-text-secondary uppercase';
+
+interface Glance {
+  href: string;
+  art: ArtName;
+  /** null = nothing to count right now (the note says why). */
+  value: number | null;
+  label: string;
+  /** A short second line: what needs you, or why there is no number. */
+  note?: string | undefined;
+  /** Something is waiting for you here: the number is highlighted. */
+  waiting?: boolean;
+}
 
 /** First protected page. The session check happens on the server: an unauthenticated request never reaches the markup. */
 export default async function HomePage() {
   const user = await requireUser();
-  // Independent lookups, asked for together rather than one after another.
-  const [ranch, lists, sessions, news, memories, lit, mine] = await Promise.all([
-    getOwnRanch(user.id),
-    // Only requests from people who are still active count (a suspended account's request is not shown or counted).
-    listMyRelationships(user.id).then(withCards),
-    listMySessions(),
-    // Best-effort: Home never fails because the announcement could not be read.
-    getTeamAnnouncement().catch(() => null),
-    // Best-effort as well: a memory is a nice extra, never a reason for Home to fail.
-    memoriesToday(user.id).catch(() => null),
-    // Porch Lights (ADR-032): best-effort too — without them Home just shows the switch.
-    litPals(user.id).catch(() => []),
-    myLight(user.id).catch(() => null),
-  ]);
+  // Independent lookups, asked for together rather than one after another. Every count is best-effort (Home never
+  // fails because one number could not be read) and comes from the same function its own page uses, so the number
+  // here always agrees with what that page shows (held Whispers, muted people, blocks and Shadow Walk included).
+  const [ranch, photo, lists, sessions, news, memories, lit, mine, whispers, chimes, tracks] =
+    await Promise.all([
+      getOwnRanch(user.id),
+      getPortraitVersion(user.id).catch(() => null),
+      // Only requests from people who are still active count (a suspended account's request is not shown or counted).
+      listMyRelationships(user.id).then(withCards),
+      listMySessions(),
+      getTeamAnnouncement().catch(() => null),
+      memoriesToday(user.id).catch(() => null),
+      // Porch Lights (ADR-032): without them Home just shows the switch.
+      litPals(user.id).catch(() => []),
+      myLight(user.id).catch(() => null),
+      unreadThreads(user.id).catch(() => null),
+      unreadCount(user.id).catch(() => null),
+      listTracks(user.id).catch(() => null),
+    ]);
   // One look-up for every photo on the page, whoever it belongs to.
   await attachPortraits(user.id, [...(memories?.pals.map((p) => p.pal) ?? []), ...lit.map((l) => l.pal)]);
   const litRows = lit.map((l) => ({ ...l.pal, note: l.note, untilLabel: clockOf(l.until) }));
@@ -50,65 +73,111 @@ export default async function HomePage() {
     lastSeenAt: s.lastSeenAt.toISOString(),
     current: s.current,
   }));
+  const visitsToday = tracks
+    ? tracks.people.filter((p) => p.when === 'today').length + tracks.hidden.today
+    : null;
+
+  const glance: Glance[] = [
+    {
+      href: '/whispers',
+      art: 'nav-whispers',
+      value: whispers,
+      label: whispers === 1 ? 'Unread Whisper' : 'Unread Whispers',
+      waiting: (whispers ?? 0) > 0,
+    },
+    {
+      href: '/chimes',
+      art: 'nav-chimes',
+      value: chimes,
+      label: chimes === 1 ? 'New Chime' : 'New Chimes',
+      waiting: (chimes ?? 0) > 0,
+    },
+    {
+      href: '/pals',
+      art: 'nav-pals',
+      value: lists.posse.length,
+      label: lists.posse.length === 1 ? 'Pal' : 'Pals',
+      note: requests > 0 ? `${requests} ${requests === 1 ? 'request' : 'requests'} waiting` : undefined,
+      waiting: requests > 0,
+    },
+    {
+      href: '/tracks',
+      art: 'nav-tracks',
+      // On Shadow Walk your own Tracks are frozen, so there is honestly nothing to count.
+      value: tracks?.frozen ? null : visitsToday,
+      label: 'Porch visits today',
+      note: tracks?.frozen ? 'Shadow Walk is on' : undefined,
+    },
+  ];
 
   return (
     <>
       {/* No side padding of its own: the shell's px-4 is the gutter, so the cards use the full phone width. */}
       <main id="main" className="mx-auto flex w-full max-w-xl flex-col gap-4 py-4 sm:gap-6 sm:py-8">
-        <ClayCard className="flex flex-col gap-3 p-4 sm:gap-4 sm:p-6">
-          {/* The picture sits beside the greeting rather than above it, which saves a row on a phone. */}
+        <ClayCard className="flex flex-col gap-4 p-4 sm:p-6">
           <div className="flex items-center gap-3">
-            <Glyph emoji="📜" size="free" className="size-10 shrink-0 sm:size-14" />
-            <div className="min-w-0">
-              <h1 className="text-heading text-text-primary">Howdy, {ranch.displayName}</h1>
-              <p className="flex flex-wrap items-center gap-x-2 text-caption text-text-secondary">
-                <span>Deed granted, @{user.handle}.</span>
-                {/* A quiet fact, not a headline: small muted text with a tick, no pill. */}
-                <span className="inline-flex items-center gap-1 text-metadata text-text-muted">
-                  <svg
-                    aria-hidden="true"
-                    viewBox="0 0 24 24"
-                    className="size-3 fill-none stroke-current stroke-[3]"
-                  >
-                    <path d="M5 12.5l4.5 4.5L19 7.5" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                  Email confirmed
-                </span>
-              </p>
+            <Avatar
+              name={ranch.displayName}
+              tint={ranch.portraitTint}
+              src={photo ? portraitUrl(user.handle, photo) : null}
+              size="lg"
+            />
+            <div className="min-w-0 flex-1">
+              <h1 className="text-heading [overflow-wrap:anywhere] text-text-primary">
+                Howdy, {ranch.displayName}
+              </h1>
+              <p className="text-caption [overflow-wrap:anywhere] text-text-secondary">@{user.handle}</p>
             </div>
           </div>
-          {/* One main action, then the everyday small ones in a single row of three. */}
-          <Link href={`/porch/${user.handle}`} className={buttonClasses({ fullWidth: true })}>
+
+          {/* A few numbers worth a glance, each a way into the page that has the detail. */}
+          <section aria-labelledby="glance" className="flex flex-col gap-2">
+            <h2 id="glance" className={SECTION_TITLE}>
+              At a glance
+            </h2>
+            <ul className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {glance.map((g) => (
+                <li key={g.href}>
+                  <Link
+                    href={g.href}
+                    className={cn(
+                      'flex h-full min-h-11 flex-col gap-1 rounded-lg p-3 no-underline transition-colors hover:no-underline',
+                      g.waiting
+                        ? 'bg-accent/15 hover:bg-accent/25'
+                        : 'bg-surface-sunken hover:bg-surface-sunken/70',
+                    )}
+                  >
+                    <span className="flex items-center justify-between gap-2">
+                      <span className="text-heading font-semibold text-text-primary tabular-nums">
+                        {g.value === null ? '–' : g.value > 99 ? '99+' : g.value}
+                      </span>
+                      <Art name={g.art} size="free" className="size-7 shrink-0" />
+                    </span>
+                    <span className="text-caption leading-tight text-text-primary">{g.label}</span>
+                    {g.note && (
+                      <span
+                        className={cn(
+                          'text-metadata leading-tight',
+                          g.waiting ? 'font-semibold text-text-primary' : 'text-text-secondary',
+                        )}
+                      >
+                        {g.note}
+                      </span>
+                    )}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          <Link href={`/porch/${user.handle}`} className={cn(buttonClasses({ size: 'sm' }), 'self-start')}>
             Visit your Porch
           </Link>
-          {/* Each takes the width its label needs, so all three fit one row even on a 320 px phone (it may wrap only
-              there, when a "new requests" count is showing). */}
-          <div className="flex flex-wrap gap-2">
-            <Link href="/pals" className={cn(SMALL, 'flex-auto')}>
-              Pals{requests > 0 && <span className="sr-only">, </span>}
-              {requests > 0 && (
-                <Badge tone="accent">
-                  {requests}
-                  <span className="sr-only"> new</span>
-                </Badge>
-              )}
-            </Link>
-            <Link href="/workshop" className={cn(SMALL, 'flex-auto')}>
-              Workshop
-            </Link>
-            <HitTheTrail className="flex-auto" />
-          </div>
-          <div className="-mt-2 -mb-2 flex justify-end">
-            <HitTheTrailEverywhere />
-          </div>
         </ClayCard>
         <PorchLightCard lit={litRows} mine={myLightState} />
         {announcement && (
           <section aria-labelledby="whats-new" className="clay flex flex-col gap-2 bg-info/25 p-4 sm:p-5">
-            <h2
-              id="whats-new"
-              className="flex items-center gap-1.5 text-metadata font-semibold tracking-wider text-text-secondary uppercase"
-            >
+            <h2 id="whats-new" className={SECTION_TITLE}>
               What’s new on Howdy
             </h2>
             <p className="text-body break-words text-text-primary">{announcement.text}</p>
@@ -121,7 +190,6 @@ export default async function HomePage() {
           </section>
         )}
         {memories && <MemoriesCard memories={memories} handle={user.handle} />}
-        {/* Technical, and rarely needed: a quiet folded line instead of a card of its own. */}
         <OpenGates initial={gates} />
       </main>
     </>

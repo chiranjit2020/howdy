@@ -38,7 +38,11 @@ test.describe('authentication journey (production build, real CSP, real cookies)
     await expect(page).toHaveURL(/\/home$/);
     // Home greets by display name (which defaults to the call sign) and still names the call sign.
     await expect(page.getByRole('heading', { name: `Howdy, ${a.handle}` })).toBeVisible();
-    await expect(page.getByText(`Deed granted, @${a.handle}`)).toBeVisible();
+    await expect(page.locator('main').getByText(`@${a.handle}`, { exact: true })).toBeVisible();
+    // "At a glance": four numbers, each a way into the page with the detail.
+    const glance = page.getByRole('region', { name: 'At a glance' });
+    for (const href of ['/whispers', '/chimes', '/pals', '/tracks'])
+      await expect(glance.locator(`a[href="${href}"]`)).toBeVisible();
 
     // The session cookie: HttpOnly, Secure, __Host- prefixed, SameSite=Lax, site-wide, and invisible to page scripts.
     const session = (await ctx.cookies()).find((c) => c.name === '__Host-howdy_session');
@@ -53,7 +57,7 @@ test.describe('authentication journey (production build, real CSP, real cookies)
     await page.goto('/step-inside');
     await expect(page).toHaveURL(/\/home$/);
 
-    await page.getByRole('button', { name: 'Hit the Trail', exact: true }).click();
+    await page.getByRole('button', { name: 'Sign out', exact: true }).click();
     await expect(page).toHaveURL(/\/gate$/);
     expect((await ctx.cookies()).find((c) => c.name === '__Host-howdy_session')).toBeUndefined();
     await page.goto('/home');
@@ -245,8 +249,8 @@ test.describe('authentication journey (production build, real CSP, real cookies)
     await expect(gates.getByRole('listitem')).toHaveCount(2);
     await expect(gates.getByText('This device')).toHaveCount(1);
     await gates.getByRole('button', { name: /Close gate on/ }).click();
-    // With only this device left, the list folds itself away and says so in its summary line.
-    await expect(gates.getByText('· signed in on 1 device')).toBeVisible();
+    await expect(gates.getByText('Where you are signed in · 1 device')).toBeVisible();
+    await expect(gates.getByRole('listitem')).toHaveCount(1);
 
     await p2.reload();
     await expect(p2).toHaveURL(/\/step-inside$/);
@@ -263,14 +267,14 @@ test.describe('authentication journey (production build, real CSP, real cookies)
     await signUpVia(page, a);
     await confirmEmailVia(page, a.email);
     await stepInsideVia(page, a.email, a.password);
-    await page.getByRole('button', { name: 'Hit the Trail everywhere' }).click();
+    await page.getByRole('button', { name: 'Sign out everywhere…' }).click();
     const dialog = page.getByRole('alertdialog', { name: 'Sign out of every device?' });
     await expect(dialog).toBeVisible();
     await expect(dialog.getByRole('button', { name: 'Cancel' })).toBeFocused(); // the safe choice is the default
     await page.keyboard.press('Escape');
     await expect(dialog).toBeHidden();
     await expect(page).toHaveURL(/\/home$/); // cancelling changed nothing
-    await page.getByRole('button', { name: 'Hit the Trail everywhere' }).click();
+    await page.getByRole('button', { name: 'Sign out everywhere…' }).click();
     await dialog.getByRole('button', { name: 'Sign out everywhere' }).click();
     await expect(page).toHaveURL(/\/gate$/);
     await ctx.close();

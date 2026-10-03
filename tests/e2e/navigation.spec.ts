@@ -67,6 +67,12 @@ test('on a 320 px phone, "More" reaches every page that is not a tab — Moderat
     await menu.getByRole('menuitem', { name: new RegExp(`^${label}`) }).click();
     await expect(me.page).toHaveURL(url);
   }
+  // The menu ends with Sign out: on a phone that is where people look for it.
+  await me.page.getByRole('button', { name: /^More pages/ }).click();
+  await me.page.getByRole('menu', { name: 'More' }).getByRole('menuitem', { name: 'Sign out' }).click();
+  await expect(me.page).toHaveURL(/\/gate$/);
+  await me.page.goto('/home');
+  await expect(me.page).toHaveURL(/\/step-inside$/);
   expect(problems).toEqual([]);
   await me.ctx.close();
 });
