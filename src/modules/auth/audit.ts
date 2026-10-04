@@ -16,7 +16,8 @@ export type AuditEvent =
   | 'appeal_filed'
   | 'deletion_requested'
   | 'deletion_cancelled'
-  | 'account_deleted';
+  | 'account_deleted'
+  | 'data_exported';
 
 /** Best-effort append to the security audit trail. Never records IPs, tokens, passwords or message content. */
 export async function audit(

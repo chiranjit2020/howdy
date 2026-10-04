@@ -26,3 +26,5 @@ export type {
   WaitingCard,
   WaitingReply,
 } from './service';
+export { fenceExport } from './export';
+export type { ExportState, FenceExport } from './export';

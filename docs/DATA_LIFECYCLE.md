@@ -88,6 +88,13 @@ recorded as a `retired` row in the same transaction that makes the new photo liv
    Rotating `AUTH_SECRET` releases every held call sign early.
 5. A second email once it is deleted.
 
+## 2b. Export ("Download my data") — built (ADR-037, 2026-10-04)
+
+A ZIP built on the spot from the Workshop (password again; 10 attempts/hour, 3 exports/day). It holds what the person
+gave Howdy plus what the app already shows them, in the state they see it, and names another person only if that
+account is active and not hidden from them (block either way, or their own mute). Nothing is stored: the file is
+streamed and never kept on the server. See ADR-037 for exactly what is and is not in it.
+
 ## 3. Retention (master prompt §54) — what is kept, how long, who removes it
 
 | Data | Kept | Removed by |

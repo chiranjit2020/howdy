@@ -9,6 +9,20 @@ Town Hall feed ADR-033, Dynamic Island ADR-034). Production: Vercel `sin1` + Neo
 mail, R2 photos, Upstash Redis; a push to `main` deploys. Production does not migrate on deploy: apply new migrations
 to `howdy_dev` and the Singapore `howdy_prod` first.
 
+## 2026-10-04 — "Download my data" (ADR-037)
+
+Decisions taken with you: **instant download**, **a ZIP with the photos**, **yours + what you can see**, **password
+again + a limit**.
+
+- [x] Workshop → "Download my data": password, then a ZIP (`README.txt`, `data.json`, `photos/`) streamed from
+      `POST /api/me/export`. Attempts 10/hour, finished exports 3/day, audit `data_exported`.
+- [x] One rule: nothing the app would not show you now. Each module exports its own rows in the state you see (held
+      looks posted to its writer, declined requests look sent, sealed capsules have no words, Marks are counts); the
+      app layer names people only if active and not hidden (block either way, or your mute), else drops the item.
+- [x] Privacy 1.9.0 (no re-acceptance). Also on 2026-10-04: the unused `KV_*` variables removed from Vercel.
+- [x] Tests: `tests/security/data-export.test.ts` (12), mutation `.dev/mutate21.mjs` 8/8, e2e
+      `tests/e2e/data-export.spec.ts`. No migration.
+
 ## 2026-10-04 — Home redesign: "At a glance", plain sign-out
 
 - [x] Greeting card: your photo, "Howdy, name", @call sign; four tappable numbers — unread Whispers, new Chimes, Pals
@@ -61,8 +75,7 @@ to `howdy_dev` and the Singapore `howdy_prod` first.
 
 ## 2026-10-01 — Town Hall feed (ADR-033)
 
-Built locally, **not yet deployed**: migration `0027_town_hall_feed` is applied to the local test and e2e databases
-only — it must go on `howdy_dev` and the Singapore `howdy_prod` before the code is pushed.
+Shipped 2026-10-01 (e158b7f); migration `0027_town_hall_feed` on `howdy_dev` and the Singapore `howdy_prod`.
 - [x] Members-only feed: posts (280), replies (80, ≤ 20 per post), five reactions; writer or owner removes.
 - [x] Fence protections: blocks/mutes, inactive authors, fail-closed limits, first-week budgets, auto-hold + owner's
       "Waiting for you" tray, held items purged after 30 days.
@@ -123,12 +136,11 @@ Decisions taken with you: size for **~20,000 people**; "Advanced Intelligence" =
 - [x] Pals you may know (Pals page): Pals of ≥ 2 of my Pals; never across a block/mute/restrict, any ask or decline,
       a Pals-only Porch, an opt-out or a dismissal. Workshop switch "Suggest me to Pals of my Pals". Migration `0024`.
 - [x] Privacy 1.4.0. Tests: `suggestions` (10), `batch-equivalence` (2) + e2e; mutation `.dev/mutate19.mjs`.
-- [ ] **Your call: move to Singapore** (`docs/RUNBOOK-move-to-singapore.md`) — the biggest remaining speed-up for people in
-      India, bigger than any code change here.
+- [x] ~~Your call: move to Singapore~~ **Done 2026-10-01** (`docs/RUNBOOK-move-to-singapore.md`; Vercel `sin1`, Neon
+      `howdy-sg`, Upstash Singapore).
 
 
-**Phase 11 — Moderation + Anti-Abuse Expansion** is **in progress**, and most of it is built (2026-09-29, local, not yet
-committed): the moderation queue (ADR-018, restored from `git stash`), suspension reasons + timed suspensions +
+**Phase 11 — Moderation + Anti-Abuse Expansion** (shipped 2026-09-30; this note is as of 2026-09-29) was built: the moderation queue (ADR-018, restored from `git stash`), suspension reasons + timed suspensions +
 appeals (ADR-023), first-week budgets + auto-hold after many reports (ADR-024), reporting photos, Whispers and Town
 Halls (ADR-025), and the held-Whispers tray (ADR-026). Migrations `0019`–`0021` are on the local test and e2e databases only: `howdy_dev` and `howdy_prod`
 need them **before** this code is pushed. **Full e2e 2026-09-30: 87 of 87 pass** (run in three chunks to fit the
@@ -624,38 +636,42 @@ layers covered for them); direct tests of the recorder now catch both. All 15 ca
 1. ~~Mail provider~~ **Done:** Resend, domain verified.
 2. ~~Neon dev branch~~ **Done:** `howdy_dev` on the old Ohio project's `dev` branch is what local dev uses. The Ohio
    project (`dry-mode-62941068`) is otherwise only a rollback since the Singapore move — delete it ~2 weeks after
-   2026-10-01 (your call), and remove the unused `KV_*` Vercel variables that point at the old Redis.
+   2026-10-01 (your call), after moving local dev's `howdy_dev` somewhere else (e.g. a `dev` branch of `howdy-sg`).
+   ~~Unused `KV_*` Vercel variables~~ removed 2026-10-04.
 3. ~~First commit~~ **Done:** everything is on GitHub; pushing `main` deploys.
 4. ~~Schedule `pnpm jobs:purge`~~ **Done 2026-09-27**; ~~retention periods~~ **Done 2026-10-01**: audit log 12 months,
    closed reports 1 year.
 5. ~~Cloudflare R2~~ **Done:** bucket `howdy` is live and its CORS rule allows `PUT` from the site (checked 2026-10-01).
-6. **Deploying `pnpm ws`** (see ADR-013): long-lived Node process, `NODE_ENV=production`, `WS_PUBLIC_URL=wss://<same host as the site>`, Redis.
+6. ~~Deploying `pnpm ws`~~ **Not needed:** production's live Whispers go through Ably (ADR-035, live 2026-10-04);
+   the self-hosted `pnpm ws` path stays in the code for local dev and tests.
 
 ## Known Issues / Deferred
 
-- Town Halls have no shared post feed yet (directory + membership only, ADR-017); `members` visibility is today
-  identical in effect to `open` (self-serve either way; the feed is ADR-033) — only the label differs, in case a real approval-gated join
-  flow is wanted later.
+- Town Halls: `members` visibility is today identical in effect to `open` (self-serve either way) — only the label
+  differs, in case a real approval-gated join flow is wanted later. (The shared feed is built: ADR-033.)
 - Posse members always see each other's visits unless the visitor chose Shadow Walk (disclosed on the page). A person with few non-Posse
   visitors may guess who a hidden one was from what they know.
 - No Tracks digest / push, Guess Who, reveal tokens or cohort clues; no "who I visited".
 - The sidebar now has eight links (Town Halls is `sidebarOnly`, so the phone tab bar stays at six; the desktop sidebar
   wraps — already true at seven before this phase).
-- Earlier deferrals still stand (non-Posse Whispers, no MFA/passkeys, no self-service data export,
-  fixed-window limiter, placeholder icons, e2e needs local Edge, no visual baselines, master prompt §49–50 items).
+- Earlier deferrals still stand (non-Posse Whispers, no MFA/passkeys, fixed-window limiter, placeholder icons, e2e needs local Edge, no visual baselines, master prompt §49–50 items).
 - From the Whispers chat-service prompt (ADR-036), worth doing without Phoenix: a whole-of-Whispers threat-model
   write-up (its §61) and a staged load test of the Ably ring path (100 → 1,000 listeners).
 
 ## Next Task
 
-**All thirteen phases of the master prompt's build order are built** (Phase 13, 2026-09-30). What is left is your
-call or waits for real use: moving to Singapore (runbook); image moderation (deferred); an audit-log retention period
-(legal, done 2026-10-01: 12 months); a self-service data export; capsules to a Town Hall; deploying the realtime
-server (blocker 6). (The Town Hall feed is built: ADR-033; the Dynamic Island: ADR-034.)
-Tributes/Marks/Town Halls follow-ups: revisit whether Tribute/Mark giving should ever
-widen beyond Posse-only; a Town Hall shared feed if the need becomes real; Town Hall roles beyond owner/member.
+**All thirteen phases of the master prompt's build order are built** (Phase 13, 2026-09-30), and so is everything
+since (Singapore move, Town Hall feed, Dynamic Island, Ably Whispers, Porch bio, Home redesign). What is left is your
+call or waits for real use:
+
+1. ~~A self-service data export~~ **Done 2026-10-04** (ADR-037).
+2. Deleting the Ohio Neon project after ~2026-10-15 (blocker 2; move local dev's `howdy_dev` first).
+3. A whole-of-Whispers threat model and a staged Ably load test (ADR-036).
+4. Image moderation (deferred by you; worth revisiting now that Post Cards carry photos).
+5. Capsules to a Town Hall; Town Hall roles beyond owner/member and an approval-gated join; MFA/passkeys.
+6. Revisit whether Tribute/Mark giving should ever widen beyond Pals-only.
 
 ## Architectural Decisions
 
-ADR-001 … ADR-036 in `docs/decisions/`; lifecycle and deletion design in `docs/DATA_LIFECYCLE.md`.
+ADR-001 … ADR-037 in `docs/decisions/`; lifecycle and deletion design in `docs/DATA_LIFECYCLE.md`.
 

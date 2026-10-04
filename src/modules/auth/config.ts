@@ -31,6 +31,10 @@ export const RATE = {
   tokenIp: rule(20, 3600),
   /** Asking to delete my account (it re-checks the password, so it is limited like a sign-in). */
   deleteAccount: rule(5, 3600),
+  /** Attempts to download my data (each re-checks the password, so limited like a sign-in). Spent before the check. */
+  exportAttempt: rule(10, 3600),
+  /** Downloads that passed the password check: a few a day is plenty, and each one reads everything I have. */
+  exportDone: rule(3, 86_400),
 } as const;
 
 /** Cookie name. The `__Host-` prefix (Secure, Path=/, no Domain) is used whenever the site is served over https. */

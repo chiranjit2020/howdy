@@ -198,6 +198,9 @@ export const deleteAccountSchema = z.object({
   password: z.string().min(1, 'Enter your password.').max(PASSWORD_MAX),
 });
 
+/** "Download my data" re-checks the password exactly like deleting the account (ADR-037). */
+export const exportDataSchema = deleteAccountSchema;
+
 export const emailOnlySchema = z.object({ email: emailSchema });
 
 /** 32 random bytes as base64url is 43 chars. Anything wildly different is rejected before touching the database. */

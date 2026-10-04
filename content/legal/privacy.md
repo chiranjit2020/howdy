@@ -10,7 +10,7 @@ Howdy is run by {{operator}}, an individual based in {{country}} ("Howdy", "we",
 - We do not use analytics or tracking tools, and we use only two small cookies (see the [Cookie Policy](/cookies)).
 - A lot of Howdy is built to forget: Signals fade after 12 hours, Whispers after 7 days, and Tracks keep only a date for 7 days.
 - Your privacy settings decide who can see your Porch, Signal and Fence. New Porches are visible to signed-in members only.
-- You can delete your account yourself in the Workshop at any time. You can also ask us for a copy of your data, or to correct it, by writing to [{{contactEmail}}](mailto:{{contactEmail}}).
+- You can delete your account, or download a copy of your data, yourself in the Workshop at any time. You can also ask us to correct your data by writing to [{{contactEmail}}](mailto:{{contactEmail}}).
 
 ## Information we collect
 
@@ -137,14 +137,14 @@ No system is perfectly secure. If we learn of a breach that affects your persona
 
 ## Your rights and choices
 
-**In the app, at any time:** change your display name, bio, Portrait and privacy settings in the Workshop; delete your own Post Cards (with their photos), replies and Tributes; burn Whisper threads; turn on Shadow Walk; mute, restrict or block people; choose which Chimes you get; and sign out other devices.
+**In the app, at any time:** change your display name, bio, Portrait and privacy settings in the Workshop; delete your own Post Cards (with their photos), replies and Tributes; burn Whisper threads; turn on Shadow Walk; mute, restrict or block people; choose which Chimes you get; sign out other devices; and download your data (see Export below).
 
 **By writing to us at [{{contactEmail}}](mailto:{{contactEmail}}),** from the email address on your account, you can ask:
 
 - **Access:** for a summary of the personal data we hold about you and what we do with it.
 - **Correction:** to correct or complete information that is wrong.
 - **Deletion:** to delete your account, yourself, in the Workshop (or from the sign-in page if your account is suspended). It is closed at once: you are signed out everywhere and your Porch disappears. For 14 days you can still keep it by signing in; after that it is deleted for good, with your Porch, Post Cards, replies, Whispers, Pals, Tributes, Marks, Town Halls you own and your photo, except for the records described in [How long we keep things](#how-long-we-keep-things). We email you when it closes and when it is deleted. Your call sign is kept from anyone else for 90 days (we store only a scrambled form of it, not the name), so nobody can take it straight away to pretend to be you.
-- **Export:** for a copy of the information you gave us.
+- **Export:** download a copy yourself, at once, with "Download my data" in the Workshop (your password is asked for again, and a few downloads a day are allowed). It is a ZIP file: your account and settings, everything you wrote, your photos, and what Howdy shows you (cards on your Fence, Whispers in your threads, Tributes on your Porch). Other people appear only by call sign and name, and only if Howdy would show them to you that day; it never includes anyone else's email or private choices, who gave you which Mark, or the words of a sealed Time Capsule. You can also write to us for a copy.
 - **Withdrawing consent:** you may withdraw your consent at any time by deleting your account. This does not affect anything done before.
 - **Nominating someone:** you may name another person to exercise these rights for you if you die or become unable to.
 

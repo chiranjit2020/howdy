@@ -48,3 +48,5 @@ export type {
   HeldPost,
   HeldReply,
 } from './feed';
+export { townHallsExport } from './export';
+export type { HallExport } from './export';

@@ -35,3 +35,5 @@ export type {
   ReportAbout,
   SuspensionNotice,
 } from './service';
+export { moderationExport } from './export';
+export type { ModerationExport } from './export';

@@ -18,3 +18,5 @@ export {
   unreadThreads,
 } from './service';
 export type { HeldWhisper, ThreadPage, ThreadSummary } from './service';
+export { whispersExport } from './export';
+export type { WhispersExport } from './export';
