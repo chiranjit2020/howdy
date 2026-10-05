@@ -1,6 +1,7 @@
-import { auditLog, emailTokens, sessions } from '@db/schema';
-import { and, isNotNull, lt, or } from 'drizzle-orm';
+import { auditLog, emailTokens, sessions, totpFactors, webauthnChallenges } from '@db/schema';
+import { and, isNotNull, isNull, lt, or } from 'drizzle-orm';
 import { getDb } from '@/platform/db';
+import { TOTP_SETUP_TTL_MS } from './config';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 /** Dead sessions and spent tokens are kept briefly for debugging/support, then removed. Live ones are never touched. */
@@ -14,11 +15,12 @@ export const AUDIT_RETENTION_DAYS = 365;
 
 /**
  * Retention for authentication data (master prompt §54): remove email tokens that were used or expired more than a
- * week ago, and sessions that were revoked or expired more than 30 days ago. Idempotent; safe to run on a schedule.
+ * week ago, sessions that were revoked or expired more than 30 days ago, passkey challenges nobody answered, and
+ * authenticator-app setups that were never finished (ADR-040). Idempotent; safe to run on a schedule.
  */
 export async function purgeExpiredAuthData(
   now: Date = new Date(),
-): Promise<{ emailTokens: number; sessions: number }> {
+): Promise<{ emailTokens: number; sessions: number; challenges: number; unfinishedApps: number }> {
   const db = getDb();
   const tokenCutoff = new Date(now.getTime() - EXPIRED_GRACE_MS);
   const sessionCutoff = new Date(now.getTime() - SESSION_GRACE_MS);
@@ -44,7 +46,27 @@ export async function purgeExpiredAuthData(
     )
     .returning({ id: sessions.id });
 
-  return { emailTokens: tokens.length, sessions: dead.length };
+  const challenges = await db
+    .delete(webauthnChallenges)
+    .where(lt(webauthnChallenges.expiresAt, now))
+    .returning({ id: webauthnChallenges.id });
+
+  const unfinished = await db
+    .delete(totpFactors)
+    .where(
+      and(
+        isNull(totpFactors.confirmedAt),
+        lt(totpFactors.createdAt, new Date(now.getTime() - TOTP_SETUP_TTL_MS)),
+      ),
+    )
+    .returning({ userId: totpFactors.userId });
+
+  return {
+    emailTokens: tokens.length,
+    sessions: dead.length,
+    challenges: challenges.length,
+    unfinishedApps: unfinished.length,
+  };
 }
 
 /** Retention for the security audit trail: delete entries older than AUDIT_RETENTION_DAYS. Idempotent. */

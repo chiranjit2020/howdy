@@ -14,6 +14,7 @@ import {
   stepInsideVia,
   uniqueAccount,
   watchProblems,
+  makeStaff,
 } from './helpers';
 
 /**
@@ -44,7 +45,7 @@ test('on a 320 px phone, "More" reaches every page that is not a tab — Moderat
   browser,
 }) => {
   const me = await person(browser, 'navphone', PHONE);
-  await db.query("update users set role = 'moderator' where handle = $1", [me.handle]);
+  await makeStaff(db, me.handle);
   const problems = await watchProblems(me.page);
   const pages: [string, RegExp][] = [
     ['Tracks', /\/tracks$/],

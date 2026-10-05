@@ -153,9 +153,9 @@ describe('what a suspended person is told at sign-in', () => {
     expect(data.reason).toBe('spam');
     expect(data.appeal).toBe('available');
     expect(new Date(data.endsAt!).getTime()).toBeGreaterThan(Date.now() + 6 * 86_400_000);
-    // Nothing internal leaks: no ids, no moderator.
+    // Nothing internal leaks: no moderator, nothing but the facts and the sign-in ticket (ADR-040).
     expect(r.text).not.toContain(mod.handle);
-    expect(Object.keys(data).sort()).toEqual(['appeal', 'endsAt', 'reason']);
+    expect(Object.keys(data).sort()).toEqual(['appeal', 'endsAt', 'reason', 'ticket']);
   });
 
   it('an account suspended by hand (no suspension row) is told the generic reason', async () => {
@@ -163,7 +163,12 @@ describe('what a suspended person is told at sign-in', () => {
     await q(`update users set status = 'suspended' where handle = $1`, [b.handle]);
     const r = await signIn(b);
     expect(r.data.error!.code).toBe('ACCOUNT_SUSPENDED');
-    expect(errorData(r)).toEqual({ reason: 'other', endsAt: null, appeal: 'available' });
+    expect(errorData(r)).toEqual({
+      reason: 'other',
+      endsAt: null,
+      appeal: 'available',
+      ticket: expect.stringMatching(/^[0-9a-f-]{36}\./),
+    });
   });
 
   it('an account being deleted says so instead (ADR-027), without any suspension detail', async () => {
@@ -173,7 +178,7 @@ describe('what a suspended person is told at sign-in', () => {
     ]);
     const r = await signIn(b);
     expect(r.data.error!.code).toBe('ACCOUNT_CLOSING');
-    expect(Object.keys(errorData(r)!)).toEqual(['deleteOn']);
+    expect(Object.keys(errorData(r)!).sort()).toEqual(['deleteOn', 'ticket']);
   });
 });
 

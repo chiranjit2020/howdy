@@ -33,18 +33,10 @@ const longDate = (iso: string) =>
   new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' });
 
 /**
- * The suspension, in plain words, and the one appeal it allows. The appeal re-sends the sign-in details the person just
- * typed: they have no session, and the server checks the password again before it accepts anything.
+ * The suspension, in plain words, and the one appeal it allows. They have no session, so the appeal carries the ticket
+ * their complete sign-in returned (ADR-040): short-lived, and checked by the server before it accepts anything.
  */
-export function SuspendedNotice({
-  suspension,
-  identifier,
-  password,
-}: {
-  suspension: Suspension;
-  identifier: string;
-  password: string;
-}) {
+export function SuspendedNotice({ suspension, ticket }: { suspension: Suspension; ticket: string }) {
   const [appeal, setAppeal] = useState(suspension.appeal);
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
@@ -57,7 +49,7 @@ export function SuspendedNotice({
   async function leave() {
     setLeaving('busy');
     setLeaveError(undefined);
-    const res = await postJson<{ deleteOn: string }>('/api/auth/close', { identifier, password });
+    const res = await postJson<{ deleteOn: string }>('/api/auth/close', { ticket });
     setLeaving('idle');
     if (res.ok && res.data) setClosedOn(res.data.deleteOn);
     else setLeaveError(res.error?.message ?? 'That did not work. Try again.');
@@ -68,7 +60,7 @@ export function SuspendedNotice({
     if (!text.trim()) return setError('Say why the suspension should be lifted.');
     setBusy(true);
     setError(undefined);
-    const res = await postJson('/api/auth/appeal', { identifier, password, text });
+    const res = await postJson('/api/auth/appeal', { ticket, text });
     setBusy(false);
     // 409: an appeal is already waiting (sent from another tab, say) — the outcome is the same.
     if (res.ok || res.status === 409) setAppeal('open');

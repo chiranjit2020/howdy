@@ -1,4 +1,4 @@
-import { randomInt } from 'node:crypto';
+import { randomBytes, randomInt } from 'node:crypto';
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { join } from 'node:path';
@@ -252,4 +252,21 @@ export function smallTargets(page: Page): Promise<string[]> {
     }
     return out;
   });
+}
+
+/**
+ * Make an account staff the way production does it (a role set by hand) AND give it a passkey row, because staff need
+ * two-step sign-in before moderation opens (ADR-040). The key is never used to sign in.
+ */
+export async function makeStaff(
+  db: { query: (sql: string, args: unknown[]) => Promise<unknown> },
+  handle: string,
+  role: 'moderator' | 'admin' = 'moderator',
+): Promise<void> {
+  await db.query('update users set role = $2 where handle = $1', [handle, role]);
+  await db.query(
+    `insert into passkeys (user_id, credential_id, public_key, name)
+     select id, $2, decode('00', 'hex'), 'Test key' from users where handle = $1`,
+    [handle, randomBytes(24).toString('base64url')],
+  );
 }

@@ -6,5 +6,7 @@ export { AUDIT_RETENTION_DAYS, purgeExpiredAuthData, purgeOldAuditLog } from './
 export { dueDeletions, eraseAccount, purgeFreedHandles } from './deletion';
 export { acceptCurrentTerms, pendingAcceptances } from './legal';
 export { accountExport, verifyForExport } from './export';
+export { hasTwoStep, twoStepSummary } from './two-step';
+export type { TwoStepSummary } from './two-step';
 export type { AccountExport } from './export';
 export type { SessionContext, SessionUser, SessionSummary } from './sessions';

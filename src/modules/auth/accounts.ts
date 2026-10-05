@@ -20,7 +20,10 @@ import {
   passwordResetMessage,
   verifyEmailMessage,
 } from './emails';
+import { issueTicket, readTicket } from './factor-crypto';
+import { verifyPasskeySignIn } from './passkeys';
 import { createSession, revokeSessionByToken } from './sessions';
+import { requireSecondStep } from './two-step';
 
 type Db = ReturnType<typeof getDb>;
 type Writer = Pick<Db, 'insert' | 'delete'>;
@@ -289,24 +292,57 @@ export interface LoginResult {
   user: { id: string; handle: string };
 }
 
+/** How someone proves who they are on the sign-in page (ADR-040). */
+export type SignInProof =
+  | { identifier: string; password: string; code?: string | undefined }
+  /** A ticket from a sign-in that was complete but could not open a session (suspended / closing). */
+  | { ticket: string };
+
+type SessionCtx = RequestContext & { userAgent?: string | null; previousToken?: string | undefined };
+
 /**
  * Verify credentials and open a session. Unknown account and wrong password are indistinguishable (same error, same
- * Argon2 cost via a dummy hash). EMAIL_NOT_VERIFIED / ACCOUNT_UNAVAILABLE are only revealed AFTER the password was
- * proven correct. Any session presented with the request is revoked and a brand-new token is issued (no fixation).
+ * Argon2 cost via a dummy hash). The second step, then EMAIL_NOT_VERIFIED / ACCOUNT_UNAVAILABLE, are only asked for or
+ * revealed AFTER the password was proven correct. Any session presented with the request is revoked and a brand-new
+ * token is issued (no fixation).
  */
-export async function login(
-  input: { identifier: string; password: string },
-  ctx: RequestContext & { userAgent?: string | null; previousToken?: string | undefined },
+export async function login(input: SignInProof, ctx: SessionCtx): Promise<LoginResult> {
+  const { row, method } = await proveAccount(input, ctx);
+  return finishSignIn(row, method, ctx);
+}
+
+/** Sign in with a passkey: it proves the person AND stands in for the second step, so nothing else is asked. */
+export async function passkeyLogin(
+  input: Parameters<typeof verifyPasskeySignIn>[0],
+  ctx: SessionCtx,
 ): Promise<LoginResult> {
-  const row = await verifyCredentials(input, ctx);
+  const row = await verifyPasskeySignIn(input, ctx);
+  return finishSignIn(row, 'passkey', ctx);
+}
+
+interface ProvenAccount {
+  id: string;
+  handle: string;
+  status: string;
+  emailVerifiedAt: Date | null;
+}
+
+/**
+ * The account has been fully proven (password + second step, a passkey, or a ticket). Say what is in the way, if
+ * anything — and hand back a ticket with it, so the sign-in page can appeal, keep or close without asking again (an app
+ * code works only once) — or open a session.
+ */
+async function finishSignIn(row: ProvenAccount, method: string, ctx: SessionCtx): Promise<LoginResult> {
   if (row.status === 'suspended') {
-    // Only now, with the password proven: say why, and until when. A timed suspension that ran out lifts here.
+    // Only now, fully proven: say why, and until when. A timed suspension that ran out lifts here.
     const at = await suspensionAtSignIn(row.id);
-    if (!at.lifted) throw suspendedError(at.notice);
+    if (!at.lifted) throw suspendedError(at.notice, issueTicket(row.id));
   } else if (row.status === 'pending_deletion') {
-    // Only now, with the password proven: say when it goes, and offer to keep it (ADR-027).
+    // Only now, fully proven: say when it goes, and offer to keep it (ADR-027).
     const deleteOn = await deletionDate(row.id);
-    throw new AppError('ACCOUNT_CLOSING', { data: { deleteOn: deleteOn?.toISOString() ?? null } });
+    throw new AppError('ACCOUNT_CLOSING', {
+      data: { deleteOn: deleteOn?.toISOString() ?? null, ticket: issueTicket(row.id) },
+    });
   } else if (row.status !== 'active') {
     throw new AppError('ACCOUNT_UNAVAILABLE');
   }
@@ -314,26 +350,31 @@ export async function login(
 
   if (ctx.previousToken) await revokeSessionByToken(ctx.previousToken);
   const session = await createSession(row.id, ctx.userAgent);
-  await audit('login_success', { userId: row.id, requestId: ctx.requestId });
+  await audit('login_success', { userId: row.id, requestId: ctx.requestId, meta: { method } });
   return { token: session.token, maxAgeSec: session.maxAgeSec, user: { id: row.id, handle: row.handle } };
 }
 
-function suspendedError(notice: SuspensionNotice): AppError {
+function suspendedError(notice: SuspensionNotice, ticket: string): AppError {
   return new AppError('ACCOUNT_SUSPENDED', {
-    data: { reason: notice.reason, endsAt: notice.endsAt?.toISOString() ?? null, appeal: notice.appeal },
+    data: {
+      reason: notice.reason,
+      endsAt: notice.endsAt?.toISOString() ?? null,
+      appeal: notice.appeal,
+      ticket,
+    },
   });
 }
 
 /**
- * A suspended person's one appeal (ADR-023). They cannot hold a session, so it is sent with the same identifier and
- * password as signing in, checked the same way and against the SAME rate limits (an appeal is not a second place to
- * guess passwords). Nothing about the account is said until the password is proven.
+ * A suspended person's one appeal (ADR-023). They cannot hold a session, so it is sent with the ticket their sign-in
+ * returned — or the same identifier and password (and second step) as signing in, checked the same way and against the
+ * SAME rate limits (an appeal is not a second place to guess passwords). Nothing is said until the account is proven.
  */
 export async function appealSuspension(
-  input: { identifier: string; password: string; text: string },
+  input: SignInProof & { text: string },
   ctx: RequestContext,
 ): Promise<void> {
-  const row = await verifyCredentials(input, ctx);
+  const { row } = await proveAccount(input, ctx);
   if (row.status !== 'suspended')
     throw new AppError('BAD_REQUEST', { message: 'This account is not suspended.' });
   await fileAppeal(row.id, input.text);
@@ -341,29 +382,53 @@ export async function appealSuspension(
 }
 
 /**
- * "Keep my account" from the sign-in page (ADR-027): the same identifier and password as signing in, checked the same
- * way and against the same limits, then the scheduled deletion is cancelled. The caller signs in again afterwards.
+ * "Keep my account" from the sign-in page (ADR-027): proven the same way as signing in (or with its ticket), then the
+ * scheduled deletion is cancelled. The caller signs in again afterwards (the ticket still works for that).
  */
-export async function keepClosingAccount(
-  input: { identifier: string; password: string },
-  ctx: RequestContext,
-): Promise<void> {
-  const row = await verifyCredentials(input, ctx);
+export async function keepClosingAccount(input: SignInProof, ctx: RequestContext): Promise<void> {
+  const { row } = await proveAccount(input, ctx);
   await keepAccount(row.id, ctx);
 }
 
 /**
  * Close my account from the sign-in page (ADR-027). A suspended person has no session, so this is how they use their
- * right to delete: the same identifier and password as signing in, the same checks and limits. Works for an active
- * account too (the same thing the Workshop does).
+ * right to delete: proven the same way as signing in (or with its ticket). Works for an active account too (the same
+ * thing the Workshop does).
  */
-export async function closeFromSignIn(
-  input: { identifier: string; password: string },
-  ctx: RequestContext,
-): Promise<{ deleteOn: Date }> {
-  const row = await verifyCredentials(input, ctx);
+export async function closeFromSignIn(input: SignInProof, ctx: RequestContext): Promise<{ deleteOn: Date }> {
+  const { row } = await proveAccount(input, ctx);
   const [u] = await getDb().select({ email: users.email }).from(users).where(eq(users.id, row.id)).limit(1);
   return closeAccount(row.id, u!.email, ctx);
+}
+
+const INVALID_TICKET_MESSAGE = 'That took too long. Sign in again.';
+
+/** Password (+ the second step when it is on), or a still-valid ticket. Returns the account whatever its status. */
+async function proveAccount(
+  input: SignInProof,
+  ctx: RequestContext,
+): Promise<{ row: ProvenAccount; method: string }> {
+  if ('ticket' in input) {
+    await enforceRateLimit(`auth:token:ip:${ctx.ip}`, RATE.tokenIp);
+    const userId = readTicket(input.ticket);
+    const [row] = userId
+      ? await getDb()
+          .select({
+            id: users.id,
+            handle: users.handle,
+            status: users.status,
+            emailVerifiedAt: users.emailVerifiedAt,
+          })
+          .from(users)
+          .where(eq(users.id, userId))
+          .limit(1)
+      : [];
+    if (!row) throw new AppError('UNAUTHENTICATED', { message: INVALID_TICKET_MESSAGE });
+    return { row, method: 'ticket' };
+  }
+  const row = await verifyCredentials(input, ctx);
+  const method = await requireSecondStep(row.id, input.code, ctx);
+  return { row, method };
 }
 
 /**

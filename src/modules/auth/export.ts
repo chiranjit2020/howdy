@@ -6,6 +6,7 @@ import { enforceRateLimit } from '@/platform/rate-limit';
 import { audit } from './audit';
 import { RATE } from './config';
 import { verifyPassword } from './crypto';
+import { twoStepSummary } from './two-step';
 
 /**
  * "Download my data" (ADR-037). The password is asked for again, like deleting the account: a session left open on a
@@ -43,12 +44,27 @@ export interface AccountExport {
   devices: { device: string; signedInAt: string; lastSeenAt: string }[];
   /** Which versions of the Terms and Privacy Policy I agreed to, and when. */
   agreements: { document: string; version: string; agreedAt: string }[];
+  /**
+   * Two-step sign-in (ADR-040): what is set up, never the secrets — no app key, no recovery codes, no passkey keys
+   * (those live only on the person's devices anyway).
+   */
+  twoStep: {
+    on: boolean;
+    authenticatorApp: boolean;
+    passkeys: {
+      device: string;
+      syncedToPasswordManager: boolean;
+      addedAt: string;
+      lastUsedAt: string | null;
+    }[];
+    recoveryCodesLeft: number;
+  };
 }
 
 /** My account, as I would see it across the Workshop: nothing here is about anyone else. */
 export async function accountExport(userId: string, now: Date = new Date()): Promise<AccountExport> {
   const db = getDb();
-  const [[user], live, agreed] = await Promise.all([
+  const [[user], live, agreed, twoStep] = await Promise.all([
     db
       .select({
         handle: users.handle,
@@ -84,6 +100,7 @@ export async function accountExport(userId: string, now: Date = new Date()): Pro
       .from(legalAcceptances)
       .where(eq(legalAcceptances.userId, userId))
       .orderBy(asc(legalAcceptances.acceptedAt)),
+    twoStepSummary(userId),
   ]);
   if (!user) throw new AppError('NOT_FOUND');
   return {
@@ -101,5 +118,16 @@ export async function accountExport(userId: string, now: Date = new Date()): Pro
       version: a.version,
       agreedAt: a.acceptedAt.toISOString(),
     })),
+    twoStep: {
+      on: twoStep.on,
+      authenticatorApp: twoStep.app,
+      passkeys: twoStep.passkeys.map((p) => ({
+        device: p.name,
+        syncedToPasswordManager: p.backedUp,
+        addedAt: p.createdAt.toISOString(),
+        lastUsedAt: p.lastUsedAt?.toISOString() ?? null,
+      })),
+      recoveryCodesLeft: twoStep.recoveryCodesLeft,
+    },
   };
 }

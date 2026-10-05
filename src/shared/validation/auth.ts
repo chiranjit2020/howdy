@@ -209,3 +209,83 @@ export const tokenSchema = z.string().regex(/^[A-Za-z0-9_-]{43}$/, 'That link is
 export const verifyEmailSchema = z.object({ token: tokenSchema });
 
 export const resetPasswordSchema = z.object({ token: tokenSchema, password: passwordSchema });
+
+// ─── Two-step sign-in (ADR-040) ──────────────────────────────────────────────────────────────────────────────────────
+
+/** An authenticator-app code (6 digits) or a recovery code (`abcde-fghjk`); the server tells them apart. */
+export const secondStepCodeSchema = z
+  .string()
+  .trim()
+  .min(1, 'Enter the code.')
+  .max(32, 'That code isn’t right.')
+  .refine((s) => /^[\da-z\s-]+$/i.test(s), 'That code isn’t right.');
+
+/** `<user id>.<expires ms>.<mac>` — see factor-crypto.ts. */
+export const ticketSchema = z.string().regex(/^[0-9a-f-]{36}\.\d{13}\.[A-Za-z0-9_-]{43}$/);
+
+/** Sign in, keep or close from the sign-in page: password (+ code when two-step is on), or a ticket. */
+export const signInProofSchema = z.union([
+  z.strictObject({ ticket: ticketSchema }),
+  loginSchema.extend({ code: secondStepCodeSchema.optional() }),
+]);
+
+export const appealProofSchema = z.union([
+  z.strictObject({ ticket: ticketSchema, text: appealTextSchema }),
+  appealSchema.extend({ code: secondStepCodeSchema.optional() }),
+]);
+
+/** Changing sign-in security asks for the password again. */
+export const passwordOnlySchema = deleteAccountSchema;
+
+export const confirmAppSchema = z.object({
+  code: z
+    .string()
+    .trim()
+    .regex(/^\d{6}$/, 'Enter the 6-digit code.'),
+});
+
+const b64url = (max: number) =>
+  z
+    .string()
+    .regex(/^[A-Za-z0-9_-]*$/)
+    .max(max);
+
+/**
+ * What the browser sends back from a passkey prompt. Only the shape is checked here (sizes bounded); the WebAuthn
+ * library checks the contents and signatures.
+ */
+const credentialBase = {
+  id: b64url(1366).min(16),
+  rawId: b64url(1366).min(16),
+  type: z.literal('public-key'),
+  clientExtensionResults: z.record(z.string(), z.unknown()),
+  authenticatorAttachment: z.enum(['platform', 'cross-platform']).optional(),
+};
+
+export const passkeyRegistrationSchema = z.object({
+  challengeId: z.uuid(),
+  response: z.object({
+    ...credentialBase,
+    response: z.object({
+      clientDataJSON: b64url(8192),
+      attestationObject: b64url(32768),
+      authenticatorData: b64url(32768).optional(),
+      transports: z.array(z.string().max(32)).max(8).optional(),
+      publicKeyAlgorithm: z.number().int().optional(),
+      publicKey: b64url(8192).optional(),
+    }),
+  }),
+});
+
+export const passkeySignInSchema = z.object({
+  challengeId: z.uuid(),
+  response: z.object({
+    ...credentialBase,
+    response: z.object({
+      clientDataJSON: b64url(8192),
+      authenticatorData: b64url(8192),
+      signature: b64url(2048),
+      userHandle: b64url(256).optional(),
+    }),
+  }),
+});

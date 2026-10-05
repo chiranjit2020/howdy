@@ -35,7 +35,24 @@ export const RATE = {
   exportAttempt: rule(10, 3600),
   /** Downloads that passed the password check: a few a day is plenty, and each one reads everything I have. */
   exportDone: rule(3, 86_400),
+  /**
+   * Second-step attempts per ACCOUNT (ADR-040), spent before the code is checked. A 6-digit code has a million values
+   * and three are valid at a time: at 5 per 15 minutes a guesser needs years on average. The password must be right
+   * for each attempt too.
+   */
+  secondStep: rule(5, 900),
+  /** Re-typing the password to change sign-in security (add/remove a passkey, the app, recovery codes). */
+  securityChange: rule(10, 3600),
+  /** Asking for a passkey challenge, per source. Cheap, but each one is a row until it expires. */
+  passkeyOptionsIp: rule(60, 900),
 } as const;
+
+/** How long the browser has to answer a passkey challenge. */
+export const WEBAUTHN_CHALLENGE_TTL_MS = 5 * MIN;
+/** How long a half-set-up authenticator app waits for its first code before it has to be started again. */
+export const TOTP_SETUP_TTL_MS = 15 * MIN;
+/** Passkeys per account: plenty for a phone, a laptop and a spare key, and a bound on what one account can store. */
+export const MAX_PASSKEYS = 10;
 
 /** Cookie name. The `__Host-` prefix (Secure, Path=/, no Domain) is used whenever the site is served over https. */
 export function sessionCookieName(): string {

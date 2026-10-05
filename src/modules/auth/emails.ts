@@ -107,3 +107,66 @@ export function accountDeletedMessage(to: string): MailMessage {
     ].join('\n'),
   };
 }
+
+/**
+ * Every change to how an account signs in is told to its owner by email (ADR-040), so a change they did not make is
+ * noticed. No codes, keys or device secrets are ever in it.
+ */
+export type TwoStepChange =
+  | 'turned_on'
+  | 'turned_off'
+  | 'passkey_added'
+  | 'passkey_removed'
+  | 'app_added'
+  | 'app_removed'
+  | 'recovery_codes_renewed'
+  | 'recovery_code_used';
+
+const TWO_STEP_LINES: Record<TwoStepChange, { subject: string; line: string }> = {
+  turned_on: {
+    subject: 'Two-step sign-in is on',
+    line: 'Two-step sign-in is now on for your Howdy account. Every other device was signed out.',
+  },
+  turned_off: {
+    subject: 'Two-step sign-in is off',
+    line: 'Two-step sign-in is now off for your Howdy account: your password alone signs in again.',
+  },
+  passkey_added: { subject: 'A passkey was added', line: 'A new passkey was added to your Howdy account.' },
+  passkey_removed: {
+    subject: 'A passkey was removed',
+    line: 'A passkey was removed from your Howdy account.',
+  },
+  app_added: {
+    subject: 'An authenticator app was linked',
+    line: 'An authenticator app was linked to your Howdy account.',
+  },
+  app_removed: {
+    subject: 'Your authenticator app was unlinked',
+    line: 'The authenticator app was unlinked from your Howdy account.',
+  },
+  recovery_codes_renewed: {
+    subject: 'New recovery codes',
+    line: 'New recovery codes were made for your Howdy account. The old ones no longer work.',
+  },
+  recovery_code_used: {
+    subject: 'A recovery code was used',
+    line: 'A recovery code was just used to sign in to your Howdy account.',
+  },
+};
+
+export function twoStepChangedMessage(to: string, change: TwoStepChange, extra?: string): MailMessage {
+  const { subject, line } = TWO_STEP_LINES[change];
+  return {
+    to,
+    subject,
+    text: [
+      'Howdy!',
+      '',
+      line,
+      ...(extra ? [extra] : []),
+      '',
+      `If this was you, there is nothing to do. If it was not, reset your password now: ${link('/lost-your-key')}`,
+      'and then check "Sign-in security" in your Workshop.',
+    ].join('\n'),
+  };
+}

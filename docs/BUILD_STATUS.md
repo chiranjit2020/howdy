@@ -9,6 +9,33 @@ Town Hall feed ADR-033, Dynamic Island ADR-034). Production: Vercel `sin1` + Neo
 mail, R2 photos, Upstash Redis; a push to `main` deploys. Production does not migrate on deploy: apply new migrations
 to `howdy_dev` and the Singapore `howdy_prod` first.
 
+## 2026-10-05 (later) — Passkeys and two-step sign-in (ADR-040) — shipped
+
+Decisions taken with you: **passkeys + authenticator-app codes**; **a passkey signs in alone**; **optional, but required
+for staff**; **10 recovery codes, and a password reset does NOT switch two-step off**.
+
+- [x] Workshop → **Sign-in security**: add/remove passkeys, link/unlink an authenticator app (QR, "Open in authenticator
+      app" link for the same phone, typed key), recovery codes shown once (copy / download), new codes. Every change
+      re-asks the password and emails the owner. Turning two-step on signs out every other device.
+- [x] Sign-in: **"Sign in with a passkey"** (no handle, no password); with two-step on, the password leads to "One more
+      step" (app code, recovery code, or "Use a passkey instead"). Asked only after the password is right and before
+      any account status is said.
+- [x] Suspended / closing accounts get a 15-minute **ticket** with the notice: appeal, keep and close use it (the
+      password routes now need the second step too, so closing from the sign-in page cannot skip it).
+- [x] **Staff need two-step**: moderators/admins without it get a 403 telling them to turn it on (members still 404);
+      `pnpm set-role` warns. **`rickdev` must add a passkey or app before moderation opens again in production.**
+- [x] Migration `0032_two_step`, applied to `howdy_dev`, Singapore `howdy_prod` and the local test + e2e databases
+      before the push. Privacy 1.11.0 (no re-acceptance). Data export lists what is set up,
+      never a secret. Daily purge removes stale challenges and unfinished app setups.
+- [x] Tests: `tests/unit/two-step-crypto.test.ts` (RFC 4226/6238 vectors, sealing, codes, tickets),
+      `tests/security/two-step.test.ts` (34: replay, races, guessing limit, reset, look-alike origin, missing user
+      verification, cloned counter, challenge hijack, staff gate agreement, export), `tests/e2e/two-step.spec.ts`
+      (Chromium virtual authenticator, 320 px phone). Software authenticator in `tests/helpers/passkey.ts`.
+- [x] Verified 2026-10-05: vitest 1408/1408; format, lint, typecheck, build; **full e2e 103/103** (run in batches).
+      Mutation check `.dev/mutate-two-step.mjs`: all 10 caught (the race one only after the race test was made
+      deterministic with a held row lock). Also fixed a stale e2e assertion from the Home redesign ("1 new" → "1
+      request waiting").
+
 ## 2026-10-05 — Whispers threat model, burn for me (ADR-038), photo check (ADR-039), Ably load test, dev DB moved
 
 Decisions taken with you: all four remaining items; **silent "burn for me"**; **OpenAI omni-moderation**; **hold for a
@@ -692,11 +719,11 @@ call or waits for real use:
 3. ~~A whole-of-Whispers threat model and a staged Ably load test~~ **Done 2026-10-05** (ADR-038, see above).
 4. ~~Image moderation~~ **Built 2026-10-05** (ADR-039) — set `OPENAI_API_KEY` to turn it on. CSAM is not covered
    by it (Cloudflare CSAM Scanning Tool or PhotoDNA, if wanted).
-5. Capsules to a Town Hall; Town Hall roles beyond owner/member and an approval-gated join; MFA/passkeys.
+5. Capsules to a Town Hall; Town Hall roles beyond owner/member and an approval-gated join. ~~MFA/passkeys~~ **built 2026-10-05** (ADR-040).
 6. Revisit whether Tribute/Mark giving should ever widen beyond Pals-only.
 
 ## Architectural Decisions
 
-ADR-001 … ADR-039 in `docs/decisions/`; lifecycle and deletion design in `docs/DATA_LIFECYCLE.md`; Whispers threat model in
+ADR-001 … ADR-040 in `docs/decisions/`; lifecycle and deletion design in `docs/DATA_LIFECYCLE.md`; Whispers threat model in
 `docs/WHISPERS_THREAT_MODEL.md`.
 

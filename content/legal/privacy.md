@@ -28,6 +28,8 @@ Howdy is run by {{operator}}, an individual based in {{country}} ("Howdy", "we",
 
 **Chimes.** Your notifications: who did what, and when.
 
+**Two-step sign-in (if you turn it on).** For a **passkey**, the passkey's public key and its ID, a rough label for the device you added it on (such as "Chrome on Android"), whether it is synced to a password manager, and when it was added and last used. Your fingerprint, face or screen lock never leaves your device: your phone or computer checks it, and Howdy only receives a signed "yes". For an **authenticator app**, the shared key the app uses to make codes, stored encrypted. Your **recovery codes** are stored only in a scrambled form that cannot be turned back into the codes.
+
 **Device and connection information.** For each device you are signed in on, we keep a rough label such as "Edge on Windows", so that you can see your open sessions and sign any of them out. Howdy itself does not store your IP address with your account or sessions. We use it for up to an hour to limit how often something can be tried (for example, password guesses), and our hosting provider records it in its own short-lived request logs.
 
 **Security records.** A record of important account events, such as signing up, signing in, a failed sign-in or a password reset. These records do not contain your password, IP address or anything you wrote.
@@ -100,6 +102,7 @@ On your Pals page we may suggest people who are Pals with at least two of your P
 - **Post Cards waiting for approval, waiting Tributes, and Town Hall posts waiting for the owner:** 30 days, if they are not approved.
 - **Unfinished photo uploads:** about an hour (a photo chosen for a card but never nailed goes too). A replaced or removed Portrait is deleted straight away; a card's photo stops being shown the moment its card is removed, and its file is deleted within a day.
 - **Sessions:** until you sign out, or after 14 days without use (60 days at most), plus 30 days of records so we can help with account problems.
+- **Passkeys, authenticator app and recovery codes:** until you remove them, switch two-step sign-in off, or delete your account. A passkey prompt nobody answered is deleted within a day; an authenticator app you started to link but never finished, after 15 minutes.
 - **Email links:** confirmation links work for 24 hours and reset links for 1 hour. Used and expired links are kept for 7 days.
 - **Your account, Porch, posts, Pals, Marks and Town Halls:** for as long as you keep your account, or until you or the person they are on removes them.
 - **Reports:** while a report is open, and for 1 year after a moderator closes it, then deleted, including the words it was about and who reported whom. If an account is deleted first, its reports stay for that time with the link to the account removed.
@@ -132,7 +135,7 @@ Howdy uses two cookies: one that keeps you signed in, and one that remembers you
 
 ## Security
 
-We protect your information with care: encrypted connections, passwords stored only as strong one-way hashes, sessions you can see and end, protection against forged requests, rate limits against guessing, strict limits on what each person can see, and logs that leave out sensitive content. Photos are kept in private storage, and each one is checked against your privacy settings every time it is viewed.
+We protect your information with care: encrypted connections, passwords stored only as strong one-way hashes, sessions you can see and end, optional two-step sign-in with passkeys or an authenticator app (we email you whenever it changes), protection against forged requests, rate limits against guessing, strict limits on what each person can see, and logs that leave out sensitive content. Photos are kept in private storage, and each one is checked against your privacy settings every time it is viewed.
 
 No system is perfectly secure. If we learn of a breach that affects your personal data, we will tell you and the authorities as the law requires. Please use a password you do not use anywhere else.
 

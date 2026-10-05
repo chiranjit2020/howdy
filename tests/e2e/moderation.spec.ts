@@ -14,6 +14,7 @@ import {
   stepInsideVia,
   uniqueAccount,
   watchProblems,
+  makeStaff,
 } from './helpers';
 
 /** ADR-023: a suspended person is told why at sign-in and can appeal; a moderator answers on /moderation. */
@@ -41,7 +42,7 @@ test.describe('Suspensions and appeals (production build, real CSP)', () => {
     browser,
   }) => {
     const mod = await person(browser, 'mod');
-    await db.query("update users set role = 'moderator' where handle = $1", [mod.handle]);
+    await makeStaff(db, mod.handle);
     // On a phone (touch), where every control must be a 44 px target; `sm` buttons shrink only for a mouse.
     const member = await person(browser, 'member', {
       hasTouch: true,
@@ -133,7 +134,7 @@ test.describe('Suspensions and appeals (production build, real CSP)', () => {
       isMobile: true,
       hasTouch: true,
     });
-    await db.query("update users set role = 'moderator' where handle = $1", [mod.handle]);
+    await makeStaff(db, mod.handle);
     expect((await mod.page.goto('/moderation'))?.status()).toBe(200);
     await pageReady(mod.page);
     expect(await horizontalOverflow(mod.page)).toBe(0);

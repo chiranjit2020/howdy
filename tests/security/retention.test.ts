@@ -121,7 +121,7 @@ describe('authentication data retention', () => {
     const audit = await count('audit_log');
     await purgeExpiredAuthData();
     const second = await purgeExpiredAuthData();
-    expect(second).toEqual({ emailTokens: 0, sessions: 0 });
+    expect(second).toEqual({ emailTokens: 0, sessions: 0, challenges: 0, unfinishedApps: 0 });
     expect(await count('users')).toBe(users);
     expect(await count('profiles')).toBe(profiles);
     expect(await count('audit_log')).toBe(audit);

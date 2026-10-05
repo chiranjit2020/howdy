@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto';
 import { GET as queueRoute } from '@/app/api/moderation/reports/route';
 import { POST as actRoute } from '@/app/api/moderation/reports/[id]/route';
 import { GET as accountRoute, POST as accountActRoute } from '@/app/api/moderation/accounts/[handle]/route';
@@ -116,6 +117,24 @@ export const decide = (id: string, decision: unknown, opts: Opts = {}) =>
 export const fileAppeal = (body: unknown, opts: Opts = {}) =>
   call(authHandlers.appeal, 'POST', '/api/auth/appeal', body, opts);
 
-/** There is no self-service promotion: a role is set by hand, which is what this does. */
-export const makeRole = (handle: string, role: 'member' | 'moderator' | 'admin') =>
-  q('update users set role = $2 where handle = $1', [handle, role]);
+/**
+ * There is no self-service promotion: a role is set by hand, which is what this does. Staff need two-step sign-in to
+ * moderate (ADR-040), so a promoted account is also given a passkey row, the way a real moderator would have one;
+ * pass `{ twoStep: false }` to test the gate itself.
+ */
+export async function makeRole(
+  handle: string,
+  role: 'member' | 'moderator' | 'admin',
+  opts: { twoStep?: boolean } = {},
+) {
+  await q('update users set role = $2 where handle = $1', [handle, role]);
+  if (role !== 'member' && (opts.twoStep ?? true)) await giveTwoStep(handle);
+}
+
+/** A passkey row for this account (its key is never used to sign in: it only makes two-step count as on). */
+export const giveTwoStep = (handle: string) =>
+  q(
+    `insert into passkeys (user_id, credential_id, public_key, name)
+     select id, $2, decode('00', 'hex'), 'Test key' from users where handle = $1`,
+    [handle, randomBytes(24).toString('base64url')],
+  );

@@ -17,7 +17,18 @@ export type AuditEvent =
   | 'deletion_requested'
   | 'deletion_cancelled'
   | 'account_deleted'
-  | 'data_exported';
+  | 'data_exported'
+  // Two-step sign-in (ADR-040)
+  | 'two_step_on'
+  | 'two_step_off'
+  | 'passkey_added'
+  | 'passkey_removed'
+  | 'app_added'
+  | 'app_removed'
+  | 'recovery_codes_renewed'
+  | 'recovery_code_used'
+  | 'second_step_failed'
+  | 'passkey_sign_in_failed';
 
 /** Best-effort append to the security audit trail. Never records IPs, tokens, passwords or message content. */
 export async function audit(

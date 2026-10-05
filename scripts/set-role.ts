@@ -35,6 +35,20 @@ async function main(): Promise<void> {
     ]);
   }
   process.stdout.write(`@${handle.data}: ${row.old_role} -> ${role}\n`);
+  if (role !== 'member') {
+    // Staff need two-step sign-in before moderation opens for them (ADR-040).
+    const { rows: on } = await pool.query<{ on: boolean }>(
+      `select exists (select 1 from totp_factors where user_id = $1 and confirmed_at is not null)
+           or exists (select 1 from passkeys where user_id = $1) as on`,
+      [row.id],
+    );
+    if (!on[0]?.on) {
+      process.stdout.write(
+        'Note: two-step sign-in is off for this account. Moderation stays closed to them until they add a passkey\n' +
+          'or an authenticator app under Workshop > Sign-in security.\n',
+      );
+    }
+  }
 }
 
 main()

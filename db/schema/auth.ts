@@ -1,6 +1,8 @@
 import { sql } from 'drizzle-orm';
 import {
+  bigint,
   bigserial,
+  boolean,
   check,
   customType,
   index,
@@ -119,6 +121,94 @@ export const auditLog = pgTable(
     index('audit_log_user_created_idx').on(t.userId, t.createdAt),
     // The daily job deletes rows older than AUDIT_RETENTION_DAYS (12 months).
     index('audit_log_created_idx').on(t.createdAt),
+  ],
+);
+
+/**
+ * Passkeys (ADR-040). Only the PUBLIC key is stored: the private key never leaves the person's device or password
+ * manager, so a database leak yields nothing that can sign in. The credential id is the authenticator's own random
+ * handle (base64url), never anything about the person.
+ */
+export const passkeys = pgTable(
+  'passkeys',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    credentialId: text('credential_id').notNull().unique(),
+    publicKey: bytea('public_key').notNull(),
+    /** Signature counter as last seen. Synced passkeys always report 0; a counter that goes backwards is refused. */
+    counter: bigint('counter', { mode: 'number' }).notNull().default(0),
+    transports: text('transports')
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
+    /** Coarse label such as "Chrome on Android", from the device it was added on (like Open Gates). */
+    name: text('name').notNull(),
+    /** Synced to a password manager (survives a lost phone) rather than bound to one device. */
+    backedUp: boolean('backed_up').notNull().default(false),
+    createdAt: tstz('created_at').notNull().defaultNow(),
+    lastUsedAt: tstz('last_used_at'),
+  },
+  (t) => [
+    index('passkeys_user_id_idx').on(t.userId),
+    // Postgres regexes allow at most 255 repetitions, so the length is checked on its own.
+    check(
+      'passkeys_credential_id_shape',
+      sql`${t.credentialId} ~ '^[A-Za-z0-9_-]+$' and length(${t.credentialId}) between 16 and 1366`,
+    ),
+  ],
+);
+
+/**
+ * Authenticator-app codes (TOTP, RFC 6238), at most one per person (ADR-040). The shared secret has to be readable to
+ * check a code, so it is ENCRYPTED (AES-256-GCM, key derived from AUTH_SECRET), never stored in the clear.
+ * `confirmedAt` is null while it is being set up: it only counts once a correct code has been typed.
+ */
+export const totpFactors = pgTable('totp_factors', {
+  userId: uuid('user_id')
+    .primaryKey()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  secretEnc: text('secret_enc').notNull(),
+  confirmedAt: tstz('confirmed_at'),
+  /** The newest 30-second step a code was accepted for: a code is never accepted twice (replay). */
+  lastStep: bigint('last_step', { mode: 'number' }),
+  createdAt: tstz('created_at').notNull().defaultNow(),
+});
+
+/** One-time recovery codes (ADR-040), stored only as a keyed hash. A new set replaces the old one. */
+export const recoveryCodes = pgTable(
+  'recovery_codes',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    codeHash: bytea('code_hash').notNull().unique(),
+    usedAt: tstz('used_at'),
+    createdAt: tstz('created_at').notNull().defaultNow(),
+  },
+  (t) => [index('recovery_codes_user_id_idx').on(t.userId)],
+);
+
+/**
+ * A WebAuthn challenge, waiting for the browser's answer (ADR-040). Single use (claimed with DELETE … RETURNING), short
+ * lived, and bound to its purpose and, for adding a passkey, to the person who asked.
+ */
+export const webauthnChallenges = pgTable(
+  'webauthn_challenges',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    challenge: text('challenge').notNull(),
+    purpose: text('purpose').notNull(),
+    userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }),
+    expiresAt: tstz('expires_at').notNull(),
+  },
+  (t) => [
+    check('webauthn_challenges_purpose_check', sql`${t.purpose} in ('register', 'sign_in')`),
+    check('webauthn_challenges_register_has_user', sql`${t.purpose} = 'sign_in' or ${t.userId} is not null`),
+    index('webauthn_challenges_expires_idx').on(t.expiresAt),
   ],
 );
 

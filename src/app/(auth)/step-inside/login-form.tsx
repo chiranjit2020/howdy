@@ -4,10 +4,19 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 import { loginSchema } from '@/shared/validation/auth';
-import { postJson } from '@/ui/auth/api';
+import { postJson, type ApiResult } from '@/ui/auth/api';
 import { FormMessage } from '@/ui/auth/form-parts';
+import {
+  usePasskeysSupported,
+  signWithPasskey,
+  type PublicKeyCredentialRequestOptionsJSON,
+} from '@/ui/auth/passkey';
 import { Button, Input } from '@/ui/primitives';
 import { readSuspension, SuspendedNotice, type Suspension } from './suspended-notice';
+
+type Creds = { identifier: string; password: string };
+/** What proves the person to the server: password (+ code), or the ticket a complete sign-in handed back (ADR-040). */
+type Proof = (Creds & { code?: string }) | { ticket: string };
 
 export function LoginForm() {
   const router = useRouter();
@@ -19,24 +28,27 @@ export function LoginForm() {
   const [resent, setResent] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const [busy, setBusy] = useState(false);
-  const [suspended, setSuspended] = useState<(Suspension & { identifier: string; password: string }) | null>(
-    null,
-  );
+  const [passkeyBusy, setPasskeyBusy] = useState(false);
+  const canPasskey = usePasskeysSupported();
+  // ADR-040: the password was right and two-step is on — ask for the second step.
+  const [secondStep, setSecondStep] = useState<(Creds & { passkey: boolean }) | null>(null);
+  const [code, setCode] = useState('');
+  const [suspended, setSuspended] = useState<(Suspension & { ticket: string }) | null>(null);
   // ADR-027: the owner asked to delete this account; it can still be kept until `deleteOn`.
-  const [closing, setClosing] = useState<{
-    deleteOn: string | null;
-    identifier: string;
-    password: string;
-  } | null>(null);
+  const [closing, setClosing] = useState<{ deleteOn: string | null; ticket: string } | null>(null);
   const [keeping, setKeeping] = useState(false);
 
-  async function onSubmit(e: FormEvent) {
-    e.preventDefault();
+  function reset() {
     setError(undefined);
     setNeedsVerify(false);
     setResent(false);
     setSuspended(null);
     setClosing(null);
+  }
+
+  async function onSubmit(e: FormEvent) {
+    e.preventDefault();
+    reset();
     const parsed = loginSchema.safeParse({ identifier, password });
     if (!parsed.success) {
       setError('Enter your handle or email and your password.');
@@ -46,30 +58,88 @@ export function LoginForm() {
     await signIn(parsed.data);
   }
 
-  async function signIn(creds: { identifier: string; password: string }) {
-    setBusy(true);
-    const res = await postJson('/api/auth/login', creds);
-    if (res.ok) {
-      router.push('/home');
-      router.refresh();
+  async function onSecondStep(e: FormEvent) {
+    e.preventDefault();
+    if (!secondStep) return;
+    if (!code.trim()) {
+      setError('Enter the code.');
+      setAttempt((n) => n + 1);
       return;
     }
+    setError(undefined);
+    await signIn({ identifier: secondStep.identifier, password: secondStep.password, code: code.trim() });
+  }
+
+  async function signIn(proof: Proof) {
+    setBusy(true);
+    const res = await postJson('/api/auth/login', proof);
+    if (res.ok) return done();
     setBusy(false);
+    if (res.error?.code === 'SECOND_STEP_REQUIRED' && 'password' in proof) {
+      setSecondStep({
+        identifier: proof.identifier,
+        password: proof.password,
+        passkey: res.error.data?.passkey === 'yes',
+      });
+      setCode('');
+      return;
+    }
+    onFailure(res);
+  }
+
+  async function signInWithPasskey() {
+    reset();
+    setPasskeyBusy(true);
+    const start = await postJson<{ challengeId: string; options: PublicKeyCredentialRequestOptionsJSON }>(
+      '/api/auth/passkey/options',
+      {},
+    );
+    if (!start.ok || !start.data) {
+      setPasskeyBusy(false);
+      return onFailure(start);
+    }
+    const answer = await signWithPasskey(start.data.options);
+    if (!answer.ok) {
+      setPasskeyBusy(false);
+      setError(answer.message);
+      setAttempt((n) => n + 1);
+      return;
+    }
+    const res = await postJson('/api/auth/passkey/login', {
+      challengeId: start.data.challengeId,
+      response: answer.response,
+    });
+    if (res.ok) return done();
+    setPasskeyBusy(false);
+    onFailure(res);
+  }
+
+  function done() {
+    router.push('/home');
+    router.refresh();
+  }
+
+  /** Whatever stands in the way after a complete sign-in, or the error to show. */
+  function onFailure(res: ApiResult) {
+    const ticket = res.error?.data?.ticket ?? '';
     if (res.error?.code === 'ACCOUNT_SUSPENDED') {
       // Not an error to fix: show what happened, and the appeal, instead of a red message.
-      setSuspended({ ...readSuspension(res.error.data), ...creds });
+      setSecondStep(null);
+      setSuspended({ ...readSuspension(res.error.data), ticket });
       return;
     }
     if (res.error?.code === 'ACCOUNT_CLOSING') {
       const at = res.error.data?.deleteOn;
-      setClosing({ deleteOn: at && !Number.isNaN(Date.parse(at)) ? at : null, ...creds });
+      setSecondStep(null);
+      setClosing({ deleteOn: at && !Number.isNaN(Date.parse(at)) ? at : null, ticket });
       return;
     }
     if (res.error?.code === 'EMAIL_NOT_VERIFIED') {
+      setSecondStep(null);
       setNeedsVerify(true);
-      setVerifyEmail(creds.identifier.includes('@') ? creds.identifier : '');
+      setVerifyEmail(identifier.includes('@') ? identifier.trim() : '');
     }
-    setError(res.error?.message ?? 'Something went wrong. Try again.');
+    setError(res.error?.fields?.code ?? res.error?.message ?? 'Something went wrong. Try again.');
     setAttempt((n) => n + 1);
   }
 
@@ -83,18 +153,17 @@ export function LoginForm() {
   async function keep() {
     if (!closing) return;
     setKeeping(true);
-    const creds = { identifier: closing.identifier, password: closing.password };
-    const res = await postJson('/api/auth/keep', creds);
+    const { ticket } = closing;
+    const res = await postJson('/api/auth/keep', { ticket });
     setKeeping(false);
+    setClosing(null);
     if (!res.ok) {
-      setClosing(null);
       setError(res.error?.message ?? 'That did not work. Try again.');
       setAttempt((n) => n + 1);
       return;
     }
-    setClosing(null);
-    // Kept: sign straight in (a suspended account is shown its suspension, as before it closed).
-    await signIn(creds);
+    // Kept: sign straight in with the same ticket (a suspended account is shown its suspension, as before it closed).
+    await signIn({ ticket });
   }
 
   if (closing) {
@@ -134,15 +203,62 @@ export function LoginForm() {
     return (
       <div className="flex flex-col gap-3">
         <h1 className="text-title text-text-primary">Welcome back</h1>
-        <SuspendedNotice
-          suspension={suspended}
-          identifier={suspended.identifier}
-          password={suspended.password}
-        />
+        <SuspendedNotice suspension={suspended} ticket={suspended.ticket} />
         <Button variant="ghost" onClick={() => setSuspended(null)}>
           Sign in with another account
         </Button>
       </div>
+    );
+  }
+
+  if (secondStep) {
+    return (
+      <form onSubmit={onSecondStep} noValidate className="flex flex-col gap-3">
+        <div>
+          <h1 className="text-title text-text-primary">One more step</h1>
+          <p className="text-body text-text-secondary">
+            Two-step sign-in is on for this account. Enter the 6-digit code from your authenticator app, or
+            one of your recovery codes.
+          </p>
+        </div>
+        {error && (
+          <FormMessage tone="error" focusKey={attempt}>
+            {error}
+          </FormMessage>
+        )}
+        <Input
+          label="Code"
+          name="code"
+          autoComplete="one-time-code"
+          autoCapitalize="none"
+          spellCheck={false}
+          autoFocus
+          value={code}
+          onChange={(e) => setCode(e.target.value)}
+        />
+        <Button type="submit" size="lg" fullWidth loading={busy}>
+          Step Inside
+        </Button>
+        {secondStep.passkey && canPasskey && (
+          <Button variant="secondary" fullWidth loading={passkeyBusy} onClick={signInWithPasskey}>
+            Use a passkey instead
+          </Button>
+        )}
+        <Button
+          variant="ghost"
+          onClick={() => {
+            setSecondStep(null);
+            setError(undefined);
+            setPassword('');
+          }}
+        >
+          Back
+        </Button>
+        <p className="text-caption text-text-secondary">
+          Lost your phone and your recovery codes? We can’t switch two-step off for you: that is what keeps
+          someone who gets into your email out.
+        </p>
+      </form>
     );
   }
 
@@ -196,6 +312,11 @@ export function LoginForm() {
       <Button type="submit" size="lg" fullWidth loading={busy}>
         Step Inside
       </Button>
+      {canPasskey && (
+        <Button variant="secondary" size="lg" fullWidth loading={passkeyBusy} onClick={signInWithPasskey}>
+          Sign in with a passkey
+        </Button>
+      )}
       <div className="flex justify-center text-caption">
         <Link href="/lost-your-key" className="inline-flex min-h-11 items-center">
           Lost your key? Reset your password

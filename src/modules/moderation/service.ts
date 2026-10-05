@@ -128,10 +128,39 @@ export async function isModerator(userId: string): Promise<boolean> {
   return role !== null && isModeratorRole(role);
 }
 
-/** Everyone else gets the same plain 404 as a page that does not exist: the moderation area is not advertised. */
-async function requireModerator(userId: string): Promise<void> {
+/**
+ * Staff need two-step sign-in (ADR-040): a moderator's password alone must not be enough to suspend people or read
+ * reported Whispers. "On" means a confirmed authenticator app or at least one passkey — the same rule as the auth
+ * module's `isOn` (moderation may not import auth, so it is asked here in SQL; a test checks the two agree). Turning it on
+ * signs out every other device, so every staff session that passes here passed the second step.
+ */
+async function staffHasTwoStep(userId: string): Promise<boolean> {
+  const { rows } = await getDb().execute<{ on: boolean }>(sql`
+    select exists (select 1 from totp_factors where user_id = ${userId} and confirmed_at is not null)
+        or exists (select 1 from passkeys where user_id = ${userId}) as "on"`);
+  return Boolean(rows[0]?.on);
+}
+
+export type ModeratorStanding = 'not_staff' | 'needs_two_step' | 'ready';
+
+/** For the moderation page: not staff (404), staff without two-step (told to turn it on), or ready. */
+export async function moderatorStanding(userId: string): Promise<ModeratorStanding> {
   const role = await roleOf(userId);
-  if (!role || !isModeratorRole(role)) throw new AppError('NOT_FOUND');
+  if (!role || !isModeratorRole(role)) return 'not_staff';
+  return (await staffHasTwoStep(userId)) ? 'ready' : 'needs_two_step';
+}
+
+export const STAFF_TWO_STEP_MESSAGE =
+  'Moderation needs two-step sign-in. Turn it on under Sign-in security in your Workshop.';
+
+/**
+ * Everyone else gets the same plain 404 as a page that does not exist: the moderation area is not advertised. Staff
+ * without two-step get a 403 that says what to do.
+ */
+async function requireModerator(userId: string): Promise<void> {
+  const standing = await moderatorStanding(userId);
+  if (standing === 'not_staff') throw new AppError('NOT_FOUND');
+  if (standing === 'needs_two_step') throw new AppError('FORBIDDEN', { message: STAFF_TWO_STEP_MESSAGE });
 }
 
 // ─── the audit trail ─────────────────────────────────────────────────────────────────────────────────────────────────

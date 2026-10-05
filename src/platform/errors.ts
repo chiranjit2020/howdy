@@ -19,6 +19,11 @@ export type ErrorCode =
   | 'ACCOUNT_SUSPENDED'
   /** Correct credentials but the owner asked to delete the account; `data.deleteOn` says when. It can still be kept. */
   | 'ACCOUNT_CLOSING'
+  /**
+   * Correct password, but the account has two-step sign-in on (ADR-040): send a code too, or use a passkey. `data` says
+   * which second steps this account has. Only ever returned AFTER the password was verified.
+   */
+  | 'SECOND_STEP_REQUIRED'
   | 'INTERNAL';
 
 const STATUS: Record<ErrorCode, number> = {
@@ -26,6 +31,7 @@ const STATUS: Record<ErrorCode, number> = {
   ACCOUNT_UNAVAILABLE: 403,
   ACCOUNT_SUSPENDED: 403,
   ACCOUNT_CLOSING: 403,
+  SECOND_STEP_REQUIRED: 401,
   BAD_REQUEST: 400,
   VALIDATION_FAILED: 422,
   UNAUTHENTICATED: 401,
@@ -42,6 +48,7 @@ const DEFAULT_MESSAGE: Record<ErrorCode, string> = {
   ACCOUNT_UNAVAILABLE: 'This account is not available right now.',
   ACCOUNT_SUSPENDED: 'This account is suspended.',
   ACCOUNT_CLOSING: 'This account is closing.',
+  SECOND_STEP_REQUIRED: 'Enter the code from your authenticator app, or use a recovery code.',
   BAD_REQUEST: 'That request was not understood.',
   VALIDATION_FAILED: 'Some fields need another look.',
   UNAUTHENTICATED: 'You need to step inside first.',
