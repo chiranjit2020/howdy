@@ -232,6 +232,13 @@
       "when": 1791219854004,
       "tag": "0032_two_step",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1791224678473,
+      "tag": "0033_town_hall_roles",
+      "breakpoints": true
     }
   ]
 }

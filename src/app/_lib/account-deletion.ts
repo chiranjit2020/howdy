@@ -1,5 +1,6 @@
 import { dueDeletions, eraseAccount } from '@/modules/auth';
 import { deleteAllMediaFor, mediaLeftFor } from '@/modules/media';
+import { handOverTownHalls } from '@/modules/town-halls';
 import { logger } from '@/platform/logger';
 
 const log = logger.child({ module: 'account-deletion' });
@@ -24,6 +25,8 @@ export async function purgeDeletedAccounts(now: Date = new Date()): Promise<{
         log.warn({ event: 'account_deletion.files_left' });
         continue;
       }
+      // Town Halls it owns pass to their longest-serving Deputy instead of going with it (ADR-041).
+      await handOverTownHalls(userId);
       if (await eraseAccount(userId)) deleted += 1;
     } catch (cause) {
       deferred += 1;

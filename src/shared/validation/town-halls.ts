@@ -41,10 +41,16 @@ export const townHallDescriptionSchema = clean(
 );
 export const townHallVisibilitySchema = z.enum(TOWNHALL_VISIBILITIES);
 
+/** How a listed Town Hall is joined (ADR-041): one tap, or ask and wait for the owner or a Deputy. */
+export const TOWNHALL_JOIN_RULES = ['instant', 'approval'] as const;
+export type TownHallJoinRule = (typeof TOWNHALL_JOIN_RULES)[number];
+export const townHallJoinRuleSchema = z.enum(TOWNHALL_JOIN_RULES);
+
 export const createTownHallSchema = z.object({
   name: townHallNameSchema,
   description: townHallDescriptionSchema,
   visibility: townHallVisibilitySchema,
+  joinRule: townHallJoinRuleSchema.default('instant'),
 });
 
 export const updateTownHallSchema = z
@@ -52,6 +58,7 @@ export const updateTownHallSchema = z
     name: townHallNameSchema.optional(),
     description: townHallDescriptionSchema.optional(),
     visibility: townHallVisibilitySchema.optional(),
+    joinRule: townHallJoinRuleSchema.optional(),
   })
   .refine((v) => Object.values(v).some((x) => x !== undefined), 'Nothing to change.');
 
@@ -61,6 +68,14 @@ export type TownHallAction = (typeof TOWNHALL_ACTIONS)[number];
 export const townHallActionSchema = z.object({ action: z.enum(TOWNHALL_ACTIONS) });
 
 export const inviteToTownHallSchema = z.object({ handle: z.string().pipe(handleParamSchema) });
+
+/**
+ * What staff do about one person (ADR-041). `approve`/`decline` answer a join request (owner or Deputy);
+ * `make_deputy`/`make_member` appoint or stand down a Deputy, and `make_owner` hands the Town Hall to a Deputy (owner only).
+ */
+export const MEMBER_ACTIONS = ['approve', 'decline', 'make_deputy', 'make_member', 'make_owner'] as const;
+export type MemberAction = (typeof MEMBER_ACTIONS)[number];
+export const memberActionSchema = z.object({ action: z.enum(MEMBER_ACTIONS) });
 
 export const townHallIdParamSchema = idParamSchema;
 

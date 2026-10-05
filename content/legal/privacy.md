@@ -54,7 +54,7 @@ Your settings decide most of it.
 - **Your Porch and Signal** can be visible to everyone, to signed-in members (the default), or to your Pals only.
 - **Your Fence** follows your settings for who may read it and who may write on it. You can review cards before they appear, and remove anything on your own Fence.
 - **Whispers** are only ever between the two people in the conversation.
-- **Town Halls:** the list of who is in a Town Hall, and its posts, replies and reactions, are visible only to its members. Its owner can remove any post in it.
+- **Town Halls:** the list of who is in a Town Hall, and its posts, replies and reactions, are visible only to its members. Its owner can remove any post in it, and Deputies the owner appoints can remove posts by ordinary members. If you ask to join a Town Hall that needs approval, its owner and Deputies see your name, call sign and portrait, and when you asked. If they say no, you are not told; the request simply runs out.
 - **Blocks, mutes and restrictions** are private to you, and a block hides the two of you from each other.
 - **Moderators** can see reports and the content they are about (a Post Card, a photo, one reported Whisper, a Town Hall's name and description, a Town Hall post), and photos the automatic check held back, and may act on them.
 
@@ -100,6 +100,7 @@ On your Pals page we may suggest people who are Pals with at least two of your P
 - **Tracks:** 7 days.
 - **Chimes:** 30 days after you read them, or 90 days if you never do.
 - **Post Cards waiting for approval, waiting Tributes, and Town Hall posts waiting for the owner:** 30 days, if they are not approved.
+- **Requests to join a Town Hall:** 30 days, if nobody lets you in (whether or not they said no).
 - **Unfinished photo uploads:** about an hour (a photo chosen for a card but never nailed goes too). A replaced or removed Portrait is deleted straight away; a card's photo stops being shown the moment its card is removed, and its file is deleted within a day.
 - **Sessions:** until you sign out, or after 14 days without use (60 days at most), plus 30 days of records so we can help with account problems.
 - **Passkeys, authenticator app and recovery codes:** until you remove them, switch two-step sign-in off, or delete your account. A passkey prompt nobody answered is deleted within a day; an authenticator app you started to link but never finished, after 15 minutes.
@@ -147,7 +148,7 @@ No system is perfectly secure. If we learn of a breach that affects your persona
 
 - **Access:** for a summary of the personal data we hold about you and what we do with it.
 - **Correction:** to correct or complete information that is wrong.
-- **Deletion:** to delete your account, yourself, in the Workshop (or from the sign-in page if your account is suspended). It is closed at once: you are signed out everywhere and your Porch disappears. For 14 days you can still keep it by signing in; after that it is deleted for good, with your Porch, Post Cards, replies, Whispers, Pals, Tributes, Marks, Town Halls you own and your photo, except for the records described in [How long we keep things](#how-long-we-keep-things). We email you when it closes and when it is deleted. Your call sign is kept from anyone else for 90 days (we store only a scrambled form of it, not the name), so nobody can take it straight away to pretend to be you.
+- **Deletion:** to delete your account, yourself, in the Workshop (or from the sign-in page if your account is suspended). It is closed at once: you are signed out everywhere and your Porch disappears. For 14 days you can still keep it by signing in; after that it is deleted for good, with your Porch, Post Cards, replies, Whispers, Pals, Tributes, Marks, Town Halls you own (unless you have a Deputy there, who then becomes its owner) and your photo, except for the records described in [How long we keep things](#how-long-we-keep-things). We email you when it closes and when it is deleted. Your call sign is kept from anyone else for 90 days (we store only a scrambled form of it, not the name), so nobody can take it straight away to pretend to be you.
 - **Export:** download a copy yourself, at once, with "Download my data" in the Workshop (your password is asked for again, and a few downloads a day are allowed). It is a ZIP file: your account and settings, everything you wrote, your photos, and what Howdy shows you (cards on your Fence, Whispers in your threads, Tributes on your Porch). Other people appear only by call sign and name, and only if Howdy would show them to you that day; it never includes anyone else's email or private choices, who gave you which Mark, or the words of a sealed Time Capsule. You can also write to us for a copy.
 - **Withdrawing consent:** you may withdraw your consent at any time by deleting your account. This does not affect anything done before.
 - **Nominating someone:** you may name another person to exercise these rights for you if you die or become unable to.

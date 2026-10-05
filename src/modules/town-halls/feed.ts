@@ -16,12 +16,14 @@ import {
 } from '@/shared/validation/fence';
 import type { PortraitTint } from '@/shared/validation/profile';
 import { HALL_FEED_MAX_PAGE_SIZE, HALL_FEED_PAGE_SIZE } from '@/shared/validation/town-halls';
+import { activeRole, isStaff, outranks, rolesIn, type HallRole } from './roles';
 
 /**
  * A Town Hall's feed (ADR-033): posts by its members, short replies and reactions. Only ACTIVE members read or write it;
  * to everyone else a post is "not found" — the same answer as a post that does not exist. The same protections as the
  * Fence apply: people the viewer blocked, muted or is blocked by are left out, inactive accounts are left out, and an
- * author many people have reported lately is held for the owner's OK (looking posted to them).
+ * author many people have reported lately is held for the staff's OK (looking posted to them). The owner and Deputies
+ * keep order (ADR-041): a Deputy acts on ordinary members' words, the owner on anyone's.
  */
 
 const rule = (limit: number, windowSec: number): RateLimitRule => ({ limit, windowSec });
@@ -110,13 +112,15 @@ const emptyReactions = (): Record<ReactionKind, number> =>
 interface Hall {
   id: string;
   ownerId: string;
+  /** The member's own role here (they are always an active member when they hold a Hall). */
+  myRole: HallRole;
 }
 
 /** The Town Hall, when this person is an active member of it; null otherwise (hidden ≡ missing). */
 async function hallForMember(userId: string, townHallId: string): Promise<Hall | null> {
   if (!idParamSchema.safeParse(townHallId).success) return null;
   const [row] = await getDb()
-    .select({ id: townHalls.id, ownerId: townHalls.ownerId })
+    .select({ id: townHalls.id, ownerId: townHalls.ownerId, myRole: sql<HallRole>`${townHallMembers.role}` })
     .from(townHalls)
     .innerJoin(
       townHallMembers,
@@ -142,7 +146,7 @@ interface PostRow {
 
 /**
  * A post this member may see right now, with its Town Hall; null otherwise. Held posts belong to their writer and the
- * owner alone; a post by someone the viewer has hidden, or by an inactive account, is not there for them.
+ * staff alone; a post by someone the viewer has hidden, or by an inactive account, is not there for them.
  */
 async function loadPost(userId: string, postId: string): Promise<{ post: PostRow; hall: Hall } | null> {
   if (!idParamSchema.safeParse(postId).success) return null;
@@ -150,7 +154,7 @@ async function loadPost(userId: string, postId: string): Promise<{ post: PostRow
   if (!post) return null;
   const hall = await hallForMember(userId, post.townHallId);
   if (!hall) return null;
-  if (post.status !== 'published' && post.authorId !== userId && hall.ownerId !== userId) return null;
+  if (post.status !== 'published' && post.authorId !== userId && !isStaff(hall.myRole)) return null;
   const [hidden, authors] = await Promise.all([
     hiddenAuthors(userId, [post.authorId]),
     getCards([post.authorId]),
@@ -168,7 +172,6 @@ async function hydrate(
   if (rows.length === 0) return [];
   const db = getDb();
   const ids = rows.map((r) => r.id);
-  const isOwner = viewerId === hall.ownerId;
   const [counts, mine, replyRows] = await Promise.all([
     db
       .select({ postId: townHallReactions.postId, kind: townHallReactions.kind, n: count() })
@@ -194,10 +197,16 @@ async function hydrate(
   ]);
 
   const replyAuthorIds = replyRows.map((r) => r.authorId);
-  const [replyAuthors, hidden] = await Promise.all([
+  const [replyAuthors, hidden, roles] = await Promise.all([
     getCards(replyAuthorIds),
     hiddenAuthors(viewerId, replyAuthorIds),
+    // Only staff need to know who outranks whom.
+    isStaff(hall.myRole)
+      ? rolesIn(hall.id, [...replyAuthorIds, ...rows.map((r) => r.authorId)])
+      : Promise.resolve(new Map<string, HallRole>()),
   ]);
+  const mayRemove = (authorId: string) =>
+    authorId === viewerId || outranks(hall.myRole, roles.get(authorId) ?? null);
   const reactionsByPost = new Map<string, Record<ReactionKind, number>>();
   for (const c of counts) {
     if (!isReactionKind(c.kind)) continue;
@@ -220,7 +229,7 @@ async function hydrate(
       createdAt: r.createdAt,
       author: toAuthor(author),
       mine: r.authorId === viewerId,
-      canRemove: isOwner || r.authorId === viewerId,
+      canRemove: mayRemove(r.authorId),
     });
     repliesByPost.set(r.postId, list);
   }
@@ -236,7 +245,7 @@ async function hydrate(
         createdAt: row.createdAt,
         author: toAuthor(author),
         mine: row.authorId === viewerId,
-        canRemove: isOwner || row.authorId === viewerId,
+        canRemove: mayRemove(row.authorId),
         canReact: published && row.authorId !== viewerId,
         canReply: published,
         reactions: reactionsByPost.get(row.id) ?? emptyReactions(),
@@ -320,9 +329,12 @@ export async function listFeed(
   };
 }
 
-/** The owner's own words are never held; anyone else's are when enough people have reported them lately (ADR-024). */
+/**
+ * Staff's own words are never held (they would only be letting themselves through); anyone else's are when enough
+ * people have reported them lately (ADR-024). `hall` is the AUTHOR's own view of it.
+ */
 async function statusFor(hall: Hall, authorId: string): Promise<'published' | 'held'> {
-  if (authorId === hall.ownerId) return 'published';
+  if (isStaff(hall.myRole)) return 'published';
   return (await shouldHoldForOthers(authorId)) ? 'held' : 'published';
 }
 
@@ -424,19 +436,29 @@ export async function setReaction(
 }
 
 /**
- * Take a post down: its writer always may (even after leaving the Town Hall), and so may the Town Hall's owner. Nobody
- * else can, and nobody else can tell whether the post exists. Its replies and reactions go with it.
+ * May `userId` take down something `authorId` wrote in this Town Hall? The writer always may (even after leaving); the
+ * owner may take down anyone's; a Deputy only an ordinary member's or a former member's (ADR-041).
+ */
+async function mayTakeDown(userId: string, townHallId: string, authorId: string): Promise<boolean> {
+  if (authorId === userId) return true;
+  const role = await activeRole(userId, townHallId);
+  if (!isStaff(role)) return false;
+  return outranks(role, await activeRole(authorId, townHallId));
+}
+
+/**
+ * Take a post down: its writer always may, and so may the Town Hall's staff (see `mayTakeDown`). Nobody else can, and
+ * nobody else can tell whether the post exists. Its replies and reactions go with it.
  */
 export async function removePost(userId: string, postId: string): Promise<void> {
   await enforceRateLimit(`townhalls:feed-manage:${userId}`, FEED_RATE.manage);
   if (!idParamSchema.safeParse(postId).success) throw new AppError('NOT_FOUND');
   const [row] = await getDb()
-    .select({ authorId: townHallPosts.authorId, ownerId: townHalls.ownerId })
+    .select({ authorId: townHallPosts.authorId, townHallId: townHallPosts.townHallId })
     .from(townHallPosts)
-    .innerJoin(townHalls, eq(townHalls.id, townHallPosts.townHallId))
     .where(eq(townHallPosts.id, postId))
     .limit(1);
-  if (!row || (row.authorId !== userId && row.ownerId !== userId)) throw new AppError('NOT_FOUND');
+  if (!row || !(await mayTakeDown(userId, row.townHallId, row.authorId))) throw new AppError('NOT_FOUND');
   await getDb().delete(townHallPosts).where(eq(townHallPosts.id, postId));
 }
 
@@ -444,59 +466,52 @@ export async function removeReply(userId: string, replyId: string): Promise<void
   await enforceRateLimit(`townhalls:feed-manage:${userId}`, FEED_RATE.manage);
   if (!idParamSchema.safeParse(replyId).success) throw new AppError('NOT_FOUND');
   const [row] = await getDb()
-    .select({ authorId: townHallReplies.authorId, ownerId: townHalls.ownerId })
+    .select({ authorId: townHallReplies.authorId, townHallId: townHallPosts.townHallId })
     .from(townHallReplies)
     .innerJoin(townHallPosts, eq(townHallPosts.id, townHallReplies.postId))
-    .innerJoin(townHalls, eq(townHalls.id, townHallPosts.townHallId))
     .where(eq(townHallReplies.id, replyId))
     .limit(1);
-  if (!row || (row.authorId !== userId && row.ownerId !== userId)) throw new AppError('NOT_FOUND');
+  if (!row || !(await mayTakeDown(userId, row.townHallId, row.authorId))) throw new AppError('NOT_FOUND');
   await getDb().delete(townHallReplies).where(eq(townHallReplies.id, replyId));
 }
 
+/** Is `userId` on this Town Hall's staff (owner or Deputy, active)? */
+const onStaff = async (userId: string, townHallId: string) => isStaff(await activeRole(userId, townHallId));
+
 /**
- * Let a held post through. Owner only. Approval bumps it to "now" so members already past that spot still see it. No
- * Chime goes to the writer: they were never told it was held.
+ * Let a held post through. Owner or Deputy. Approval bumps it to "now" so members already past that spot still see it.
+ * No Chime goes to the writer: they were never told it was held.
  */
-export async function approvePost(ownerId: string, postId: string): Promise<void> {
-  await enforceRateLimit(`townhalls:feed-manage:${ownerId}`, FEED_RATE.manage);
+export async function approvePost(staffId: string, postId: string): Promise<void> {
+  await enforceRateLimit(`townhalls:feed-manage:${staffId}`, FEED_RATE.manage);
   if (!idParamSchema.safeParse(postId).success) throw new AppError('NOT_FOUND');
-  const rows = await getDb()
+  const [row] = await getDb()
+    .select({ status: townHallPosts.status, townHallId: townHallPosts.townHallId })
+    .from(townHallPosts)
+    .where(eq(townHallPosts.id, postId))
+    .limit(1);
+  if (!row || !(await onStaff(staffId, row.townHallId))) throw new AppError('NOT_FOUND');
+  // Already published is a harmless repeat.
+  await getDb()
     .update(townHallPosts)
     .set({ status: 'published', createdAt: new Date() })
-    .where(
-      and(
-        eq(townHallPosts.id, postId),
-        eq(townHallPosts.status, 'held'),
-        inArray(
-          townHallPosts.townHallId,
-          getDb().select({ id: townHalls.id }).from(townHalls).where(eq(townHalls.ownerId, ownerId)),
-        ),
-      ),
-    )
-    .returning({ id: townHallPosts.id });
-  if (rows.length > 0) return;
-  // Already published is a harmless repeat; anything else (not theirs, gone) is not found.
-  const [row] = await getDb()
-    .select({ id: townHallPosts.id })
-    .from(townHallPosts)
-    .innerJoin(townHalls, eq(townHalls.id, townHallPosts.townHallId))
-    .where(and(eq(townHallPosts.id, postId), eq(townHalls.ownerId, ownerId)))
-    .limit(1);
-  if (!row) throw new AppError('NOT_FOUND');
+    .where(and(eq(townHallPosts.id, postId), eq(townHallPosts.status, 'held')));
 }
 
-export async function approveReply(ownerId: string, replyId: string): Promise<void> {
-  await enforceRateLimit(`townhalls:feed-manage:${ownerId}`, FEED_RATE.manage);
+export async function approveReply(staffId: string, replyId: string): Promise<void> {
+  await enforceRateLimit(`townhalls:feed-manage:${staffId}`, FEED_RATE.manage);
   if (!idParamSchema.safeParse(replyId).success) throw new AppError('NOT_FOUND');
   const [row] = await getDb()
-    .select({ status: townHallReplies.status, postId: townHallReplies.postId })
+    .select({
+      status: townHallReplies.status,
+      postId: townHallReplies.postId,
+      townHallId: townHallPosts.townHallId,
+    })
     .from(townHallReplies)
     .innerJoin(townHallPosts, eq(townHallPosts.id, townHallReplies.postId))
-    .innerJoin(townHalls, eq(townHalls.id, townHallPosts.townHallId))
-    .where(and(eq(townHallReplies.id, replyId), eq(townHalls.ownerId, ownerId)))
+    .where(eq(townHallReplies.id, replyId))
     .limit(1);
-  if (!row) throw new AppError('NOT_FOUND');
+  if (!row || !(await onStaff(staffId, row.townHallId))) throw new AppError('NOT_FOUND');
   if (row.status === 'published') return;
   await getDb().transaction(async (tx) => {
     await tx.execute(
@@ -515,13 +530,13 @@ export async function approveReply(ownerId: string, replyId: string): Promise<vo
 }
 
 /**
- * What is held for the owner's OK in one Town Hall. Owner only (anyone else: null). People the owner hid, and inactive
- * accounts, are left out — as on the Fence.
+ * What is held for the staff's OK in one Town Hall. Owner or Deputy only (anyone else: null). People the viewer hid,
+ * and inactive accounts, are left out — as on the Fence.
  */
-export async function listHeld(ownerId: string, townHallId: string): Promise<HeldItems | null> {
-  await enforceRateLimit(`townhalls:feed-manage:${ownerId}`, FEED_RATE.manage);
-  const hall = await hallForMember(ownerId, townHallId);
-  if (!hall || hall.ownerId !== ownerId) return null;
+export async function listHeld(staffId: string, townHallId: string): Promise<HeldItems | null> {
+  await enforceRateLimit(`townhalls:feed-manage:${staffId}`, FEED_RATE.manage);
+  const hall = await hallForMember(staffId, townHallId);
+  if (!hall || !isStaff(hall.myRole)) return null;
   const db = getDb();
   const [posts, replies] = await Promise.all([
     db
@@ -539,7 +554,7 @@ export async function listHeld(ownerId: string, townHallId: string): Promise<Hel
       .limit(HELD_LIMIT),
   ]);
   const ids = [...posts.map((p) => p.authorId), ...replies.map((r) => r.reply.authorId)];
-  const [authors, hidden] = await Promise.all([getCards(ids), hiddenAuthors(ownerId, ids)]);
+  const [authors, hidden] = await Promise.all([getCards(ids), hiddenAuthors(staffId, ids)]);
   const ok = (id: string) => authors.has(id) && !hidden.has(id);
   return {
     posts: posts

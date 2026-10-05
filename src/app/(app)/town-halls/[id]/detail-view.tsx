@@ -2,26 +2,47 @@
 
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
-import type { MemberPage, MemberRef, TownHallDetail } from '@/modules/town-halls';
+import type { JoinRequest, MemberPage, MemberRef, TownHallDetail } from '@/modules/town-halls';
 import { LIMITS } from '@/shared/limits';
 import { handleParamSchema } from '@/shared/validation/profile';
+import type { MemberAction } from '@/shared/validation/town-halls';
 import { apiRequest, postJson } from '@/ui/auth/api';
 import { FormMessage } from '@/ui/auth/form-parts';
 import { TownHallCard } from '@/ui/howdy';
+import { MoreIcon } from '@/ui/icons';
 import { FeedSection, type InitialFeed, type InitialHeld } from './feed-section';
 import { ReportDialog } from '@/ui/howdy/report-dialog';
-import { Avatar, Button, ClayCard, ConfirmationDialog, EmptyState, Input, useToast } from '@/ui/primitives';
+import {
+  Avatar,
+  Button,
+  ClayCard,
+  ConfirmationDialog,
+  Dropdown,
+  EmptyState,
+  Input,
+  Switch,
+  useToast,
+} from '@/ui/primitives';
+
+const ROLE_LABEL = { owner: 'Owner', deputy: 'Deputy', member: undefined } as const;
+
+// A round 44px icon button, like the Pals rows.
+const iconButton =
+  'inline-flex size-11 items-center justify-center rounded-pill text-title text-text-secondary hover:bg-surface hover:text-text-primary';
 
 export function TownHallDetailView({
   townHall,
   initialMembers,
   initialFeed,
   initialHeld,
+  initialRequests,
 }: {
   townHall: TownHallDetail;
   initialMembers: MemberPage | null;
   initialFeed: InitialFeed | null;
   initialHeld: InitialHeld | null;
+  /** Waiting join requests: only for the owner and Deputies (ADR-041). */
+  initialRequests: JoinRequest[] | null;
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -32,10 +53,19 @@ export function TownHallDetailView({
   const [deleting, setDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [reporting, setReporting] = useState(false);
-  // The list is this component's own state (it grows with "More members"), so a removal is applied here as well as
-  // on the server; refreshing the page alone would not reset it.
-  const removed = (handle: string) => {
-    setMembers((all) => all.filter((m) => m.handle !== handle));
+  const staff = townHall.myRole === 'owner' || townHall.myRole === 'deputy';
+  const owner = townHall.myRole === 'owner';
+
+  // The list is this component's own state (it grows with "More members"), so a change is applied here as well as on
+  // the server; refreshing the page alone would not reset it.
+  const changed = (handle: string, role: MemberRef['role'] | null) => {
+    // Handing the Town Hall over changes my own row too, and every control on the page: start again from the server.
+    if (role === 'owner') return window.location.reload();
+    setMembers((all) =>
+      role === null
+        ? all.filter((m) => m.handle !== handle)
+        : all.map((m) => (m.handle === handle ? { ...m, role } : m)),
+    );
     router.refresh();
   };
 
@@ -80,13 +110,22 @@ export function TownHallDetailView({
           Decline
         </Button>
       </div>
-    ) : townHall.membership === 'active' && !townHall.isOwner ? (
+    ) : townHall.membership === 'active' && !owner ? (
       <Button size="sm" variant="secondary" loading={busy === 'leave'} onClick={() => act('leave')}>
         Leave
       </Button>
     ) : townHall.canJoin ? (
       <Button size="sm" loading={busy === 'join'} onClick={() => act('join')}>
         Join
+      </Button>
+    ) : townHall.canAsk ? (
+      <Button size="sm" loading={busy === 'join'} onClick={() => act('join')}>
+        Ask to join
+      </Button>
+    ) : townHall.membership === 'requested' ? (
+      // Never says whether it was answered: a "no" is not announced (ADR-041).
+      <Button size="sm" variant="secondary" disabled>
+        Requested
       </Button>
     ) : undefined;
 
@@ -101,11 +140,28 @@ export function TownHallDetailView({
         action={primaryAction}
       />
       {error && <FormMessage tone="error">{error}</FormMessage>}
+      {townHall.membership === 'requested' && (
+        <p className="text-caption text-text-secondary">
+          Your request is with the people who look after this Town Hall. If you are let in, you will get a
+          Chime.
+        </p>
+      )}
+      {townHall.canAsk && (
+        <p className="text-caption text-text-secondary">New members are let in by the owner or a Deputy.</p>
+      )}
+
+      {staff && initialRequests && initialRequests.length > 0 && (
+        <RequestsCard
+          townHallId={townHall.id}
+          requests={initialRequests}
+          onAnswered={() => router.refresh()}
+        />
+      )}
 
       {townHall.membership === 'active' && initialFeed && (
         <FeedSection
           townHallId={townHall.id}
-          isOwner={townHall.isOwner}
+          isOwner={staff}
           initial={initialFeed}
           initialHeld={initialHeld}
         />
@@ -121,17 +177,18 @@ export function TownHallDetailView({
               {members.map((m) => (
                 <li key={m.handle} className="flex items-center gap-3">
                   <Avatar name={m.displayName} tint={m.portraitTint} src={m.portraitUrl} size="sm" />
-                  <span className="min-w-0 flex-1 text-body text-text-primary">
+                  <span className="min-w-0 flex-1 text-body [overflow-wrap:anywhere] text-text-primary">
                     {m.displayName} <span className="text-text-secondary">@{m.handle}</span>
                   </span>
-                  {m.role === 'owner' && <span className="text-caption text-text-secondary">Owner</span>}
-                  {townHall.isOwner && m.role !== 'owner' && (
-                    <RemoveMemberButton
-                      townHallId={townHall.id}
-                      member={m}
-                      onRemoved={() => removed(m.handle)}
-                    />
+                  {ROLE_LABEL[m.role] && (
+                    <span className="text-caption text-text-secondary">{ROLE_LABEL[m.role]}</span>
                   )}
+                  <MemberMenu
+                    townHallId={townHall.id}
+                    member={m}
+                    viewerRole={townHall.myRole}
+                    onChanged={(role) => changed(m.handle, role)}
+                  />
                 </li>
               ))}
             </ul>
@@ -150,25 +207,27 @@ export function TownHallDetailView({
         </ClayCard>
       )}
 
-      {!townHall.isOwner && (
+      {!owner && (
         <Button variant="ghost" size="sm" onClick={() => setReporting(true)} className="self-start">
           Flag this Town Hall…
         </Button>
       )}
 
-      {townHall.isOwner && (
-        <>
-          <InviteForm townHallId={townHall.id} onInvited={() => router.refresh()} />
-          <ClayCard className="flex flex-col gap-3">
-            <h2 className="text-title text-text-primary">Danger zone</h2>
-            <p className="text-caption text-text-secondary">
-              Deleting a Town Hall removes it and every membership in it. This cannot be undone.
-            </p>
-            <Button variant="danger" size="sm" onClick={() => setConfirmDelete(true)} className="self-start">
-              Delete this Town Hall
-            </Button>
-          </ClayCard>
-        </>
+      {staff && <InviteForm townHallId={townHall.id} onInvited={() => router.refresh()} />}
+
+      {owner && townHall.visibility !== 'invite' && <JoinRuleCard townHall={townHall} />}
+
+      {owner && (
+        <ClayCard className="flex flex-col gap-3">
+          <h2 className="text-title text-text-primary">Danger zone</h2>
+          <p className="text-caption text-text-secondary">
+            Deleting a Town Hall removes it and every membership in it. This cannot be undone. To step away
+            without deleting it, make someone a Deputy, then hand it to them from the Members list.
+          </p>
+          <Button variant="danger" size="sm" onClick={() => setConfirmDelete(true)} className="self-start">
+            Delete this Town Hall
+          </Button>
+        </ClayCard>
       )}
 
       <ReportDialog
@@ -244,40 +303,204 @@ function InviteForm({ townHallId, onInvited }: { townHallId: string; onInvited: 
   );
 }
 
-function RemoveMemberButton({
+/** Waiting join requests, oldest first: let them in, or say no (which they are never told). */
+function RequestsCard({
   townHallId,
-  member,
-  onRemoved,
+  requests,
+  onAnswered,
 }: {
   townHallId: string;
-  member: MemberRef;
-  onRemoved: () => void;
+  requests: JoinRequest[];
+  onAnswered: () => void;
 }) {
-  const [busy, setBusy] = useState(false);
-  const [confirming, setConfirming] = useState(false);
+  const [busy, setBusy] = useState<string | undefined>();
+  const [error, setError] = useState<string | undefined>();
+  // Answered ones leave the list at once (the server's list is re-read on refresh too).
+  const [gone, setGone] = useState<Set<string>>(new Set());
 
-  async function confirmRemove() {
+  async function answer(handle: string, action: 'approve' | 'decline') {
+    setBusy(`${action}:${handle}`);
+    setError(undefined);
+    const res = await postJson(`/api/town-halls/${townHallId}/members/${handle}`, { action });
+    setBusy(undefined);
+    if (!res.ok) return setError(res.error?.message ?? 'That did not work. Try again.');
+    setGone((s) => new Set(s).add(handle));
+    onAnswered();
+  }
+
+  const waiting = requests.filter((r) => !gone.has(r.handle));
+  if (waiting.length === 0) return null;
+  return (
+    <ClayCard className="flex flex-col gap-3">
+      <h2 className="text-title text-text-primary">Asking to join ({waiting.length})</h2>
+      <p className="text-caption text-text-secondary">
+        Saying no is quiet: they are not told, and their request simply runs out after 30 days.
+      </p>
+      {error && <FormMessage tone="error">{error}</FormMessage>}
+      <ul className="flex flex-col gap-3">
+        {waiting.map((r) => (
+          <li key={r.handle} className="flex flex-wrap items-center gap-3">
+            <Avatar name={r.displayName} tint={r.portraitTint} src={r.portraitUrl} size="sm" />
+            <span className="min-w-0 flex-1 text-body [overflow-wrap:anywhere] text-text-primary">
+              {r.displayName} <span className="text-text-secondary">@{r.handle}</span>
+            </span>
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                loading={busy === `approve:${r.handle}`}
+                onClick={() => answer(r.handle, 'approve')}
+              >
+                Let in
+              </Button>
+              <Button
+                size="sm"
+                variant="secondary"
+                loading={busy === `decline:${r.handle}`}
+                onClick={() => answer(r.handle, 'decline')}
+              >
+                No
+              </Button>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </ClayCard>
+  );
+}
+
+/** "Anyone can join" or "Ask to join", for a listed Town Hall. Owner only. */
+function JoinRuleCard({ townHall }: { townHall: TownHallDetail }) {
+  const router = useRouter();
+  const [approval, setApproval] = useState(townHall.joinRule === 'approval');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | undefined>();
+
+  async function set(next: boolean) {
     setBusy(true);
-    const res = await apiRequest('DELETE', `/api/town-halls/${townHallId}/members/${member.handle}`);
+    setError(undefined);
+    const res = await apiRequest('PATCH', `/api/town-halls/${townHall.id}`, {
+      joinRule: next ? 'approval' : 'instant',
+    });
     setBusy(false);
-    setConfirming(false);
-    if (res.ok) onRemoved();
+    if (!res.ok) return setError(res.error?.message ?? 'That did not save. Try again.');
+    setApproval(next);
+    router.refresh();
   }
 
   return (
+    <ClayCard className="flex flex-col gap-2">
+      <h2 className="text-title text-text-primary">Joining</h2>
+      <Switch
+        label="Ask to join"
+        hint={
+          approval
+            ? 'New members ask; you or a Deputy let them in.'
+            : 'Anyone can join with one tap. Switch on to approve each new member.'
+        }
+        checked={approval}
+        disabled={busy}
+        onCheckedChange={set}
+      />
+      {error && <FormMessage tone="error">{error}</FormMessage>}
+    </ClayCard>
+  );
+}
+
+/**
+ * What the viewer may do about one member (ADR-041). The owner: make or stand down a Deputy, hand the Town Hall to a
+ * Deputy, remove anyone. A Deputy: remove ordinary members. Nothing for anyone else (no button at all).
+ */
+function MemberMenu({
+  townHallId,
+  member,
+  viewerRole,
+  onChanged,
+}: {
+  townHallId: string;
+  member: MemberRef;
+  viewerRole: TownHallDetail['myRole'];
+  onChanged: (role: MemberRef['role'] | null) => void;
+}) {
+  const [confirming, setConfirming] = useState<'remove' | 'make_owner' | null>(null);
+  const [busy, setBusy] = useState(false);
+  const toast = useToast();
+
+  const ownerView = viewerRole === 'owner';
+  const mayRemove =
+    member.role !== 'owner' && (ownerView || (viewerRole === 'deputy' && member.role === 'member'));
+  if (!mayRemove && !(ownerView && member.role !== 'owner')) return null;
+
+  async function run(action: MemberAction | 'remove') {
+    setBusy(true);
+    const path = `/api/town-halls/${townHallId}/members/${member.handle}`;
+    const res = action === 'remove' ? await apiRequest('DELETE', path) : await postJson(path, { action });
+    setBusy(false);
+    setConfirming(null);
+    if (!res.ok) {
+      toast({ title: res.error?.message ?? 'That did not work.', tone: 'danger' });
+      return;
+    }
+    if (action === 'remove') onChanged(null);
+    else if (action === 'make_deputy') onChanged('deputy');
+    else if (action === 'make_member') onChanged('member');
+    else if (action === 'make_owner') {
+      toast({ title: `@${member.handle} owns this Town Hall now. You are a Deputy.`, tone: 'success' });
+      onChanged('owner');
+    }
+  }
+
+  const items = [
+    ...(ownerView && member.role === 'member'
+      ? [{ id: 'deputy', label: 'Make a Deputy', onSelect: () => run('make_deputy') }]
+      : []),
+    ...(ownerView && member.role === 'deputy'
+      ? [
+          { id: 'member', label: 'Stand down as Deputy', onSelect: () => run('make_member') },
+          { id: 'owner', label: 'Hand the Town Hall to them…', onSelect: () => setConfirming('make_owner') },
+        ]
+      : []),
+    ...(mayRemove
+      ? [{ id: 'remove', label: 'Remove…', danger: true, onSelect: () => setConfirming('remove') }]
+      : []),
+  ];
+
+  return (
     <>
-      <Button variant="ghost" size="sm" onClick={() => setConfirming(true)}>
-        Remove
-      </Button>
+      <Dropdown
+        label={`Options for @${member.handle}`}
+        align="end"
+        trigger={(t) => (
+          <button
+            type="button"
+            aria-label={`Options for @${member.handle}`}
+            className={iconButton}
+            disabled={busy}
+            {...t}
+          >
+            <MoreIcon />
+          </button>
+        )}
+        items={items}
+      />
       <ConfirmationDialog
-        open={confirming}
+        open={confirming === 'remove'}
         destructive
         title={`Remove @${member.handle}?`}
         description="They will no longer be a member of this Town Hall."
         confirmLabel="Remove"
         loading={busy}
-        onCancel={() => setConfirming(false)}
-        onConfirm={confirmRemove}
+        onCancel={() => setConfirming(null)}
+        onConfirm={() => run('remove')}
+      />
+      <ConfirmationDialog
+        open={confirming === 'make_owner'}
+        destructive
+        title={`Hand this Town Hall to @${member.handle}?`}
+        description="They become its owner, with every power you have now, including deleting it. You stay on as a Deputy. Only they can give it back."
+        confirmLabel="Hand it over"
+        loading={busy}
+        onCancel={() => setConfirming(null)}
+        onConfirm={() => run('make_owner')}
       />
     </>
   );

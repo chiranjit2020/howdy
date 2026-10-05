@@ -108,7 +108,9 @@ test.describe('Town Halls (production build, real CSP)', () => {
     // Alice removes Bob from the open one: he is back to a Join button and no member list.
     await a.page.goto(`/town-halls/${openId}`);
     await pageReady(a.page);
-    await a.page.getByRole('button', { name: 'Remove' }).click();
+    // Member actions live in each row's Options menu (ADR-041).
+    await a.page.getByRole('button', { name: `Options for @${b.handle}` }).click();
+    await a.page.getByRole('menuitem', { name: 'Remove…' }).click();
     await a.page
       .getByRole('alertdialog', { name: `Remove @${b.handle}?` })
       .getByRole('button', { name: 'Remove' })

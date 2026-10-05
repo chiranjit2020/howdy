@@ -34,8 +34,14 @@ export type DomainEvent =
   /** Who gave it and which kind are never broadcast beyond the target (the Ranch shows only the aggregate breakdown). */
   | { type: 'mark.given'; raterId: string; targetId: string }
   /** The owner invited someone; they are not a member until they accept. */
-  | { type: 'townhall.invited'; townHallId: string; ownerId: string; inviteeId: string }
+  /** `inviterId`: the owner or the Deputy who sent it (ADR-041). */
+  | { type: 'townhall.invited'; townHallId: string; inviterId: string; inviteeId: string }
   | { type: 'townhall.invite_accepted'; townHallId: string; ownerId: string; inviteeId: string }
+  /** Someone asked to join a Town Hall that needs approval; every member of its staff hears (ADR-041). */
+  | { type: 'townhall.join_requested'; townHallId: string; requesterId: string; staffIds: string[] }
+  | { type: 'townhall.request_approved'; townHallId: string; approverId: string; requesterId: string }
+  | { type: 'townhall.made_deputy'; townHallId: string; ownerId: string; deputyId: string }
+  | { type: 'townhall.made_owner'; townHallId: string; fromId: string; toId: string }
   /** A published reply on a Town Hall post (ADR-033). Held replies emit nothing: only the owner sees them, in the feed. */
   | { type: 'hall.reply_created'; postId: string; postAuthorId: string; authorId: string }
   | { type: 'hall.reaction_given'; postId: string; postAuthorId: string; actorId: string }

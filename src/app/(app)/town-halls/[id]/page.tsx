@@ -1,26 +1,29 @@
 import { notFound } from 'next/navigation';
 import { attachPortraits } from '@/app/_lib/social';
 import { requireUser } from '@/modules/auth';
-import { getTownHall, listFeed, listHeld, listMembers } from '@/modules/town-halls';
+import { getTownHall, listFeed, listHeld, listMembers, listRequests } from '@/modules/town-halls';
 import { TownHallDetailView } from './detail-view';
 
 export const metadata = { title: 'Town Hall', robots: { index: false, follow: false } };
 
-/** One Town Hall: header, your membership state, and (members only) the feed and the roster. */
+/** One Town Hall: header, your membership state, and (members only) the feed and the roster; staff also get the held tray and join requests. */
 export default async function TownHallPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const user = await requireUser();
   const townHall = await getTownHall(user.id, id);
   if (!townHall) notFound();
   const member = townHall.membership === 'active';
-  const [members, feed, held] = member
+  const staff = townHall.myRole === 'owner' || townHall.myRole === 'deputy';
+  const [members, feed, held, requests] = member
     ? await Promise.all([
         listMembers(user.id, id, {}),
         listFeed(user.id, id, {}),
-        townHall.isOwner ? listHeld(user.id, id) : Promise.resolve(null),
+        staff ? listHeld(user.id, id) : Promise.resolve(null),
+        staff ? listRequests(user.id, id) : Promise.resolve(null),
       ])
-    : [null, null, null];
+    : [null, null, null, null];
   await attachPortraits(user.id, [
+    ...(requests ?? []),
     ...(members?.members ?? []),
     ...(feed?.posts.flatMap((p) => [p.author, ...p.replies.map((r) => r.author)]) ?? []),
     ...[...(held?.posts ?? []), ...(held?.replies ?? [])].map((h) => h.author),
@@ -33,6 +36,7 @@ export default async function TownHallPage({ params }: { params: Promise<{ id: s
         initialMembers={members}
         initialFeed={feed}
         initialHeld={held}
+        initialRequests={requests}
       />
     </main>
   );

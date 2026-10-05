@@ -23,9 +23,15 @@ export const townHalls = pgTable(
     name: text('name').notNull(),
     description: text('description').notNull(),
     visibility: text('visibility').notNull().default('open'),
+    /**
+     * How a listed (`open`/`members`) Town Hall is joined (ADR-041): `instant` — one tap; `approval` — ask, and the owner
+     * or a Deputy says yes. Invite-only Town Halls ignore it (an invite is always needed).
+     */
+    joinRule: text('join_rule').notNull().default('instant'),
     createdAt: tstz('created_at').notNull().defaultNow(),
   },
   (t) => [
+    check('town_halls_join_rule_check', sql`${t.joinRule} in ('instant', 'approval')`),
     check('town_halls_name_len', sql`char_length(${t.name}) between 3 and 50`),
     check('town_halls_description_len', sql`char_length(${t.description}) between 1 and 280`),
     check('town_halls_visibility_check', sql`${t.visibility} in ('open', 'members', 'invite')`),
@@ -36,10 +42,13 @@ export const townHalls = pgTable(
 );
 
 /**
- * One row per (Town Hall, person). `status`:
- * - `active`   a real member (the owner's own row is always `active`, written in the same transaction as the Town Hall)
- * - `invited`  the owner invited this person; they are not a member until they accept (`act('accept')`)
- * At most one `owner` row per Town Hall (a partial unique index — ownership never transfers in this phase).
+ * One row per (Town Hall, person). `role` (ADR-041): `owner` (exactly one), `deputy` (appointed by the owner; keeps
+ * order) or `member`. `status`:
+ * - `active`     a real member (the owner's own row is always `active`, written in the same transaction as the Town Hall)
+ * - `invited`    the owner or a Deputy invited this person; they are not a member until they accept (`act('accept')`)
+ * - `requested`  this person asked to join a Town Hall that needs approval; staff say yes or no. A "no" only sets
+ *                `declined_at`: the asker still sees "Requested" until the request runs out (30 days), then may ask again.
+ * At most one `owner` row per Town Hall (a partial unique index); ownership moves only by handing it to a Deputy.
  */
 export const townHallMembers = pgTable(
   'town_hall_members',
@@ -52,12 +61,21 @@ export const townHallMembers = pgTable(
       .references(() => users.id, { onDelete: 'cascade' }),
     role: text('role').notNull().default('member'),
     status: text('status').notNull().default('active'),
+    /** Set when staff said no to a join request (never shown to the asker; ADR-041). */
+    declinedAt: tstz('declined_at'),
     createdAt: tstz('created_at').notNull().defaultNow(),
   },
   (t) => [
     primaryKey({ columns: [t.townHallId, t.userId] }),
-    check('town_hall_members_role_check', sql`${t.role} in ('owner', 'member')`),
-    check('town_hall_members_status_check', sql`${t.status} in ('active', 'invited')`),
+    check('town_hall_members_role_check', sql`${t.role} in ('owner', 'deputy', 'member')`),
+    check('town_hall_members_status_check', sql`${t.status} in ('active', 'invited', 'requested')`),
+    // Only a real member holds a role: an invite or a request is always a plain `member` row.
+    check('town_hall_members_role_needs_active', sql`${t.role} = 'member' or ${t.status} = 'active'`),
+    check('town_hall_members_declined_is_request', sql`${t.declinedAt} is null or ${t.status} = 'requested'`),
+    // Staff's queue of waiting requests.
+    index('town_hall_members_requests_idx')
+      .on(t.townHallId, t.createdAt)
+      .where(sql`${t.status} = 'requested' and ${t.declinedAt} is null`),
     // The owner's own row is always active: an owner is never merely "invited" to their own Town Hall.
     check('town_hall_members_owner_active', sql`${t.role} <> 'owner' or ${t.status} = 'active'`),
     uniqueIndex('town_hall_members_one_owner_idx')

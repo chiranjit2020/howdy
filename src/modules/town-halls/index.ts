@@ -5,12 +5,16 @@ export {
   createTownHall,
   deleteTownHall,
   getTownHall,
+  handOverTownHalls,
   invite,
   listDirectory,
   listMembers,
   listMine,
   listMyInvites,
+  listRequests,
   mayOpenTownHall,
+  memberAction,
+  purgeExpiredRequests,
   removeMember,
   townHallForReport,
   updateTownHall,
@@ -20,7 +24,9 @@ export type {
   DirectoryItem,
   DirectoryPage,
   InviteSummary,
+  JoinRequest,
   MemberPage,
+  MineItem,
   MemberRef,
   TownHallDetail,
   TownHallSummary,
@@ -49,4 +55,5 @@ export type {
   HeldReply,
 } from './feed';
 export { townHallsExport } from './export';
+export type { HallRole } from './roles';
 export type { HallExport } from './export';

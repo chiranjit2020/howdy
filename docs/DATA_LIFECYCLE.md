@@ -51,9 +51,11 @@ author or the Ranch it was on; a Mark (deep-vibe award) is removed with the rate
 there is no reason to keep a testimonial or an award once one of the two people involved is gone.
 
 **Town Halls (Phase 10): the Town Hall belongs to its owner, not to any one member.** Deleting the *owner's* account
-cascades to `town_halls` and removes the whole Town Hall (and, from there, every `town_hall_members` row in it — there
-is no ownership transfer, ADR-017). Deleting a *regular member's* account only removes their own membership row; the
-Town Hall and everyone else in it are unaffected.
+cascades to `town_halls` and removes the whole Town Hall (and, from there, every `town_hall_members` row in it).
+**Since ADR-041** the daily deletion job first hands each Town Hall the account owns to its longest-serving Deputy
+(`handOverTownHalls`, before `eraseAccount`), so only a Town Hall with no Deputy goes with its owner. Deleting a
+*regular member's* (or a Deputy's) account only removes their own membership row. Join requests
+(`status = 'requested'`) are deleted 30 days after they were made, answered or not (`purgeExpiredRequests`).
 
 Planned (each must declare its deletion behaviour when created):
 

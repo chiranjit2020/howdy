@@ -15,7 +15,7 @@ export interface HallExport {
   name: string;
   description: string;
   visibility: string;
-  role: 'owner' | 'member';
+  role: 'owner' | 'deputy' | 'member';
   joinedAt: Date;
   posts: { body: string; postedAt: Date }[];
   replies: { body: string; postedAt: Date }[];
@@ -80,7 +80,7 @@ export async function townHallsExport(userId: string): Promise<HallExport[]> {
     name: h.name,
     description: h.description,
     visibility: h.visibility,
-    role: h.role === 'owner' ? 'owner' : 'member',
+    role: h.role === 'owner' || h.role === 'deputy' ? h.role : 'member',
     joinedAt: h.joinedAt,
     posts: posts.filter((p) => p.hallId === h.id).map((p) => ({ body: p.body, postedAt: p.createdAt })),
     replies: replies.filter((r) => r.hallId === h.id).map((r) => ({ body: r.body, postedAt: r.createdAt })),

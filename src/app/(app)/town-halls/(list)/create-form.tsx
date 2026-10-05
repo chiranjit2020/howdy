@@ -6,11 +6,11 @@ import { LIMITS } from '@/shared/limits';
 import type { TownHallVisibility } from '@/shared/validation/town-halls';
 import { postJson } from '@/ui/auth/api';
 import { FormMessage } from '@/ui/auth/form-parts';
-import { Button, ClayCard, Input, Select, Textarea } from '@/ui/primitives';
+import { Button, ClayCard, Input, Select, Switch, Textarea } from '@/ui/primitives';
 
 const VISIBILITY_HINT: Record<TownHallVisibility, string> = {
-  open: 'Anyone can find it and join with one tap.',
-  members: 'Anyone can find it and join with one tap (a different label for you, same rule).',
+  open: 'Anyone can find it in the directory.',
+  members: 'Anyone can find it in the directory (a different label for you, same rule).',
   invite: 'Nobody can find it — you invite people by call sign.',
 };
 
@@ -21,6 +21,7 @@ export function CreateTownHallForm() {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [visibility, setVisibility] = useState<TownHallVisibility>('open');
+  const [approval, setApproval] = useState(false);
   const [error, setError] = useState<string | undefined>();
   const [busy, setBusy] = useState(false);
 
@@ -32,6 +33,7 @@ export function CreateTownHallForm() {
       name: name.trim(),
       description: description.trim(),
       visibility,
+      joinRule: approval && visibility !== 'invite' ? 'approval' : 'instant',
     });
     setBusy(false);
     if (res.ok) {
@@ -39,6 +41,7 @@ export function CreateTownHallForm() {
       setName('');
       setDescription('');
       setVisibility('open');
+      setApproval(false);
       router.refresh();
     } else
       setError(
@@ -86,6 +89,18 @@ export function CreateTownHallForm() {
           <option value="members">Members only</option>
           <option value="invite">By invitation</option>
         </Select>
+        {visibility !== 'invite' && (
+          <Switch
+            label="Ask to join"
+            hint={
+              approval
+                ? 'People ask; you (or a Deputy you appoint) let them in.'
+                : 'Off: anyone can join with one tap.'
+            }
+            checked={approval}
+            onCheckedChange={setApproval}
+          />
+        )}
         <div className="flex gap-2">
           <Button type="submit" loading={busy} disabled={!name.trim() || !description.trim()}>
             Start it

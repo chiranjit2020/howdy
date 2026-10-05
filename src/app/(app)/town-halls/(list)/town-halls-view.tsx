@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import type { DirectoryItem, DirectoryPage, InviteSummary, TownHallSummary } from '@/modules/town-halls';
+import type { DirectoryItem, DirectoryPage, InviteSummary, MineItem } from '@/modules/town-halls';
 import { apiRequest } from '@/ui/auth/api';
 import { FormMessage } from '@/ui/auth/form-parts';
 import { TownHallCard } from '@/ui/howdy';
@@ -15,7 +15,7 @@ export function TownHallsView({
   invites,
 }: {
   initialDirectory: DirectoryPage;
-  mine: TownHallSummary[];
+  mine: MineItem[];
   invites: InviteSummary[];
 }) {
   return (
@@ -84,6 +84,14 @@ function Directory({ initial }: { initial: DirectoryPage }) {
               <Link href={`/town-halls/${t.id}`} className="text-caption text-auth-link">
                 Open
               </Link>
+            ) : t.joinRule === 'approval' ? (
+              // Asked for on its own page, which explains that the owner or a Deputy lets people in (ADR-041).
+              <Link
+                href={`/town-halls/${t.id}`}
+                className="inline-flex min-h-11 items-center text-caption text-auth-link"
+              >
+                Ask to join
+              </Link>
             ) : (
               <Button size="sm" loading={busy === t.id} onClick={() => join(t.id)}>
                 Join
@@ -101,7 +109,7 @@ function Directory({ initial }: { initial: DirectoryPage }) {
   );
 }
 
-function Mine({ mine }: { mine: TownHallSummary[] }) {
+function Mine({ mine }: { mine: MineItem[] }) {
   if (mine.length === 0) {
     return (
       <ClayCard>
@@ -125,7 +133,8 @@ function Mine({ mine }: { mine: TownHallSummary[] }) {
           joined
           action={
             <Link href={`/town-halls/${t.id}`} className="text-caption text-auth-link">
-              {t.isOwner ? 'Manage' : 'Open'}
+              {t.myRole === 'owner' || t.myRole === 'deputy' ? 'Manage' : 'Open'}
+              {t.requestsWaiting ? ` · ${t.requestsWaiting} asking to join` : ''}
             </Link>
           }
         />

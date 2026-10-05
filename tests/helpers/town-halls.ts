@@ -7,7 +7,11 @@ import {
 } from '@/app/api/town-halls/[id]/route';
 import { POST as inviteRoute } from '@/app/api/town-halls/[id]/invite/route';
 import { GET as membersRoute } from '@/app/api/town-halls/[id]/members/route';
-import { DELETE as removeMemberRoute } from '@/app/api/town-halls/[id]/members/[handle]/route';
+import {
+  DELETE as removeMemberRoute,
+  POST as memberActionRoute,
+} from '@/app/api/town-halls/[id]/members/[handle]/route';
+import { GET as requestsRoute } from '@/app/api/town-halls/[id]/requests/route';
 import { GET as mineRoute } from '@/app/api/me/town-halls/route';
 import { GET as invitesRoute } from '@/app/api/me/town-halls/invites/route';
 import { call, request } from './auth';
@@ -18,6 +22,7 @@ type Wire = {
   townHalls?: TownHall[];
   members?: Member[];
   invites?: Invite[];
+  requests?: { handle: string; askedAt: string }[];
   nextCursor?: string | null;
   error?: { code: string; message: string; requestId: string; fields?: Record<string, string> };
   [k: string]: unknown;
@@ -27,15 +32,19 @@ export interface TownHall {
   name: string;
   description: string;
   visibility: 'open' | 'members' | 'invite';
+  joinRule: 'instant' | 'approval';
   isOwner: boolean;
+  myRole: 'owner' | 'deputy' | 'member' | null;
   joined?: boolean;
-  membership?: 'none' | 'active' | 'invited';
+  membership?: 'none' | 'active' | 'invited' | 'requested';
   canJoin?: boolean;
+  canAsk?: boolean;
+  requestsWaiting?: number | null;
 }
 export interface Member {
   handle: string;
   displayName: string;
-  role: 'owner' | 'member';
+  role: 'owner' | 'deputy' | 'member';
 }
 export interface Invite {
   townHallId: string;
@@ -114,3 +123,18 @@ export const myInvites = (opts: Opts = {}) =>
     text: string;
     res: Response;
   }>;
+
+/** POST /api/town-halls/:id/members/:handle {action} — a staff decision about one person (ADR-041). */
+export const memberAction = (id: string, handle: string, action: string, opts: Opts = {}) =>
+  dynamic(
+    memberActionRoute,
+    'POST',
+    `/api/town-halls/${enc(id)}/members/${enc(handle)}`,
+    { id, handle },
+    { action },
+    opts,
+  );
+
+/** GET /api/town-halls/:id/requests — waiting join requests (staff only). */
+export const requests = (id: string, opts: Opts = {}) =>
+  dynamic(requestsRoute, 'GET', `/api/town-halls/${enc(id)}/requests`, { id }, undefined, opts);

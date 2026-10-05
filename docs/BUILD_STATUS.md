@@ -9,6 +9,24 @@ Town Hall feed ADR-033, Dynamic Island ADR-034). Production: Vercel `sin1` + Neo
 mail, R2 photos, Upstash Redis; a push to `main` deploys. Production does not migrate on deploy: apply new migrations
 to `howdy_dev` and the Singapore `howdy_prod` first.
 
+## 2026-10-06 — Town Hall Deputies, "ask to join", handover (ADR-041) — shipped
+
+Decisions taken with you: **Deputies keep order** (owner alone edits/deletes/appoints/hands over); **a separate "Ask to
+join" switch**; **a quiet "no"** (the request runs out after 30 days); **hand over to a Deputy**.
+
+- [x] Members list: Owner / Deputy labels and a per-person Options menu (Make a Deputy, Stand down, Hand the Town Hall
+      to them…, Remove…). Staff see "Asking to join (N)" with Let in / No; owners get a "Joining" switch; the create
+      form has "Ask to join". Askers see a disabled "Requested". "Mine" shows "N asking to join" to staff.
+- [x] Deputies: held tray, take-downs of ordinary members' words, invites, removals; never the owner or another Deputy.
+- [x] When an owner's account is deleted, the longest-serving Deputy inherits the Town Hall (else it goes, as before).
+- [x] Migration `0033_town_hall_roles`, applied to `howdy_dev`, Singapore `howdy_prod` and the local test + e2e
+      databases before the push. Privacy 1.12.0 (no re-acceptance). Daily purge deletes requests older than 30 days.
+- [x] Tests: `tests/security/town-hall-roles.test.ts` (15), `tests/e2e/town-hall-roles.spec.ts` (two 320 px phones);
+      vitest 1423/1423; affected e2e green (town-halls spec now opens the Options menu to remove). Mutation check
+      `.dev/mutate-town-hall-roles.mjs`: 13/13 caught (two mutants first had to be made real: editing has two guards,
+      and a no-op "no shows" mutant was replaced by "a no deletes the request").
+- Known limit (pre-existing): someone removed from an instant-join Town Hall can rejoin; there is no ban list.
+
 ## 2026-10-05 (later) — Passkeys and two-step sign-in (ADR-040) — shipped
 
 Decisions taken with you: **passkeys + authenticator-app codes**; **a passkey signs in alone**; **optional, but required
@@ -719,11 +737,11 @@ call or waits for real use:
 3. ~~A whole-of-Whispers threat model and a staged Ably load test~~ **Done 2026-10-05** (ADR-038, see above).
 4. ~~Image moderation~~ **Built 2026-10-05** (ADR-039) — set `OPENAI_API_KEY` to turn it on. CSAM is not covered
    by it (Cloudflare CSAM Scanning Tool or PhotoDNA, if wanted).
-5. Capsules to a Town Hall; Town Hall roles beyond owner/member and an approval-gated join. ~~MFA/passkeys~~ **built 2026-10-05** (ADR-040).
+5. Capsules to a Town Hall. ~~Town Hall roles + approval-gated join~~ **built 2026-10-06** (ADR-041). ~~MFA/passkeys~~ **built 2026-10-05** (ADR-040). A Town Hall ban list (removed people can rejoin instant-join halls).
 6. Revisit whether Tribute/Mark giving should ever widen beyond Pals-only.
 
 ## Architectural Decisions
 
-ADR-001 … ADR-040 in `docs/decisions/`; lifecycle and deletion design in `docs/DATA_LIFECYCLE.md`; Whispers threat model in
+ADR-001 … ADR-041 in `docs/decisions/`; lifecycle and deletion design in `docs/DATA_LIFECYCLE.md`; Whispers threat model in
 `docs/WHISPERS_THREAT_MODEL.md`.
 

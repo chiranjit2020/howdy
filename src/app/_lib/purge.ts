@@ -8,7 +8,7 @@ import { liftExpiredSuspensions, purgeClosedReports } from '@/modules/moderation
 import { purgeOldChimes } from '@/modules/notifications';
 import { clearExpiredSignals } from '@/modules/profiles';
 import { purgeDeadSubscriptions } from '@/modules/push';
-import { purgeStaleHeld } from '@/modules/town-halls';
+import { purgeExpiredRequests, purgeStaleHeld } from '@/modules/town-halls';
 import { purgeOldTracks } from '@/modules/tracks';
 import { purgeStaleTributes } from '@/modules/tributes';
 import { recheckStaleTrust } from '@/modules/trust';
@@ -28,6 +28,8 @@ export async function runAllPurges() {
   const waiting = await purgeStaleWaiting();
   // Town Hall posts and replies held for an owner who never answered (ADR-033), on the same 30 days.
   const hallHeld = await purgeStaleHeld();
+  // Town Hall join requests that ran out (declined or never answered) after 30 days (ADR-041).
+  const hallRequests = await purgeExpiredRequests();
   const chimes = await purgeOldChimes();
   const whispers = await purgeOldWhispers();
   const trackRows = await purgeOldTracks();
@@ -54,6 +56,7 @@ export async function runAllPurges() {
     ...lights,
     waiting,
     hallHeld,
+    hallRequests,
     ...chimes,
     whispers,
     ...trackRows,

@@ -1,0 +1,14 @@
+ALTER TABLE "notifications" DROP CONSTRAINT "notifications_type_check";--> statement-breakpoint
+ALTER TABLE "notifications" DROP CONSTRAINT "notifications_card_iff_card_type";--> statement-breakpoint
+ALTER TABLE "town_hall_members" DROP CONSTRAINT "town_hall_members_role_check";--> statement-breakpoint
+ALTER TABLE "town_hall_members" DROP CONSTRAINT "town_hall_members_status_check";--> statement-breakpoint
+ALTER TABLE "town_hall_members" ADD COLUMN "declined_at" timestamp with time zone;--> statement-breakpoint
+ALTER TABLE "town_halls" ADD COLUMN "join_rule" text DEFAULT 'instant' NOT NULL;--> statement-breakpoint
+CREATE INDEX "town_hall_members_requests_idx" ON "town_hall_members" USING btree ("town_hall_id","created_at") WHERE "town_hall_members"."status" = 'requested' and "town_hall_members"."declined_at" is null;--> statement-breakpoint
+ALTER TABLE "notifications" ADD CONSTRAINT "notifications_type_check" CHECK ("notifications"."type" in ('posse_requested', 'posse_accepted', 'card_created', 'card_waiting', 'card_approved', 'reply_created', 'reply_waiting', 'yo_given', 'whisper_received', 'tribute_waiting', 'tribute_approved', 'mark_given', 'townhall_invited', 'townhall_invite_accepted', 'capsule_opened', 'hall_reply_created', 'hall_reaction_given', 'townhall_join_requested', 'townhall_request_approved', 'townhall_made_deputy', 'townhall_made_owner'));--> statement-breakpoint
+ALTER TABLE "notifications" ADD CONSTRAINT "notifications_card_iff_card_type" CHECK (("notifications"."type" in ('posse_requested', 'posse_accepted', 'whisper_received', 'tribute_waiting', 'tribute_approved', 'mark_given', 'townhall_invited', 'townhall_invite_accepted', 'capsule_opened', 'hall_reply_created', 'hall_reaction_given', 'townhall_join_requested', 'townhall_request_approved', 'townhall_made_deputy', 'townhall_made_owner')) = ("notifications"."card_id" is null));--> statement-breakpoint
+ALTER TABLE "town_hall_members" ADD CONSTRAINT "town_hall_members_role_needs_active" CHECK ("town_hall_members"."role" = 'member' or "town_hall_members"."status" = 'active');--> statement-breakpoint
+ALTER TABLE "town_hall_members" ADD CONSTRAINT "town_hall_members_declined_is_request" CHECK ("town_hall_members"."declined_at" is null or "town_hall_members"."status" = 'requested');--> statement-breakpoint
+ALTER TABLE "town_hall_members" ADD CONSTRAINT "town_hall_members_role_check" CHECK ("town_hall_members"."role" in ('owner', 'deputy', 'member'));--> statement-breakpoint
+ALTER TABLE "town_hall_members" ADD CONSTRAINT "town_hall_members_status_check" CHECK ("town_hall_members"."status" in ('active', 'invited', 'requested'));--> statement-breakpoint
+ALTER TABLE "town_halls" ADD CONSTRAINT "town_halls_join_rule_check" CHECK ("town_halls"."join_rule" in ('instant', 'approval'));

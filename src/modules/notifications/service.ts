@@ -47,6 +47,10 @@ export type ChimeType =
   | 'mark_given'
   | 'townhall_invited'
   | 'townhall_invite_accepted'
+  | 'townhall_join_requested'
+  | 'townhall_request_approved'
+  | 'townhall_made_deputy'
+  | 'townhall_made_owner'
   | 'capsule_opened'
   | 'hall_reply_created'
   | 'hall_reaction_given';
@@ -66,6 +70,10 @@ const CATEGORY: Record<ChimeType, ChimeCategory> = {
   mark_given: 'tributes',
   townhall_invited: 'townhalls',
   townhall_invite_accepted: 'townhalls',
+  townhall_join_requested: 'townhalls',
+  townhall_request_approved: 'townhalls',
+  townhall_made_deputy: 'townhalls',
+  townhall_made_owner: 'townhalls',
   capsule_opened: 'capsules',
   hall_reply_created: 'townhalls',
   hall_reaction_given: 'townhalls',
@@ -234,7 +242,19 @@ export async function handleEvent(event: DomainEvent): Promise<void> {
       // Which kind is never in the Chime text: the Ranch's aggregate breakdown is the only place a kind is shown.
       return deliver(event.targetId, event.raterId, 'mark_given', null, { bump: true });
     case 'townhall.invited':
-      return deliver(event.inviteeId, event.ownerId, 'townhall_invited', null, { bump: true });
+      return deliver(event.inviteeId, event.inviterId, 'townhall_invited', null, { bump: true });
+    case 'townhall.join_requested':
+      // Each of the Town Hall's staff (owner and Deputies) hears it; any of them may answer (ADR-041).
+      for (const staffId of event.staffIds) {
+        await deliver(staffId, event.requesterId, 'townhall_join_requested', null, { bump: true });
+      }
+      return;
+    case 'townhall.request_approved':
+      return deliver(event.requesterId, event.approverId, 'townhall_request_approved', null, { bump: true });
+    case 'townhall.made_deputy':
+      return deliver(event.deputyId, event.ownerId, 'townhall_made_deputy', null, { bump: true });
+    case 'townhall.made_owner':
+      return deliver(event.toId, event.fromId, 'townhall_made_owner', null, { bump: true });
     case 'townhall.invite_accepted':
       return deliver(event.ownerId, event.inviteeId, 'townhall_invite_accepted', null, { bump: true });
     case 'capsule.opened':
@@ -419,6 +439,15 @@ function describe(userId: string, s: Shown, myHandle: string): { text: string; h
       return { text: `${name} invited you to a Town Hall.`, href: '/town-halls' };
     case 'townhall_invite_accepted':
       return { text: `${name} accepted your Town Hall invite.`, href: '/town-halls' };
+    // Person-shaped like invites (no Town Hall named in the Chime): the Town Halls page says which one.
+    case 'townhall_join_requested':
+      return { text: `${name} asked to join a Town Hall you look after.`, href: '/town-halls' };
+    case 'townhall_request_approved':
+      return { text: `${name} let you into a Town Hall.`, href: '/town-halls' };
+    case 'townhall_made_deputy':
+      return { text: `${name} made you a Deputy of a Town Hall.`, href: '/town-halls' };
+    case 'townhall_made_owner':
+      return { text: `${name} handed you a Town Hall. You are its owner now.`, href: '/town-halls' };
     case 'capsule_opened':
       return {
         text:
