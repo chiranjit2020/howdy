@@ -11,7 +11,7 @@ export const GET = route(async ({ req, params }) => {
   const { user } = await requireSession(req);
   const mediaId = await reportedCardPhoto(user.id, (await params).id ?? '');
   if (!mediaId) throw new AppError('NOT_FOUND');
-  const bytes = await readCardPhoto(mediaId);
+  const bytes = await readCardPhoto(mediaId, 'moderator');
   if (!bytes) throw new AppError('NOT_FOUND');
   return new Response(new Uint8Array(bytes), {
     status: 200,

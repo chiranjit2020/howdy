@@ -23,6 +23,13 @@ export const conversations = pgTable(
     lastSeq: bigint('last_seq', { mode: 'number' }).notNull().default(0),
     lowReadSeq: bigint('low_read_seq', { mode: 'number' }).notNull().default(0),
     highReadSeq: bigint('high_read_seq', { mode: 'number' }).notNull().default(0),
+    /**
+     * "Burn for me" (ADR-038): when someone who has been blocked or restricted burns the thread, it is not deleted; it is
+     * cleared for THEM up to this position, so the other person keeps their thread and held tray. Everything the burner sees
+     * is numbered from here, so their view is the same as after a real burn.
+     */
+    lowClearedSeq: bigint('low_cleared_seq', { mode: 'number' }).notNull().default(0),
+    highClearedSeq: bigint('high_cleared_seq', { mode: 'number' }).notNull().default(0),
     createdAt: tstz('created_at').notNull().defaultNow(),
     lastMessageAt: tstz('last_message_at').notNull().defaultNow(),
   },
@@ -31,6 +38,10 @@ export const conversations = pgTable(
     check(
       'conversations_read_within_bounds',
       sql`${t.lowReadSeq} between 0 and ${t.lastSeq} and ${t.highReadSeq} between 0 and ${t.lastSeq}`,
+    ),
+    check(
+      'conversations_cleared_within_bounds',
+      sql`${t.lowClearedSeq} between 0 and ${t.lastSeq} and ${t.highClearedSeq} between 0 and ${t.lastSeq}`,
     ),
     uniqueIndex('conversations_pair_idx').on(t.userLow, t.userHigh),
     index('conversations_high_idx').on(t.userHigh),

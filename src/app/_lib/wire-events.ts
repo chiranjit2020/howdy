@@ -1,3 +1,4 @@
+import { filePhotoCheckReport } from '@/modules/moderation';
 import { handleEvent } from '@/modules/notifications';
 import { handleEvent as handleTrackEvent } from '@/modules/tracks';
 import { handleEvent as handleTrustEvent } from '@/modules/trust';
@@ -13,6 +14,12 @@ import { publishToUser } from '@/platform/realtime';
 subscribe(handleEvent);
 subscribe(handleTrackEvent);
 subscribe(handleTrustEvent);
+
+// The photo check held a photo (ADR-039): it goes to the moderation queue. (media emits; moderation listens.)
+subscribe(async (event) => {
+  if (event.type !== 'photo.held') return;
+  await filePhotoCheckReport(event);
+});
 
 // Live delivery: tell the recipient's open sockets (and the sender's other devices) there is a new Whisper to look at. Words
 // held back from the recipient are never announced to them.

@@ -16,7 +16,7 @@ export default async function CapsulesPage() {
   const user = await requireUser();
   const [capsules, lists] = await Promise.all([
     myCapsules(user.id),
-    listMyRelationships(user.id).then(withCards),
+    listMyRelationships(user.id).then((r) => withCards(r, user.id)),
   ]);
   await attachPortraits(
     user.id,

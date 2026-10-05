@@ -131,7 +131,7 @@ describe('asking for my data', () => {
     const a = await person('alice');
     expect((await uploadPortrait(a.cookie, await jpeg(400, 400))).done?.status).toBe(200);
     const r = await exportOf(a);
-    const stored = await readPortrait(await userId(a.handle));
+    const stored = await readPortrait(await userId(a.handle), 'moderator');
     expect(r.files!.get('photos/portrait.webp')?.equals(stored!.bytes)).toBe(true);
     expect(r.data.porch.portrait).toBe('photos/portrait.webp');
   });

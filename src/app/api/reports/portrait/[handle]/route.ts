@@ -21,7 +21,7 @@ export const POST = route(async ({ req, params }) => {
   if (!owner || owner.userId === user.id || !(await mayViewRanch(user.id, owner.userId))) {
     throw new AppError('NOT_FOUND');
   }
-  const mediaId = await getPortraitVersion(owner.userId);
+  const mediaId = await getPortraitVersion(owner.userId, { userId: user.id });
   if (!mediaId) throw new AppError('NOT_FOUND');
   await createReport(user.id, owner.userId, {
     reason: body.reason,

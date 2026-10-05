@@ -118,7 +118,7 @@ export default async function RanchPage({ params }: { params: Promise<{ handle: 
       const ownerId = r.isOwner ? user?.id : person?.userId;
       const [rel, photo, light] = await Promise.all([
         user && person ? getRelationshipView(user.id, person.userId) : null,
-        user && ownerId ? getPortraitVersion(ownerId).catch(() => null) : null,
+        user && ownerId ? getPortraitVersion(ownerId, { userId: user.id }).catch(() => null) : null,
         // Best-effort: without it the Porch simply shows no light.
         (user && person
           ? lightFor(user.id, person.userId)
@@ -136,7 +136,7 @@ export default async function RanchPage({ params }: { params: Promise<{ handle: 
     // Only the owner sees their own Pals here; nobody else's list is ever shown on a Porch.
     isOwner && user
       ? listMyRelationships(user.id)
-          .then(withCards)
+          .then((r) => withCards(r, user.id))
           .then((l) => l.posse)
       : null,
     // Tributes and the Vibe Matrix follow the Porch's own visibility (the same rule as the Fence), separately from it.

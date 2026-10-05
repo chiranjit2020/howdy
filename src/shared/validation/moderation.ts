@@ -61,7 +61,15 @@ export const SUSPENSION_DAYS: Record<SuspensionLength, number | null> = {
 };
 
 /** What a report can be about (ADR-025): the person, or one thing of theirs. */
-export const REPORT_SUBJECTS = ['person', 'card', 'portrait', 'whisper', 'town_hall', 'hall_post'] as const;
+export const REPORT_SUBJECTS = [
+  'person',
+  'card',
+  'portrait',
+  'card_photo',
+  'whisper',
+  'town_hall',
+  'hall_post',
+] as const;
 export type ReportSubject = (typeof REPORT_SUBJECTS)[number];
 
 /** Acting on one report. Each `remove_*` only makes sense when the report is about that kind of thing. */
@@ -69,6 +77,7 @@ export const REPORT_ACTIONS = [
   'dismiss',
   'remove_card',
   'remove_portrait',
+  'remove_card_photo',
   'remove_whisper',
   'remove_town_hall',
   'remove_hall_post',
@@ -82,6 +91,7 @@ export const reportActionSchema = z.discriminatedUnion('action', [
       'dismiss',
       'remove_card',
       'remove_portrait',
+      'remove_card_photo',
       'remove_whisper',
       'remove_town_hall',
       'remove_hall_post',

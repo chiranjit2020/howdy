@@ -3,6 +3,7 @@ import { and, asc, eq, inArray, or, sql } from 'drizzle-orm';
 import { getCards } from '@/modules/profiles';
 import { posseMembersAmong } from '@/modules/relationships';
 import { getDb } from '@/platform/db';
+import { pastCleared } from './service';
 
 /**
  * The Whispers part of "Download my data" (ADR-037): exactly what the Whispers pages show me.
@@ -43,6 +44,7 @@ export async function whispersExport(userId: string): Promise<WhispersExport> {
           eq(messages.status, 'held'),
           sql`${messages.senderId} <> ${userId}`,
           or(eq(conversations.userLow, userId), eq(conversations.userHigh, userId)),
+          pastCleared(userId),
         ),
       )
       .orderBy(asc(messages.createdAt), asc(messages.id))
@@ -64,14 +66,16 @@ export async function whispersExport(userId: string): Promise<WhispersExport> {
             createdAt: messages.createdAt,
           })
           .from(messages)
+          .innerJoin(conversations, eq(conversations.id, messages.conversationId))
           .where(
             and(
               inArray(
                 messages.conversationId,
                 open.map((c) => c.id),
               ),
-              // Never words held back from me (the same rule as the thread page).
+              // Never words held back from me (the same rule as the thread page), nor any I burnt for myself (ADR-038).
               or(eq(messages.status, 'sent'), eq(messages.senderId, userId)),
+              pastCleared(userId),
             ),
           )
           .orderBy(asc(messages.conversationId), asc(messages.seq))

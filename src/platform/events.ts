@@ -39,6 +39,14 @@ export type DomainEvent =
   /** A published reply on a Town Hall post (ADR-033). Held replies emit nothing: only the owner sees them, in the feed. */
   | { type: 'hall.reply_created'; postId: string; postAuthorId: string; authorId: string }
   | { type: 'hall.reaction_given'; postId: string; postAuthorId: string; actorId: string }
+  /** The photo check held an uploaded photo for a moderator (ADR-039); only its owner sees it meanwhile. */
+  | {
+      type: 'photo.held';
+      mediaId: string;
+      ownerId: string;
+      kind: 'portrait' | 'card_photo';
+      summary: string;
+    }
   /** A Time Capsule opened (ADR-028). Author and recipient are the same person for a capsule to one's future self. */
   | { type: 'capsule.opened'; capsuleId: string; authorId: string; recipientId: string };
 

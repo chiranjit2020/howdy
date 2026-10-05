@@ -45,9 +45,9 @@ export default async function HomePage() {
   const [ranch, photo, lists, sessions, news, memories, lit, mine, whispers, chimes, tracks] =
     await Promise.all([
       getOwnRanch(user.id),
-      getPortraitVersion(user.id).catch(() => null),
+      getPortraitVersion(user.id, { userId: user.id }).catch(() => null),
       // Only requests from people who are still active count (a suspended account's request is not shown or counted).
-      listMyRelationships(user.id).then(withCards),
+      listMyRelationships(user.id).then((r) => withCards(r, user.id)),
       listMySessions(),
       getTeamAnnouncement().catch(() => null),
       memoriesToday(user.id).catch(() => null),

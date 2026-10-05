@@ -29,7 +29,7 @@ export const GET = route(async ({ req, params }) => {
   const allowed = owner.userId === session.user.id || (await mayViewRanch(session.user.id, owner.userId));
   if (!allowed) throw new AppError('NOT_FOUND');
 
-  const portrait = await readPortrait(owner.userId);
+  const portrait = await readPortrait(owner.userId, { userId: session.user.id });
   if (!portrait) throw new AppError('NOT_FOUND');
 
   const etag = `"${portrait.version}"`;

@@ -128,7 +128,7 @@ async function main() {
     await time('whispers: threads', who, () => whispers.listThreads(me.id));
     await time('whispers: one thread', who, () => whispers.getThread(me.id, pal.handle, {}));
     await time('pals: lists + names', who, () =>
-      relationships.listMyRelationships(me.id).then(social.withCards),
+      relationships.listMyRelationships(me.id).then((r) => social.withCards(r, me.id)),
     );
     await time('tracks', who, () => tracks.listTracks(me.id));
     await time('town halls: directory', who, () => townHalls.listDirectory(me.id, {}));

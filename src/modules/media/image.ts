@@ -46,6 +46,14 @@ export async function processPortrait(input: Buffer): Promise<ProcessedPortrait>
   }
 }
 
+/** What the photo check is shown (ADR-039): the processed photo as a small JPEG — only pixels we produced ourselves. */
+export async function previewForCheck(processed: Buffer): Promise<Buffer> {
+  return sharp(processed)
+    .resize(512, 512, { fit: 'inside', withoutEnlargement: true })
+    .jpeg({ quality: 80 })
+    .toBuffer();
+}
+
 /**
  * A Post Card photo (ADR-031): the same decode -> re-encode control as a Portrait (only pixels survive; EXIF, location
  * and anything hidden are dropped; the phone's rotation is applied), but the whole picture is kept, fitted inside

@@ -1,9 +1,10 @@
 import { requireSession } from '@/modules/auth';
-import { retirePortrait } from '@/modules/media';
+import { releaseHeldPhoto, retireCardPhoto, retirePortrait } from '@/modules/media';
 import {
   dismissReport,
   removeReportedCard,
   removeReportedHallPost,
+  removeReportedCardPhoto,
   removeReportedPortrait,
   removeReportedTownHall,
   removeReportedWhisper,
@@ -36,6 +37,9 @@ export const POST = route(async ({ req, params }) => {
       // The file is in object storage, which only the media module touches: moderation is handed the removal.
       await removeReportedPortrait(user.id, id, retirePortrait);
       break;
+    case 'remove_card_photo':
+      await removeReportedCardPhoto(user.id, id, retireCardPhoto);
+      break;
     case 'remove_whisper':
       await removeReportedWhisper(user.id, id);
       break;
@@ -46,7 +50,8 @@ export const POST = route(async ({ req, params }) => {
       await removeReportedHallPost(user.id, id);
       break;
     case 'dismiss':
-      await dismissReport(user.id, id);
+      // A photo the photo check held is released when its report is dismissed (ADR-039).
+      await dismissReport(user.id, id, releaseHeldPhoto);
       break;
   }
   return json({ ok: true });

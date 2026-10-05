@@ -1,6 +1,7 @@
 import { sql } from 'drizzle-orm';
 import {
   bigint,
+  boolean,
   check,
   index,
   integer,
@@ -47,6 +48,11 @@ export const media = pgTable(
     byteSize: bigint('byte_size', { mode: 'number' }),
     width: integer('width'),
     height: integer('height'),
+    /**
+     * The photo check flagged it (ADR-039): only its owner (and moderators) see it until a moderator decides. To the
+     * owner it looks like any other photo.
+     */
+    held: boolean('held').notNull().default(false),
     createdAt: tstz('created_at').notNull().defaultNow(),
     updatedAt: tstz('updated_at').notNull().defaultNow(),
   },

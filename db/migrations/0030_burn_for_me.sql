@@ -1,0 +1,3 @@
+ALTER TABLE "conversations" ADD COLUMN "low_cleared_seq" bigint DEFAULT 0 NOT NULL;--> statement-breakpoint
+ALTER TABLE "conversations" ADD COLUMN "high_cleared_seq" bigint DEFAULT 0 NOT NULL;--> statement-breakpoint
+ALTER TABLE "conversations" ADD CONSTRAINT "conversations_cleared_within_bounds" CHECK ("conversations"."low_cleared_seq" between 0 and "conversations"."last_seq" and "conversations"."high_cleared_seq" between 0 and "conversations"."last_seq");

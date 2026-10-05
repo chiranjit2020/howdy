@@ -46,7 +46,8 @@ receipt or a "delivered" state is exactly the signal that would expose a Restric
    `WS_PUBLIC_URL` must be `wss` in production and share the site's *host* (the session cookie is `__Host-`, host-only).
 10. **Client:** works without the socket (sends over HTTP with the same client id; polls `?after=` every 8 s when not live),
     reconnects with exponential backoff and jitter, and catches up with `whisper.sync` / `?after=` after every reconnect.
-11. **Retention:** 7 days (`pnpm jobs:purge`), "Burn Thread" deletes the thread for both people at once (always allowed, same answer
+11. *(Amended by ADR-038: a burner who has been blocked or restricted only clears the thread for themselves, invisibly.)*
+    **Retention:** 7 days (`pnpm jobs:purge`), "Burn Thread" deletes the thread for both people at once (always allowed, same answer
     for a thread that never existed). Chimes: a "whispered to you" Chime (its own preference), hidden once the thread is closed.
 
 ## Consequences

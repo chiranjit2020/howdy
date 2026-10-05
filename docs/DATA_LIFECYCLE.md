@@ -106,7 +106,7 @@ streamed and never kept on the server. See ADR-037 for exactly what is and is no
 | Audit log (`audit_log`) | **12 months**, then deleted (kept that long after an account is deleted, anonymised) | `purgeOldAuditLog()` (in `pnpm jobs:purge`) |
 | Rate-limit counters (Redis) | ≤ 1 hour, expire on their own | Redis TTL |
 | **Tracks** (`tracks`) | **7 days**: a row holds only the UTC date of the latest visit; reads ignore older rows at once | `purgeOldTracks()` (in `pnpm jobs:purge`); also deleted with either person |
-| **Whispers** (`messages`) | **7 days** from being sent, or at once by "Burn Thread" (either person, both sides) | `purgeOldWhispers()` (in `pnpm jobs:purge`); threads left empty are dropped with them |
+| **Whispers** (`messages`) | **7 days** from being sent, or at once by "Burn Thread" (either person, both sides — except a burner who was blocked or restricted only clears their own view, ADR-038) | `purgeOldWhispers()` (in `pnpm jobs:purge`); threads left empty are dropped with them |
 | Chimes (`notifications`) | read: 30 days after being read; unread: 90 days after being rung | `purgeOldChimes()` (in `pnpm jobs:purge`) |
 | **Portrait files** (`media`) | a live Portrait until replaced/removed or the account is deleted; an **unfinished upload 60 minutes**; a replaced/removed file is deleted at once and, if storage failed, retried by the job | `purgeStaleMedia()` (in `pnpm jobs:purge`); removal deletes the object first, then the row |
 | Post Card photos (`media` kind `card_photo`, ADR-031) | with their card; never served once the card is gone (its `card_id` goes to null) and the file is deleted by the job; a photo never nailed: 60 minutes | `purgeDetachedCardPhotos()` (in `pnpm jobs:purge`); `deleteAllMediaFor` on account deletion |

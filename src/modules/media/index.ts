@@ -14,9 +14,12 @@ export {
   mediaLeftFor,
   purgeStaleMedia,
   readPortrait,
+  releaseHeldPhoto,
+  retireCardPhoto,
   removePortrait,
   retirePortrait,
   startPortraitUpload,
+  type PhotoViewer,
   type StartedUpload,
 } from './service';
 export { processPortrait, MAX_INPUT_PIXELS, type ProcessedPortrait } from './image';

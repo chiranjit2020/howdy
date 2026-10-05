@@ -22,8 +22,10 @@ export const reports = pgTable(
     reporterId: uuid('reporter_id').references(() => users.id, { onDelete: 'set null' }),
     targetUserId: uuid('target_user_id').references(() => users.id, { onDelete: 'set null' }),
     reason: text('reason').notNull(),
-    /** person | card | portrait | whisper | town_hall | hall_post. */
+    /** person | card | portrait | card_photo | whisper | town_hall | hall_post. */
     subject: text('subject').notNull().default('person'),
+    /** member (someone filed it) | photo_check (the automatic photo check held a photo, ADR-039; no reporter). */
+    source: text('source').notNull().default('member'),
     details: text('details'),
     /** Snapshot of the reported words (a card, a Whisper, a Town Hall's name and description): evidence outlives them. */
     evidenceText: text('evidence_text'),
@@ -51,7 +53,12 @@ export const reports = pgTable(
     check('reports_evidence_len', sql`${t.evidenceText} is null or char_length(${t.evidenceText}) <= 600`),
     check(
       'reports_subject_check',
-      sql`${t.subject} in ('person', 'card', 'portrait', 'whisper', 'town_hall', 'hall_post')`,
+      sql`${t.subject} in ('person', 'card', 'portrait', 'card_photo', 'whisper', 'town_hall', 'hall_post')`,
+    ),
+    check('reports_source_check', sql`${t.source} in ('member', 'photo_check')`),
+    check(
+      'reports_photo_check_has_photo',
+      sql`${t.source} = 'member' or (${t.reporterId} is null and ${t.subject} in ('portrait', 'card_photo'))`,
     ),
     check(
       'reports_not_self',

@@ -1,6 +1,6 @@
 # Howdy Build Status
 
-_Last updated: 2026-10-04_
+_Last updated: 2026-10-05_
 
 ## Current Phase
 
@@ -8,6 +8,28 @@ _Last updated: 2026-10-04_
 Town Hall feed ADR-033, Dynamic Island ADR-034). Production: Vercel `sin1` + Neon `howdy-sg` (`howdy_prod`), Resend
 mail, R2 photos, Upstash Redis; a push to `main` deploys. Production does not migrate on deploy: apply new migrations
 to `howdy_dev` and the Singapore `howdy_prod` first.
+
+## 2026-10-05 — Whispers threat model, burn for me (ADR-038), photo check (ADR-039), Ably load test, dev DB moved
+
+Decisions taken with you: all four remaining items; **silent "burn for me"**; **OpenAI omni-moderation**; **hold for a
+moderator**; load test on the **live Ably app up to 150**.
+
+- [x] `docs/WHISPERS_THREAT_MODEL.md` — the §61 list (takeover, tokens, hijacking, IDOR, spoofing, replay, spam,
+      exhaustion, XSS, CSRF, DB compromise, leakage), each with its mitigation, test and what is left over.
+- [x] Found by it, fixed: a blocked/restricted person could Burn Thread and wipe the other person's held tray.
+      **ADR-038**: their burn only clears it for themselves, indistinguishably (positions renumbered, old client ids
+      re-keyed). Migration `0030_burn_for_me`. Burn dialog no longer says "for both of you".
+- [x] **Photo check (ADR-039)**: refuse (sexual / graphic ≥ 0.9), hold (anything else flagged, or the check failing:
+      owner-only + an automatic report), or pass. Every photo read now names its viewer. Moderators: Dismiss releases,
+      "Remove photo" retires (a card keeps its words). Migration `0031_photo_check`. **Inert until `OPENAI_API_KEY`
+      is set** in `.env.local` and on Vercel. The model cannot judge `sexual/minors` in images (documented).
+- [x] Privacy 1.10.0 (no re-acceptance): the burn exception, the photo check, OpenAI as a provider.
+- [x] **Ably load test** (`scripts/loadtest/ably-ring.mjs`, from India, 2026-10-05): 25 → 50 → 100 → 150 listeners,
+      1,625 rings, 0 lost, 0 failed connects; ring → listener p50 86 ms, p95 251–373 ms, max 443 ms; connect p95
+      ~670 ms; site round trip p50 ~150 ms. Ring-to-screen ≈ 0.5 s at p95 — well under ADR-036's 1 s trigger.
+- [x] Local dev DB moved off Ohio (blocker 2).
+- [x] Tests: `whispers.test.ts` "Burn for me" (5, mutation `.dev/mutate-burn.mjs` 6/6), `photo-check.test.ts` (13,
+      mutation `.dev/mutate-photo.mjs` 7/7).
 
 ## 2026-10-04 — "Download my data" (ADR-037)
 
@@ -634,9 +656,10 @@ layers covered for them); direct tests of the recorder now catch both. All 15 ca
 ## Blockers / Open questions
 
 1. ~~Mail provider~~ **Done:** Resend, domain verified.
-2. ~~Neon dev branch~~ **Done:** `howdy_dev` on the old Ohio project's `dev` branch is what local dev uses. The Ohio
-   project (`dry-mode-62941068`) is otherwise only a rollback since the Singapore move — delete it ~2 weeks after
-   2026-10-01 (your call), after moving local dev's `howdy_dev` somewhere else (e.g. a `dev` branch of `howdy-sg`).
+2. ~~Neon dev branch~~ **Done:** since 2026-10-05 local dev uses `howdy_dev` on the `dev` branch of `howdy-sg`
+   (`still-violet-96054141`; schema-only off `main`, so no real member data; its own role `howdy_dev_owner`). The old
+   Ohio `howdy_dev` rows were copied over (873 rows, counts checked). The Ohio project (`dry-mode-62941068`) is now
+   only a rollback — delete it after ~2026-10-15 (your call); nothing local depends on it any more.
    ~~Unused `KV_*` Vercel variables~~ removed 2026-10-04.
 3. ~~First commit~~ **Done:** everything is on GitHub; pushing `main` deploys.
 4. ~~Schedule `pnpm jobs:purge`~~ **Done 2026-09-27**; ~~retention periods~~ **Done 2026-10-01**: audit log 12 months,
@@ -655,8 +678,8 @@ layers covered for them); direct tests of the recorder now catch both. All 15 ca
 - The sidebar now has eight links (Town Halls is `sidebarOnly`, so the phone tab bar stays at six; the desktop sidebar
   wraps — already true at seven before this phase).
 - Earlier deferrals still stand (non-Posse Whispers, no MFA/passkeys, fixed-window limiter, placeholder icons, e2e needs local Edge, no visual baselines, master prompt §49–50 items).
-- From the Whispers chat-service prompt (ADR-036), worth doing without Phoenix: a whole-of-Whispers threat-model
-  write-up (its §61) and a staged load test of the Ably ring path (100 → 1,000 listeners).
+- ~~Whispers threat model + Ably load test (ADR-036)~~ done 2026-10-05. The load test stops at 150 listeners (free
+  plan: 200 connections); go higher only on a paid plan.
 
 ## Next Task
 
@@ -665,13 +688,15 @@ since (Singapore move, Town Hall feed, Dynamic Island, Ably Whispers, Porch bio,
 call or waits for real use:
 
 1. ~~A self-service data export~~ **Done 2026-10-04** (ADR-037).
-2. Deleting the Ohio Neon project after ~2026-10-15 (blocker 2; move local dev's `howdy_dev` first).
-3. A whole-of-Whispers threat model and a staged Ably load test (ADR-036).
-4. Image moderation (deferred by you; worth revisiting now that Post Cards carry photos).
+2. Deleting the Ohio Neon project after ~2026-10-15 (blocker 2; local dev already moved off it 2026-10-05).
+3. ~~A whole-of-Whispers threat model and a staged Ably load test~~ **Done 2026-10-05** (ADR-038, see above).
+4. ~~Image moderation~~ **Built 2026-10-05** (ADR-039) — set `OPENAI_API_KEY` to turn it on. CSAM is not covered
+   by it (Cloudflare CSAM Scanning Tool or PhotoDNA, if wanted).
 5. Capsules to a Town Hall; Town Hall roles beyond owner/member and an approval-gated join; MFA/passkeys.
 6. Revisit whether Tribute/Mark giving should ever widen beyond Pals-only.
 
 ## Architectural Decisions
 
-ADR-001 … ADR-037 in `docs/decisions/`; lifecycle and deletion design in `docs/DATA_LIFECYCLE.md`.
+ADR-001 … ADR-039 in `docs/decisions/`; lifecycle and deletion design in `docs/DATA_LIFECYCLE.md`; Whispers threat model in
+`docs/WHISPERS_THREAT_MODEL.md`.
 

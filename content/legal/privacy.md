@@ -18,7 +18,7 @@ Howdy is run by {{operator}}, an individual based in {{country}} ("Howdy", "we",
 
 **Your Porch.** Your display name, your bio if you write one (a short line shown under your name), the colour of your portrait, your Portrait photo if you add one, your Signal (a short status), your Porch Light while it is on, and your settings: who can see your Porch and Signal, who can write on your Fence, and which Chimes you want.
 
-**Photos.** When you add a Portrait, or a photo to a Post Card, we re-make the picture ourselves (a small square for a Portrait; for a card, the whole picture at most 1280 pixels across). Anything hidden inside the original file, such as the location where it was taken or the camera used, is thrown away and never stored. A card's photo is shown only to the people who can see that card.
+**Photos.** When you add a Portrait, or a photo to a Post Card, we re-make the picture ourselves (a small square for a Portrait; for a card, the whole picture at most 1280 pixels across). Anything hidden inside the original file, such as the location where it was taken or the camera used, is thrown away and never stored. A card's photo is shown only to the people who can see that card. Before anyone else sees a new photo, an automatic check looks at a small copy of it for sexual content, violence and self-harm (see OpenAI under [Service providers](#service-providers)). A photo that is almost certainly explicit or graphic is turned down; one the check is unsure about is shown only to you until a moderator has looked at it.
 
 **What you post and do.** Post Cards and replies, Yos, Tributes you write or receive, Marks you give, Whispers you send, Time Capsules you seal, Town Halls you start or join, posts, replies and reactions in Town Halls, and reports you file.
 
@@ -54,7 +54,7 @@ Your settings decide most of it.
 - **Whispers** are only ever between the two people in the conversation.
 - **Town Halls:** the list of who is in a Town Hall, and its posts, replies and reactions, are visible only to its members. Its owner can remove any post in it.
 - **Blocks, mutes and restrictions** are private to you, and a block hides the two of you from each other.
-- **Moderators** can see reports and the content they are about (a Post Card, a photo, one reported Whisper, a Town Hall's name and description, a Town Hall post), and may act on them.
+- **Moderators** can see reports and the content they are about (a Post Card, a photo, one reported Whisper, a Town Hall's name and description, a Town Hall post), and photos the automatic check held back, and may act on them.
 
 ## Tracks and Shadow Walk
 
@@ -86,7 +86,7 @@ On your Pals page we may suggest people who are Pals with at least two of your P
 - **Private:** a Whisper can be read only by the two people in the conversation. You can only Whisper someone who is in your Pals, and a block or leaving Pals closes the conversation.
 - **If a Whisper is reported:** the person who received it can report that one Whisper, even after blocking you. Our moderators then see only that Whisper's words, never the rest of the conversation, and those words are kept with the report as evidence after the Whisper itself is deleted.
 - **No read receipts:** the other person is never told whether or when you read their message.
-- **Short-lived:** Whispers are deleted 7 days after they are sent. Either person can also Burn a Thread, which deletes it for both of you at once.
+- **Short-lived:** Whispers are deleted 7 days after they are sent. Either person can also Burn a Thread, which deletes it for both of you at once — with one exception, for safety: if one of you has blocked or restricted the other, a burn by the person who was blocked or restricted clears the thread only from their own view. The other person keeps it, so they can still report it, until it is deleted 7 days after being sent.
 - **Stored securely, not end-to-end encrypted.** Whispers travel over encrypted connections and are stored on our servers, so they are not end-to-end encrypted. Please do not use Whispers for passwords, financial details or anything you would not want stored for a week.
 
 ## How long we keep things
@@ -117,6 +117,7 @@ We use a few companies to run Howdy. They process data only to provide their ser
 - **Cloudflare:** stores Portrait and Post Card photos (R2) and provides our domain's DNS.
 - **Resend:** sends account emails.
 - A managed **Redis** provider: holds short-lived rate-limit counters.
+- **OpenAI:** checks new photos (above). It is sent only a small copy of the picture we made, never your name, call sign or anything else about you. OpenAI does not keep what its moderation service is sent and does not use it to train its models.
 - **Ably:** makes new Whispers appear at once. When a Whisper arrives, Howdy sends your browser a signal that simply says "something new" — never the words, never who sent it, and never your name. Ably sees your browser's connection (such as its IP address) while a Whispers page is open, but not who you are.
 
 These providers may store and process data outside {{country}}, including in the United States and Singapore.

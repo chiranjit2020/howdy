@@ -1,5 +1,11 @@
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
-import { messageForDelivery, purgeOldWhispers } from '@/modules/whispers';
+import {
+  listHeld,
+  messageForDelivery,
+  messageForReport,
+  purgeOldWhispers,
+  whispersExport,
+} from '@/modules/whispers';
 import { flushBackground } from '@/platform/background';
 import { getPool } from '@/platform/db';
 import { subscribe, type DomainEvent } from '@/platform/events';
@@ -529,6 +535,114 @@ describe('Burn Thread', () => {
     await say(a, b, 'x');
     await doAct(b.handle, 'block', as(a));
     expect((await burn(a.handle, as(b))).data.burned).toBe(1);
+    // Alice blocked Bob: her burn is a real one.
+    expect((await burn(b.handle, as(a))).data.burned).toBe(1);
+    expect(await count('conversations')).toBe(0);
+  });
+});
+
+describe('Burn for me (ADR-038): a blocked or restricted burner cannot wipe the other person’s copy', () => {
+  /**
+   * Everything the burner can observe, from burning on: answers, the thread, the list, positions, a retried client id,
+   * reading, and their download. Ids and times are left out; only what could tell the two kinds of burn apart is kept.
+   */
+  async function burnerSees(burner: P, other: P) {
+    const old = newId();
+    await say(burner, other, 'before 1', old);
+    await say(other, burner, 'before 2');
+    const out: unknown[] = [];
+    const shape = (m: { seq: number; body: string; mine: boolean }) => [m.seq, m.body, m.mine];
+    out.push((await burn(other.handle, as(burner))).data);
+    out.push((await burn(other.handle, as(burner))).data); // nothing left to burn
+    out.push((await threadOf(other.handle, as(burner))).data);
+    out.push((await threads(as(burner))).data);
+    out.push(await whisperBell(as(burner)));
+    later();
+    const retried = await whisper(other.handle, 'retry of an old id', as(burner), old);
+    out.push(retried.status, shape(retried.data.message!));
+    const next = await say(burner, other, 'after 2');
+    out.push(next.status, shape(next.data.message!));
+    out.push((await threadOf(other.handle, as(burner))).data.messages!.map(shape));
+    out.push((await threadOf(other.handle, as(burner), '?after=1')).data.messages!.map(shape));
+    out.push((await threadOf(other.handle, as(burner), '?before=2')).data.messages!.map(shape));
+    out.push((await readTo(other.handle, 1, as(burner))).data);
+    out.push((await readTo(other.handle, 99, as(burner))).data);
+    const mine = await whispersExport(await userId(burner.handle));
+    out.push(
+      mine.threads.map((t) => t.whispers.map((w) => [w.fromMe, w.body])),
+      mine.held.length,
+    );
+    return JSON.parse(
+      JSON.stringify(out, (k, v) =>
+        k === 'handle' || k === 'displayName' || k === 'at' || k === 'portraitTint' ? undefined : v,
+      ),
+    ) as unknown;
+  }
+
+  it('to the burner, a restricted burn and a block-free real burn look exactly the same', async () => {
+    const real = await friends();
+    // A restricted person never gets "Seen", which is what receipts-off looks like (ADR-021) — so compare with that.
+    expect((await patchRanch({ readReceipts: false }, as(real.a))).status).toBe(200);
+    const control = await burnerSees(real.b, real.a);
+    const quiet = await friends();
+    await doAct(quiet.b.handle, 'restrict', as(quiet.a)); // the second Alice restricts her Bob
+    const restricted = await burnerSees(quiet.b, quiet.a);
+    expect(restricted).toEqual(control);
+  });
+
+  it('the person who restricted keeps the whole thread and their held tray', async () => {
+    const { a, b } = await friends();
+    await doAct(b.handle, 'restrict', as(a));
+    const aliceSaid = await say(a, b, 'from alice');
+    await say(b, a, 'held from bob');
+    expect((await messageForReport(await userId(b.handle), aliceSaid.data.message!.id))?.body).toBe(
+      'from alice',
+    );
+    expect((await burn(a.handle, as(b))).data.burned).toBe(1);
+    expect(await bodies(a.handle, as(b))).toEqual([]);
+    expect((await threads(as(b))).data.threads).toEqual([]);
+    expect(await bodies(b.handle, as(a))).toEqual(['from alice']);
+    const aliceId = await userId(a.handle);
+    const tray = await listHeld(aliceId);
+    expect(tray.map((h) => h.body)).toEqual(['held from bob']);
+    expect((await messageForReport(aliceId, tray[0]!.id))?.body).toBe('held from bob');
+    // Bob can no longer reach what he burnt, even by id (he could report Alice's Whisper before).
+    const [fromAlice] = (await q(`select id from messages where body = 'from alice'`)).rows;
+    expect(await messageForReport(await userId(b.handle), fromAlice.id)).toBeNull();
+  });
+
+  it('after a block, the blocker can still report what the burner sent', async () => {
+    const { a, b } = await friends();
+    const abuse = await say(b, a, 'abuse');
+    await doAct(b.handle, 'block', as(a)); // alice blocks bob
+    expect((await burn(a.handle, as(b))).data.burned).toBe(1);
+    expect(await count('messages')).toBe(1);
+    expect((await messageForReport(await userId(a.handle), abuse.data.message!.id))?.body).toBe('abuse');
+  });
+
+  it('a block or restrict set BY the burner does not stop a real burn', async () => {
+    const { a, b } = await friends();
+    await say(b, a, 'x');
+    await doAct(b.handle, 'restrict', as(a)); // alice restricts bob, then alice burns
+    expect((await burn(b.handle, as(a))).data.burned).toBe(1);
+    expect(await count('messages')).toBe(0);
+  });
+
+  it('the burner’s new Whispers still reach the other person, each side with its own numbering', async () => {
+    const { a, b } = await friends();
+    await doAct(b.handle, 'restrict', as(a));
+    await say(a, b, 'before');
+    expect((await burn(a.handle, as(b))).data.burned).toBe(1);
+    await doAct(b.handle, 'unrestrict', as(a));
+    await say(b, a, 'after');
+    const seqs = async (handle: string, p: P) =>
+      (await threadOf(handle, as(p))).data.messages!.map((m) => [m.seq, m.body]);
+    expect(await seqs(b.handle, a)).toEqual([
+      [1, 'before'],
+      [2, 'after'],
+    ]);
+    expect(await seqs(a.handle, b)).toEqual([[1, 'after']]);
+    expect(await whisperBell(as(a))).toBe(1);
   });
 });
 

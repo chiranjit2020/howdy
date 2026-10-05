@@ -90,7 +90,7 @@ export async function buildDataExport(userId: string, now: Date = new Date()): P
   const photoEntries: ZipEntry[] = [];
   let portraitPath: string | null = null;
   // Read now, not when streamed: whether the file has a Portrait must be known before data.json is written.
-  const portrait = await readPortrait(userId).catch(() => null);
+  const portrait = await readPortrait(userId, { userId }).catch(() => null);
   if (portrait) {
     portraitPath = 'photos/portrait.webp';
     photoEntries.push({ name: portraitPath, read: async () => portrait.bytes });
@@ -99,7 +99,7 @@ export async function buildDataExport(userId: string, now: Date = new Date()): P
   const cardPhoto = (photoId: string | null): string | null => {
     if (!photoId) return null;
     const path = `photos/cards/${++n}.webp`;
-    photoEntries.push({ name: path, read: () => readCardPhoto(photoId).catch(() => null) });
+    photoEntries.push({ name: path, read: () => readCardPhoto(photoId, { userId }).catch(() => null) });
     return path;
   };
 

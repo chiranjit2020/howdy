@@ -8,6 +8,7 @@ export {
   fenceStanding,
   fenceStandings,
   getRelationshipView,
+  hasLimited,
   hiddenAuthors,
   listMyRelationships,
   relationshipOf,

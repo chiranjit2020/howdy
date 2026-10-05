@@ -3,7 +3,7 @@ import { and, asc, desc, eq, exists, inArray, lt, or, sql } from 'drizzle-orm';
 import { can } from '@/modules/authz';
 import { enforceNewAccountLimit } from '@/modules/moderation';
 import { bothShareReceipts, getCards, resolveHandle, type PersonCard } from '@/modules/profiles';
-import { fenceStanding, hiddenAuthors, posseMembersAmong } from '@/modules/relationships';
+import { fenceStanding, hasLimited, hiddenAuthors, posseMembersAmong } from '@/modules/relationships';
 import { getDb } from '@/platform/db';
 import { AppError } from '@/platform/errors';
 import { emit } from '@/platform/events';
@@ -61,9 +61,21 @@ interface MessageRow {
   createdAt: Date;
 }
 
-const toWire = (m: MessageRow, userId: string): WhisperMessage => ({
+/**
+ * "Burn for me" (ADR-038): how far this person has cleared the thread. They see nothing up to it, and every position they
+ * see or send is counted from it, so a cleared thread looks exactly like one that was burnt and started again.
+ */
+const clearedFor = (
+  c: { userLow: string; lowClearedSeq: number; highClearedSeq: number },
+  userId: string,
+): number => (c.userLow === userId ? c.lowClearedSeq : c.highClearedSeq);
+/** The message lies past my cleared position. Needs `conversations` joined. */
+export const pastCleared = (userId: string) =>
+  sql`${messages.seq} > case when ${conversations.userLow} = ${userId} then ${conversations.lowClearedSeq} else ${conversations.highClearedSeq} end`;
+
+const toWire = (m: MessageRow, userId: string, cleared = 0): WhisperMessage => ({
   id: m.id,
-  seq: m.seq,
+  seq: m.seq - cleared,
   clientId: m.clientId,
   body: m.body,
   mine: m.senderId === userId,
@@ -96,6 +108,7 @@ export async function messageForReport(
         inArray(messages.status, ['sent', 'held']),
         sql`${messages.senderId} <> ${userId}`,
         or(eq(conversations.userLow, userId), eq(conversations.userHigh, userId)),
+        pastCleared(userId),
       ),
     )
     .limit(1);
@@ -166,6 +179,7 @@ export async function sendWhisper(
       .where(pairWhere(userId, acc.other.userId))
       .for('update');
     if (!conv) throw new AppError('INTERNAL');
+    // Clearing the thread re-keyed my earlier client ids, so a retry only ever finds a Whisper sent since.
     const [again] = await tx
       .select()
       .from(messages)
@@ -214,7 +228,10 @@ export async function sendWhisper(
       held: outcome.row.status === 'held',
     });
   }
-  return { message: toWire(outcome.row, userId), created: outcome.created };
+  return {
+    message: toWire(outcome.row, userId, clearedFor(outcome.conv, userId)),
+    created: outcome.created,
+  };
 }
 
 // ─── reading a thread ────────────────────────────────────────────────────────────────────────────────────────────────
@@ -256,24 +273,36 @@ export async function getThread(
     db.select().from(conversations).where(pairWhere(userId, acc.other.userId)),
     acc.restricted ? false : bothShareReceipts(userId, acc.other.userId),
   ]);
+  const cleared = conv ? clearedFor(conv, userId) : 0;
   // Present even before the first Whisper, so a page opened on an empty thread knows to watch for "Seen".
   const seen = shared
-    ? { seenUpTo: !conv ? 0 : order(userId, acc.other.userId).meIsLow ? conv.highReadSeq : conv.lowReadSeq }
+    ? {
+        seenUpTo: !conv
+          ? 0
+          : Math.max(
+              0,
+              (order(userId, acc.other.userId).meIsLow ? conv.highReadSeq : conv.lowReadSeq) - cleared,
+            ),
+      }
     : {};
   if (!conv) return { person, messages: [], hasMore: false, ...seen };
 
-  const inThread = and(eq(messages.conversationId, conv.id), visibleTo(userId));
+  const inThread = and(
+    eq(messages.conversationId, conv.id),
+    visibleTo(userId),
+    sql`${messages.seq} > ${cleared}`,
+  );
   if (q.after !== undefined) {
     const limit = Math.min(q.limit ?? SYNC_BATCH, THREAD_MAX_PAGE_SIZE);
     const rows = await db
       .select()
       .from(messages)
-      .where(and(inThread, sql`${messages.seq} > ${q.after}`))
+      .where(and(inThread, sql`${messages.seq} > ${q.after + cleared}`))
       .orderBy(asc(messages.seq))
       .limit(limit + 1);
     return {
       person,
-      messages: rows.slice(0, limit).map((m) => toWire(m, userId)),
+      messages: rows.slice(0, limit).map((m) => toWire(m, userId, cleared)),
       hasMore: rows.length > limit,
       ...seen,
     };
@@ -282,7 +311,7 @@ export async function getThread(
   const rows = await db
     .select()
     .from(messages)
-    .where(q.before !== undefined ? and(inThread, lt(messages.seq, q.before)) : inThread)
+    .where(q.before !== undefined ? and(inThread, lt(messages.seq, q.before + cleared)) : inThread)
     .orderBy(desc(messages.seq))
     .limit(limit + 1);
   return {
@@ -290,7 +319,7 @@ export async function getThread(
     messages: rows
       .slice(0, limit)
       .reverse()
-      .map((m) => toWire(m, userId)),
+      .map((m) => toWire(m, userId, cleared)),
     hasMore: rows.length > limit,
     ...seen,
   };
@@ -310,18 +339,22 @@ export async function markThreadRead(
   if (!acc) throw new AppError('NOT_FOUND');
   const { meIsLow } = order(userId, acc.other.userId);
   const col = meIsLow ? conversations.lowReadSeq : conversations.highReadSeq;
+  const clearedCol = meIsLow ? conversations.lowClearedSeq : conversations.highClearedSeq;
+  // `upTo` counts from my cleared position (ADR-038), like every position I am shown.
   const [row] = await getDb()
     .update(conversations)
     .set(
       meIsLow
-        ? { lowReadSeq: sql`greatest(${conversations.lowReadSeq}, least(${upTo}, ${conversations.lastSeq}))` }
+        ? {
+            lowReadSeq: sql`greatest(${conversations.lowReadSeq}, least(${upTo} + ${conversations.lowClearedSeq}, ${conversations.lastSeq}))`,
+          }
         : {
-            highReadSeq: sql`greatest(${conversations.highReadSeq}, least(${upTo}, ${conversations.lastSeq}))`,
+            highReadSeq: sql`greatest(${conversations.highReadSeq}, least(${upTo} + ${conversations.highClearedSeq}, ${conversations.lastSeq}))`,
           },
     )
     .where(pairWhere(userId, acc.other.userId))
-    .returning({ read: col });
-  return { readUpTo: row?.read ?? 0 };
+    .returning({ read: col, cleared: clearedCol });
+  return { readUpTo: row ? Math.max(0, row.read - row.cleared) : 0 };
 }
 
 // ─── the list of threads ─────────────────────────────────────────────────────────────────────────────────────────────
@@ -350,6 +383,7 @@ async function unreadByThread(userId: string, conversationIds: string[]): Promis
         inArray(messages.conversationId, conversationIds),
         sql`${messages.senderId} <> ${userId}`,
         eq(messages.status, 'sent'),
+        pastCleared(userId),
         sql`${messages.seq} > case when ${conversations.userLow} = ${userId} then ${conversations.lowReadSeq} else ${conversations.highReadSeq} end`,
       ),
     )
@@ -385,7 +419,8 @@ export async function listThreads(userId: string): Promise<ThreadSummary[]> {
         createdAt: messages.createdAt,
       })
       .from(messages)
-      .where(and(inArray(messages.conversationId, ids), visibleTo(userId)))
+      .innerJoin(conversations, eq(conversations.id, messages.conversationId))
+      .where(and(inArray(messages.conversationId, ids), visibleTo(userId), pastCleared(userId)))
       .orderBy(messages.conversationId, desc(messages.seq)),
   ]);
   const lastOf = new Map(lasts.map((l) => [l.conversationId, l]));
@@ -438,6 +473,7 @@ export async function listHeld(userId: string): Promise<HeldWhisper[]> {
         eq(messages.status, 'held'),
         sql`${messages.senderId} <> ${userId}`,
         or(eq(conversations.userLow, userId), eq(conversations.userHigh, userId)),
+        pastCleared(userId),
       ),
     )
     .orderBy(desc(messages.createdAt), desc(messages.id))
@@ -497,16 +533,41 @@ export async function unreadThreads(userId: string): Promise<number> {
  * "Burn Thread": delete the whole thread for both people, at once and for good. Either person can, always (undoing or ending
  * a conversation is never gated by Posse or block). The answer is the same for a person who does not exist and a thread that
  * does not, so it reveals nothing.
+ *
+ * Except (ADR-038): someone the other person has blocked or restricted only burns it for THEMSELVES, so a harasser cannot
+ * wipe the evidence the other person may still want to report (their held tray above all). To the burner it is
+ * indistinguishable from a real burn — same answer, the thread gone, and anything sent next numbered from 1 again.
  */
 export async function burnThread(userId: string, handle: string): Promise<{ burned: number }> {
   await enforceRateLimit(`whisper:manage:${userId}`, RATE.manage);
   const other = await resolveHandle(handle);
   if (!other || other.userId === userId) return { burned: 0 };
+  if (await hasLimited(other.userId, userId)) return clearForMe(userId, other.userId);
   const rows = await getDb()
     .delete(conversations)
     .where(pairWhere(userId, other.userId))
     .returning({ id: conversations.id });
   return { burned: rows.length };
+}
+
+/** "Burn for me" (ADR-038): hide everything so far from `userId` alone. Answers exactly as `burnThread` would. */
+async function clearForMe(userId: string, otherId: string): Promise<{ burned: number }> {
+  return getDb().transaction(async (tx: Tx) => {
+    const [conv] = await tx.select().from(conversations).where(pairWhere(userId, otherId)).for('update');
+    // Already cleared to the end: to me there is no thread, as after a real burn.
+    if (!conv || conv.lastSeq <= clearedFor(conv, userId)) return { burned: 0 };
+    const meIsLow = conv.userLow === userId;
+    await tx
+      .update(conversations)
+      .set(meIsLow ? { lowClearedSeq: conv.lastSeq } : { highClearedSeq: conv.lastSeq })
+      .where(eq(conversations.id, conv.id));
+    // A real burn forgets my client ids, so re-sending an old one would make a new Whisper. Re-key mine so it does here too.
+    await tx
+      .update(messages)
+      .set({ clientId: sql`gen_random_uuid()::text` })
+      .where(and(eq(messages.conversationId, conv.id), eq(messages.senderId, userId)));
+    return { burned: 1 };
+  });
 }
 
 // ─── live delivery ───────────────────────────────────────────────────────────────────────────────────────────────────
@@ -522,15 +583,22 @@ export async function messageForDelivery(
   seq: number,
 ): Promise<{ handle: string; message: WhisperMessage } | null> {
   const [row] = await getDb()
-    .select({ m: messages, low: conversations.userLow, high: conversations.userHigh })
+    .select({ m: messages, c: conversations })
     .from(messages)
     .innerJoin(conversations, eq(conversations.id, messages.conversationId))
-    .where(and(eq(messages.conversationId, conversationId), eq(messages.seq, seq), visibleTo(userId)));
-  if (!row || (row.low !== userId && row.high !== userId)) return null;
-  const otherId = row.low === userId ? row.high : row.low;
+    .where(
+      and(
+        eq(messages.conversationId, conversationId),
+        eq(messages.seq, seq),
+        visibleTo(userId),
+        pastCleared(userId),
+      ),
+    );
+  if (!row || (row.c.userLow !== userId && row.c.userHigh !== userId)) return null;
+  const otherId = row.c.userLow === userId ? row.c.userHigh : row.c.userLow;
   if (!(await posseMembersAmong(userId, [otherId])).has(otherId)) return null;
   const other = (await getCards([otherId])).get(otherId);
-  return other ? { handle: other.handle, message: toWire(row.m, userId) } : null;
+  return other ? { handle: other.handle, message: toWire(row.m, userId, clearedFor(row.c, userId)) } : null;
 }
 
 // ─── retention ───────────────────────────────────────────────────────────────────────────────────────────────────────

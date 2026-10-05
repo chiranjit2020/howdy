@@ -187,6 +187,27 @@ export async function fenceStanding(
 }
 
 /**
+ * Has `ownerId` blocked or restricted `actorId`? Only the owner's own choices count (a block the actor set is not one).
+ * For a server-side decision that must never be shown to the actor (ADR-038: such a person's Burn Thread only clears it
+ * for themselves).
+ */
+export async function hasLimited(ownerId: string, actorId: string): Promise<boolean> {
+  if (ownerId === actorId) return false;
+  const [row] = await getDb()
+    .select({ k: userControls.kind })
+    .from(userControls)
+    .where(
+      and(
+        eq(userControls.actorId, ownerId),
+        eq(userControls.targetId, actorId),
+        inArray(userControls.kind, ['block', 'restrict']),
+      ),
+    )
+    .limit(1);
+  return Boolean(row);
+}
+
+/**
  * Of `otherIds`, who is `userId` currently in each other's Posse with AND not in a block with (either direction)? Those are the
  * people a Whisper thread is still open with. Two queries for the whole list.
  */

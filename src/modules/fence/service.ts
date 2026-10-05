@@ -19,6 +19,10 @@ import {
 import type { PortraitTint } from '@/shared/validation/profile';
 import { decodeCursor, encodeCursor, type Cursor } from '@/platform/cursor';
 
+/** A card photo held by the photo check (ADR-039) is shown only to the person who posted it. */
+export const photoShownTo = (viewerId: string | null) =>
+  viewerId ? or(eq(media.held, false), eq(media.ownerId, viewerId)) : eq(media.held, false);
+
 const rule = (limit: number, windowSec: number): RateLimitRule => ({ limit, windowSec });
 
 const isReactionKind = (k: string): k is ReactionKind => (REACTION_KINDS as readonly string[]).includes(k);
@@ -214,7 +218,14 @@ async function hydrate(
     db
       .select({ id: media.id, cardId: media.cardId, width: media.width, height: media.height })
       .from(media)
-      .where(and(inArray(media.cardId, ids), eq(media.kind, 'card_photo'), eq(media.status, 'ready'))),
+      .where(
+        and(
+          inArray(media.cardId, ids),
+          eq(media.kind, 'card_photo'),
+          eq(media.status, 'ready'),
+          photoShownTo(viewerId),
+        ),
+      ),
   ]);
   const photoByCard = new Map(photos.map((p) => [p.cardId!, p]));
 
@@ -720,7 +731,14 @@ export async function listWaiting(ownerId: string): Promise<Waiting> {
       ? db
           .select({ id: media.id, cardId: media.cardId, width: media.width, height: media.height })
           .from(media)
-          .where(and(inArray(media.cardId, cardIds), eq(media.kind, 'card_photo'), eq(media.status, 'ready')))
+          .where(
+            and(
+              inArray(media.cardId, cardIds),
+              eq(media.kind, 'card_photo'),
+              eq(media.status, 'ready'),
+              photoShownTo(ownerId),
+            ),
+          )
       : Promise.resolve([]),
   ]);
   const photoByCard = new Map(photos.map((p) => [p.cardId!, p]));
@@ -767,7 +785,14 @@ export async function cardPhotoFor(viewer: Actor, cardId: string): Promise<strin
     getDb()
       .select({ id: media.id })
       .from(media)
-      .where(and(eq(media.cardId, card.id), eq(media.kind, 'card_photo'), eq(media.status, 'ready')))
+      .where(
+        and(
+          eq(media.cardId, card.id),
+          eq(media.kind, 'card_photo'),
+          eq(media.status, 'ready'),
+          photoShownTo(viewerId),
+        ),
+      )
       .limit(1),
   ]);
   if (hidden.has(card.authorId) || !authors.has(card.authorId)) return null;

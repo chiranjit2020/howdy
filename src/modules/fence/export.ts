@@ -1,6 +1,7 @@
 import { cardReplies, media, postCards, yos } from '@db/schema';
 import { and, asc, eq, inArray, ne } from 'drizzle-orm';
 import { getDb } from '@/platform/db';
+import { photoShownTo } from './service';
 
 /**
  * The Fence part of "Download my data" (ADR-037), as raw rows with user ids: the app layer names people and leaves out
@@ -108,7 +109,12 @@ export async function fenceExport(userId: string): Promise<FenceExport> {
           .select({ id: media.id, cardId: media.cardId })
           .from(media)
           .where(
-            and(inArray(media.cardId, cardIds), eq(media.kind, 'card_photo'), eq(media.status, 'ready')),
+            and(
+              inArray(media.cardId, cardIds),
+              eq(media.kind, 'card_photo'),
+              eq(media.status, 'ready'),
+              photoShownTo(userId),
+            ),
           ),
   ]);
   const photoOf = new Map(photos.map((p) => [p.cardId!, p.id]));

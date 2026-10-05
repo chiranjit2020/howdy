@@ -463,7 +463,7 @@ export function ThreadView({
         open={burning}
         destructive
         title="Burn this thread?"
-        description={`Every Whisper between you and ${displayName} is deleted for both of you, for good. This cannot be undone.`}
+        description={`Every Whisper between you and ${displayName} is deleted, for good. This cannot be undone.`}
         confirmLabel="Burn it"
         loading={busy === 'burn'}
         onCancel={() => setBurning(false)}

@@ -36,7 +36,7 @@ export const GET = route(async ({ req, params, requestId }) => {
     'Cross-Origin-Resource-Policy': 'same-origin',
   });
   if (req.headers.get('if-none-match') === etag) return new Response(null, { status: 304, headers });
-  const bytes = await readCardPhoto(mediaId);
+  const bytes = await readCardPhoto(mediaId, { userId: session?.user.id ?? null });
   if (!bytes) throw new AppError('NOT_FOUND');
   headers.set('Content-Type', 'image/webp');
   headers.set('Content-Length', String(bytes.length));

@@ -45,7 +45,7 @@ export async function AppFrame({
     unreadThreads(user.id).catch(() => 0),
     countMyInvites(user.id).catch(() => 0),
     getOwnRanch(user.id).catch(() => null),
-    getPortraitVersion(user.id).catch(() => null),
+    getPortraitVersion(user.id, { userId: user.id }).catch(() => null),
     // Best-effort like the rest: if the check itself fails, let the person in rather than take every page down.
     askToAgree ? pendingAcceptances(user.id).catch(() => []) : Promise.resolve([]),
     isModerator(user.id).catch(() => false),

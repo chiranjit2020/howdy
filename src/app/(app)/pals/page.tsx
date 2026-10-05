@@ -13,7 +13,7 @@ export const metadata = { title: 'Pals' };
 export default async function PossePage() {
   const user = await requireUser();
   const [lists, suggestions] = await Promise.all([
-    listMyRelationships(user.id).then(withCards),
+    listMyRelationships(user.id).then((r) => withCards(r, user.id)),
     // Best-effort: suggestions are an extra, never a reason for the Pals page to fail.
     palSuggestions(user.id).catch(() => []),
   ]);

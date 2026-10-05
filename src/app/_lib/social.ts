@@ -25,7 +25,7 @@ export async function targetFor(handle: string | undefined): Promise<PersonCard>
 export async function portraitsFor(viewerId: string, handles: string[]): Promise<Map<string, string>> {
   try {
     const viewable = await viewableRanches(viewerId, handles);
-    const versions = await getPortraitVersions([...viewable.values()]);
+    const versions = await getPortraitVersions([...viewable.values()], { userId: viewerId });
     const out = new Map<string, string>();
     for (const [handle, id] of viewable) {
       const version = versions.get(id);
@@ -77,13 +77,13 @@ export type RelationshipLists = Record<
 };
 
 /** Attach names (and Pals' photos) to every list, dropping people whose account is no longer active. */
-export async function withCards(rel: MyRelationships): Promise<RelationshipLists> {
+export async function withCards(rel: MyRelationships, viewerId: string): Promise<RelationshipLists> {
   const keys = ['posse', 'incoming', 'outgoing', 'scouting', 'blocked', 'muted', 'restricted'] as const;
   const palIds = rel.posse.map((p) => p.userId);
   const [cards, photos] = await Promise.all([
     getCards(keys.flatMap((k) => rel[k].map((p) => p.userId))),
     // Best-effort: a problem here just means initials show.
-    getPortraitVersions(palIds).catch(() => new Map<string, string>()),
+    getPortraitVersions(palIds, { userId: viewerId }).catch(() => new Map<string, string>()),
   ]);
   const entries = (refs: (PersonRef & { closeByMe?: boolean })[]): PersonEntry[] =>
     refs.flatMap((r) => {

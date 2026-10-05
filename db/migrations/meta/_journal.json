@@ -211,6 +211,20 @@
       "when": 1790883741396,
       "tag": "0029_profile_bio",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1791172201170,
+      "tag": "0030_burn_for_me",
+      "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1791173245672,
+      "tag": "0031_photo_check",
+      "breakpoints": true
     }
   ]
 }

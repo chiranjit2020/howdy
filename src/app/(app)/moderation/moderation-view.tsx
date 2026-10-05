@@ -51,6 +51,12 @@ const SUBJECT: Record<
     gone: 'The photo has since been changed or removed.',
     remove: { action: 'remove_portrait', label: 'Remove photo' },
   },
+  card_photo: {
+    label: 'Card photo',
+    said: '',
+    gone: 'The photo has since been removed.',
+    remove: { action: 'remove_card_photo', label: 'Remove photo' },
+  },
   whisper: {
     label: 'Whisper',
     said: 'The reported Whisper said:',
@@ -267,11 +273,19 @@ function Queue({ initial }: { initial: QueuePage }) {
                   </span>
                   <RelativeTime date={r.createdAt} className="text-metadata text-text-secondary" />
                 </div>
-                <p className="text-body text-text-secondary">
-                  <Person who={r.reporter} gone="A former member" /> reported{' '}
-                  <Person who={r.target} gone="an account that no longer exists" />
-                </p>
-                {r.cardHasPhoto && (
+                {r.automatic ? (
+                  <p className="text-body text-text-secondary">
+                    The photo check held a photo by{' '}
+                    <Person who={r.target} gone="an account that no longer exists" />. Only they can see it
+                    until you decide: Dismiss shows it to everyone again.
+                  </p>
+                ) : (
+                  <p className="text-body text-text-secondary">
+                    <Person who={r.reporter} gone="A former member" /> reported{' '}
+                    <Person who={r.target} gone="an account that no longer exists" />
+                  </p>
+                )}
+                {(r.cardHasPhoto || (r.subject === 'card_photo' && r.canRemove)) && (
                   <Img
                     src={`/api/moderation/reports/${r.id}/card-photo`}
                     width={240}

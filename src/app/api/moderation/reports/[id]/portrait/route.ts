@@ -15,7 +15,7 @@ export const GET = route(async ({ req, params }) => {
   const { user } = await requireSession(req);
   const reported = await reportedPortrait(user.id, (await params).id ?? '');
   if (!reported) throw new AppError('NOT_FOUND');
-  const portrait = await readPortrait(reported.ownerId);
+  const portrait = await readPortrait(reported.ownerId, 'moderator');
   if (!portrait || portrait.version !== reported.mediaId) throw new AppError('NOT_FOUND');
   return new Response(new Uint8Array(portrait.bytes), {
     status: 200,

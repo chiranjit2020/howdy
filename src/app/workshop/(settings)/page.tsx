@@ -19,8 +19,8 @@ export default async function WorkshopPage() {
   const [ranch, prefs, lists, photo] = await Promise.all([
     getOwnRanch(user.id),
     getPrefs(user.id),
-    listMyRelationships(user.id).then(withCards),
-    getPortraitVersion(user.id).catch(() => null),
+    listMyRelationships(user.id).then((r) => withCards(r, user.id)),
+    getPortraitVersion(user.id, { userId: user.id }).catch(() => null),
   ]);
   return (
     <main id="main" className="mx-auto flex max-w-xl flex-col gap-4 py-4 sm:gap-6 sm:py-8">

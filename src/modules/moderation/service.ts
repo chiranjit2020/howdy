@@ -87,6 +87,29 @@ export async function createReport(
     .onConflictDoNothing();
 }
 
+/**
+ * The photo check held a photo (ADR-039): put it in front of a moderator as a report with no reporter. Its owner is
+ * not told. Such reports never count towards auto-hold (that counts distinct REPORTERS).
+ */
+export async function filePhotoCheckReport(held: {
+  mediaId: string;
+  ownerId: string;
+  kind: 'portrait' | 'card_photo';
+  summary: string;
+}): Promise<void> {
+  await getDb()
+    .insert(reports)
+    .values({
+      reporterId: null,
+      targetUserId: held.ownerId,
+      reason: 'inappropriate',
+      subject: held.kind,
+      source: 'photo_check',
+      details: held.summary.slice(0, 500),
+      mediaId: held.mediaId,
+    });
+}
+
 // ─── the moderator gate ──────────────────────────────────────────────────────────────────────────────────────────────
 
 /** Does this role reach the queue? `admin` is reserved for capabilities not built yet — both pass the same gate today. */
@@ -123,6 +146,7 @@ export type ModerationAuditEvent =
   | 'whisper_removed'
   | 'town_hall_removed'
   | 'portrait_removed'
+  | 'card_photo_removed'
   | 'hall_post_removed';
 
 /** Append to the shared security audit trail (`audit_log`). `moderatorId` is the actor; everything else is `meta`. */
@@ -179,6 +203,8 @@ export interface QueueItem {
   subject: ReportSubject;
   details: string | null;
   evidenceText: string | null;
+  /** Filed by the photo check (ADR-039), not a person: the photo is hidden from everyone but its owner until decided. */
+  automatic: boolean;
   /** True when the reported thing (card, photo, Whisper, Town Hall) still exists and can be removed from here. */
   canRemove: boolean;
   /** `canRemove` for a Post Card (kept for the card flow's callers). */
@@ -208,6 +234,7 @@ interface Row {
   targetUserId: string | null;
   reason: string;
   subject: string;
+  source: string;
   details: string | null;
   evidenceText: string | null;
   cardId: string | null;
@@ -280,6 +307,7 @@ export async function listQueue(
       details: r.details,
       subject: r.subject as ReportSubject,
       evidenceText: r.evidenceText,
+      automatic: r.source === 'photo_check',
       canRemove: live.has(r.id),
       canRemoveCard: r.subject === 'card' && live.has(r.id),
       cardHasPhoto: r.subject === 'card' && r.cardId !== null && withPhoto.has(r.cardId),
@@ -342,6 +370,7 @@ async function stillThere(rows: Row[]): Promise<Set<string>> {
       whisper: r.messageId,
       town_hall: r.townHallId,
       portrait: r.mediaId,
+      card_photo: r.mediaId,
       hall_post: r.hallPostId,
       person: null,
     })[r.subject as ReportSubject] ?? null;
@@ -440,10 +469,23 @@ async function suspendInTx(tx: Tx, targetUserId: string, how: SuspendWith): Prom
   return changed.length > 0;
 }
 
-/** Close a report without acting on it — it looked fine, or nothing more can be done. */
-export async function dismissReport(moderatorId: string, reportId: string): Promise<void> {
-  await reportToActOn(moderatorId, reportId);
-  await getDb().transaction((tx) => closeReport(tx, moderatorId, reportId, 'dismissed'));
+/**
+ * Close a report without acting on it — it looked fine, or nothing more can be done. A photo the report is about that
+ * the photo check held (ADR-039) is released to everyone who may see it: `release` is wired in by the app layer, as
+ * only the media module touches photos. It runs inside the report's transaction.
+ */
+export async function dismissReport(
+  moderatorId: string,
+  reportId: string,
+  release?: (mediaId: string) => Promise<boolean>,
+): Promise<void> {
+  const row = await reportToActOn(moderatorId, reportId);
+  await getDb().transaction(async (tx) => {
+    await closeReport(tx, moderatorId, reportId, 'dismissed');
+    if (release && row.mediaId && (row.subject === 'portrait' || row.subject === 'card_photo')) {
+      await release(row.mediaId);
+    }
+  });
   await auditModAction('report_dismissed', moderatorId, { reportId });
 }
 
@@ -460,16 +502,24 @@ export async function removeReportedCard(moderatorId: string, reportId: string):
 }
 
 /** The report must be about this kind of thing, and still point at it; otherwise 400 with a plain reason. */
-function pointerFor(row: Row, subject: 'whisper' | 'town_hall' | 'portrait' | 'hall_post'): string {
+function pointerFor(
+  row: Row,
+  subject: 'whisper' | 'town_hall' | 'portrait' | 'card_photo' | 'hall_post',
+): string {
   const id = {
     whisper: row.messageId,
     town_hall: row.townHallId,
     portrait: row.mediaId,
+    card_photo: row.mediaId,
     hall_post: row.hallPostId,
   }[subject];
-  const what = { whisper: 'a Whisper', town_hall: 'a Town Hall', portrait: 'a photo', hall_post: 'a post' }[
-    subject
-  ];
+  const what = {
+    whisper: 'a Whisper',
+    town_hall: 'a Town Hall',
+    portrait: 'a photo',
+    card_photo: 'a photo',
+    hall_post: 'a post',
+  }[subject];
   if (row.subject !== subject)
     throw new AppError('BAD_REQUEST', { message: `This report is not about ${what}.` });
   if (!id) throw new AppError('BAD_REQUEST', { message: `That ${what.slice(2)} is already gone.` });
@@ -537,6 +587,28 @@ export async function removeReportedPortrait(
 }
 
 /**
+ * Take down the exact Post Card photo a report is about (ADR-039; today filed only by the photo check), and close the
+ * report. The card itself stays, without its photo. `retire` is `media.retireCardPhoto`, as for Portraits.
+ */
+export async function removeReportedCardPhoto(
+  moderatorId: string,
+  reportId: string,
+  retire: (ownerId: string, mediaId: string) => Promise<boolean>,
+): Promise<void> {
+  const row = await reportToActOn(moderatorId, reportId);
+  const mediaId = pointerFor(row, 'card_photo');
+  const ownerId = row.targetUserId;
+  if (!ownerId) throw new AppError('BAD_REQUEST', { message: 'The reported account no longer exists.' });
+  await getDb().transaction(async (tx) => {
+    await closeReport(tx, moderatorId, reportId, 'actioned');
+    if (!(await retire(ownerId, mediaId))) {
+      throw new AppError('CONFLICT', { message: 'That photo has already been removed.' });
+    }
+  });
+  await auditModAction('card_photo_removed', moderatorId, { reportId, mediaId });
+}
+
+/**
  * For showing a moderator the photo on a reported Post Card (ADR-031): its media id while the card is still there.
  * Null unless the report is about a card that carries a photo. Moderator only.
  */
@@ -544,6 +616,8 @@ export async function reportedCardPhoto(moderatorId: string, reportId: string): 
   await requireModerator(moderatorId);
   await enforceRateLimit(`moderation:read:${moderatorId}`, RATE.read);
   const row = await loadReport(reportId);
+  // A card photo the photo check held (ADR-039): that exact photo, card or not yet.
+  if (row?.subject === 'card_photo') return row.mediaId;
   if (!row || row.subject !== 'card' || !row.cardId) return null;
   const [photo] = await getDb()
     .select({ id: media.id })

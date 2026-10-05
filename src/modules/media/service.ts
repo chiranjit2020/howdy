@@ -1,13 +1,15 @@
 import { randomUUID } from 'node:crypto';
 import { media } from '@db/schema';
-import { and, count, eq, inArray, isNull, lt, sql } from 'drizzle-orm';
+import { and, count, eq, inArray, isNull, lt, or, sql } from 'drizzle-orm';
 import { getDb } from '@/platform/db';
 import { AppError } from '@/platform/errors';
+import { emit } from '@/platform/events';
 import { logger } from '@/platform/logger';
+import { photoChecker } from '@/platform/photo-check';
 import { enforceRateLimit } from '@/platform/rate-limit';
 import { getObjectStore, type UploadTarget } from '@/platform/storage';
 import { PORTRAIT_MAX_BYTES, type PortraitType } from '@/shared/validation/media';
-import { processCardPhoto, processPortrait } from './image';
+import { previewForCheck, processCardPhoto, processPortrait } from './image';
 
 const rule = (limit: number, windowSec: number) => ({ limit, windowSec });
 export const RATE = {
@@ -63,6 +65,29 @@ async function destroy(
     }
   }
   return done;
+}
+
+/** Who is looking at a photo. A held one (ADR-039) is shown only to its owner and to moderators. */
+export type PhotoViewer = { userId: string | null } | 'moderator';
+const shownTo = (viewer: PhotoViewer) =>
+  viewer === 'moderator'
+    ? undefined
+    : viewer.userId
+      ? or(eq(media.held, false), eq(media.ownerId, viewer.userId))
+      : eq(media.held, false);
+
+const REFUSED = 'We can’t use that photo on Howdy. Please choose a different one.';
+
+/**
+ * The photo check (ADR-039) on the photo we are about to store. Null when the check is not set up. It sees only our
+ * re-encoded pixels, never the upload itself.
+ */
+async function checkPhoto(processed: Buffer) {
+  const check = photoChecker();
+  if (!check) return null;
+  const verdict = await check(await previewForCheck(processed));
+  if (verdict.verdict !== 'ok') log.info({ event: 'photo_check.' + verdict.verdict });
+  return verdict;
 }
 
 export interface StartedUpload {
@@ -147,6 +172,9 @@ export async function completePortrait(userId: string, mediaId: string): Promise
     await destroy([pending]);
     throw err;
   }
+  const check = await checkPhoto(processed.data);
+  if (check?.verdict === 'refuse') return reject(REFUSED);
+  const held = check?.verdict === 'hold';
 
   const finalKey = `portraits/${randomUUID()}.webp`;
   await store().put(finalKey, processed.data, 'image/webp');
@@ -169,6 +197,7 @@ export async function completePortrait(userId: string, mediaId: string): Promise
           byteSize: processed.data.length,
           width: processed.width,
           height: processed.height,
+          held,
           updatedAt: sql`now()`,
         })
         .where(and(eq(media.id, pending.id), eq(media.status, 'pending')))
@@ -192,6 +221,15 @@ export async function completePortrait(userId: string, mediaId: string): Promise
 
   // Clean up after the fact: the raw upload and the Portrait that was replaced (each: object first, then its row).
   await destroy(retired);
+  if (check?.verdict === 'hold') {
+    emit({
+      type: 'photo.held',
+      mediaId: pending.id,
+      ownerId: userId,
+      kind: 'portrait',
+      summary: check.summary,
+    });
+  }
   return { version: pending.id };
 }
 
@@ -264,6 +302,9 @@ export async function completeCardPhoto(
     await destroy([pending]);
     throw err;
   }
+  const check = await checkPhoto(processed.data);
+  if (check?.verdict === 'refuse') return reject(REFUSED);
+  const held = check?.verdict === 'hold';
   const finalKey = `cards/${randomUUID()}.webp`;
   await store().put(finalKey, processed.data, 'image/webp');
   let raw: { id: string; objectKey: string };
@@ -278,6 +319,7 @@ export async function completeCardPhoto(
           byteSize: processed.data.length,
           width: processed.width,
           height: processed.height,
+          held,
           updatedAt: sql`now()`,
         })
         .where(and(eq(media.id, pending.id), eq(media.status, 'pending')))
@@ -297,6 +339,15 @@ export async function completeCardPhoto(
     throw err;
   }
   await destroy([raw]);
+  if (check?.verdict === 'hold') {
+    emit({
+      type: 'photo.held',
+      mediaId: pending.id,
+      ownerId: userId,
+      kind: 'card_photo',
+      summary: check.summary,
+    });
+  }
   return { mediaId: pending.id, width: processed.width, height: processed.height };
 }
 
@@ -304,11 +355,13 @@ export async function completeCardPhoto(
  * The bytes of a card photo. This does NOT decide who may look: the caller has already applied the card's own rules
  * (fence.cardPhotoFor) and passes the id it got from there.
  */
-export async function readCardPhoto(mediaId: string): Promise<Buffer | null> {
+export async function readCardPhoto(mediaId: string, viewer: PhotoViewer): Promise<Buffer | null> {
   const [row] = await getDb()
     .select({ objectKey: media.objectKey })
     .from(media)
-    .where(and(eq(media.id, mediaId), eq(media.kind, 'card_photo'), eq(media.status, 'ready')))
+    .where(
+      and(eq(media.id, mediaId), eq(media.kind, 'card_photo'), eq(media.status, 'ready'), shownTo(viewer)),
+    )
     .limit(1);
   if (!row) return null;
   return store().get(row.objectKey, SERVE_MAX_BYTES);
@@ -368,18 +421,51 @@ export async function retirePortrait(ownerId: string, mediaId: string): Promise<
   return retired.length > 0;
 }
 
+/** Take down one exact card photo (a moderator, ADR-039): the card stays, without its photo. Only while it is live. */
+export async function retireCardPhoto(ownerId: string, mediaId: string): Promise<boolean> {
+  const retired = await getDb()
+    .update(media)
+    .set({ status: 'retired', updatedAt: sql`now()` })
+    .where(
+      and(
+        eq(media.id, mediaId),
+        eq(media.ownerId, ownerId),
+        eq(media.kind, 'card_photo'),
+        eq(media.status, 'ready'),
+      ),
+    )
+    .returning({ id: media.id, objectKey: media.objectKey });
+  await destroy(retired);
+  return retired.length > 0;
+}
+
+/** A moderator found a held photo fine (ADR-039): everyone who may see it now can. Whether it was held. */
+export async function releaseHeldPhoto(mediaId: string): Promise<boolean> {
+  const rows = await getDb()
+    .update(media)
+    .set({ held: false, updatedAt: sql`now()` })
+    .where(and(eq(media.id, mediaId), eq(media.held, true)))
+    .returning({ id: media.id });
+  return rows.length > 0;
+}
+
 /** The id of someone's live Portrait (used to name the picture in a URL and to bust caches), or null when they have none. */
-export async function getPortraitVersion(userId: string): Promise<string | null> {
+export async function getPortraitVersion(userId: string, viewer: PhotoViewer): Promise<string | null> {
   const [row] = await getDb()
     .select({ id: media.id })
     .from(media)
-    .where(and(eq(media.ownerId, userId), eq(media.kind, 'portrait'), eq(media.status, 'ready')))
+    .where(
+      and(eq(media.ownerId, userId), eq(media.kind, 'portrait'), eq(media.status, 'ready'), shownTo(viewer)),
+    )
     .limit(1);
   return row?.id ?? null;
 }
 
 /** `getPortraitVersion` for many people in one query: only those with a live Portrait appear in the map. */
-export async function getPortraitVersions(userIds: string[]): Promise<Map<string, string>> {
+export async function getPortraitVersions(
+  userIds: string[],
+  viewer: PhotoViewer,
+): Promise<Map<string, string>> {
   if (userIds.length === 0) return new Map();
   const rows = await getDb()
     .select({ ownerId: media.ownerId, id: media.id })
@@ -389,6 +475,7 @@ export async function getPortraitVersions(userIds: string[]): Promise<Map<string
         inArray(media.ownerId, [...new Set(userIds)]),
         eq(media.kind, 'portrait'),
         eq(media.status, 'ready'),
+        shownTo(viewer),
       ),
     );
   return new Map(rows.map((r) => [r.ownerId, r.id]));
@@ -398,11 +485,16 @@ export async function getPortraitVersions(userIds: string[]): Promise<Map<string
  * The bytes of someone's live Portrait. This does NOT decide who may look: the caller (the route) has already applied the
  * visibility rules. A row whose file has gone missing reads as "no Portrait".
  */
-export async function readPortrait(ownerId: string): Promise<{ bytes: Buffer; version: string } | null> {
+export async function readPortrait(
+  ownerId: string,
+  viewer: PhotoViewer,
+): Promise<{ bytes: Buffer; version: string } | null> {
   const [row] = await getDb()
     .select({ id: media.id, objectKey: media.objectKey })
     .from(media)
-    .where(and(eq(media.ownerId, ownerId), eq(media.kind, 'portrait'), eq(media.status, 'ready')))
+    .where(
+      and(eq(media.ownerId, ownerId), eq(media.kind, 'portrait'), eq(media.status, 'ready'), shownTo(viewer)),
+    )
     .limit(1);
   if (!row) return null;
   const bytes = await store().get(row.objectKey, SERVE_MAX_BYTES);
