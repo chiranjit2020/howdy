@@ -1,5 +1,12 @@
-import { townHallMembers, townHallPosts, townHallReactions, townHallReplies, townHalls } from '@db/schema';
-import { and, asc, count, desc, eq, inArray, lt, or, sql } from 'drizzle-orm';
+import {
+  media,
+  townHallMembers,
+  townHallPosts,
+  townHallReactions,
+  townHallReplies,
+  townHalls,
+} from '@db/schema';
+import { and, asc, count, desc, eq, gt, inArray, isNull, lt, or, sql } from 'drizzle-orm';
 import { enforceNewAccountLimit, shouldHoldForOthers } from '@/modules/moderation';
 import { getCards, type PersonCard } from '@/modules/profiles';
 import { hiddenAuthors } from '@/modules/relationships';
@@ -40,6 +47,41 @@ export const FEED_RATE = {
   manage: rule(120, 3600),
 } as const;
 
+/** A photo can be posted only while it is younger than this (the clean-up job takes unattached ones at 60 minutes). */
+const PHOTO_ATTACH_WINDOW_MS = 55 * 60_000;
+
+/** One photo on a post (ADR-046), served by /api/hall-posts/:id/photo to exactly who may see the post. */
+export interface HallPhoto {
+  url: string;
+  width: number;
+  height: number;
+}
+
+/** A photo the photo check held (ADR-039) is shown to its owner only, until a moderator decides. */
+const photoShownTo = (viewerId: string) => or(eq(media.held, false), eq(media.ownerId, viewerId));
+
+/** The live photos on these posts that this viewer may see, by post id. */
+async function photosOn(viewerId: string, postIds: string[]): Promise<Map<string, HallPhoto>> {
+  if (postIds.length === 0) return new Map();
+  const rows = await getDb()
+    .select({ id: media.id, postId: media.hallPostId, width: media.width, height: media.height })
+    .from(media)
+    .where(
+      and(
+        inArray(media.hallPostId, postIds),
+        eq(media.kind, 'card_photo'),
+        eq(media.status, 'ready'),
+        photoShownTo(viewerId),
+      ),
+    );
+  return new Map(
+    rows.map((r) => [
+      r.postId!,
+      { url: `/api/hall-posts/${r.postId}/photo?v=${r.id}`, width: r.width ?? 0, height: r.height ?? 0 },
+    ]),
+  );
+}
+
 /** Held posts and replies the owner never answered are dropped after this long (see docs/DATA_LIFECYCLE.md). */
 export const HELD_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
 const MAX_ROUNDS = 4;
@@ -73,6 +115,8 @@ export interface HallPostView {
   canRemove: boolean;
   canReact: boolean;
   canReply: boolean;
+  /** Its photo (ADR-046), when it has one this viewer may see. */
+  photo: HallPhoto | null;
   /** Set when this post is a Time Capsule that opened (ADR-043): when its words were sealed. */
   capsuleSealedAt: Date | null;
   /** Count per kind, always present even at zero. Never who gave which. */
@@ -91,8 +135,10 @@ export interface HeldPost {
   body: string;
   createdAt: Date;
   author: HallAuthor;
+  /** Staff see a held post's photo to judge it — unless the photo check itself is holding the photo. */
+  photo: HallPhoto | null;
 }
-export interface HeldReply extends HeldPost {
+export interface HeldReply extends Omit<HeldPost, 'photo'> {
   onPost: string;
 }
 export interface HeldItems {
@@ -176,7 +222,7 @@ async function hydrate(
   if (rows.length === 0) return [];
   const db = getDb();
   const ids = rows.map((r) => r.id);
-  const [counts, mine, replyRows] = await Promise.all([
+  const [counts, mine, replyRows, photos] = await Promise.all([
     db
       .select({ postId: townHallReactions.postId, kind: townHallReactions.kind, n: count() })
       .from(townHallReactions)
@@ -198,6 +244,7 @@ async function hydrate(
       .orderBy(asc(townHallReplies.createdAt), asc(townHallReplies.id))
       // Replies per post are capped at write time; this only bounds the read.
       .limit(ids.length * (REPLIES_PER_CARD + 5)),
+    photosOn(viewerId, ids),
   ]);
 
   const replyAuthorIds = replyRows.map((r) => r.authorId);
@@ -252,6 +299,7 @@ async function hydrate(
         canRemove: mayRemove(row.authorId),
         canReact: published && row.authorId !== viewerId,
         canReply: published,
+        photo: photos.get(row.id) ?? null,
         capsuleSealedAt: row.capsuleSealedAt,
         reactions: reactionsByPost.get(row.id) ?? emptyReactions(),
         myReaction: myReaction.get(row.id) ?? null,
@@ -345,8 +393,16 @@ async function statusFor(hall: Hall, authorId: string): Promise<'published' | 'h
   return (await shouldHoldForOthers(authorId)) ? 'held' : 'published';
 }
 
-/** Post to a Town Hall's feed. Active members only. */
-export async function createPost(userId: string, townHallId: string, body: string): Promise<HallPostView> {
+/**
+ * Post to a Town Hall's feed. Active members only. With `photoId`, one of my finished photos goes with it (ADR-046) —
+ * the same photo pipeline and check as a Post Card's, attached in the same transaction or not at all.
+ */
+export async function createPost(
+  userId: string,
+  townHallId: string,
+  body: string,
+  photoId?: string,
+): Promise<HallPostView> {
   // Spent before the Town Hall is looked up: the same limit trips whether it exists, is hidden or is made up.
   await enforceRateLimit(`townhalls:post:${userId}`, FEED_RATE.post);
   await enforceNewAccountLimit(userId, 'card');
@@ -354,12 +410,39 @@ export async function createPost(userId: string, townHallId: string, body: strin
   if (!hall) throw new AppError('NOT_FOUND');
   await enforceRateLimit(`townhalls:post:${userId}:${hall.id}`, FEED_RATE.postPerHall);
   const status = await statusFor(hall, userId);
-  // Written with millisecond precision so cursors compare exactly (see cursor.ts).
-  const [row] = await getDb()
-    .insert(townHallPosts)
-    .values({ townHallId: hall.id, authorId: userId, body, status, createdAt: new Date() })
-    .returning();
-  const [view] = await hydrate(userId, hall, [row!], await getCards([userId]));
+  const row = await getDb().transaction(async (tx) => {
+    // Written with millisecond precision so cursors compare exactly (see cursor.ts).
+    const [post] = await tx
+      .insert(townHallPosts)
+      .values({ townHallId: hall.id, authorId: userId, body, status, createdAt: new Date() })
+      .returning();
+    if (photoId) {
+      // Only MY finished photo, on no card and no other post yet, and young enough that the clean-up cannot take it.
+      const attached = await tx
+        .update(media)
+        .set({ hallPostId: post!.id, updatedAt: sql`now()` })
+        .where(
+          and(
+            eq(media.id, photoId),
+            eq(media.ownerId, userId),
+            eq(media.kind, 'card_photo'),
+            eq(media.status, 'ready'),
+            isNull(media.cardId),
+            isNull(media.hallPostId),
+            gt(media.createdAt, new Date(Date.now() - PHOTO_ATTACH_WINDOW_MS)),
+          ),
+        )
+        .returning({ id: media.id });
+      if (attached.length === 0) {
+        throw new AppError('VALIDATION_FAILED', {
+          message: 'That photo is no longer available. Add it again.',
+          fields: { photo: 'That photo is no longer available. Add it again.' },
+        });
+      }
+    }
+    return post!;
+  });
+  const [view] = await hydrate(userId, hall, [row], await getCards([userId]));
   if (!view) throw new AppError('INTERNAL');
   return view;
 }
@@ -561,7 +644,14 @@ export async function listHeld(staffId: string, townHallId: string): Promise<Hel
       .limit(HELD_LIMIT),
   ]);
   const ids = [...posts.map((p) => p.authorId), ...replies.map((r) => r.reply.authorId)];
-  const [authors, hidden] = await Promise.all([getCards(ids), hiddenAuthors(staffId, ids)]);
+  const [authors, hidden, photos] = await Promise.all([
+    getCards(ids),
+    hiddenAuthors(staffId, ids),
+    photosOn(
+      staffId,
+      posts.map((p) => p.id),
+    ),
+  ]);
   const ok = (id: string) => authors.has(id) && !hidden.has(id);
   return {
     posts: posts
@@ -571,6 +661,7 @@ export async function listHeld(staffId: string, townHallId: string): Promise<Hel
         body: p.body,
         createdAt: p.createdAt,
         author: toAuthor(authors.get(p.authorId)!),
+        photo: photos.get(p.id) ?? null,
       })),
     replies: replies
       .filter((r) => ok(r.reply.authorId))
@@ -582,6 +673,29 @@ export async function listHeld(staffId: string, townHallId: string): Promise<Hel
         onPost: r.postBody,
       })),
   };
+}
+
+/**
+ * The photo on a post, for exactly who may see the post (ADR-046): an active member, the post published (or their own,
+ * or they are staff), its writer not hidden from them — and the photo not held by the photo check unless it is theirs.
+ * Missing, hidden and "no photo" are all null.
+ */
+export async function hallPostPhotoFor(viewerId: string, postId: string): Promise<string | null> {
+  const loaded = await loadPost(viewerId, postId);
+  if (!loaded) return null;
+  const [photo] = await getDb()
+    .select({ id: media.id })
+    .from(media)
+    .where(
+      and(
+        eq(media.hallPostId, loaded.post.id),
+        eq(media.kind, 'card_photo'),
+        eq(media.status, 'ready'),
+        photoShownTo(viewerId),
+      ),
+    )
+    .limit(1);
+  return photo?.id ?? null;
 }
 
 /** A post the reader may see, in the shape a report needs (the writer and its words). Null otherwise. */

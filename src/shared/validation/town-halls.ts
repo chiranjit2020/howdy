@@ -100,7 +100,8 @@ export const MEMBER_MAX_PAGE_SIZE = 100;
  * no disguising characters); replies reuse the Post Card reply rules.
  */
 export const hallPostBodySchema = clean(LIMITS.TOWNHALL_POST_MAX, 'Write something to post.', 'A post');
-export const hallPostSchema = z.object({ body: hallPostBodySchema });
+/** A post, and optionally one finished photo of mine to go with it (ADR-046). */
+export const hallPostSchema = z.object({ body: hallPostBodySchema, photoId: z.uuid().optional() });
 
 /** A Time Capsule for a whole Town Hall (ADR-043): it becomes a post, so it follows a post's rules. */
 export const sealHallCapsuleSchema = z.object({ body: hallPostBodySchema, openOn: capsuleDaySchema });

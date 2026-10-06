@@ -265,7 +265,7 @@ export async function buildDataExport(userId: string, now: Date = new Date()): P
       visibility: h.visibility,
       role: h.role,
       joinedAt: iso(h.joinedAt),
-      myPosts: h.posts.map((p) => ({ words: p.body, at: iso(p.postedAt) })),
+      myPosts: h.posts.map((p) => ({ words: p.body, at: iso(p.postedAt), photo: cardPhoto(p.photoId) })),
       myReplies: h.replies.map((r) => ({ words: r.body, at: iso(r.postedAt) })),
       myReactions: h.reactions.map((r) => ({ reaction: r.kind, at: iso(r.givenAt) })),
     })),
@@ -303,7 +303,7 @@ function readmeText(callSign: string, at: string): string {
 
 data.json    Everything in one file: your account and settings, Pals, Post Cards, Whispers,
              Tributes, Marks, Time Capsules, Tracks, Town Halls and moderation history.
-photos/      Your Portrait and the photos on the Post Cards in data.json.
+photos/      Your Portrait, and the photos on the Post Cards and Town Hall posts in data.json.
 
 What is in it: everything you gave Howdy, plus what Howdy already shows you (cards on your
 Fence, Whispers in your threads, Tributes on your Porch). Other people appear by call sign

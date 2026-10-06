@@ -13,6 +13,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import { users } from './auth';
 import { postCards } from './fence';
+import { townHallPosts } from './town-halls';
 
 const tstz = (name: string) => timestamp(name, { withTimezone: true, mode: 'date' });
 
@@ -40,6 +41,11 @@ export const media = pgTable(
      * once its card is removed (SET NULL): a detached card photo is never served, and its file is deleted by the job.
      */
     cardId: uuid('card_id').references(() => postCards.id, { onDelete: 'set null' }),
+    /**
+     * The Town Hall post a `card_photo` belongs to instead (ADR-046): the same waiting photo can be nailed to a card or
+     * posted in a Town Hall, never both. SET NULL when the post goes, like `card_id`.
+     */
+    hallPostId: uuid('hall_post_id').references(() => townHallPosts.id, { onDelete: 'set null' }),
     status: text('status').notNull().default('pending'),
     /** Where the bytes are in storage. Random; never derived from the owner or the file name. */
     objectKey: text('object_key').notNull().unique(),
@@ -59,6 +65,8 @@ export const media = pgTable(
   (t) => [
     check('media_kind_check', sql`${t.kind} in ('portrait', 'card_photo')`),
     check('media_card_only_for_card_photos', sql`${t.cardId} is null or ${t.kind} = 'card_photo'`),
+    check('media_hall_post_only_for_card_photos', sql`${t.hallPostId} is null or ${t.kind} = 'card_photo'`),
+    check('media_card_or_hall_post', sql`${t.cardId} is null or ${t.hallPostId} is null`),
     check('media_status_check', sql`${t.status} in ('pending', 'ready', 'retired')`),
     // One live Portrait per person, enforced by the database, not just by the code.
     uniqueIndex('media_one_ready_per_owner_idx')
@@ -68,6 +76,10 @@ export const media = pgTable(
     uniqueIndex('media_one_per_card_idx')
       .on(t.cardId)
       .where(sql`${t.cardId} is not null`),
+    // One photo per Town Hall post.
+    uniqueIndex('media_one_per_hall_post_idx')
+      .on(t.hallPostId)
+      .where(sql`${t.hallPostId} is not null`),
     index('media_owner_idx').on(t.ownerId),
     // The retention job looks for stale pending rows and for retired ones.
     index('media_status_created_idx').on(t.status, t.createdAt),

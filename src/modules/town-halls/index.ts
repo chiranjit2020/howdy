@@ -41,6 +41,7 @@ export {
   createPost,
   createReply,
   hallPostForReport,
+  hallPostPhotoFor,
   listFeed,
   listHeld,
   purgeStaleHeld,
@@ -52,6 +53,7 @@ export {
 export type {
   HallAuthor,
   HallFeedPage,
+  HallPhoto,
   HallPostView,
   HallReplyView,
   HeldItems,

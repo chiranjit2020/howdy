@@ -1,4 +1,11 @@
-import { townHallMembers, townHallPosts, townHallReactions, townHallReplies, townHalls } from '@db/schema';
+import {
+  media,
+  townHallMembers,
+  townHallPosts,
+  townHallReactions,
+  townHallReplies,
+  townHalls,
+} from '@db/schema';
 import { and, asc, eq, inArray } from 'drizzle-orm';
 import { getDb } from '@/platform/db';
 
@@ -17,7 +24,8 @@ export interface HallExport {
   visibility: string;
   role: 'owner' | 'deputy' | 'member';
   joinedAt: Date;
-  posts: { body: string; postedAt: Date }[];
+  /** `photoId`: my own photo on the post (ADR-046), when it has one. */
+  posts: { body: string; postedAt: Date; photoId: string | null }[];
   replies: { body: string; postedAt: Date }[];
   reactions: { kind: string; givenAt: Date }[];
 }
@@ -47,8 +55,13 @@ export async function townHallsExport(userId: string): Promise<HallExport[]> {
         hallId: townHallPosts.townHallId,
         body: townHallPosts.body,
         createdAt: townHallPosts.createdAt,
+        photoId: media.id,
       })
       .from(townHallPosts)
+      .leftJoin(
+        media,
+        and(eq(media.hallPostId, townHallPosts.id), eq(media.kind, 'card_photo'), eq(media.status, 'ready')),
+      )
       .where(and(eq(townHallPosts.authorId, userId), inArray(townHallPosts.townHallId, ids)))
       .orderBy(asc(townHallPosts.createdAt))
       .limit(EXPORT_CAP),
@@ -82,7 +95,9 @@ export async function townHallsExport(userId: string): Promise<HallExport[]> {
     visibility: h.visibility,
     role: h.role === 'owner' || h.role === 'deputy' ? h.role : 'member',
     joinedAt: h.joinedAt,
-    posts: posts.filter((p) => p.hallId === h.id).map((p) => ({ body: p.body, postedAt: p.createdAt })),
+    posts: posts
+      .filter((p) => p.hallId === h.id)
+      .map((p) => ({ body: p.body, postedAt: p.createdAt, photoId: p.photoId })),
     replies: replies.filter((r) => r.hallId === h.id).map((r) => ({ body: r.body, postedAt: r.createdAt })),
     reactions: reactions
       .filter((r) => r.hallId === h.id)

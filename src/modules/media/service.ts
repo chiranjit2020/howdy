@@ -368,8 +368,9 @@ export async function readCardPhoto(mediaId: string, viewer: PhotoViewer): Promi
 }
 
 /**
- * Throw away card photos that are on no card: never nailed within the hour, or whose card has been removed (its
- * `card_id` went to null). Object first, then row. Safe to call right after a card is removed, and daily.
+ * Throw away card photos that are on no card and in no Town Hall post (ADR-046): never used within the hour, or whose
+ * card or post has been removed (its pointer went to null). Object first, then row. Safe to call right after a card or
+ * a post is removed, and daily.
  */
 export async function purgeDetachedCardPhotos(
   now: Date = new Date(),
@@ -383,6 +384,7 @@ export async function purgeDetachedCardPhotos(
         eq(media.kind, 'card_photo'),
         eq(media.status, 'ready'),
         isNull(media.cardId),
+        isNull(media.hallPostId),
         lt(media.createdAt, cutoff),
       ),
     );

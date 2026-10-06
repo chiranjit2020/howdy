@@ -9,6 +9,8 @@ import { FormMessage } from '@/ui/auth/form-parts';
 import { PostCard, PostCardComposer, PostCardReply, type PostCardAuthor } from '@/ui/howdy';
 import { ReportDialog } from '@/ui/howdy/report-dialog';
 import { RelativeTime } from '@/ui/howdy/time';
+import { Img } from '@/ui/art/img';
+import { uploadPhoto } from '@/ui/media/upload-photo';
 import {
   Button,
   ClayCard,
@@ -71,15 +73,23 @@ export function FeedSection({
   const patchPost = (id: string, fn: (p: WirePost) => WirePost) =>
     setPosts((all) => all.map((p) => (p.id === id ? fn(p) : p)));
 
-  async function post(body: string): Promise<boolean> {
+  async function post(body: string, photoId?: string): Promise<boolean> {
     setError(undefined);
-    const res = await postJson<{ post: WirePost }>(`/api/town-halls/${townHallId}/posts`, { body });
+    const res = await postJson<{ post: WirePost }>(`/api/town-halls/${townHallId}/posts`, {
+      body,
+      ...(photoId ? { photoId } : {}),
+    });
     if (res.ok && res.data) {
       const made = res.data.post;
       setPosts((all) => [made, ...all]);
       return true;
     }
-    setError(res.error?.fields?.body ?? res.error?.message ?? 'That did not work. Try again.');
+    setError(
+      res.error?.fields?.body ??
+        res.error?.fields?.photo ??
+        res.error?.message ??
+        'That did not work. Try again.',
+    );
     return false;
   }
 
@@ -195,7 +205,12 @@ export function FeedSection({
         <h2 id={headingId} className="font-display text-heading text-text-primary">
           The feed
         </h2>
-        <PostCardComposer kind="post" onSubmit={post} />
+        {/* One photo per post (ADR-046): the same upload and check as a Post Card's. */}
+        <PostCardComposer
+          kind="post"
+          onSubmit={post}
+          onPhoto={(file: File) => uploadPhoto('/api/me/card-photo', file)}
+        />
         {error && <FormMessage tone="error">{error}</FormMessage>}
         {posts.length === 0 ? (
           <EmptyState
@@ -213,6 +228,7 @@ export function FeedSection({
                   author={authorOf(p.author)}
                   body={p.body}
                   createdAt={p.createdAt}
+                  photo={p.photo}
                   {...(p.capsuleSealedAt
                     ? {
                         stamp: 'Time Capsule',
@@ -315,7 +331,13 @@ function HeldTray({ initial, onApproved }: { initial: WireHeld; onApproved: () =
 
   const row = (
     kind: 'post' | 'reply',
-    item: { id: string; body: string; createdAt: Date | string; author: HallPostView['author'] },
+    item: {
+      id: string;
+      body: string;
+      createdAt: Date | string;
+      author: HallPostView['author'];
+      photo?: HallPostView['photo'];
+    },
     onPost?: string,
   ) => (
     <li key={item.id} className="flex flex-col gap-2 rounded-md bg-surface-sunken p-3">
@@ -325,6 +347,15 @@ function HeldTray({ initial, onApproved }: { initial: WireHeld; onApproved: () =
         {onPost && <> · on “{onPost}”</>}
       </p>
       <p className="text-body break-words whitespace-pre-wrap text-text-primary">{item.body}</p>
+      {item.photo && (
+        <Img
+          src={item.photo.url}
+          width={item.photo.width}
+          height={item.photo.height}
+          alt={`The photo on the held post from @${item.author.handle}`}
+          className="max-h-60 w-auto max-w-full rounded-md object-contain"
+        />
+      )}
       <div className="flex gap-2">
         <Button
           size="sm"

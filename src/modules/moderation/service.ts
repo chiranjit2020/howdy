@@ -238,7 +238,7 @@ export interface QueueItem {
   canRemove: boolean;
   /** `canRemove` for a Post Card (kept for the card flow's callers). */
   canRemoveCard: boolean;
-  /** The reported card is still there and carries a photo (ADR-031): the moderator can look at it. */
+  /** The reported card (or Town Hall post, ADR-046) is still there and carries a photo: the moderator can look at it. */
   cardHasPhoto: boolean;
   status: ReportStatus;
   createdAt: Date;
@@ -310,7 +310,8 @@ export async function listQueue(
     [r.reporterId, r.targetUserId, r.reviewedBy].filter((x) => x !== null),
   );
   const liveCardIds = page.flatMap((r) => (r.subject === 'card' && r.cardId ? [r.cardId] : []));
-  const [people, live, cardPhotos] = await Promise.all([
+  const hallPostIds = page.flatMap((r) => (r.subject === 'hall_post' && r.hallPostId ? [r.hallPostId] : []));
+  const [people, live, cardPhotos, hallPhotos] = await Promise.all([
     modCards(peopleIds),
     stillThere(page),
     liveCardIds.length
@@ -319,8 +320,16 @@ export async function listQueue(
           .from(media)
           .where(and(inArray(media.cardId, liveCardIds), eq(media.status, 'ready')))
       : Promise.resolve([] as { cardId: string | null }[]),
+    // A reported Town Hall post's photo (ADR-046), the same way.
+    hallPostIds.length
+      ? getDb()
+          .select({ hallPostId: media.hallPostId })
+          .from(media)
+          .where(and(inArray(media.hallPostId, hallPostIds), eq(media.status, 'ready')))
+      : Promise.resolve([] as { hallPostId: string | null }[]),
   ]);
   const withPhoto = new Set(cardPhotos.map((p) => p.cardId));
+  const hallWithPhoto = new Set(hallPhotos.map((p) => p.hallPostId));
   const targets = [...new Set(page.flatMap((r) => (r.targetUserId ? [r.targetUserId] : [])))];
   const held = new Set(
     (await Promise.all(targets.map(async (t) => ((await isUnderReview(t)) ? t : null)))).filter(
@@ -339,7 +348,9 @@ export async function listQueue(
       automatic: r.source === 'photo_check',
       canRemove: live.has(r.id),
       canRemoveCard: r.subject === 'card' && live.has(r.id),
-      cardHasPhoto: r.subject === 'card' && r.cardId !== null && withPhoto.has(r.cardId),
+      cardHasPhoto:
+        (r.subject === 'card' && r.cardId !== null && withPhoto.has(r.cardId)) ||
+        (r.subject === 'hall_post' && r.hallPostId !== null && hallWithPhoto.has(r.hallPostId)),
       status: r.status as ReportStatus,
       createdAt: r.createdAt,
       reporter: r.reporterId ? (people.get(r.reporterId) ?? null) : null,
@@ -647,11 +658,18 @@ export async function reportedCardPhoto(moderatorId: string, reportId: string): 
   const row = await loadReport(reportId);
   // A card photo the photo check held (ADR-039): that exact photo, card or not yet.
   if (row?.subject === 'card_photo') return row.mediaId;
-  if (!row || row.subject !== 'card' || !row.cardId) return null;
+  // The photo on a reported card, or on a reported Town Hall post (ADR-046).
+  const on =
+    row?.subject === 'card' && row.cardId
+      ? eq(media.cardId, row.cardId)
+      : row?.subject === 'hall_post' && row.hallPostId
+        ? eq(media.hallPostId, row.hallPostId)
+        : null;
+  if (!on) return null;
   const [photo] = await getDb()
     .select({ id: media.id })
     .from(media)
-    .where(and(eq(media.cardId, row.cardId), eq(media.kind, 'card_photo'), eq(media.status, 'ready')))
+    .where(and(on, eq(media.kind, 'card_photo'), eq(media.status, 'ready')))
     .limit(1);
   return photo?.id ?? null;
 }

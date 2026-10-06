@@ -28,11 +28,14 @@ export const GET = route(async ({ req, params }) => {
   return json(page);
 });
 
-/** Post to the feed. The writer is always the signed-in user; whether it is held is the server's call, and never said. */
+/**
+ * Post to the feed, optionally with one photo (ADR-046). The writer is always the signed-in user; whether it is held is
+ * the server's call, and never said.
+ */
 export const POST = route(async ({ req, params }) => {
   const { user } = await requireSession(req);
-  const { body } = await readJson(req, hallPostSchema);
-  const post = await createPost(user.id, (await params).id ?? '', body);
+  const { body, photoId } = await readJson(req, hallPostSchema);
+  const post = await createPost(user.id, (await params).id ?? '', body, photoId);
   await attachPortraits(user.id, [post.author]);
   return json({ post }, { status: 201 });
 });

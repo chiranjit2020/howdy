@@ -9,6 +9,18 @@ Town Hall feed ADR-033, Dynamic Island ADR-034). Production: Vercel `sin1` + Neo
 mail, R2 photos, Upstash Redis; a push to `main` deploys. Production does not migrate on deploy: apply new migrations
 to `howdy_dev` and the Singapore `howdy_prod` first.
 
+## 2026-10-07 — A photo on a Town Hall post (ADR-046) — shipped
+
+- [x] One photo per Town Hall post, any member: the Post Card photo pipeline and photo check, attached in the post's
+      transaction (my finished photo, on no card or other post, under 55 minutes). Never on a card and a post both.
+- [x] Served only to who may see the post (`/api/hall-posts/:id/photo`); held photos to their owner; staff see it in the
+      held tray; moderators in the queue; it goes with its post; my hall photos are in "Download my data".
+- [x] Migration `0038_hall_post_photos`, applied to `howdy_dev`, Singapore `howdy_prod` and the local test + e2e
+      databases before the push. Privacy 1.17.0. Welcome page Town Halls line mentions photos.
+- [x] Tests: `tests/security/hall-photos.test.ts` (10), `tests/e2e/hall-photos.spec.ts` (320 px phones, clean WebP).
+      Mutation check `.dev/mutate-hall-photos.mjs`: 11/11 caught (the "held photo" guard first survived behind the file
+      read's own guard; the decision is now tested on its own).
+
 ## 2026-10-07 — Invite links (ADR-045) — shipped
 
 Decisions taken with you: **joining through my link sends me a Pal request** (nothing automatic); **one personal link,
@@ -825,6 +837,6 @@ call or waits for real use:
 
 ## Architectural Decisions
 
-ADR-001 … ADR-045 in `docs/decisions/`; lifecycle and deletion design in `docs/DATA_LIFECYCLE.md`; Whispers threat model in
+ADR-001 … ADR-046 in `docs/decisions/`; lifecycle and deletion design in `docs/DATA_LIFECYCLE.md`; Whispers threat model in
 `docs/WHISPERS_THREAT_MODEL.md`.
 

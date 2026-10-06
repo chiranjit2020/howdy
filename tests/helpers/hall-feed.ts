@@ -29,6 +29,8 @@ export interface HallPost {
   reactions: Record<string, number>;
   myReaction: string | null;
   replies: HallReply[];
+  /** ADR-046: the post's photo, when there is one this viewer may see. */
+  photo?: { url: string; width: number; height: number } | null;
 }
 type Wire = {
   posts?: HallPost[];

@@ -18,7 +18,7 @@ Howdy is run by {{operator}}, an individual based in {{country}} ("Howdy", "we",
 
 **Your Porch.** Your display name, your bio if you write one (a short line shown under your name), the colour of your portrait, your Portrait photo if you add one, your Signal (a short status), your Porch Light while it is on, and your settings: who can see your Porch and Signal, who can write on your Fence, and which Chimes you want.
 
-**Photos.** When you add a Portrait, or a photo to a Post Card, we re-make the picture ourselves (a small square for a Portrait; for a card, the whole picture at most 1280 pixels across). Anything hidden inside the original file, such as the location where it was taken or the camera used, is thrown away and never stored. A card's photo is shown only to the people who can see that card. Before anyone else sees a new photo, an automatic check looks at a small copy of it for sexual content, violence and self-harm (see OpenAI under [Service providers](#service-providers)). A photo that is almost certainly explicit or graphic is turned down; one the check is unsure about is shown only to you until a moderator has looked at it.
+**Photos.** When you add a Portrait, or a photo to a Post Card or a Town Hall post, we re-make the picture ourselves (a small square for a Portrait; for a card or a post, the whole picture at most 1280 pixels across). Anything hidden inside the original file, such as the location where it was taken or the camera used, is thrown away and never stored. A card's photo is shown only to the people who can see that card. Before anyone else sees a new photo, an automatic check looks at a small copy of it for sexual content, violence and self-harm (see OpenAI under [Service providers](#service-providers)). A photo that is almost certainly explicit or graphic is turned down; one the check is unsure about is shown only to you until a moderator has looked at it.
 
 **What you post and do.** Post Cards and replies, Yos, Tributes you write or receive, Marks you give, Whispers you send, Time Capsules you seal, Town Halls you start or join, posts, replies and reactions in Town Halls, and reports you file.
 
@@ -106,7 +106,7 @@ On your Pals page we may suggest people who are Pals with at least two of your P
 - **Requests to join a Town Hall:** 30 days, if nobody lets you in (whether or not they said no).
 - **Invitations (who signed up through whose link):** 30 days after the sign-up.
 - **Town Hall bans:** until the owner or a Deputy lifts the ban, or the Town Hall or the banned account is deleted. When a banned person last asked to join is deleted after 30 days.
-- **Unfinished photo uploads:** about an hour (a photo chosen for a card but never nailed goes too). A replaced or removed Portrait is deleted straight away; a card's photo stops being shown the moment its card is removed, and its file is deleted within a day.
+- **Unfinished photo uploads:** about an hour (a photo chosen for a card but never nailed goes too). A replaced or removed Portrait is deleted straight away; a card's (or a Town Hall post's) photo stops being shown the moment its card or post is removed, and its file is deleted within a day.
 - **Sessions:** until you sign out, or after 14 days without use (60 days at most), plus 30 days of records so we can help with account problems.
 - **Passkeys, authenticator app and recovery codes:** until you remove them, switch two-step sign-in off, or delete your account. A passkey prompt nobody answered is deleted within a day; an authenticator app you started to link but never finished, after 15 minutes.
 - **Email links:** confirmation links work for 24 hours and reset links for 1 hour. Used and expired links are kept for 7 days.
@@ -123,7 +123,7 @@ We use a few companies to run Howdy. They process data only to provide their ser
 
 - **Vercel:** hosts the website and runs the app.
 - **Neon:** hosts the database.
-- **Cloudflare:** stores Portrait and Post Card photos (R2) and provides our domain's DNS.
+- **Cloudflare:** stores Portrait, Post Card and Town Hall photos (R2) and provides our domain's DNS.
 - **Resend:** sends account emails.
 - A managed **Redis** provider: holds short-lived rate-limit counters.
 - **OpenAI:** checks new photos (above). It is sent only a small copy of the picture we made, never your name, call sign or anything else about you. OpenAI does not keep what its moderation service is sent and does not use it to train its models.

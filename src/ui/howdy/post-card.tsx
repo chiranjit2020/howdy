@@ -174,7 +174,7 @@ export function PostCardComposer({
           {/* eslint-disable-next-line @next/next/no-img-element -- a blob: preview; see ui/art/img.tsx */}
           <img
             src={photo.preview}
-            alt="The photo you chose for this card"
+            alt={`The photo you chose for this ${kind === 'post' ? 'post' : 'card'}`}
             className={cn('max-h-40 rounded-md object-contain', uploading && 'opacity-60')}
           />
           {uploading && <p className="text-metadata text-text-secondary">Uploading…</p>}
@@ -333,7 +333,7 @@ export function PostCard({
               src={photo.url}
               width={photo.width}
               height={photo.height}
-              alt={`Photo on this card from ${author.name}`}
+              alt={`Photo on this ${noun === 'Post' ? 'post' : 'card'} from ${author.name}`}
               className="h-auto max-h-[28rem] w-full rounded-md bg-surface-sunken object-contain"
             />
           )}

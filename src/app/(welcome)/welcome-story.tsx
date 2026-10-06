@@ -43,7 +43,7 @@ const FEATURES: { art: ArtName; name: string; text: string }[] = [
   {
     art: 'nav-town-halls',
     name: 'Town Halls',
-    text: 'Small communities with their own feed, Deputies who keep order, and “ask to join” when you want it.',
+    text: 'Small communities with their own feed and photos, Deputies who keep order, and “ask to join” when you want it.',
   },
   {
     art: 'nav-capsules',
