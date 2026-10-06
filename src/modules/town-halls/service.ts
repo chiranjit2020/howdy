@@ -1,4 +1,4 @@
-import { townHallMembers, townHalls } from '@db/schema';
+import { townHallBans, townHallMembers, townHalls } from '@db/schema';
 import { and, asc, desc, eq, gt, inArray, isNull, lt, sql } from 'drizzle-orm';
 import { enforceNewAccountLimit } from '@/modules/moderation';
 import { getCards, resolveHandle, type PersonCard } from '@/modules/profiles';
@@ -45,6 +45,7 @@ const MAX_ROUNDS = 4;
 const MINE_LIMIT = 200;
 const INVITES_LIMIT = 50;
 const REQUESTS_LIMIT = 100;
+const BANS_LIMIT = 200;
 
 export interface MemberRef {
   handle: string;
@@ -109,6 +110,24 @@ export interface MemberPage {
   nextCursor: string | null;
 }
 
+/** Someone banned from a Town Hall, as its staff see them (ADR-042). */
+export interface BanEntry {
+  handle: string;
+  displayName: string;
+  portraitTint: PortraitTint;
+  portraitUrl?: string;
+  bannedAt: Date;
+  /** The call sign of whoever set it; null once their account is gone. */
+  bannedBy: string | null;
+}
+
+/** The banned person's own side of a ban: only when they last "asked". */
+interface Ban {
+  askedAt: Date | null;
+}
+
+type Tx = Parameters<Parameters<ReturnType<typeof getDb>['transaction']>[0]>[0];
+
 interface Row {
   id: string;
   ownerId: string;
@@ -145,9 +164,21 @@ function membershipOf(mine: Mine | null, now: Date = new Date()): TownHallDetail
   return requestLive(mine.createdAt, now) ? 'requested' : 'none';
 }
 
-function toDetail(row: Row, viewerId: string, mine: Mine | null): TownHallDetail {
-  const membership = membershipOf(mine);
+function toDetail(row: Row, viewerId: string, mine: Mine | null, ban: Ban | null = null): TownHallDetail {
   const listed = row.visibility !== 'invite';
+  if (ban) {
+    // Seen from inside a ban (ADR-042): a Town Hall that needs approval, where asking is never answered — the same
+    // thing a quiet "no" looks like. A banned person never has a membership row.
+    const membership = ban.askedAt && requestLive(ban.askedAt, new Date()) ? 'requested' : 'none';
+    return {
+      ...toSummary(row, viewerId, null),
+      joinRule: 'approval',
+      membership,
+      canJoin: false,
+      canAsk: listed && membership === 'none',
+    };
+  }
+  const membership = membershipOf(mine);
   return {
     ...toSummary(row, viewerId, mine),
     membership,
@@ -170,6 +201,23 @@ async function myMembership(userId: string, townHallId: string): Promise<Mine | 
     .limit(1);
   return row ?? null;
 }
+
+/** Is this person banned from this Town Hall? (`tx`: read inside a transaction holding `lockPerson`.) */
+async function banOf(townHallId: string, userId: string, tx: Tx | null = null): Promise<Ban | null> {
+  const [row] = await (tx ?? getDb())
+    .select({ askedAt: townHallBans.askedAt })
+    .from(townHallBans)
+    .where(and(eq(townHallBans.townHallId, townHallId), eq(townHallBans.userId, userId)))
+    .limit(1);
+  return row ?? null;
+}
+
+/**
+ * Serialises everything that can put one person into one Town Hall (joining, asking, being invited) against banning
+ * them, so a join racing a ban can never leave a banned person inside.
+ */
+const lockPerson = (tx: Tx, townHallId: string, userId: string) =>
+  tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${`townhall:${townHallId}:${userId}`}, 0))`);
 
 /**
  * The Town Hall, if `userId` is on its staff (`ownerOnly`: is its owner). Everyone else — members included — gets the
@@ -268,11 +316,28 @@ export async function listDirectory(
         )
     : [];
   const mine = new Map(memberships.map((m) => [m.townHallId, m]));
+  // Where the viewer is banned, the directory says "needs approval" too, as the Town Hall's own page does (ADR-042).
+  const bans = page.length
+    ? await getDb()
+        .select({ townHallId: townHallBans.townHallId })
+        .from(townHallBans)
+        .where(
+          and(
+            eq(townHallBans.userId, viewerId),
+            inArray(
+              townHallBans.townHallId,
+              page.map((r) => r.id),
+            ),
+          ),
+        )
+    : [];
+  const banned = new Set(bans.map((b) => b.townHallId));
 
   const last = page.at(-1);
   return {
     townHalls: page.map((row) => ({
       ...toSummary(row, viewerId, mine.get(row.id) ?? null),
+      ...(banned.has(row.id) ? { joinRule: 'approval' as const } : {}),
       joined: mine.has(row.id),
     })),
     nextCursor: more && last ? encodeCursor({ at: last.createdAt, id: last.id }) : null,
@@ -396,7 +461,7 @@ export async function getTownHall(viewerId: string, townHallId: string): Promise
   if (!row) return null;
   const mine = await myMembership(viewerId, townHallId);
   if (row.visibility === 'invite' && !mine) return null;
-  return toDetail(row, viewerId, mine);
+  return toDetail(row, viewerId, mine, mine ? null : await banOf(townHallId, viewerId));
 }
 
 /**
@@ -522,37 +587,17 @@ export async function act(
     case 'join': {
       if (row.visibility === 'invite') throw new AppError('NOT_FOUND');
       if (mine?.status === 'active' || mine?.status === 'invited') break;
-      if (row.joinRule === 'instant') {
-        // A request left over from when it needed approval simply becomes a membership.
-        if (mine) {
-          await db.update(townHallMembers).set({ status: 'active', declinedAt: null }).where(where);
-        } else {
-          await db
-            .insert(townHallMembers)
-            .values({ townHallId, userId, role: 'member', status: 'active' })
-            .onConflictDoNothing();
-        }
-        after = { role: 'member', status: 'active', createdAt: now };
-        break;
-      }
-      // Needs approval. A live request (answered or not) stays exactly as it is: asking again changes nothing.
-      if (mine && requestLive(mine.createdAt, now)) break;
-      await enforceRateLimit(`townhalls:request:${userId}`, RATE.request);
-      await db
-        .insert(townHallMembers)
-        .values({ townHallId, userId, role: 'member', status: 'requested', createdAt: now })
-        .onConflictDoUpdate({
-          target: [townHallMembers.townHallId, townHallMembers.userId],
-          set: { createdAt: now, declinedAt: null },
-          setWhere: eq(townHallMembers.status, 'requested'),
+      const done = await joinOrAsk(row, userId, mine, now);
+      if (done.ban) return toDetail(row, userId, null, done.ban);
+      after = done.after;
+      if (done.asked) {
+        emit({
+          type: 'townhall.join_requested',
+          townHallId,
+          requesterId: userId,
+          staffIds: await staffIdsOf(townHallId),
         });
-      after = { role: 'member', status: 'requested', createdAt: now };
-      emit({
-        type: 'townhall.join_requested',
-        townHallId,
-        requesterId: userId,
-        staffIds: await staffIdsOf(townHallId),
-      });
+      }
       break;
     }
     case 'leave': {
@@ -561,11 +606,14 @@ export async function act(
           message: 'The owner cannot leave — hand the Town Hall to a Deputy, or delete it.',
         });
       }
-      if (mine?.status === 'requested' && requestLive(mine.createdAt, now)) {
+      const ban = mine ? null : await banOf(townHallId, userId);
+      const askedAt = mine?.status === 'requested' ? mine.createdAt : ban?.askedAt;
+      if (askedAt && requestLive(askedAt, now)) {
         throw new AppError('BAD_REQUEST', {
           message: 'A request cannot be taken back. It runs out by itself after 30 days.',
         });
       }
+      if (ban) return toDetail(row, userId, null, ban);
       await db.delete(townHallMembers).where(where);
       after = null;
       break;
@@ -592,6 +640,58 @@ export async function act(
 }
 
 /**
+ * The `join` step itself, with the person locked against a ban. Joins at once, or leaves a request (`asked`: staff are
+ * to be rung), or changes nothing if a live request is already there. A banned person (`ban` set) only ever "asks":
+ * that spends the same daily budget and shows the same "Requested", but only stamps the ban row — nobody is rung and
+ * nothing reaches staff's queue (ADR-042).
+ */
+async function joinOrAsk(
+  row: Row,
+  userId: string,
+  mine: Mine | null,
+  now: Date,
+): Promise<{ after: Mine | null; asked: boolean; ban: Ban | null }> {
+  return getDb().transaction(async (tx) => {
+    await lockPerson(tx, row.id, userId);
+    const where = and(eq(townHallMembers.townHallId, row.id), eq(townHallMembers.userId, userId));
+    const ban = await banOf(row.id, userId, tx);
+    if (ban) {
+      if (ban.askedAt && requestLive(ban.askedAt, now)) return { after: null, asked: false, ban };
+      await enforceRateLimit(`townhalls:request:${userId}`, RATE.request);
+      await tx
+        .update(townHallBans)
+        .set({ askedAt: now })
+        .where(and(eq(townHallBans.townHallId, row.id), eq(townHallBans.userId, userId)));
+      return { after: null, asked: false, ban: { askedAt: now } };
+    }
+    if (row.joinRule === 'instant') {
+      // A request left over from when it needed approval simply becomes a membership.
+      if (mine) {
+        await tx.update(townHallMembers).set({ status: 'active', declinedAt: null }).where(where);
+      } else {
+        await tx
+          .insert(townHallMembers)
+          .values({ townHallId: row.id, userId, role: 'member', status: 'active' })
+          .onConflictDoNothing();
+      }
+      return { after: { role: 'member', status: 'active', createdAt: now }, asked: false, ban: null };
+    }
+    // Needs approval. A live request (answered or not) stays exactly as it is: asking again changes nothing.
+    if (mine && requestLive(mine.createdAt, now)) return { after: mine, asked: false, ban: null };
+    await enforceRateLimit(`townhalls:request:${userId}`, RATE.request);
+    await tx
+      .insert(townHallMembers)
+      .values({ townHallId: row.id, userId, role: 'member', status: 'requested', createdAt: now })
+      .onConflictDoUpdate({
+        target: [townHallMembers.townHallId, townHallMembers.userId],
+        set: { createdAt: now, declinedAt: null },
+        setWhere: eq(townHallMembers.status, 'requested'),
+      });
+    return { after: { role: 'member', status: 'requested', createdAt: now }, asked: true, ban: null };
+  });
+}
+
+/**
  * Invite someone by call sign. The owner or a Deputy. A repeat invite (already invited, or already a member) is a
  * harmless no-op; inviting someone who asked to join lets them in.
  */
@@ -609,11 +709,18 @@ export async function invite(inviterId: string, townHallId: string, handle: stri
     await approveRequest(inviterId, townHallId, target.userId);
     return;
   }
-  const made = await getDb()
-    .insert(townHallMembers)
-    .values({ townHallId, userId: target.userId, role: 'member', status: 'invited' })
-    .onConflictDoNothing()
-    .returning({ userId: townHallMembers.userId });
+  const made = await getDb().transaction(async (tx) => {
+    await lockPerson(tx, townHallId, target.userId);
+    // Staff can see the ban list, so saying so hides nothing (ADR-042).
+    if (await banOf(townHallId, target.userId, tx)) {
+      throw new AppError('CONFLICT', { message: `@${target.handle} is banned here. Lift the ban first.` });
+    }
+    return tx
+      .insert(townHallMembers)
+      .values({ townHallId, userId: target.userId, role: 'member', status: 'invited' })
+      .onConflictDoNothing()
+      .returning({ userId: townHallMembers.userId });
+  });
   if (made.length > 0) {
     emit({ type: 'townhall.invited', townHallId, inviterId, inviteeId: target.userId });
   }
@@ -658,6 +765,79 @@ export async function removeMember(staffId: string, townHallId: string, targetHa
   await getDb()
     .delete(townHallMembers)
     .where(and(eq(townHallMembers.townHallId, townHallId), eq(townHallMembers.userId, target.userId)));
+}
+
+/**
+ * Ban someone by call sign (ADR-042): they lose any membership, invite or request here, and can never join again until
+ * the ban is lifted. The owner or a Deputy; a member or a stranger alike. A Deputy may not ban the owner or a Deputy,
+ * and the owner must stand a Deputy down first. Never announced to the banned person. Repeating it changes nothing.
+ */
+export async function banPerson(staffId: string, townHallId: string, handle: string): Promise<void> {
+  await enforceRateLimit(`townhalls:manage:${staffId}`, RATE.manage);
+  const { role } = await hallForStaff(staffId, townHallId);
+  const target = await resolveHandle(handle);
+  if (!target) throw new AppError('NOT_FOUND', { message: 'No one has that call sign.' });
+  if (target.userId === staffId) throw new AppError('BAD_REQUEST', { message: 'You cannot ban yourself.' });
+  await getDb().transaction(async (tx) => {
+    await lockPerson(tx, townHallId, target.userId);
+    const [theirs] = await tx
+      .select({ role: townHallMembers.role, status: townHallMembers.status })
+      .from(townHallMembers)
+      .where(and(eq(townHallMembers.townHallId, townHallId), eq(townHallMembers.userId, target.userId)))
+      .limit(1);
+    const theirRole = theirs?.status === 'active' ? (theirs.role as HallRole) : null;
+    if (theirRole === 'deputy' && role === 'owner') {
+      throw new AppError('BAD_REQUEST', { message: 'Stand them down as Deputy first.' });
+    }
+    if (!outranks(role, theirRole)) {
+      throw new AppError('FORBIDDEN', { message: 'A Deputy cannot ban the owner or another Deputy.' });
+    }
+    await tx
+      .insert(townHallBans)
+      .values({ townHallId, userId: target.userId, bannedBy: staffId })
+      .onConflictDoNothing();
+    await tx
+      .delete(townHallMembers)
+      .where(and(eq(townHallMembers.townHallId, townHallId), eq(townHallMembers.userId, target.userId)));
+  });
+}
+
+/** Lift a ban (owner or a Deputy). They are not let back in — they may join again like anyone. Idempotent. */
+export async function liftBan(staffId: string, townHallId: string, handle: string): Promise<void> {
+  await enforceRateLimit(`townhalls:manage:${staffId}`, RATE.manage);
+  await hallForStaff(staffId, townHallId);
+  const target = await resolveHandle(handle);
+  if (!target) throw new AppError('NOT_FOUND');
+  await getDb()
+    .delete(townHallBans)
+    .where(and(eq(townHallBans.townHallId, townHallId), eq(townHallBans.userId, target.userId)));
+}
+
+/**
+ * Who is banned here, newest first (owner or a Deputy only; everyone else the same 404). Unlike the request queue,
+ * people the viewer hid are kept: staff must be able to find a ban to lift it. Accounts that are not active are left
+ * out until they are (their ban stays).
+ */
+export async function listBans(staffId: string, townHallId: string): Promise<BanEntry[]> {
+  await enforceRateLimit(`townhalls:read:${staffId}`, RATE.read);
+  await hallForStaff(staffId, townHallId);
+  const rows = await getDb()
+    .select({
+      userId: townHallBans.userId,
+      bannedBy: townHallBans.bannedBy,
+      createdAt: townHallBans.createdAt,
+    })
+    .from(townHallBans)
+    .where(eq(townHallBans.townHallId, townHallId))
+    .orderBy(desc(townHallBans.createdAt), desc(townHallBans.userId))
+    .limit(BANS_LIMIT);
+  const cards = await getCards(rows.flatMap((r) => (r.bannedBy ? [r.userId, r.bannedBy] : [r.userId])));
+  return rows.flatMap((r) => {
+    const card = cards.get(r.userId);
+    if (!card) return [];
+    const by = r.bannedBy ? cards.get(r.bannedBy) : undefined;
+    return [{ ...toRef(card), bannedAt: r.createdAt, bannedBy: by?.handle ?? null }];
+  });
 }
 
 /**
@@ -861,16 +1041,20 @@ export async function handOverTownHalls(userId: string): Promise<{ handedOver: n
   return { handedOver };
 }
 
-/** Retention: join requests that ran out (answered "no" or never answered) are deleted after 30 days. */
+/**
+ * Retention: join requests that ran out (answered "no" or never answered) are deleted after 30 days, and so is when a
+ * banned person last asked (the ban itself stays until lifted; ADR-042).
+ */
 export async function purgeExpiredRequests(now: Date = new Date()): Promise<{ requests: number }> {
+  const cutoff = new Date(now.getTime() - REQUEST_TTL_MS);
   const rows = await getDb()
     .delete(townHallMembers)
-    .where(
-      and(
-        eq(townHallMembers.status, 'requested'),
-        lt(townHallMembers.createdAt, new Date(now.getTime() - REQUEST_TTL_MS)),
-      ),
-    )
+    .where(and(eq(townHallMembers.status, 'requested'), lt(townHallMembers.createdAt, cutoff)))
     .returning({ userId: townHallMembers.userId });
-  return { requests: rows.length };
+  const asks = await getDb()
+    .update(townHallBans)
+    .set({ askedAt: null })
+    .where(lt(townHallBans.askedAt, cutoff))
+    .returning({ userId: townHallBans.userId });
+  return { requests: rows.length + asks.length };
 }

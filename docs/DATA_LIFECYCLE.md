@@ -56,6 +56,9 @@ cascades to `town_halls` and removes the whole Town Hall (and, from there, every
 (`handOverTownHalls`, before `eraseAccount`), so only a Town Hall with no Deputy goes with its owner. Deleting a
 *regular member's* (or a Deputy's) account only removes their own membership row. Join requests
 (`status = 'requested'`) are deleted 30 days after they were made, answered or not (`purgeExpiredRequests`).
+**Bans (ADR-042, `town_hall_bans`)** go with the Town Hall or the banned account (cascade); if the account that set a
+ban is deleted, the ban stays with `banned_by` emptied (set null). When a banned person last "asked" (`asked_at`) is
+cleared by the same daily purge after 30 days.
 
 Planned (each must declare its deletion behaviour when created):
 

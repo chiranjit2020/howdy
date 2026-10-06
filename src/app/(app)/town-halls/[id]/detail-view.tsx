@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
-import type { JoinRequest, MemberPage, MemberRef, TownHallDetail } from '@/modules/town-halls';
+import type { BanEntry, JoinRequest, MemberPage, MemberRef, TownHallDetail } from '@/modules/town-halls';
 import { LIMITS } from '@/shared/limits';
 import { handleParamSchema } from '@/shared/validation/profile';
 import type { MemberAction } from '@/shared/validation/town-halls';
@@ -36,6 +36,7 @@ export function TownHallDetailView({
   initialFeed,
   initialHeld,
   initialRequests,
+  initialBans,
 }: {
   townHall: TownHallDetail;
   initialMembers: MemberPage | null;
@@ -43,6 +44,8 @@ export function TownHallDetailView({
   initialHeld: InitialHeld | null;
   /** Waiting join requests: only for the owner and Deputies (ADR-041). */
   initialRequests: JoinRequest[] | null;
+  /** Who is banned: only for the owner and Deputies (ADR-042). */
+  initialBans: BanEntry[] | null;
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -215,6 +218,17 @@ export function TownHallDetailView({
 
       {staff && <InviteForm townHallId={townHall.id} onInvited={() => router.refresh()} />}
 
+      {staff && initialBans && (
+        // Remounted whenever the server's list changes (e.g. after "Ban…" in the Members list): its own state would
+        // otherwise survive router.refresh().
+        <BansCard
+          key={initialBans.map((b) => b.handle).join(' ')}
+          townHallId={townHall.id}
+          initial={initialBans}
+          onBanned={(handle) => changed(handle, null)}
+        />
+      )}
+
       {owner && townHall.visibility !== 'invite' && <JoinRuleCard townHall={townHall} />}
 
       {owner && (
@@ -299,6 +313,126 @@ function InviteForm({ townHallId, onInvited }: { townHallId: string; onInvited: 
           Send invite
         </Button>
       </form>
+    </ClayCard>
+  );
+}
+
+const banDate = (d: Date | string) =>
+  new Date(d).toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    timeZone: 'Asia/Kolkata',
+  });
+
+/**
+ * Who may not join (ADR-042): ban someone by call sign, or lift a ban. The owner or a Deputy. A ban is never announced:
+ * to the banned person this Town Hall just never answers their request.
+ */
+function BansCard({
+  townHallId,
+  initial,
+  onBanned,
+}: {
+  townHallId: string;
+  initial: BanEntry[];
+  /** The roster lives in the parent's state: a ban removes the person from it too. */
+  onBanned: (handle: string) => void;
+}) {
+  const [bans, setBans] = useState(initial);
+  const [handle, setHandle] = useState('');
+  const [fieldError, setFieldError] = useState<string | undefined>();
+  const [error, setError] = useState<string | undefined>();
+  const [busy, setBusy] = useState<string | undefined>();
+  const [confirming, setConfirming] = useState<string | undefined>();
+
+  function submit(e: FormEvent) {
+    e.preventDefault();
+    setError(undefined);
+    const cleaned = handle.trim().replace(/^@/, '').toLowerCase();
+    if (!handleParamSchema.safeParse(cleaned).success) {
+      setFieldError('Enter a call sign: 3–24 letters, numbers or underscores.');
+      return;
+    }
+    setFieldError(undefined);
+    setConfirming(cleaned);
+  }
+
+  async function ban(target: string) {
+    setBusy('ban');
+    const res = await postJson(`/api/town-halls/${townHallId}/bans`, { handle: target });
+    setBusy(undefined);
+    setConfirming(undefined);
+    if (!res.ok) return setError(res.error?.message ?? 'That did not work. Try again.');
+    setHandle('');
+    onBanned(target);
+  }
+
+  async function lift(target: string) {
+    setBusy(`lift:${target}`);
+    setError(undefined);
+    const res = await apiRequest('DELETE', `/api/town-halls/${townHallId}/bans/${target}`);
+    setBusy(undefined);
+    if (!res.ok) return setError(res.error?.message ?? 'That did not work. Try again.');
+    setBans((all) => all.filter((b) => b.handle !== target));
+  }
+
+  return (
+    <ClayCard className="flex flex-col gap-3">
+      <h2 className="text-title text-text-primary">Banned{bans.length > 0 && ` (${bans.length})`}</h2>
+      <p className="text-caption text-text-secondary">
+        A banned person cannot join or be invited. They are not told: to them, this Town Hall just never
+        answers their request.
+      </p>
+      {error && <FormMessage tone="error">{error}</FormMessage>}
+      {bans.length > 0 && (
+        <ul className="flex flex-col gap-3">
+          {bans.map((b) => (
+            <li key={b.handle} className="flex flex-wrap items-center gap-3">
+              <Avatar name={b.displayName} tint={b.portraitTint} src={b.portraitUrl} size="sm" />
+              <span className="min-w-0 flex-1 text-body [overflow-wrap:anywhere] text-text-primary">
+                {b.displayName} <span className="text-text-secondary">@{b.handle}</span>
+                <span className="block text-caption text-text-secondary">
+                  {banDate(b.bannedAt)}
+                  {b.bannedBy && ` · by @${b.bannedBy}`}
+                </span>
+              </span>
+              <Button
+                size="sm"
+                variant="secondary"
+                loading={busy === `lift:${b.handle}`}
+                onClick={() => lift(b.handle)}
+              >
+                Lift ban
+              </Button>
+            </li>
+          ))}
+        </ul>
+      )}
+      <form onSubmit={submit} noValidate className="flex flex-col gap-3">
+        <Input
+          label="Ban by call sign"
+          value={handle}
+          onChange={(e) => setHandle(e.target.value)}
+          error={fieldError}
+          autoCapitalize="none"
+          spellCheck={false}
+          maxLength={LIMITS.HANDLE_MAX}
+        />
+        <Button type="submit" size="sm" variant="secondary" className="self-start">
+          Ban…
+        </Button>
+      </form>
+      <ConfirmationDialog
+        open={confirming !== undefined}
+        destructive
+        title={`Ban @${confirming ?? ''}?`}
+        description="If they are in this Town Hall, they are removed. They cannot join or be invited again until the ban is lifted, and they are not told."
+        confirmLabel="Ban"
+        loading={busy === 'ban'}
+        onCancel={() => setConfirming(undefined)}
+        onConfirm={() => confirming && ban(confirming)}
+      />
     </ClayCard>
   );
 }
@@ -408,7 +542,8 @@ function JoinRuleCard({ townHall }: { townHall: TownHallDetail }) {
 
 /**
  * What the viewer may do about one member (ADR-041). The owner: make or stand down a Deputy, hand the Town Hall to a
- * Deputy, remove anyone. A Deputy: remove ordinary members. Nothing for anyone else (no button at all).
+ * Deputy, remove anyone, ban ordinary members. A Deputy: remove or ban ordinary members (ADR-042). Nothing for anyone
+ * else (no button at all).
  */
 function MemberMenu({
   townHallId,
@@ -421,7 +556,7 @@ function MemberMenu({
   viewerRole: TownHallDetail['myRole'];
   onChanged: (role: MemberRef['role'] | null) => void;
 }) {
-  const [confirming, setConfirming] = useState<'remove' | 'make_owner' | null>(null);
+  const [confirming, setConfirming] = useState<'remove' | 'ban' | 'make_owner' | null>(null);
   const [busy, setBusy] = useState(false);
   const toast = useToast();
 
@@ -430,17 +565,22 @@ function MemberMenu({
     member.role !== 'owner' && (ownerView || (viewerRole === 'deputy' && member.role === 'member'));
   if (!mayRemove && !(ownerView && member.role !== 'owner')) return null;
 
-  async function run(action: MemberAction | 'remove') {
+  async function run(action: MemberAction | 'remove' | 'ban') {
     setBusy(true);
     const path = `/api/town-halls/${townHallId}/members/${member.handle}`;
-    const res = action === 'remove' ? await apiRequest('DELETE', path) : await postJson(path, { action });
+    const res =
+      action === 'remove'
+        ? await apiRequest('DELETE', path)
+        : action === 'ban'
+          ? await postJson(`/api/town-halls/${townHallId}/bans`, { handle: member.handle })
+          : await postJson(path, { action });
     setBusy(false);
     setConfirming(null);
     if (!res.ok) {
       toast({ title: res.error?.message ?? 'That did not work.', tone: 'danger' });
       return;
     }
-    if (action === 'remove') onChanged(null);
+    if (action === 'remove' || action === 'ban') onChanged(null);
     else if (action === 'make_deputy') onChanged('deputy');
     else if (action === 'make_member') onChanged('member');
     else if (action === 'make_owner') {
@@ -461,6 +601,10 @@ function MemberMenu({
       : []),
     ...(mayRemove
       ? [{ id: 'remove', label: 'Remove…', danger: true, onSelect: () => setConfirming('remove') }]
+      : []),
+    // A Deputy must be stood down before they can be banned (ADR-042).
+    ...(member.role === 'member' && mayRemove
+      ? [{ id: 'ban', label: 'Ban…', danger: true, onSelect: () => setConfirming('ban') }]
       : []),
   ];
 
@@ -491,6 +635,16 @@ function MemberMenu({
         loading={busy}
         onCancel={() => setConfirming(null)}
         onConfirm={() => run('remove')}
+      />
+      <ConfirmationDialog
+        open={confirming === 'ban'}
+        destructive
+        title={`Ban @${member.handle}?`}
+        description="They are removed, and cannot join or be invited again until the ban is lifted. They are not told: to them, this Town Hall just never answers their request."
+        confirmLabel="Ban"
+        loading={busy}
+        onCancel={() => setConfirming(null)}
+        onConfirm={() => run('ban')}
       />
       <ConfirmationDialog
         open={confirming === 'make_owner'}

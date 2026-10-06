@@ -1,12 +1,15 @@
 /** Public surface of the Town Halls module. */
 export {
   act,
+  banPerson,
   countMyInvites,
   createTownHall,
   deleteTownHall,
   getTownHall,
   handOverTownHalls,
   invite,
+  liftBan,
+  listBans,
   listDirectory,
   listMembers,
   listMine,
@@ -21,6 +24,7 @@ export {
   RATE,
 } from './service';
 export type {
+  BanEntry,
   DirectoryItem,
   DirectoryPage,
   InviteSummary,

@@ -12,6 +12,8 @@ import {
   POST as memberActionRoute,
 } from '@/app/api/town-halls/[id]/members/[handle]/route';
 import { GET as requestsRoute } from '@/app/api/town-halls/[id]/requests/route';
+import { GET as bansRoute, POST as banRoute } from '@/app/api/town-halls/[id]/bans/route';
+import { DELETE as liftBanRoute } from '@/app/api/town-halls/[id]/bans/[handle]/route';
 import { GET as mineRoute } from '@/app/api/me/town-halls/route';
 import { GET as invitesRoute } from '@/app/api/me/town-halls/invites/route';
 import { call, request } from './auth';
@@ -138,3 +140,25 @@ export const memberAction = (id: string, handle: string, action: string, opts: O
 /** GET /api/town-halls/:id/requests — waiting join requests (staff only). */
 export const requests = (id: string, opts: Opts = {}) =>
   dynamic(requestsRoute, 'GET', `/api/town-halls/${enc(id)}/requests`, { id }, undefined, opts);
+
+/** GET/POST /api/town-halls/:id/bans and DELETE /api/town-halls/:id/bans/:handle — the ban list (ADR-042). */
+export const bans = (id: string, opts: Opts = {}) =>
+  dynamic(bansRoute, 'GET', `/api/town-halls/${enc(id)}/bans`, { id }, undefined, opts) as Promise<{
+    status: number;
+    data: Wire & { bans?: { handle: string; bannedBy: string | null; bannedAt: string }[] };
+    text: string;
+    res: Response;
+  }>;
+
+export const ban = (id: string, handle: unknown, opts: Opts = {}) =>
+  dynamic(banRoute, 'POST', `/api/town-halls/${enc(id)}/bans`, { id }, { handle }, opts);
+
+export const liftBan = (id: string, handle: string, opts: Opts = {}) =>
+  dynamic(
+    liftBanRoute,
+    'DELETE',
+    `/api/town-halls/${enc(id)}/bans/${enc(handle)}`,
+    { id, handle },
+    undefined,
+    opts,
+  );

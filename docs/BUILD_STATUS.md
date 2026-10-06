@@ -1,6 +1,6 @@
 # Howdy Build Status
 
-_Last updated: 2026-10-05_
+_Last updated: 2026-10-06_
 
 ## Current Phase
 
@@ -8,6 +8,25 @@ _Last updated: 2026-10-05_
 Town Hall feed ADR-033, Dynamic Island ADR-034). Production: Vercel `sin1` + Neon `howdy-sg` (`howdy_prod`), Resend
 mail, R2 photos, Upstash Redis; a push to `main` deploys. Production does not migrate on deploy: apply new migrations
 to `howdy_dev` and the Singapore `howdy_prod` first.
+
+## 2026-10-06 — Town Hall ban list (ADR-042) — shipped
+
+Decisions taken with you: **the owner and Deputies ban** (a Deputy only ordinary members and outsiders; the owner
+stands a Deputy down first); **silent** — to the banned person the Town Hall needs approval and never answers;
+**until lifted**.
+
+- [x] Members' Options menu: "Ban…" (ordinary members). Staff get a "Banned" card: who / when / by whom, "Lift ban",
+      and "Ban by call sign" for non-members. Inviting a banned person says to lift the ban first.
+- [x] Banned person: "Ask to join" → "Requested" for 30 days, never answered, nobody rung, nothing in the queue; the
+      directory shows "needs approval" to them alone; an invite-only Town Hall disappears for them.
+- [x] Join/ask/invite and ban serialise on a per-person advisory lock (a racing join cannot leave a banned person in).
+- [x] Migration `0034_town_hall_bans`, applied to `howdy_dev`, Singapore `howdy_prod` and the local test + e2e
+      databases before the push. Privacy 1.13.0 (no re-acceptance).
+- [ ] Not yet run (machine out of RAM): the full vitest suite, a local production build, and the new
+      `tests/e2e/town-hall-bans.spec.ts`. Pushed on the targeted tests at your request.
+- [x] Tests: `tests/security/town-hall-bans.test.ts` (12); Town Hall suites 64/64 still green. Mutation check
+      `.dev/mutate-town-hall-bans.mjs`: 15/15 caught (two first survived: an equivalent "rings staff" mutant, replaced,
+      and the missing lock, which HTTP racing could not hit — now a deterministic held-lock test).
 
 ## 2026-10-06 — Town Hall Deputies, "ask to join", handover (ADR-041) — shipped
 
@@ -25,7 +44,7 @@ join" switch**; **a quiet "no"** (the request runs out after 30 days); **hand ov
       vitest 1423/1423; affected e2e green (town-halls spec now opens the Options menu to remove). Mutation check
       `.dev/mutate-town-hall-roles.mjs`: 13/13 caught (two mutants first had to be made real: editing has two guards,
       and a no-op "no shows" mutant was replaced by "a no deletes the request").
-- Known limit (pre-existing): someone removed from an instant-join Town Hall can rejoin; there is no ban list.
+- Known limit (pre-existing): someone removed from an instant-join Town Hall can rejoin; there is no ban list (now ADR-042).
 
 ## 2026-10-05 (later) — Passkeys and two-step sign-in (ADR-040) — shipped
 
@@ -737,11 +756,11 @@ call or waits for real use:
 3. ~~A whole-of-Whispers threat model and a staged Ably load test~~ **Done 2026-10-05** (ADR-038, see above).
 4. ~~Image moderation~~ **Built 2026-10-05** (ADR-039) — set `OPENAI_API_KEY` to turn it on. CSAM is not covered
    by it (Cloudflare CSAM Scanning Tool or PhotoDNA, if wanted).
-5. Capsules to a Town Hall. ~~Town Hall roles + approval-gated join~~ **built 2026-10-06** (ADR-041). ~~MFA/passkeys~~ **built 2026-10-05** (ADR-040). A Town Hall ban list (removed people can rejoin instant-join halls).
+5. Capsules to a Town Hall. ~~Town Hall roles + approval-gated join~~ **built 2026-10-06** (ADR-041). ~~MFA/passkeys~~ **built 2026-10-05** (ADR-040). ~~A Town Hall ban list~~ **built 2026-10-06** (ADR-042).
 6. Revisit whether Tribute/Mark giving should ever widen beyond Pals-only.
 
 ## Architectural Decisions
 
-ADR-001 … ADR-041 in `docs/decisions/`; lifecycle and deletion design in `docs/DATA_LIFECYCLE.md`; Whispers threat model in
+ADR-001 … ADR-042 in `docs/decisions/`; lifecycle and deletion design in `docs/DATA_LIFECYCLE.md`; Whispers threat model in
 `docs/WHISPERS_THREAT_MODEL.md`.
 

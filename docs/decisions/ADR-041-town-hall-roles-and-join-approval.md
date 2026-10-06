@@ -47,6 +47,7 @@ all the keeping of order alone, and a Town Hall died with its owner's account.
 ## Consequences / known limits
 - Migration `0033_town_hall_roles`.
 - **Removing someone from an `open`/instant Town Hall does not stop them rejoining** (pre-existing, ADR-017): there is no
-  ban list. Switching the Town Hall to "Ask to join" is today's answer; a real ban is a separate decision.
+  ban list. Switching the Town Hall to "Ask to join" is today's answer; a real ban is a separate decision (since
+  built: ADR-042).
 - Pending requests are not in "Download my data" (they last at most 30 days); memberships there now show `deputy`.
 - No request message ("why I want to join"): it would be another free-text surface to screen and moderate.

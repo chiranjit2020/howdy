@@ -54,7 +54,7 @@ Your settings decide most of it.
 - **Your Porch and Signal** can be visible to everyone, to signed-in members (the default), or to your Pals only.
 - **Your Fence** follows your settings for who may read it and who may write on it. You can review cards before they appear, and remove anything on your own Fence.
 - **Whispers** are only ever between the two people in the conversation.
-- **Town Halls:** the list of who is in a Town Hall, and its posts, replies and reactions, are visible only to its members. Its owner can remove any post in it, and Deputies the owner appoints can remove posts by ordinary members. If you ask to join a Town Hall that needs approval, its owner and Deputies see your name, call sign and portrait, and when you asked. If they say no, you are not told; the request simply runs out.
+- **Town Halls:** the list of who is in a Town Hall, and its posts, replies and reactions, are visible only to its members. Its owner can remove any post in it, and Deputies the owner appoints can remove posts by ordinary members. If you ask to join a Town Hall that needs approval, its owner and Deputies see your name, call sign and portrait, and when you asked. If they say no, you are not told; the request simply runs out. Its owner and Deputies can also ban someone from it: they keep a list of who is banned, when and by whom, and a banned person is not told — to them the Town Hall simply never answers a request to join.
 - **Blocks, mutes and restrictions** are private to you, and a block hides the two of you from each other.
 - **Moderators** can see reports and the content they are about (a Post Card, a photo, one reported Whisper, a Town Hall's name and description, a Town Hall post), and photos the automatic check held back, and may act on them.
 
@@ -101,6 +101,7 @@ On your Pals page we may suggest people who are Pals with at least two of your P
 - **Chimes:** 30 days after you read them, or 90 days if you never do.
 - **Post Cards waiting for approval, waiting Tributes, and Town Hall posts waiting for the owner:** 30 days, if they are not approved.
 - **Requests to join a Town Hall:** 30 days, if nobody lets you in (whether or not they said no).
+- **Town Hall bans:** until the owner or a Deputy lifts the ban, or the Town Hall or the banned account is deleted. When a banned person last asked to join is deleted after 30 days.
 - **Unfinished photo uploads:** about an hour (a photo chosen for a card but never nailed goes too). A replaced or removed Portrait is deleted straight away; a card's photo stops being shown the moment its card is removed, and its file is deleted within a day.
 - **Sessions:** until you sign out, or after 14 days without use (60 days at most), plus 30 days of records so we can help with account problems.
 - **Passkeys, authenticator app and recovery codes:** until you remove them, switch two-step sign-in off, or delete your account. A passkey prompt nobody answered is deleted within a day; an authenticator app you started to link but never finished, after 15 minutes.

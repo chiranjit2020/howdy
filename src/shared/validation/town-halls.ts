@@ -69,6 +69,9 @@ export const townHallActionSchema = z.object({ action: z.enum(TOWNHALL_ACTIONS) 
 
 export const inviteToTownHallSchema = z.object({ handle: z.string().pipe(handleParamSchema) });
 
+/** Ban someone from a Town Hall by call sign (ADR-042). */
+export const banFromTownHallSchema = inviteToTownHallSchema;
+
 /**
  * What staff do about one person (ADR-041). `approve`/`decline` answer a join request (owner or Deputy);
  * `make_deputy`/`make_member` appoint or stand down a Deputy, and `make_owner` hands the Town Hall to a Deputy (owner only).

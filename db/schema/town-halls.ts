@@ -86,6 +86,35 @@ export const townHallMembers = pgTable(
 );
 
 /**
+ * Who may not join a Town Hall (ADR-042). Set by the owner or a Deputy; lasts until lifted, or until the Town Hall or the
+ * banned person's account is deleted. A ban is never announced: to the banned person the Town Hall looks like one that
+ * needs approval, and "asking" only sets `asked_at` here — they see "Requested" until it runs out (30 days), exactly as
+ * after a quiet "no". Kept apart from `town_hall_members` on purpose: any membership row makes an invite-only Town Hall
+ * visible to its person.
+ */
+export const townHallBans = pgTable(
+  'town_hall_bans',
+  {
+    townHallId: uuid('town_hall_id')
+      .notNull()
+      .references(() => townHalls.id, { onDelete: 'cascade' }),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    /** Which member of staff set it (shown to staff). Kept if that account is deleted. */
+    bannedBy: uuid('banned_by').references(() => users.id, { onDelete: 'set null' }),
+    /** When the banned person last "asked to join" (what drives their "Requested"); never shown to staff. */
+    askedAt: tstz('asked_at'),
+    createdAt: tstz('created_at').notNull().defaultNow(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.townHallId, t.userId] }),
+    index('town_hall_bans_user_idx').on(t.userId),
+    index('town_hall_bans_by_idx').on(t.bannedBy),
+  ],
+);
+
+/**
  * A post in a Town Hall's shared feed (ADR-033). Only active members read or write the feed. Deleting the Town Hall or
  * the author removes the post (and its replies and reactions with it). Status:
  * - `published`  visible to every active member
