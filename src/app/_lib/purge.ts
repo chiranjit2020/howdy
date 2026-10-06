@@ -8,7 +8,7 @@ import { liftExpiredSuspensions, purgeClosedReports } from '@/modules/moderation
 import { purgeOldChimes } from '@/modules/notifications';
 import { clearExpiredSignals } from '@/modules/profiles';
 import { purgeDeadSubscriptions } from '@/modules/push';
-import { purgeExpiredRequests, purgeStaleHeld } from '@/modules/town-halls';
+import { openHallCapsules, purgeExpiredRequests, purgeStaleHeld } from '@/modules/town-halls';
 import { purgeOldTracks } from '@/modules/tracks';
 import { purgeStaleTributes } from '@/modules/tributes';
 import { recheckStaleTrust } from '@/modules/trust';
@@ -49,6 +49,8 @@ export async function runAllPurges() {
   const audit = await purgeOldAuditLog();
   // Not retention: Time Capsules whose day has come open (and ring) even if their recipient has not looked (ADR-028).
   const capsules = await openDue();
+  // Town Hall Time Capsules whose day has come become posts (ADR-043).
+  const hallCapsules = await openHallCapsules();
   return {
     ...devices,
     ...auth,
@@ -70,5 +72,6 @@ export async function runAllPurges() {
     ...handles,
     ...audit,
     ...capsules,
+    ...hallCapsules,
   };
 }

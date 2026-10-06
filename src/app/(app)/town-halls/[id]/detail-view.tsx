@@ -2,7 +2,16 @@
 
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
-import type { BanEntry, JoinRequest, MemberPage, MemberRef, TownHallDetail } from '@/modules/town-halls';
+import type {
+  BanEntry,
+  HallCapsule,
+  JoinRequest,
+  MemberPage,
+  MemberRef,
+  TownHallDetail,
+} from '@/modules/town-halls';
+import { addDays, addYears, dayOf, longDay } from '@/shared/calendar';
+import { CAPSULE_MAX_YEARS } from '@/shared/validation/capsules';
 import { LIMITS } from '@/shared/limits';
 import { handleParamSchema } from '@/shared/validation/profile';
 import type { MemberAction } from '@/shared/validation/town-halls';
@@ -21,6 +30,7 @@ import {
   EmptyState,
   Input,
   Switch,
+  Textarea,
   useToast,
 } from '@/ui/primitives';
 
@@ -37,6 +47,7 @@ export function TownHallDetailView({
   initialHeld,
   initialRequests,
   initialBans,
+  initialCapsules,
 }: {
   townHall: TownHallDetail;
   initialMembers: MemberPage | null;
@@ -46,6 +57,8 @@ export function TownHallDetailView({
   initialRequests: JoinRequest[] | null;
   /** Who is banned: only for the owner and Deputies (ADR-042). */
   initialBans: BanEntry[] | null;
+  /** Time Capsules coming to this Town Hall: members only (ADR-043). */
+  initialCapsules: HallCapsule[] | null;
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -161,6 +174,15 @@ export function TownHallDetailView({
         />
       )}
 
+      {townHall.membership === 'active' && initialCapsules && (staff || initialCapsules.length > 0) && (
+        <CapsulesCard
+          townHallId={townHall.id}
+          initial={initialCapsules}
+          staff={staff}
+          onSealed={() => router.refresh()}
+        />
+      )}
+
       {townHall.membership === 'active' && initialFeed && (
         <FeedSection
           townHallId={townHall.id}
@@ -219,10 +241,7 @@ export function TownHallDetailView({
       {staff && <InviteForm townHallId={townHall.id} onInvited={() => router.refresh()} />}
 
       {staff && initialBans && (
-        // Remounted whenever the server's list changes (e.g. after "Ban…" in the Members list): its own state would
-        // otherwise survive router.refresh().
         <BansCard
-          key={initialBans.map((b) => b.handle).join(' ')}
           townHallId={townHall.id}
           initial={initialBans}
           onBanned={(handle) => changed(handle, null)}
@@ -317,6 +336,136 @@ function InviteForm({ townHallId, onInvited }: { townHallId: string; onInvited: 
   );
 }
 
+/**
+ * Time Capsules for the whole Town Hall (ADR-043): members see who sealed one and when it opens, never the words. The
+ * owner and Deputies seal them; on the day each becomes a post in the feed.
+ */
+function CapsulesCard({
+  townHallId,
+  initial,
+  staff,
+  onSealed,
+}: {
+  townHallId: string;
+  initial: HallCapsule[];
+  staff: boolean;
+  onSealed: () => void;
+}) {
+  // The server's list (re-read on refresh) minus any taken back here a moment ago.
+  const [gone, setGone] = useState<Set<string>>(new Set());
+  const capsules = initial.filter((c) => !gone.has(c.id));
+  const [openOn, setOpenOn] = useState('');
+  const [body, setBody] = useState('');
+  const [fields, setFields] = useState<Record<string, string>>({});
+  const [error, setError] = useState<string | undefined>();
+  const [busy, setBusy] = useState<string | undefined>();
+  const [confirming, setConfirming] = useState<string | undefined>();
+  const today = dayOf();
+
+  async function seal(e: FormEvent) {
+    e.preventDefault();
+    setError(undefined);
+    setFields({});
+    if (!openOn) return setFields({ openOn: 'Pick the day it opens.' });
+    if (!body.trim()) return setFields({ body: 'Write something to seal.' });
+    setBusy('seal');
+    const res = await postJson(`/api/town-halls/${townHallId}/capsules`, { body, openOn });
+    setBusy(undefined);
+    if (!res.ok) {
+      setFields(res.error?.fields ?? {});
+      if (!res.error?.fields) setError(res.error?.message ?? 'That did not seal. Try again.');
+      return;
+    }
+    setBody('');
+    setOpenOn('');
+    onSealed();
+  }
+
+  async function takeBack(id: string) {
+    setBusy(`back:${id}`);
+    setError(undefined);
+    const res = await apiRequest('DELETE', `/api/town-halls/${townHallId}/capsules/${id}`);
+    setBusy(undefined);
+    setConfirming(undefined);
+    if (!res.ok) return setError(res.error?.message ?? 'That did not work. Try again.');
+    setGone((g) => new Set(g).add(id));
+    onSealed();
+  }
+
+  return (
+    <ClayCard className="flex flex-col gap-3">
+      <h2 className="text-title text-text-primary">Time Capsules</h2>
+      <p className="text-caption text-text-secondary">
+        {staff
+          ? 'Seal words for the whole Town Hall. They open as a post on the day you pick, and nobody can read them before — not even you.'
+          : 'Words sealed for this Town Hall. Each opens as a post on its day.'}
+      </p>
+      {error && <FormMessage tone="error">{error}</FormMessage>}
+      {capsules.length > 0 && (
+        <ul className="flex flex-col gap-3">
+          {capsules.map((c) => (
+            <li key={c.id} className="flex flex-wrap items-center gap-3">
+              <span aria-hidden="true" className="text-title">
+                ⏳
+              </span>
+              <span className="min-w-0 flex-1 text-body [overflow-wrap:anywhere] text-text-primary">
+                {c.from ? `From ${c.from.displayName}` : 'From a member'}
+                <span className="block text-caption text-text-secondary">Opens {longDay(c.openOn)}</span>
+              </span>
+              {c.canTakeBack && (
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  loading={busy === `back:${c.id}`}
+                  onClick={() => setConfirming(c.id)}
+                >
+                  Take back
+                </Button>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+      {staff && (
+        <form onSubmit={seal} noValidate className="flex flex-col gap-3">
+          <Input
+            label="Opens on"
+            type="date"
+            min={addDays(today, 1)}
+            max={addYears(today, CAPSULE_MAX_YEARS)}
+            value={openOn}
+            onChange={(e) => setOpenOn(e.target.value)}
+            error={fields.openOn}
+            hint={`Any day from tomorrow to ${CAPSULE_MAX_YEARS} years from now.`}
+          />
+          <Textarea
+            label="Your words"
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            maxLength={LIMITS.TOWNHALL_POST_MAX}
+            showCount
+            rows={3}
+            error={fields.body}
+          />
+          <Button type="submit" size="sm" loading={busy === 'seal'} className="self-start">
+            Seal it
+          </Button>
+        </form>
+      )}
+      <ConfirmationDialog
+        open={confirming !== undefined}
+        destructive
+        title="Take this capsule back?"
+        description="It is deleted, words and all, and will never open."
+        confirmLabel="Take it back"
+        loading={busy?.startsWith('back:') ?? false}
+        onCancel={() => setConfirming(undefined)}
+        onConfirm={() => confirming && takeBack(confirming)}
+      />
+    </ClayCard>
+  );
+}
+
 const banDate = (d: Date | string) =>
   new Date(d).toLocaleDateString('en-GB', {
     day: 'numeric',
@@ -339,7 +488,9 @@ function BansCard({
   /** The roster lives in the parent's state: a ban removes the person from it too. */
   onBanned: (handle: string) => void;
 }) {
-  const [bans, setBans] = useState(initial);
+  // The server's list (re-read on refresh) minus any lifted here a moment ago.
+  const [lifted, setLifted] = useState<Set<string>>(new Set());
+  const bans = initial.filter((b) => !lifted.has(b.handle));
   const [handle, setHandle] = useState('');
   const [fieldError, setFieldError] = useState<string | undefined>();
   const [error, setError] = useState<string | undefined>();
@@ -365,6 +516,11 @@ function BansCard({
     setConfirming(undefined);
     if (!res.ok) return setError(res.error?.message ?? 'That did not work. Try again.');
     setHandle('');
+    setLifted((l) => {
+      const next = new Set(l);
+      next.delete(target);
+      return next;
+    });
     onBanned(target);
   }
 
@@ -374,7 +530,7 @@ function BansCard({
     const res = await apiRequest('DELETE', `/api/town-halls/${townHallId}/bans/${target}`);
     setBusy(undefined);
     if (!res.ok) return setError(res.error?.message ?? 'That did not work. Try again.');
-    setBans((all) => all.filter((b) => b.handle !== target));
+    setLifted((l) => new Set(l).add(target));
   }
 
   return (

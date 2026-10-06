@@ -58,6 +58,15 @@ export type {
   HeldPost,
   HeldReply,
 } from './feed';
+export {
+  listHallCapsules,
+  openHallCapsules,
+  sealHallCapsule,
+  takeBackHallCapsule,
+  HALL_CAPSULE_RATE,
+  MAX_HALL_CAPSULES,
+} from './capsules';
+export type { HallCapsule } from './capsules';
 export { townHallsExport } from './export';
 export type { HallRole } from './roles';
 export type { HallExport } from './export';

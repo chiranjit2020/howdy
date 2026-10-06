@@ -29,6 +29,7 @@ users ──┬─< credentials      ON DELETE CASCADE   (1:1, password hash)
         ├─< legal_acceptances ON DELETE CASCADE  (which Terms / Privacy versions were agreed to, and when; append-only)
         ├─< suggestion_dismissals ON DELETE CASCADE (both user_id and dismissed_id — Phase 13, ADR-029)
         ├─< time_capsules    ON DELETE CASCADE   (both author_id and recipient_id — Phase 12, ADR-028)
+        ├─< town_hall_capsules ON DELETE CASCADE (author_id; also cascades from town_halls.id — ADR-043)
         ├─< porch_lights     ON DELETE CASCADE   (user_id; at most one row, only while the light is on — ADR-032)
         ├─< suspensions      ON DELETE CASCADE   (user_id; created_by / lifted_by / appeal_reviewed_by SET NULL — ADR-023)
         ├─< audit_log        ON DELETE SET NULL  (trail survives, anonymised)
@@ -126,6 +127,7 @@ streamed and never kept on the server. See ADR-037 for exactly what is and is no
 | Report evidence snapshot (`reports.evidence_text`, ≤ 600 chars: a card, ONE reported Whisper, a Town Hall's name + description) | open reports: kept; closed reports: **deleted 1 year after closing** (row, words, reporter/target) — outlives the thing, including a Whisper past its 7 days (disclosed in the Privacy Policy) | `purgeClosedReports()` (in `pnpm jobs:purge`) |
 | Suspensions and appeals (`suspensions`) | for the life of the account (disclosed in the Privacy Policy) | account deletion (CASCADE) |
 | Time Capsules (`time_capsules`) | sealed: until the day (then opened, or deleted if the two are no longer Pals / there is a block) or taken back by the writer; opened: until the recipient deletes it | people; `openDue()` (in `pnpm jobs:purge`); deleted with either account |
+| Town Hall Time Capsules (`town_hall_capsules`) | sealed: until the day, then the row is deleted as it becomes a `town_hall_posts` row (kept like any post); or taken back | the writer / staff who outrank them; `openHallCapsules()` (in `pnpm jobs:purge`, and on reading the feed); deleted with the writer's account or the Town Hall |
 | Memories | nothing stored — worked out when read | — |
 | Porch Light (`porch_lights`: audience, ≤ 60-char note, lit/until times) | only while on (≤ 2 hours); switching off deletes it; one that went out is deleted within a day — no history of when someone was around | the person; `purgeExpiredLights()` (in `pnpm jobs:purge`); account deletion |
 | Closing accounts (`users.status = 'pending_deletion'`) | 14 days from the request, then deleted for good | `purgeDeletedAccounts()` (in `pnpm jobs:purge`) |

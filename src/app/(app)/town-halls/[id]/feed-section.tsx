@@ -2,6 +2,7 @@
 
 import { useId, useState } from 'react';
 import type { HallFeedPage, HallPostView, HallReplyView, HeldItems } from '@/modules/town-halls';
+import { dayOf, longDay } from '@/shared/calendar';
 import type { ReactionKind } from '@/shared/validation/fence';
 import { apiRequest, postJson } from '@/ui/auth/api';
 import { FormMessage } from '@/ui/auth/form-parts';
@@ -212,6 +213,12 @@ export function FeedSection({
                   author={authorOf(p.author)}
                   body={p.body}
                   createdAt={p.createdAt}
+                  {...(p.capsuleSealedAt
+                    ? {
+                        stamp: 'Time Capsule',
+                        notice: `Sealed on ${longDay(dayOf(new Date(p.capsuleSealedAt)))}`,
+                      }
+                    : {})}
                   reactions={p.reactions}
                   myReaction={p.myReaction}
                   canReact={p.canReact}

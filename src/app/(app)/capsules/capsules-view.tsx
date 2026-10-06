@@ -2,7 +2,7 @@
 
 import { useState, type FormEvent } from 'react';
 import type { MyCapsules } from '@/modules/capsules';
-import { dayOf } from '@/shared/calendar';
+import { dayOf, longDay } from '@/shared/calendar';
 import { CAPSULE_MAX } from '@/shared/validation/capsules';
 import { apiRequest } from '@/ui/auth/api';
 import { FormMessage } from '@/ui/auth/form-parts';
@@ -16,15 +16,6 @@ import {
   Select,
   Textarea,
 } from '@/ui/primitives';
-
-/** A calendar day (YYYY-MM-DD) written out, without any time zone shifting it. */
-const longDay = (day: string) =>
-  new Date(`${day}T12:00:00Z`).toLocaleDateString(undefined, {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-    timeZone: 'UTC',
-  });
 
 export function CapsulesView({
   initial,

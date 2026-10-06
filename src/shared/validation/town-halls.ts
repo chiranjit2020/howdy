@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { LIMITS } from '../limits';
+import { capsuleDaySchema } from './capsules';
 import { cursorParamSchema, idParamSchema, postReplySchema, yoSchema } from './fence';
 import { handleParamSchema, hasDisguisingChars, hasLink, normaliseText } from './profile';
 import './zod-setup'; // jitless Zod (no eval probe under our CSP)
@@ -100,6 +101,9 @@ export const MEMBER_MAX_PAGE_SIZE = 100;
  */
 export const hallPostBodySchema = clean(LIMITS.TOWNHALL_POST_MAX, 'Write something to post.', 'A post');
 export const hallPostSchema = z.object({ body: hallPostBodySchema });
+
+/** A Time Capsule for a whole Town Hall (ADR-043): it becomes a post, so it follows a post's rules. */
+export const sealHallCapsuleSchema = z.object({ body: hallPostBodySchema, openOn: capsuleDaySchema });
 export const hallReplySchema = postReplySchema;
 export const hallReactionSchema = yoSchema;
 export const hallActionSchema = z.object({ action: z.enum(['approve']) });

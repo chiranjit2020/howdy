@@ -9,6 +9,26 @@ Town Hall feed ADR-033, Dynamic Island ADR-034). Production: Vercel `sin1` + Neo
 mail, R2 photos, Upstash Redis; a push to `main` deploys. Production does not migrate on deploy: apply new migrations
 to `howdy_dev` and the Singapore `howdy_prod` first.
 
+## 2026-10-06 — Time Capsules for a Town Hall (ADR-043) — shipped
+
+Decisions taken with you: **owner + Deputies seal**; **opens as a post in the feed** ("Time Capsule", "Sealed on …");
+**opens even if the sealer has left or been banned**.
+
+- [x] "Time Capsules" card on a Town Hall: members see who + the day (never the words); staff get a date + words form
+      (a post's rules, 280 chars) and "Take back" (sealer, or the owner over a Deputy's).
+- [x] Opens on the first feed read on/after its day or in the daily job; one transaction deletes the capsule and makes
+      the post (two openers → one post); a suspended sealer makes it wait; held like any post if the sealer is no
+      longer staff and is being reported.
+- [x] Migration `0035_town_hall_capsules`, applied to `howdy_dev`, Singapore `howdy_prod` and the local test + e2e
+      databases before the push. Privacy 1.14.0 (no re-acceptance).
+- [x] Tests: `tests/security/town-hall-capsules.test.ts` (10); Town Hall + Capsules suites 99/99. Mutation check
+      `.dev/mutate-town-hall-capsules.mjs`: 13/13 caught (the Town Hall scope on "take back" first survived: the test
+      used a stranger, who is refused anyway — now the writer tries it under another hall where they are staff).
+- [x] Phone e2e `tests/e2e/town-hall-capsules.spec.ts` (320 px: seal, member sees who/when, opens as a stamped
+      post). It found a real bug: re-mounting a card by changing its `key` on refresh left a stale duplicate card;
+      the Capsules and Banned cards now read the server's list from props plus a local "gone" set (as Asking-to-join does).
+- [x] Full vitest 1445/1445 (run in four chunks for RAM), production build, `pnpm lint`, typecheck.
+
 ## 2026-10-06 — Town Hall ban list (ADR-042) — shipped
 
 Decisions taken with you: **the owner and Deputies ban** (a Deputy only ordinary members and outsiders; the owner
@@ -22,8 +42,8 @@ stands a Deputy down first); **silent** — to the banned person the Town Hall n
 - [x] Join/ask/invite and ban serialise on a per-person advisory lock (a racing join cannot leave a banned person in).
 - [x] Migration `0034_town_hall_bans`, applied to `howdy_dev`, Singapore `howdy_prod` and the local test + e2e
       databases before the push. Privacy 1.13.0 (no re-acceptance).
-- [ ] Not yet run (machine out of RAM): the full vitest suite, a local production build, and the new
-      `tests/e2e/town-hall-bans.spec.ts`. Pushed on the targeted tests at your request.
+- [x] Owed checks done 2026-10-06 (with ADR-043): full vitest, production build, and
+      `tests/e2e/town-hall-bans.spec.ts` (passes; the Banned card's stale-duplicate risk was fixed with ADR-043's).
 - [x] Tests: `tests/security/town-hall-bans.test.ts` (12); Town Hall suites 64/64 still green. Mutation check
       `.dev/mutate-town-hall-bans.mjs`: 15/15 caught (two first survived: an equivalent "rings staff" mutant, replaced,
       and the missing lock, which HTTP racing could not hit — now a deterministic held-lock test).
@@ -756,11 +776,11 @@ call or waits for real use:
 3. ~~A whole-of-Whispers threat model and a staged Ably load test~~ **Done 2026-10-05** (ADR-038, see above).
 4. ~~Image moderation~~ **Built 2026-10-05** (ADR-039) — set `OPENAI_API_KEY` to turn it on. CSAM is not covered
    by it (Cloudflare CSAM Scanning Tool or PhotoDNA, if wanted).
-5. Capsules to a Town Hall. ~~Town Hall roles + approval-gated join~~ **built 2026-10-06** (ADR-041). ~~MFA/passkeys~~ **built 2026-10-05** (ADR-040). ~~A Town Hall ban list~~ **built 2026-10-06** (ADR-042).
+5. ~~Capsules to a Town Hall~~ **built 2026-10-06** (ADR-043). ~~Town Hall roles + approval-gated join~~ **built 2026-10-06** (ADR-041). ~~MFA/passkeys~~ **built 2026-10-05** (ADR-040). ~~A Town Hall ban list~~ **built 2026-10-06** (ADR-042).
 6. Revisit whether Tribute/Mark giving should ever widen beyond Pals-only.
 
 ## Architectural Decisions
 
-ADR-001 … ADR-042 in `docs/decisions/`; lifecycle and deletion design in `docs/DATA_LIFECYCLE.md`; Whispers threat model in
+ADR-001 … ADR-043 in `docs/decisions/`; lifecycle and deletion design in `docs/DATA_LIFECYCLE.md`; Whispers threat model in
 `docs/WHISPERS_THREAT_MODEL.md`.
 

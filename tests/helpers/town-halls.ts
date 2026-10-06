@@ -14,6 +14,8 @@ import {
 import { GET as requestsRoute } from '@/app/api/town-halls/[id]/requests/route';
 import { GET as bansRoute, POST as banRoute } from '@/app/api/town-halls/[id]/bans/route';
 import { DELETE as liftBanRoute } from '@/app/api/town-halls/[id]/bans/[handle]/route';
+import { GET as hallCapsulesRoute, POST as sealHallRoute } from '@/app/api/town-halls/[id]/capsules/route';
+import { DELETE as takeBackHallRoute } from '@/app/api/town-halls/[id]/capsules/[capsuleId]/route';
 import { GET as mineRoute } from '@/app/api/me/town-halls/route';
 import { GET as invitesRoute } from '@/app/api/me/town-halls/invites/route';
 import { call, request } from './auth';
@@ -159,6 +161,37 @@ export const liftBan = (id: string, handle: string, opts: Opts = {}) =>
     'DELETE',
     `/api/town-halls/${enc(id)}/bans/${enc(handle)}`,
     { id, handle },
+    undefined,
+    opts,
+  );
+
+/** GET/POST /api/town-halls/:id/capsules and DELETE /api/town-halls/:id/capsules/:capsuleId (ADR-043). */
+export const hallCapsules = (id: string, opts: Opts = {}) =>
+  dynamic(
+    hallCapsulesRoute,
+    'GET',
+    `/api/town-halls/${enc(id)}/capsules`,
+    { id },
+    undefined,
+    opts,
+  ) as Promise<{
+    status: number;
+    data: Wire & {
+      capsules?: { id: string; from: { handle: string } | null; openOn: string; canTakeBack: boolean }[];
+    };
+    text: string;
+    res: Response;
+  }>;
+
+export const sealHall = (id: string, body: unknown, opts: Opts = {}) =>
+  dynamic(sealHallRoute, 'POST', `/api/town-halls/${enc(id)}/capsules`, { id }, body, opts);
+
+export const takeBackHall = (id: string, capsuleId: string, opts: Opts = {}) =>
+  dynamic(
+    takeBackHallRoute,
+    'DELETE',
+    `/api/town-halls/${enc(id)}/capsules/${enc(capsuleId)}`,
+    { id, capsuleId },
     undefined,
     opts,
   );

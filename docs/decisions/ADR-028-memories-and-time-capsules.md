@@ -40,7 +40,7 @@ Status: accepted (2026-09-30). Master prompt §61 Phase 12; the prompt names the
 
 ## Not in this slice
 
-Capsules to a Town Hall; a report button on an opened capsule (the writer can be reported as a person); photos in
+Capsules to a Town Hall (since built: ADR-043); a report button on an opened capsule (the writer can be reported as a person); photos in
 capsules; a yearly recap; Memories as a Chime or push.
 
 ## Verification

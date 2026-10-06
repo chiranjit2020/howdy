@@ -71,6 +71,7 @@ Tracks tell you who has recently stopped by your Porch. They are built to be vag
 ## Time Capsules and Memories
 
 - **Time Capsules:** words you seal for your future self or for one of your Pals, to open on a day you choose. Until that day nobody can read them in Howdy, not even you (you can take one back, which deletes it). They are stored on our servers, not end-to-end encrypted. On the day, a capsule to a Pal opens only if you are still Pals and neither of you has blocked the other; otherwise it is deleted. Once open it belongs to the person it was for, and stays until they delete it.
+- **Time Capsules for a Town Hall:** its owner and Deputies can seal words for the whole Town Hall, sealed the same way. Its members see who sealed one and the day it opens, never the words. On that day it becomes a post in the Town Hall's feed, by the person who sealed it and marked with when it was sealed, even if they have left the Town Hall since; from then on it is like any other post there. The person who sealed it can take it back before then, and so can the owner if a Deputy sealed it.
 - **Memories:** "On this day" on your Home page shows Post Cards on your own Fence, the day you became Pals with someone, and Tributes written to you, from earlier years. Only you see them. Nothing extra is stored for this: they are worked out from what is still there, and something removed, or someone you have blocked or muted, does not come back as a memory.
 
 ## Porch Light
@@ -95,7 +96,7 @@ On your Pals page we may suggest people who are Pals with at least two of your P
 
 - **Signal:** 12 hours after you set it.
 - **Porch Light:** until you switch it off, and within a day of it going out on its own.
-- **Time Capsules:** until the day they open (or until you take one back); after that, until the person it was for deletes it.
+- **Time Capsules:** until the day they open (or until you take one back); after that, until the person it was for deletes it. A Town Hall's capsule becomes a post on its day and is then kept like any post.
 - **Whispers:** 7 days after they are sent (or sooner, if a thread is burned). The words of a Whisper someone reported are kept with the report (see below).
 - **Tracks:** 7 days.
 - **Chimes:** 30 days after you read them, or 90 days if you never do.

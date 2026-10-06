@@ -16,6 +16,7 @@ import {
 } from '@/shared/validation/fence';
 import type { PortraitTint } from '@/shared/validation/profile';
 import { HALL_FEED_MAX_PAGE_SIZE, HALL_FEED_PAGE_SIZE } from '@/shared/validation/town-halls';
+import { openHallCapsules } from './capsules';
 import { activeRole, isStaff, outranks, rolesIn, type HallRole } from './roles';
 
 /**
@@ -72,6 +73,8 @@ export interface HallPostView {
   canRemove: boolean;
   canReact: boolean;
   canReply: boolean;
+  /** Set when this post is a Time Capsule that opened (ADR-043): when its words were sealed. */
+  capsuleSealedAt: Date | null;
   /** Count per kind, always present even at zero. Never who gave which. */
   reactions: Record<ReactionKind, number>;
   myReaction: ReactionKind | null;
@@ -141,6 +144,7 @@ interface PostRow {
   authorId: string;
   body: string;
   status: string;
+  capsuleSealedAt: Date | null;
   createdAt: Date;
 }
 
@@ -248,6 +252,7 @@ async function hydrate(
         canRemove: mayRemove(row.authorId),
         canReact: published && row.authorId !== viewerId,
         canReply: published,
+        capsuleSealedAt: row.capsuleSealedAt,
         reactions: reactionsByPost.get(row.id) ?? emptyReactions(),
         myReaction: myReaction.get(row.id) ?? null,
         replies: repliesByPost.get(row.id) ?? [],
@@ -273,6 +278,8 @@ export async function listFeed(
   await enforceRateLimit(`townhalls:feed:${viewerId}`, FEED_RATE.read);
   const hall = await hallForMember(viewerId, townHallId);
   if (!hall) return null;
+  // Time Capsules whose day has come become posts before the first page is read (ADR-043).
+  if (!cursor) await openHallCapsules({ townHallId: hall.id });
   const limit = Math.min(Math.max(opts.limit ?? HALL_FEED_PAGE_SIZE, 1), HALL_FEED_MAX_PAGE_SIZE);
 
   const kept: PostRow[] = [];

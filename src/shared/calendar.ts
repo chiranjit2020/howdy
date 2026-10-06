@@ -50,3 +50,15 @@ export function clockOf(at: Date | string): string {
     .replace(/\s/g, ' ') // ICU puts a narrow no-break space before "pm"
     .toLowerCase();
 }
+
+/**
+ * A calendar day (YYYY-MM-DD) written out ("3 January 2026"), without any time zone shifting it. A fixed locale, so the
+ * server's render and the browser's agree (no hydration mismatch) and it reads the Indian way.
+ */
+export const longDay = (day: string) =>
+  new Date(`${day}T12:00:00Z`).toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'UTC',
+  });

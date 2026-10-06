@@ -43,6 +43,7 @@ test.describe('Town Hall bans (production build, real CSP)', () => {
   test('a Deputy bans a member, who only ever sees an unanswered request; lifting lets them back', async ({
     browser,
   }) => {
+    test.slow(); // several people signing up on phones: past the default limit on a busy machine
     const owner = await person(browser, 'tbowner');
     const dep = await person(browser, 'tbdep', PHONE);
     const eve = await person(browser, 'tbeve', PHONE);
@@ -84,6 +85,7 @@ test.describe('Town Hall bans (production build, real CSP)', () => {
     await dep.page.getByRole('menuitem', { name: 'Ban…' }).click();
     await dep.page.getByRole('alertdialog').getByRole('button', { name: 'Ban' }).click();
     await expect(dep.page.getByRole('heading', { name: 'Banned (1)' })).toBeVisible();
+    await expect(dep.page.getByRole('heading', { name: /^Banned/ })).toHaveCount(1);
     // She has left the Members list; the only row naming her is the ban.
     await expect(memberRow(dep.page, eve.handle)).toHaveCount(1);
     await expect(memberRow(dep.page, eve.handle).getByText(`by @${dep.handle}`)).toBeVisible();

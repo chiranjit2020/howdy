@@ -246,6 +246,13 @@
       "when": 1791294499620,
       "tag": "0034_town_hall_bans",
       "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1791302497647,
+      "tag": "0035_town_hall_capsules",
+      "breakpoints": true
     }
   ]
 }
