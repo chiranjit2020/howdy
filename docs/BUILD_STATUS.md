@@ -9,6 +9,19 @@ Town Hall feed ADR-033, Dynamic Island ADR-034). Production: Vercel `sin1` + Neo
 mail, R2 photos, Upstash Redis; a push to `main` deploys. Production does not migrate on deploy: apply new migrations
 to `howdy_dev` and the Singapore `howdy_prod` first.
 
+## 2026-10-06 — Welcome page (the shareable link) — shipped
+
+- [x] `/welcome` (route group `(welcome)`, no app shell): hero "Your people. Not the whole internet." with a peek built
+      from real clay pieces (Post Card, Whisper, Chime), Why Howdy, what is built (9 features), safety, "Still on the
+      trail" (Exploring: Tributes/Marks from Town Hall neighbours; Planned: stronger photo safety; Next: more circles —
+      the user's to edit), and a final Stake a Claim + Share (native share sheet or copy link).
+- [x] Signed-out `/` now redirects to `/welcome` (was `/gate`); signed-in still goes to `/home`. Sign-out still lands
+      on `/gate`.
+- [x] Share card `opengraph-image.tsx` (1200×630, Fraunces + Google Sans from `assets/fonts`, palette pinned to the
+      tokens by `design-tokens.test.ts`). Google Sans is subset without GSUB (satori cannot read it).
+- [x] Tests: `tests/e2e/welcome.spec.ts` (320 px + desktop: axe, 44 px targets, no overflow, no CSP problems; `/`
+      redirect; share image is a real PNG); `auth.spec.ts` updated for the new first stop (15/15).
+
 ## 2026-10-06 — Time Capsules for a Town Hall (ADR-043) — shipped
 
 Decisions taken with you: **owner + Deputies seal**; **opens as a post in the feed** ("Time Capsule", "Sealed on …");

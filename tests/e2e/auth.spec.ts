@@ -21,10 +21,15 @@ test.describe('authentication journey (production build, real CSP, real cookies)
     const problems = await watchProblems(page);
     const a = uniqueAccount('walker');
 
+    // A stranger's first stop is the welcome page; its main button leads to Stake a Claim.
     await page.goto('/');
-    await expect(page).toHaveURL(/\/gate$/);
-    // The top bar (shared with every signed-in page) carries its own "Stake a Claim" link too; scope to the page's own content.
-    await expect(page.locator('#main').getByRole('link', { name: 'Stake a Claim' })).toBeVisible();
+    await expect(page).toHaveURL(/\/welcome$/);
+    await page
+      .locator('#main')
+      .getByRole('link', { name: /^Stake a Claim/ })
+      .first()
+      .click();
+    await expect(page).toHaveURL(/\/stake-a-claim$/);
 
     await signUpVia(page, a);
 

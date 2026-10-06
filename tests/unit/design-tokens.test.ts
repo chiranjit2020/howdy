@@ -121,9 +121,14 @@ describe('design-system discipline', () => {
     const offenders: string[] = [];
     for (const f of files) {
       const src = readFileSync(f, 'utf8');
-      // layout.tsx and manifest.ts are the exceptions: <meta name="theme-color"> and the web app manifest cannot use
-      // CSS variables. Their values are pinned to the tokens by the tests below, so they cannot drift.
-      const isPinned = ['src/app/layout.tsx', 'src/app/manifest.ts'].includes(f.replaceAll('\\', '/'));
+      // layout.tsx, manifest.ts and the welcome page's share image are the exceptions: <meta name="theme-color">, the
+      // web app manifest and a rendered PNG cannot use CSS variables. Their values are pinned to the tokens by the tests
+      // below, so they cannot drift.
+      const isPinned = [
+        'src/app/layout.tsx',
+        'src/app/manifest.ts',
+        'src/app/(welcome)/welcome/opengraph-image.tsx',
+      ].includes(f.replaceAll('\\', '/'));
       if (!isPinned && /#[0-9a-fA-F]{3,8}\b/.test(src.replace(/&#\d+;/g, '')))
         offenders.push(`${f}: hex colour`);
       if (/\b(?:bg|text|border|ring|fill|stroke|from|to|via)-\[(?:#|rgb|hsl|oklch)/.test(src))
@@ -139,6 +144,21 @@ describe('design-system discipline', () => {
     const dark = /prefers-color-scheme: dark\)',\s*color: '(#[0-9a-f]{6})'/i.exec(layout)?.[1];
     expect(light?.toLowerCase()).toBe(get('background', 'light'));
     expect(dark?.toLowerCase()).toBe(get('background', 'dark'));
+  });
+
+  it('the welcome share image uses the Daylight palette', () => {
+    const image = readFileSync('src/app/(welcome)/welcome/opengraph-image.tsx', 'utf8');
+    const pinned = {
+      CREAM: 'background',
+      INK: 'text-primary',
+      SLATE: 'text-secondary',
+      PINK: 'accent',
+      PINK_SOFT: 'accent-soft',
+    };
+    for (const [constant, token] of Object.entries(pinned)) {
+      const value = new RegExp(`const ${constant} = '(#[0-9a-f]{6})'`, 'i').exec(image)?.[1];
+      expect(value?.toLowerCase(), constant).toBe(get(token, 'light'));
+    }
   });
 
   it('the web app manifest colours match the Daylight background token (the installed app opens in Daylight)', () => {
