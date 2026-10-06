@@ -1,5 +1,5 @@
 /** Public surface of the authorisation module. */
-export { can, canFence, holdFor, isHidden } from './policy';
+export { can, canFence, holdFor, inPosse, isHidden, neighbourMatters } from './policy';
 export type {
   Action,
   Actor,

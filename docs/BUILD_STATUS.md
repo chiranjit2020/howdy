@@ -9,6 +9,21 @@ Town Hall feed ADR-033, Dynamic Island ADR-034). Production: Vercel `sin1` + Neo
 mail, R2 photos, Upstash Redis; a push to `main` deploys. Production does not migrate on deploy: apply new migrations
 to `howdy_dev` and the Singapore `howdy_prod` first.
 
+## 2026-10-06 — Tributes and Marks from Town Hall neighbours (ADR-044) — shipped
+
+Decisions taken with you: **neighbour = both active members of one Town Hall for 14+ days**; **Marks and Tributes**
+(Tributes still need approval); **neighbours' Marks do not count toward the Trusted tick**.
+
+- [x] Policy: `tribute:give` / `mark:give` allow Pals OR neighbours (no block); Whispers stay Pals-only.
+- [x] `town_hall_members.joined_at` set on every path into `active` (age counts from becoming a member, not from the
+      invite or request); `marks.from_pal` recorded at giving; the Trusted tick counts `from_pal` only.
+- [x] Migration `0036_neighbours` (backfills: existing Marks `from_pal = true`, active members' `joined_at`) — applied to
+      `howdy_dev`, Singapore `howdy_prod` and the local test + e2e databases before the push. Privacy 1.15.0.
+- [x] Welcome page: Tributes & Marks line updated; "Kind words from neighbours" removed from "Still on the trail".
+- [x] Tests: `tests/unit/authz-give.test.ts` (oracle over action × actor × relationship × neighbour),
+      `tests/security/neighbours.test.ts` (10), a Trusted-tick case in `trust.test.ts`. Mutation check
+      `.dev/mutate-neighbours.mjs`: 11/11 caught.
+
 ## 2026-10-06 — Welcome page (the shareable link) — shipped
 
 - [x] `/welcome` (route group `(welcome)`, no app shell): hero "Your people. Not the whole internet." with a peek built
@@ -790,10 +805,10 @@ call or waits for real use:
 4. ~~Image moderation~~ **Built 2026-10-05** (ADR-039) — set `OPENAI_API_KEY` to turn it on. CSAM is not covered
    by it (Cloudflare CSAM Scanning Tool or PhotoDNA, if wanted).
 5. ~~Capsules to a Town Hall~~ **built 2026-10-06** (ADR-043). ~~Town Hall roles + approval-gated join~~ **built 2026-10-06** (ADR-041). ~~MFA/passkeys~~ **built 2026-10-05** (ADR-040). ~~A Town Hall ban list~~ **built 2026-10-06** (ADR-042).
-6. Revisit whether Tribute/Mark giving should ever widen beyond Pals-only.
+6. ~~Revisit whether Tribute/Mark giving should ever widen beyond Pals-only~~ **built 2026-10-06** (ADR-044: Town Hall neighbours).
 
 ## Architectural Decisions
 
-ADR-001 … ADR-043 in `docs/decisions/`; lifecycle and deletion design in `docs/DATA_LIFECYCLE.md`; Whispers threat model in
+ADR-001 … ADR-044 in `docs/decisions/`; lifecycle and deletion design in `docs/DATA_LIFECYCLE.md`; Whispers threat model in
 `docs/WHISPERS_THREAT_MODEL.md`.
 

@@ -184,16 +184,16 @@ describe('database invariants', () => {
     const o = await userId(owner.handle);
     const f = await userId(friend.handle);
     await expect(
-      q("insert into marks (rater_id, target_id, kind) values ($1, $1, 'chill')", [o]),
+      q("insert into marks (rater_id, target_id, kind, from_pal) values ($1, $1, 'chill', true)", [o]),
     ).rejects.toThrow(/marks_not_self/);
     await expect(
-      q("insert into marks (rater_id, target_id, kind) values ($1, $2, 'legendary')", [f, o]),
+      q("insert into marks (rater_id, target_id, kind, from_pal) values ($1, $2, 'legendary', true)", [f, o]),
     ).rejects.toThrow(/marks_kind_check/);
     // Cinema and Sigma were retired for Sharp and Bold (migration 0014).
     await expect(
-      q("insert into marks (rater_id, target_id, kind) values ($1, $2, 'cinema')", [f, o]),
+      q("insert into marks (rater_id, target_id, kind, from_pal) values ($1, $2, 'cinema', true)", [f, o]),
     ).rejects.toThrow(/marks_kind_check/);
-    await q("insert into marks (rater_id, target_id, kind) values ($1, $2, 'sharp')", [f, o]);
+    await q("insert into marks (rater_id, target_id, kind, from_pal) values ($1, $2, 'sharp', true)", [f, o]);
   });
 
   it('deleting either person removes their Marks', async () => {

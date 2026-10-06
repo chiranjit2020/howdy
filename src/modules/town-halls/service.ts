@@ -260,9 +260,13 @@ export async function createTownHall(
         createdAt: new Date(),
       })
       .returning();
-    await tx
-      .insert(townHallMembers)
-      .values({ townHallId: made!.id, userId: ownerId, role: 'owner', status: 'active' });
+    await tx.insert(townHallMembers).values({
+      townHallId: made!.id,
+      userId: ownerId,
+      role: 'owner',
+      status: 'active',
+      joinedAt: made!.createdAt,
+    });
     return made!;
   });
   return toDetail(row, ownerId, { role: 'owner', status: 'active', createdAt: row.createdAt });
@@ -620,7 +624,7 @@ export async function act(
     }
     case 'accept': {
       if (!mine || mine.status !== 'invited') throw new AppError('NOT_FOUND');
-      await db.update(townHallMembers).set({ status: 'active' }).where(where);
+      await db.update(townHallMembers).set({ status: 'active', joinedAt: now }).where(where);
       emit({ type: 'townhall.invite_accepted', townHallId, ownerId: row.ownerId, inviteeId: userId });
       after = { ...mine, status: 'active' };
       break;
@@ -667,11 +671,14 @@ async function joinOrAsk(
     if (row.joinRule === 'instant') {
       // A request left over from when it needed approval simply becomes a membership.
       if (mine) {
-        await tx.update(townHallMembers).set({ status: 'active', declinedAt: null }).where(where);
+        await tx
+          .update(townHallMembers)
+          .set({ status: 'active', declinedAt: null, joinedAt: now })
+          .where(where);
       } else {
         await tx
           .insert(townHallMembers)
-          .values({ townHallId: row.id, userId, role: 'member', status: 'active' })
+          .values({ townHallId: row.id, userId, role: 'member', status: 'active', joinedAt: now })
           .onConflictDoNothing();
       }
       return { after: { role: 'member', status: 'active', createdAt: now }, asked: false, ban: null };
@@ -729,7 +736,7 @@ export async function invite(inviterId: string, townHallId: string, handle: stri
 async function approveRequest(staffId: string, townHallId: string, requesterId: string): Promise<boolean> {
   const done = await getDb()
     .update(townHallMembers)
-    .set({ status: 'active', declinedAt: null })
+    .set({ status: 'active', declinedAt: null, joinedAt: new Date() })
     .where(
       and(
         eq(townHallMembers.townHallId, townHallId),

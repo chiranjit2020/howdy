@@ -44,8 +44,12 @@ const MODULE_DEPENDENCIES = {
   // moderation: the anti-spam checks (new-account budgets, holding for review). It depends on nothing.
   fence: ['authz', 'profiles', 'relationships', 'moderation'],
   notifications: ['authz', 'profiles', 'relationships', 'push'],
-  // Town Halls: names, who is hidden from whom (the feed, ADR-033), and the anti-spam checks. Nothing depends on it.
+  // Town Halls: names, who is hidden from whom (the feed, ADR-033), and the anti-spam checks. Only Tributes and Marks
+  // depend on it, to ask whether two people are neighbours (ADR-044).
   'town-halls': ['moderation', 'profiles', 'relationships'],
+  // Tributes and Marks: the Porch policy, names, the relationship, and whether two people are neighbours (ADR-044).
+  tributes: ['authz', 'profiles', 'relationships', 'town-halls'],
+  marks: ['authz', 'profiles', 'relationships', 'town-halls'],
   whispers: ['authz', 'profiles', 'relationships', 'moderation'],
   tracks: ['profiles', 'relationships'],
   // Owns files and nothing else; who may SEE a file is decided in the app layer.

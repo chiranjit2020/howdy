@@ -28,10 +28,10 @@ async function pal(a: string, b: string) {
     [low, high],
   );
 }
-const mark = (rater: string, target: string, kind: string, daysAgo = 0) =>
+const mark = (rater: string, target: string, kind: string, daysAgo = 0, fromPal = true) =>
   q(
-    "insert into marks (rater_id, target_id, kind, created_at) values ($1, $2, $3, now() - ($4 || ' days')::interval)",
-    [rater, target, kind, daysAgo],
+    "insert into marks (rater_id, target_id, kind, from_pal, created_at) values ($1, $2, $3, $5, now() - ($4 || ' days')::interval)",
+    [rater, target, kind, daysAgo, fromPal],
   );
 const seen = (id: string, daysAgo = 0) =>
   q(
@@ -124,6 +124,17 @@ describe('Marks that do not count', () => {
       R.markWindowDays + 1,
     ]);
     expect(await failing(p.id)).toContain('markGivers');
+  });
+
+  it('a Mark from a Town Hall neighbour (not a Pal) does not count (ADR-044)', async () => {
+    const p = await qualified();
+    await q('update marks set from_pal = false where rater_id = $1', [p.givers.at(-1)]);
+    expect(await failing(p.id)).toEqual(['markGivers']);
+    // A fresh Mark from a neighbour, given now, does not make up for it either.
+    const neighbour = await insertUser('neighbour');
+    await olderBy(neighbour.id, R.giverMinAgeDays + 1);
+    await mark(neighbour.id, p.id, 'chill', 0, false);
+    expect(await failing(p.id)).toEqual(['markGivers']);
   });
 
   it('five people all giving the same kind is not a spread', async () => {

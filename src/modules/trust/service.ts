@@ -75,10 +75,11 @@ async function gatherFacts(userId: string, now: Date): Promise<Facts | null> {
   const markSince = new Date(now.getTime() - TRUST_RULES.markWindowDays * DAY_MS);
   const giverBornBy = new Date(now.getTime() - TRUST_RULES.giverMinAgeDays * DAY_MS);
   const standingSince = new Date(now.getTime() - TRUST_RULES.standingDays * DAY_MS);
-  // A Mark counts when it is recent enough and its giver is still an active account old enough to count.
+  // A Mark counts when it is recent enough, was given by a Pal (not a Town Hall neighbour, ADR-044), and its giver is
+  // still an active account old enough to count.
   const countedMarks = sql`
     from marks m join users g on g.id = m.rater_id
-    where m.target_id = ${userId} and m.created_at > ${markSince}
+    where m.target_id = ${userId} and m.created_at > ${markSince} and m.from_pal
       and g.status = 'active' and g.created_at <= ${giverBornBy}`;
 
   const [user, portrait, pals, givers, byKind, seen, reports] = await Promise.all([

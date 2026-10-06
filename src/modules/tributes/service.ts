@@ -1,12 +1,14 @@
 import { tributes } from '@db/schema';
 import { and, desc, eq, lt, sql } from 'drizzle-orm';
-import { can, type Actor, type RanchResource } from '@/modules/authz';
+import { can, neighbourMatters, type Actor, type PolicyContext, type RanchResource } from '@/modules/authz';
 import { getCards, getFenceResource, resolveHandle, type PersonCard } from '@/modules/profiles';
 import { fenceStanding, hiddenAuthors } from '@/modules/relationships';
+import { areNeighbours } from '@/modules/town-halls';
 import { decodeCursor, encodeCursor, type Cursor } from '@/platform/cursor';
 import { getDb } from '@/platform/db';
 import { AppError } from '@/platform/errors';
 import { emit } from '@/platform/events';
+import type { RelationshipState } from '@/shared/relationship';
 import { enforceRateLimit, type RateLimitRule } from '@/platform/rate-limit';
 import { TRIBUTE_MAX_PAGE_SIZE, TRIBUTE_PAGE_SIZE, tributeIdParamSchema } from '@/shared/validation/tributes';
 import type { PortraitTint } from '@/shared/validation/profile';
@@ -49,7 +51,7 @@ export interface TributePage {
   tributes: TributeView[];
   nextCursor: string | null;
   isOwner: boolean;
-  /** May the viewer leave a Tribute here right now (Posse gate)? */
+  /** May the viewer leave a Tribute here right now (Pals or Town Hall neighbours)? */
   canGive: boolean;
 }
 
@@ -60,6 +62,18 @@ const toRef = (p: PersonCard): AuthorRef => ({
 });
 
 const actorOf = (userId: string): Actor => ({ kind: 'user', id: userId, status: 'active' });
+
+/** The policy facts for giving (ADR-044): the relationship, and — only when it could matter — whether they are neighbours. */
+async function giveContext(
+  viewerId: string | null,
+  ownerId: string,
+  relationship: RelationshipState,
+): Promise<PolicyContext> {
+  return {
+    relationship,
+    neighbour: neighbourMatters(viewerId, ownerId, relationship) && (await areNeighbours(viewerId, ownerId)),
+  };
+}
 
 /** Load the Ranch and the viewer's standing on it, or null when they may not read it (hidden ≡ missing). */
 async function access(
@@ -198,7 +212,12 @@ export async function listTributes(
     tributes: await hydrate(viewerId, kept, keptAuthors),
     nextCursor: next ? encodeCursor(next) : null,
     isOwner: viewerId === ownerId,
-    canGive: can(viewer, 'tribute:give', acc.ranch, { relationship: acc.relationship.relationship }).allow,
+    canGive: can(
+      viewer,
+      'tribute:give',
+      acc.ranch,
+      await giveContext(viewerId, ownerId, acc.relationship.relationship),
+    ).allow,
   };
 }
 
@@ -212,8 +231,9 @@ export async function giveTribute(authorId: string, handle: string, body: string
   const actor = actorOf(authorId);
   const acc = await access(actor, ownerId);
   if (!acc) throw new AppError('NOT_FOUND');
-  if (!can(actor, 'tribute:give', acc.ranch, { relationship: acc.relationship.relationship }).allow) {
-    throw new AppError('FORBIDDEN', { message: 'Only your Pals can leave you a Tribute.' });
+  const ctx = await giveContext(authorId, ownerId, acc.relationship.relationship);
+  if (!can(actor, 'tribute:give', acc.ranch, ctx).allow) {
+    throw new AppError('FORBIDDEN', { message: 'Only Pals and Town Hall neighbours can leave a Tribute.' });
   }
   await enforceRateLimit(`tributes:give:${authorId}:${ownerId}`, RATE.givePerOwner);
   const [row] = await getDb()

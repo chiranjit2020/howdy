@@ -253,6 +253,13 @@
       "when": 1791302497647,
       "tag": "0035_town_hall_capsules",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1791308132631,
+      "tag": "0036_neighbours",
+      "breakpoints": true
     }
   ]
 }

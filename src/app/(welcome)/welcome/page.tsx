@@ -50,7 +50,7 @@ const FEATURES: { art: ArtName; name: string; text: string }[] = [
   {
     art: 'mark-gem',
     name: 'Tributes & Marks',
-    text: 'Kind words you approve before anyone sees them, and five Marks from Pals: Gem, Pure, Chill, Sharp, Bold.',
+    text: 'Kind words you approve before they show, and five Marks — Gem, Pure, Chill, Sharp, Bold — from Pals and Town Hall neighbours.',
   },
   {
     art: 'nav-town-halls',
@@ -79,11 +79,6 @@ const SAFETY: { art: ArtName; text: string }[] = [
 ];
 
 const AHEAD: { name: string; text: string; tag: string }[] = [
-  {
-    tag: 'Exploring',
-    name: 'Kind words from neighbours',
-    text: 'Tributes and Marks from people you share a Town Hall with, not only your Pals — without letting anyone farm them.',
-  },
   {
     tag: 'Planned',
     name: 'Even stronger photo safety',

@@ -13,17 +13,17 @@ export const GLOSSARY = {
   tributes: {
     term: 'Tributes',
     definition:
-      'Public compliments your Pals can leave on your Porch — you approve each one before it shows.',
+      'Public compliments from your Pals and Town Hall neighbours — you approve each one before it shows.',
   },
   vibeMatrix: {
     term: 'Vibe Matrix',
     definition:
-      'A private tally of Marks your Pals have given you — a feel for your vibe, not a leaderboard.',
+      'A tally of Marks from your Pals and Town Hall neighbours — a feel for your vibe, not a leaderboard.',
   },
   trusted: {
     term: 'Trusted tick',
     definition:
-      'A gold tick earned over time from your Pals and your Marks. Nobody can ask for it or buy it, and it is never a score.',
+      'A gold tick earned over time from your Pals and the Marks they give you. Nobody can ask for it or buy it, and it is never a score.',
   },
   signal: {
     term: 'Signal',

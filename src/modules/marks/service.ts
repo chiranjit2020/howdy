@@ -1,11 +1,20 @@
 import { marks } from '@db/schema';
 import { and, desc, eq, sql } from 'drizzle-orm';
-import { can, type Actor, type RanchResource } from '@/modules/authz';
+import {
+  can,
+  inPosse,
+  neighbourMatters,
+  type Actor,
+  type PolicyContext,
+  type RanchResource,
+} from '@/modules/authz';
 import { getFenceResource, resolveHandle } from '@/modules/profiles';
 import { fenceStanding } from '@/modules/relationships';
+import { areNeighbours } from '@/modules/town-halls';
 import { getDb } from '@/platform/db';
 import { AppError } from '@/platform/errors';
 import { emit } from '@/platform/events';
+import type { RelationshipState } from '@/shared/relationship';
 import { enforceRateLimit, type RateLimitRule } from '@/platform/rate-limit';
 import { MARK_KINDS, type MarkKind } from '@/shared/validation/marks';
 
@@ -22,6 +31,18 @@ export const RATE = {
 export const COOLDOWN_MS = 30 * 24 * 60 * 60 * 1000;
 
 const actorOf = (userId: string): Actor => ({ kind: 'user', id: userId, status: 'active' });
+
+/** The policy facts for giving (ADR-044): the relationship, and — only when it could matter — whether they are neighbours. */
+async function giveContext(
+  viewerId: string | null,
+  ownerId: string,
+  relationship: RelationshipState,
+): Promise<PolicyContext> {
+  return {
+    relationship,
+    neighbour: neighbourMatters(viewerId, ownerId, relationship) && (await areNeighbours(viewerId, ownerId)),
+  };
+}
 
 async function access(
   viewer: Actor,
@@ -56,7 +77,7 @@ export interface VibeMatrix {
   counts: Record<MarkKind, number>;
   total: number;
   isOwner: boolean;
-  /** May the viewer award a Mark right now (Posse gate AND not on cooldown)? */
+  /** May the viewer award a Mark right now (Pals or Town Hall neighbours, AND not on cooldown)? */
   canGive: boolean;
   /** Set only when the viewer is blocked by the cooldown, not by the Posse gate. */
   cooldownEndsAt: Date | null;
@@ -87,9 +108,12 @@ export async function getVibeMatrix(
   if (!acc) return null;
 
   const viewerId = viewer.kind === 'user' ? viewer.id : null;
-  const posseAllowed = can(viewer, 'mark:give', acc.ranch, {
-    relationship: acc.relationship.relationship,
-  }).allow;
+  const posseAllowed = can(
+    viewer,
+    'mark:give',
+    acc.ranch,
+    await giveContext(viewerId, ownerId, acc.relationship.relationship),
+  ).allow;
   // The counts and my cooldown are independent: one round trip for both.
   const [rows, last] = await Promise.all([
     getDb()
@@ -123,7 +147,8 @@ export async function getVibeMatrix(
 }
 
 /**
- * Award a Mark to the person with call sign `handle`. Needs a mutual Posse (same gate as a Tribute) and to be off
+ * Award a Mark to the person with call sign `handle`. Needs to be Pals or Town Hall neighbours (same gate as a
+ * Tribute, ADR-044) and to be off
  * cooldown with them — one Mark total per rater→target pair every 30 days, whichever kind. The kind is never announced
  * beyond the target: the Chime just says a Mark arrived, and the Ranch shows only the aggregate breakdown.
  */
@@ -135,9 +160,12 @@ export async function giveMark(raterId: string, handle: string, kind: MarkKind):
   const actor = actorOf(raterId);
   const acc = await access(actor, targetId);
   if (!acc) throw new AppError('NOT_FOUND');
-  if (!can(actor, 'mark:give', acc.ranch, { relationship: acc.relationship.relationship }).allow) {
-    throw new AppError('FORBIDDEN', { message: 'Only your Pals can Mark you.' });
+  const relationship = acc.relationship.relationship;
+  if (!can(actor, 'mark:give', acc.ranch, await giveContext(raterId, targetId, relationship)).allow) {
+    throw new AppError('FORBIDDEN', { message: 'Only Pals and Town Hall neighbours can give a Mark.' });
   }
+  // Recorded so the Trusted tick can count Pals' Marks only (ADR-044).
+  const fromPal = inPosse(relationship);
   // A single `insert … where not exists` is NOT enough: under read committed, two racing requests can both see "no
   // recent Mark" and both insert (the marks race test caught it about 1 run in 4). So the pair is locked for the
   // length of the transaction: the second request waits, then sees the first one's row.
@@ -147,8 +175,8 @@ export async function giveMark(raterId: string, handle: string, kind: MarkKind):
       sql`select pg_advisory_xact_lock(hashtextextended(${`mark:${raterId}:${targetId}`}, 0))`,
     );
     return tx.execute(sql`
-      insert into marks (rater_id, target_id, kind, created_at)
-      select ${raterId}, ${targetId}, ${kind}, ${new Date()}
+      insert into marks (rater_id, target_id, kind, from_pal, created_at)
+      select ${raterId}, ${targetId}, ${kind}, ${fromPal}, ${new Date()}
       where not exists (
         select 1 from marks where rater_id = ${raterId} and target_id = ${targetId} and created_at > ${cutoff}
       )

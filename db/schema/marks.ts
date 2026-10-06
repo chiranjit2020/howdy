@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { check, index, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { boolean, check, index, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { users } from './auth';
 
 const tstz = (name: string) => timestamp(name, { withTimezone: true, mode: 'date' });
@@ -23,6 +23,11 @@ export const marks = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
     kind: text('kind').notNull(),
+    /**
+     * Were the two Pals when it was given (ADR-044)? Town Hall neighbours may give Marks too, but only Pals' Marks count
+     * toward the Trusted tick. No default on purpose: every insert must say which it is.
+     */
+    fromPal: boolean('from_pal').notNull(),
     createdAt: tstz('created_at').notNull().defaultNow(),
   },
   (t) => [

@@ -146,8 +146,8 @@ insert into tributes (owner_id, author_id, body, status, created_at)
 select user_low, user_high, 'kind words', 'published', now() - (random() * interval '700 days')
 from posse_links where status = 'accepted' and random() < 0.2;
 
-insert into marks (rater_id, target_id, kind, created_at)
-select user_low, user_high, (array['gem', 'pure', 'chill', 'sharp', 'bold'])[1 + floor(random() * 5)::int],
+insert into marks (rater_id, target_id, kind, from_pal, created_at)
+select user_low, user_high, (array['gem', 'pure', 'chill', 'sharp', 'bold'])[1 + floor(random() * 5)::int], true,
   now() - (random() * interval '700 days')
 from posse_links where status = 'accepted' and random() < 0.4;
 

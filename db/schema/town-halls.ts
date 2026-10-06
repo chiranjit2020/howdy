@@ -73,6 +73,11 @@ export const townHallMembers = pgTable(
     status: text('status').notNull().default('active'),
     /** Set when staff said no to a join request (never shown to the asker; ADR-041). */
     declinedAt: tstz('declined_at'),
+    /**
+     * When this person became an active member (ADR-044) — not when they were invited or asked, which `created_at`
+     * records. Rows from before it was added fall back to `created_at`. Decides who counts as a Town Hall neighbour.
+     */
+    joinedAt: tstz('joined_at'),
     createdAt: tstz('created_at').notNull().defaultNow(),
   },
   (t) => [
