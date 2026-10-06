@@ -1,3 +1,4 @@
+import { handleEvent as handleInviteEvent } from '@/modules/invites';
 import { filePhotoCheckReport } from '@/modules/moderation';
 import { handleEvent } from '@/modules/notifications';
 import { handleEvent as handleTrackEvent } from '@/modules/tracks';
@@ -14,6 +15,8 @@ import { publishToUser } from '@/platform/realtime';
 subscribe(handleEvent);
 subscribe(handleTrackEvent);
 subscribe(handleTrustEvent);
+// Invite links (ADR-045): auth says an account was made / confirmed; invites remembers who invited and sends the Pal request.
+subscribe(handleInviteEvent);
 
 // The photo check held a photo (ADR-039): it goes to the moderation queue. (media emits; moderation listens.)
 subscribe(async (event) => {

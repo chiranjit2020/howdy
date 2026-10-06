@@ -167,6 +167,11 @@ export const signUpSchema = z
     displayName: displayNameSchema.optional(),
     /** The "18 or older, and I agree to the Terms and Privacy Policy" box. Must be ticked; recorded with the versions. */
     acceptTerms: z.literal(true, { error: ACCEPT_TERMS_MESSAGE }),
+    /**
+     * The invite code the person arrived with (ADR-045). Deliberately loose: a broken or stale link must never stop
+     * anyone signing up, and the response must not say whether it worked.
+     */
+    invite: z.string().max(40).optional(),
   })
   .superRefine((v, ctx) => {
     if (passwordMatchesIdentity(v.password, v.email, v.handle)) {

@@ -3,6 +3,7 @@ import { and, eq, gt, isNull } from 'drizzle-orm';
 import { runAfterResponse } from '@/platform/background';
 import { getDb } from '@/platform/db';
 import { AppError } from '@/platform/errors';
+import { emit } from '@/platform/events';
 import { logger } from '@/platform/logger';
 import { getMailer } from '@/platform/mailer';
 import { enforceRateLimit } from '@/platform/rate-limit';
@@ -73,7 +74,13 @@ async function issueEmailToken(
  * separate the two cases, and mail is sent after the response.
  */
 export async function signUp(
-  input: { email: string; handle: string; password: string; displayName?: string | undefined },
+  input: {
+    email: string;
+    handle: string;
+    password: string;
+    displayName?: string | undefined;
+    invite?: string | undefined;
+  },
   ctx: RequestContext,
 ): Promise<void> {
   await enforceRateLimit(`auth:signup:ip:${ctx.ip}`, RATE.signupIp);
@@ -113,6 +120,8 @@ export async function signUp(
     runAfterResponse('mail.verify_email', async () =>
       getMailer().send(verifyEmailMessage(input.email, created.token)),
     );
+    // Who listens (e.g. invite links, ADR-045) is not auth's business; it runs after the response either way.
+    emit({ type: 'account.created', userId: created.userId, invite: input.invite ?? null });
   } catch (err) {
     const constraint = uniqueViolation(err);
     if (constraint?.includes('handle')) throw handleTaken(); // lost a race for the same handle
@@ -169,6 +178,7 @@ export async function verifyEmail(token: string, ctx: RequestContext): Promise<v
   });
   if (!userId) throw new AppError('BAD_REQUEST', { message: INVALID_LINK_MESSAGE });
   await audit('email_verified', { userId, requestId: ctx.requestId });
+  emit({ type: 'account.verified', userId });
 }
 
 /** Always succeeds from the caller's point of view; the work happens after the response. */

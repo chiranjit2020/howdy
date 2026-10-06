@@ -54,7 +54,14 @@ export type DomainEvent =
       summary: string;
     }
   /** A Time Capsule opened (ADR-028). Author and recipient are the same person for a capsule to one's future self. */
-  | { type: 'capsule.opened'; capsuleId: string; authorId: string; recipientId: string };
+  | { type: 'capsule.opened'; capsuleId: string; authorId: string; recipientId: string }
+  /**
+   * A brand-new account was made (never for an address that was already registered). `invite`: the invite code it
+   * arrived with, unchecked — the invites module decides what it is worth (ADR-045).
+   */
+  | { type: 'account.created'; userId: string; invite: string | null }
+  /** Someone confirmed their email address. */
+  | { type: 'account.verified'; userId: string };
 
 export type EventHandler = (event: DomainEvent) => Promise<void>;
 

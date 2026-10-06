@@ -64,6 +64,8 @@ const MODULE_DEPENDENCIES = {
   suggestions: ['authz', 'profiles'],
   // Porch Light (ADR-032): names, and which Pals a light reaches. Nothing depends on it.
   lights: ['profiles', 'relationships'],
+  // Invite links (ADR-045): names, and the ordinary Pal request. Composed with sign-up in the app layer.
+  invites: ['profiles', 'relationships'],
 };
 const moduleRules = Object.entries(MODULE_DEPENDENCIES).map(([name, allowed]) => {
   const forbidden = Object.keys(MODULE_DEPENDENCIES).filter((m) => m !== name && !allowed.includes(m));

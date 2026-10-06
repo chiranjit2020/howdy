@@ -128,6 +128,8 @@ streamed and never kept on the server. See ADR-037 for exactly what is and is no
 | Suspensions and appeals (`suspensions`) | for the life of the account (disclosed in the Privacy Policy) | account deletion (CASCADE) |
 | Time Capsules (`time_capsules`) | sealed: until the day (then opened, or deleted if the two are no longer Pals / there is a block) or taken back by the writer; opened: until the recipient deletes it | people; `openDue()` (in `pnpm jobs:purge`); deleted with either account |
 | Town Hall Time Capsules (`town_hall_capsules`) | sealed: until the day, then the row is deleted as it becomes a `town_hall_posts` row (kept like any post); or taken back | the writer / staff who outrank them; `openHallCapsules()` (in `pnpm jobs:purge`, and on reading the feed); deleted with the writer's account or the Town Hall |
+| Invite links (`invite_links`: one code per person) | until reset (new code) or the account is deleted | the person; account deletion (CASCADE) |
+| Invitations (`invitations`: invitee, inviter, when, redeemed) | **30 days after sign-up**, redeemed or not (feeds the weekly cap per link and the one Pal request) | `purgeOldInvitations()` (in `pnpm jobs:purge`); deleted with either account |
 | Memories | nothing stored — worked out when read | — |
 | Porch Light (`porch_lights`: audience, ≤ 60-char note, lit/until times) | only while on (≤ 2 hours); switching off deletes it; one that went out is deleted within a day — no history of when someone was around | the person; `purgeExpiredLights()` (in `pnpm jobs:purge`); account deletion |
 | Closing accounts (`users.status = 'pending_deletion'`) | 14 days from the request, then deleted for good | `purgeDeletedAccounts()` (in `pnpm jobs:purge`) |

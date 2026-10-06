@@ -55,6 +55,7 @@ Your settings decide most of it.
 - **Your Fence** follows your settings for who may read it and who may write on it. You can review cards before they appear, and remove anything on your own Fence.
 - **Whispers** are only ever between the two people in the conversation.
 - **Town Halls:** the list of who is in a Town Hall, and its posts, replies and reactions, are visible only to its members. Its owner can remove any post in it, and Deputies the owner appoints can remove posts by ordinary members. If you ask to join a Town Hall that needs approval, its owner and Deputies see your name, call sign and portrait, and when you asked. If they say no, you are not told; the request simply runs out. Its owner and Deputies can also ban someone from it: they keep a list of who is banned, when and by whom, and a banned person is not told — to them the Town Hall simply never answers a request to join.
+- **Invite links:** your personal invite link shows your display name, and nothing else from your Porch, to anyone who opens it. If someone signs up through it, we remember that you invited them; once they confirm their email, a Pal request goes from them to you, which you can accept or decline like any other. You can reset your link at any time, and the old one stops working.
 - **Tributes and Marks** can come from your Pals and from your Town Hall neighbours: people who have been members of a Town Hall with you for at least 14 days. To tell, we keep when each member joined a Town Hall. Tributes wait for your approval before anyone sees them; your Vibe Matrix shows only how many Marks of each kind you have. For the Trusted tick we note whether each Mark came from a Pal, because only Pals' Marks count toward it.
 - **Blocks, mutes and restrictions** are private to you, and a block hides the two of you from each other.
 - **Moderators** can see reports and the content they are about (a Post Card, a photo, one reported Whisper, a Town Hall's name and description, a Town Hall post), and photos the automatic check held back, and may act on them.
@@ -103,6 +104,7 @@ On your Pals page we may suggest people who are Pals with at least two of your P
 - **Chimes:** 30 days after you read them, or 90 days if you never do.
 - **Post Cards waiting for approval, waiting Tributes, and Town Hall posts waiting for the owner:** 30 days, if they are not approved.
 - **Requests to join a Town Hall:** 30 days, if nobody lets you in (whether or not they said no).
+- **Invitations (who signed up through whose link):** 30 days after the sign-up.
 - **Town Hall bans:** until the owner or a Deputy lifts the ban, or the Town Hall or the banned account is deleted. When a banned person last asked to join is deleted after 30 days.
 - **Unfinished photo uploads:** about an hour (a photo chosen for a card but never nailed goes too). A replaced or removed Portrait is deleted straight away; a card's photo stops being shown the moment its card is removed, and its file is deleted within a day.
 - **Sessions:** until you sign out, or after 14 days without use (60 days at most), plus 30 days of records so we can help with account problems.

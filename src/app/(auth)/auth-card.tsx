@@ -19,7 +19,14 @@ const TABS: { id: AuthMode; label: string; plain: string }[] = [
  * navigating, and the address follows along, so a refresh or a shared link opens the same form. Both addresses
  * (/step-inside and /stake-a-claim) render this card, starting on their own tab.
  */
-export function AuthCard({ initial }: { initial: AuthMode }) {
+export function AuthCard({
+  initial,
+  invite,
+}: {
+  initial: AuthMode;
+  /** Arrived through someone's invite link (ADR-045): sign-up sends the code along. */
+  invite?: { code: string; invitedBy: string };
+}) {
   const [active, setActive] = useState<AuthMode>(initial);
   // No slide on first paint: only a switch the person made animates.
   const [slide, setSlide] = useState<'from-left' | 'from-right' | undefined>();
@@ -101,7 +108,7 @@ export function AuthCard({ initial }: { initial: AuthMode }) {
           slide === 'from-left' && 'animate-slide-from-left',
         )}
       >
-        {active === 'step-inside' ? <LoginForm /> : <ClaimForm />}
+        {active === 'step-inside' ? <LoginForm /> : <ClaimForm {...(invite ? { invite } : {})} />}
       </div>
     </ClayCard>
   );

@@ -2,6 +2,7 @@ import { purgeExpiredAuthData, purgeFreedHandles, purgeOldAuditLog } from '@/mod
 import { openDue } from '@/modules/capsules';
 import { purgeDeletedAccounts } from './account-deletion';
 import { purgeStaleWaiting } from '@/modules/fence';
+import { purgeOldInvitations } from '@/modules/invites';
 import { purgeExpiredLights } from '@/modules/lights';
 import { purgeDetachedCardPhotos, purgeStaleMedia } from '@/modules/media';
 import { liftExpiredSuspensions, purgeClosedReports } from '@/modules/moderation';
@@ -25,6 +26,8 @@ export async function runAllPurges() {
   const signals = await clearExpiredSignals();
   // Porch Lights that went out (ADR-032): already treated as off; deleting them keeps no trace of when someone was around.
   const lights = await purgeExpiredLights();
+  // Invitations (ADR-045) are kept 30 days after sign-up: long enough for the weekly cap per link.
+  const invites = await purgeOldInvitations();
   const waiting = await purgeStaleWaiting();
   // Town Hall posts and replies held for an owner who never answered (ADR-033), on the same 30 days.
   const hallHeld = await purgeStaleHeld();
@@ -56,6 +59,7 @@ export async function runAllPurges() {
     ...auth,
     signals,
     ...lights,
+    ...invites,
     waiting,
     hallHeld,
     hallRequests,

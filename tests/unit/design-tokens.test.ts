@@ -127,7 +127,7 @@ describe('design-system discipline', () => {
       const isPinned = [
         'src/app/layout.tsx',
         'src/app/manifest.ts',
-        'src/app/(welcome)/welcome/opengraph-image.tsx',
+        'src/app/(welcome)/share-card.tsx',
       ].includes(f.replaceAll('\\', '/'));
       if (!isPinned && /#[0-9a-fA-F]{3,8}\b/.test(src.replace(/&#\d+;/g, '')))
         offenders.push(`${f}: hex colour`);
@@ -147,7 +147,7 @@ describe('design-system discipline', () => {
   });
 
   it('the welcome share image uses the Daylight palette', () => {
-    const image = readFileSync('src/app/(welcome)/welcome/opengraph-image.tsx', 'utf8');
+    const image = readFileSync('src/app/(welcome)/share-card.tsx', 'utf8');
     const pinned = {
       CREAM: 'background',
       INK: 'text-primary',

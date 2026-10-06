@@ -9,6 +9,22 @@ Town Hall feed ADR-033, Dynamic Island ADR-034). Production: Vercel `sin1` + Neo
 mail, R2 photos, Upstash Redis; a push to `main` deploys. Production does not migrate on deploy: apply new migrations
 to `howdy_dev` and the Singapore `howdy_prod` first.
 
+## 2026-10-07 — Invite links (ADR-045) — shipped
+
+Decisions taken with you: **joining through my link sends me a Pal request** (nothing automatic); **one personal link,
+resettable**, 20 sign-ups a week per link; **"<Name> invited you"** (display name only).
+
+- [x] `/i/<code>`: the welcome story naming the inviter (`WelcomeStory`, shared with /welcome) + a per-link preview card;
+      a dead link is just the welcome page. Sign-up carries the code and says what will happen.
+- [x] Auth emits `account.created` / `account.verified`; the new `invites` module records the invitation and, on email
+      confirmation, sends the ordinary Pal request (once; not to an inviter who is no longer active).
+- [x] Pals page: "Invite friends to Howdy" card (link, Share / copy, Reset link…, joined this week).
+- [x] Migration `0037_invites`, applied to `howdy_dev`, Singapore `howdy_prod` and the local test + e2e databases
+      before the push. Privacy 1.16.0. Welcome page Pals line mentions invite links.
+- [x] Tests: `tests/security/invites.test.ts` (11), `tests/e2e/invites.spec.ts` (2, 320 px phones, incl. the preview
+      card). Mutation check `.dev/mutate-invites.mjs`: 10/10 caught (a suspended inviter's link first survived — the
+      name lookup hid it, but sign-up still recorded the invitation; now tested).
+
 ## 2026-10-06 — Tributes and Marks from Town Hall neighbours (ADR-044) — shipped
 
 Decisions taken with you: **neighbour = both active members of one Town Hall for 14+ days**; **Marks and Tributes**
@@ -809,6 +825,6 @@ call or waits for real use:
 
 ## Architectural Decisions
 
-ADR-001 … ADR-044 in `docs/decisions/`; lifecycle and deletion design in `docs/DATA_LIFECYCLE.md`; Whispers threat model in
+ADR-001 … ADR-045 in `docs/decisions/`; lifecycle and deletion design in `docs/DATA_LIFECYCLE.md`; Whispers threat model in
 `docs/WHISPERS_THREAT_MODEL.md`.
 

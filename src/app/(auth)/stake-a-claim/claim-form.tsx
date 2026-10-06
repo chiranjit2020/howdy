@@ -12,7 +12,7 @@ import { Button, Input } from '@/ui/primitives';
 type Fields = { handle: string; displayName: string; email: string; password: string };
 type Errors = Partial<Fields & { acceptTerms: string }>;
 
-export function ClaimForm() {
+export function ClaimForm({ invite }: { invite?: { code: string; invitedBy: string } } = {}) {
   const formRef = useRef<HTMLFormElement>(null);
   const [values, setValues] = useState<Fields>({ handle: '', displayName: '', email: '', password: '' });
   const [acceptTerms, setAcceptTerms] = useState(false);
@@ -46,9 +46,12 @@ export function ClaimForm() {
     setFormError(undefined);
     // A blank Display name is not an error: the Ranch is simply named after the call sign.
     const { displayName, ...rest } = values;
-    const parsed = signUpSchema.safeParse(
-      displayName.trim() ? { ...rest, displayName, acceptTerms } : { ...rest, acceptTerms },
-    );
+    const parsed = signUpSchema.safeParse({
+      ...rest,
+      ...(displayName.trim() ? { displayName } : {}),
+      acceptTerms,
+      ...(invite ? { invite: invite.code } : {}),
+    });
     if (!parsed.success) {
       const next: Errors = {};
       for (const issue of parsed.error.issues) {
@@ -110,6 +113,13 @@ export function ClaimForm() {
         <h1 className="text-title text-text-primary">Join Howdy</h1>
         <p className="text-body text-text-secondary">It only takes a minute.</p>
       </div>
+      {invite && (
+        // Says exactly what will happen, and nothing more is granted (ADR-045).
+        <p className="rounded-md bg-accent-soft px-3 py-2 text-caption text-text-primary">
+          <strong>{invite.invitedBy}</strong> invited you. Once you confirm your email, they get a Pal request
+          from you.
+        </p>
+      )}
       {formError && (
         <FormMessage tone="error" focusKey={attempt}>
           {formError}
