@@ -22,13 +22,13 @@ _Snapshot: 2026-10-08._
 | **Security headers** | PASS | CSP, HSTS (2y, includeSubDomains), X-Content-Type-Options, X-Frame-Options DENY, Referrer-Policy, Permissions-Policy, COOP; live-verified 2026-10-07 |
 | **Realtime / WebSocket (Whispers)** | PASS | Per-join authz; `tests/security/realtime.test.ts`, `live-ping.test.ts`; `docs/WHISPERS_THREAT_MODEL.md` |
 | **Secrets** | PASS | env files gitignored, clean history (verified 2026-10-08); secrets in Vercel env only |
-| **Dependency / supply chain** | PARTIAL | `pnpm audit` clean after 2026-10-08 patch (next 16.3.8, sharp 0.35.5, overrides); **automated CI audit: TODO** |
+| **Dependency / supply chain** | PASS | `pnpm audit` clean (2026-10-08 patch); **CI gate** `.github/workflows/security.yml` fails push/PR on high/critical prod advisory, runs weekly |
 | **Database security** | PARTIAL | Neon TLS-only, encrypted at rest, migration discipline; **restore test & least-priv app role: review** |
 | **Redis security** | PASS | Upstash, authenticated, TLS, TTL'd; not durable storage; `tests/*/redis*.test.ts` |
 | **Logging / audit** | PASS | Append-only `audit_log` with rich events (login_success/failed, session_revoked, password/2FA changes, moderation actions, account deletion); never logs secrets |
 | **Detection / alerting** | TODO | Telemetry exists (audit + rate-limit counters); no automated alerts yet. See INCIDENT_RESPONSE.md |
 | **Incident response** | PARTIAL | `INCIDENT_RESPONSE.md` drafted 2026-10-08; not yet rehearsed |
-| **CI/CD security gate** | PARTIAL | Local `pnpm check` + e2e before push; **pipeline-enforced audit + secret scan: TODO** |
+| **CI/CD security gate** | PASS | `.github/workflows/security.yml`: dependency audit + gitleaks secret scan on every push/PR to main + weekly; local `pnpm check` + e2e before push |
 | **CSAM detection & reporting** | TODO | Planned; `CSAM_RUNBOOK.md` |
 | **Admin/operator account hardening** | TODO **[you]** | Enable 2FA on Vercel/Neon/Cloudflare/Resend/GitHub (outside the codebase) |
 | **Infrastructure / cloud least-privilege** | PARTIAL | Vercel `sin1`, Neon SG, R2 private; **formal IAM/least-priv review: TODO** |
@@ -36,8 +36,9 @@ _Snapshot: 2026-10-08._
 ## Top priorities (ranked)
 1. **[you]** 2FA on all provider accounts (Vercel, Neon, Cloudflare, Resend, GitHub). Highest value, zero code.
 2. **[you + code]** CSAM hash-matching — start provider applications now (`CSAM_RUNBOOK.md`).
-3. **[code]** CI gate: `pnpm audit --prod` + secret scan fail the build.
-4. **[code]** Basic detection alerts: `login_failed` spike per account/IP; sudden mass actions.
-5. **[review]** DB least-privilege app role + a tested restore.
+3. **[code]** Basic detection alerts: `login_failed` spike per account/IP; sudden mass actions (→ the Control Room, see below).
+4. **[review]** DB least-privilege app role + a tested restore.
+
+_Done 2026-10-08: CI security gate (dependency audit + secret scan) — `.github/workflows/security.yml`._
 
 _Do not promote any row to PASS without a new test or documented evidence. Update alongside ATTACK-MAPPING.md._

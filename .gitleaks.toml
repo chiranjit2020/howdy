@@ -1,0 +1,17 @@
+# gitleaks config for Howdy's secret-scan CI gate (.github/workflows/security.yml).
+# Extends the built-in ruleset and allowlists intentional, non-secret placeholders so the gate
+# fails only on REAL leaked credentials. Real secrets live only in Vercel's env, never in the repo.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Intentional placeholders and test fixtures — not real secrets."
+paths = [
+  '''\.env\.example$''',          # documented placeholders (user:password@localhost, re_..., etc.)
+  '''\.gitleaks\.toml$''',        # this file
+  '''tests/''',                   # fixtures: the well-known 'correct horse battery staple' passphrase, fake keys
+]
+regexes = [
+  '''postgres://user:password@localhost''',
+  '''correct horse battery staple''',
+]
