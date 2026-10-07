@@ -61,7 +61,9 @@ export type DomainEvent =
    */
   | { type: 'account.created'; userId: string; invite: string | null }
   /** Someone confirmed their email address. */
-  | { type: 'account.verified'; userId: string };
+  | { type: 'account.verified'; userId: string }
+  /** A Pal reacted to a Story for the first time (changing the kind rings nothing, ADR-047). */
+  | { type: 'story.reacted'; storyId: string; authorId: string; actorId: string };
 
 export type EventHandler = (event: DomainEvent) => Promise<void>;
 

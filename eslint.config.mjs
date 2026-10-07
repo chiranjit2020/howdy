@@ -66,6 +66,8 @@ const MODULE_DEPENDENCIES = {
   lights: ['profiles', 'relationships'],
   // Invite links (ADR-045): names, and the ordinary Pal request. Composed with sign-up in the app layer.
   invites: ['profiles', 'relationships'],
+  // Stories (ADR-047): names and the Story-views switch, who a Story reaches, and the first-week budgets.
+  stories: ['moderation', 'profiles', 'relationships'],
 };
 const moduleRules = Object.entries(MODULE_DEPENDENCIES).map(([name, allowed]) => {
   const forbidden = Object.keys(MODULE_DEPENDENCIES).filter((m) => m !== name && !allowed.includes(m));

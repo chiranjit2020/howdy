@@ -53,6 +53,7 @@ export function ThreadView({
   initial,
   wsUrl,
   liveChannel,
+  initialDraft,
 }: {
   handle: string;
   displayName: string;
@@ -63,6 +64,8 @@ export function ThreadView({
   wsUrl: string | undefined;
   /** My own Ably channel for instant Whispers (ADR-035), when set up. */
   liveChannel?: string | undefined;
+  /** Words to start my reply with (e.g. "Replying to your Story…", ADR-047). Nothing is sent until I send it. */
+  initialDraft?: string | undefined;
 }) {
   const router = useRouter();
   const [messages, setMessages] = useState<Msg[]>(initial.messages);
@@ -70,7 +73,7 @@ export function ThreadView({
   // How far they have read. Undefined when receipts are not shared in this thread: then nothing ever says "Seen".
   const [seenUpTo, setSeenUpTo] = useState(initial.seenUpTo);
   const [live, setLive] = useState<Live>(wsUrl ? 'connecting' : 'off');
-  const [text, setText] = useState('');
+  const [text, setText] = useState(initialDraft ?? '');
   const [error, setError] = useState<string | undefined>();
   const [burning, setBurning] = useState(false);
   // Flagging (ADR-025): "pick mode" puts a Flag button under each Whisper I received; `flagId` is the one being reported.

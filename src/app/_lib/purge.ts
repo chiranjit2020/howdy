@@ -3,6 +3,7 @@ import { openDue } from '@/modules/capsules';
 import { purgeDeletedAccounts } from './account-deletion';
 import { purgeStaleWaiting } from '@/modules/fence';
 import { purgeOldInvitations } from '@/modules/invites';
+import { purgeExpiredStories } from '@/modules/stories';
 import { purgeExpiredLights } from '@/modules/lights';
 import { purgeDetachedCardPhotos, purgeStaleMedia } from '@/modules/media';
 import { liftExpiredSuspensions, purgeClosedReports } from '@/modules/moderation';
@@ -37,7 +38,9 @@ export async function runAllPurges() {
   const whispers = await purgeOldWhispers();
   const trackRows = await purgeOldTracks();
   const files = await purgeStaleMedia();
-  // Card photos never nailed within the hour, or whose card has since been removed (ADR-031).
+  // Stories past their 12 hours (ADR-047) go first, so their photos are already detached for the clean-up below.
+  const storyRows = await purgeExpiredStories();
+  // Card photos never nailed within the hour, or whose card, post or Story has since been removed (ADR-031).
   const cardPhotos = await purgeDetachedCardPhotos();
   const tributeRows = await purgeStaleTributes();
   // Not retention, but daily upkeep that belongs with it: Trusted ticks nobody has looked at lately are checked again.
@@ -60,6 +63,7 @@ export async function runAllPurges() {
     signals,
     ...lights,
     ...invites,
+    ...storyRows,
     waiting,
     hallHeld,
     hallRequests,

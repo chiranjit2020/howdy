@@ -207,6 +207,23 @@ export async function hasLimited(ownerId: string, actorId: string): Promise<bool
   return Boolean(row);
 }
 
+/** `hasLimited` for many actors at once: which of `actorIds` has `ownerId` blocked or restricted? One query. */
+export async function limitedAmong(ownerId: string, actorIds: string[]): Promise<Set<string>> {
+  const ids = [...new Set(actorIds)].filter((id) => id !== ownerId);
+  if (ids.length === 0) return new Set();
+  const rows = await getDb()
+    .select({ targetId: userControls.targetId })
+    .from(userControls)
+    .where(
+      and(
+        eq(userControls.actorId, ownerId),
+        inArray(userControls.targetId, ids),
+        inArray(userControls.kind, ['block', 'restrict']),
+      ),
+    );
+  return new Set(rows.map((r) => r.targetId));
+}
+
 /**
  * Of `otherIds`, who is `userId` currently in each other's Posse with AND not in a block with (either direction)? Those are the
  * people a Whisper thread is still open with. Two queries for the whole list.

@@ -429,6 +429,7 @@ export async function createPost(
             eq(media.status, 'ready'),
             isNull(media.cardId),
             isNull(media.hallPostId),
+            isNull(media.storyId),
             gt(media.createdAt, new Date(Date.now() - PHOTO_ATTACH_WINDOW_MS)),
           ),
         )

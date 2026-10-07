@@ -1,5 +1,6 @@
 import { accountExport } from '@/modules/auth';
 import { myCapsules } from '@/modules/capsules';
+import { storiesExport } from '@/modules/stories';
 import { fenceExport, type ExportState } from '@/modules/fence';
 import { marksExport } from '@/modules/marks';
 import { readCardPhoto, readPortrait } from '@/modules/media';
@@ -56,6 +57,8 @@ export async function buildDataExport(userId: string, now: Date = new Date()): P
       townHallsExport(userId),
       moderationExport(userId),
     ]);
+  // My Stories that are still up (ADR-047): they last 12 hours, so that is all there is.
+  const myStories = await storiesExport(userId, now);
 
   // Everyone this file could name, checked once: active accounts only, and nobody hidden from me.
   const ids = new Set<string>([
@@ -148,6 +151,7 @@ export async function buildDataExport(userId: string, now: Date = new Date()): P
         reviewCardsFirst: ranch.fenceReview,
         shadowWalk: ranch.shadowWalk,
         readReceipts: ranch.readReceipts,
+        storyViews: ranch.storyViews,
         suggestMeToPalsOfPals: ranch.discoverable,
       },
       chimes: prefs,
@@ -249,6 +253,12 @@ export async function buildDataExport(userId: string, now: Date = new Date()): P
         note: 'Sealed words stay sealed until the day, even from you.',
       })),
     },
+    stories: myStories.map((s) => ({
+      caption: s.caption,
+      postedAt: iso(s.postedAt),
+      goneAt: iso(s.expiresAt),
+      photo: cardPhoto(s.photoId),
+    })),
     tracks: tracks.frozen
       ? { shadowWalk: true, note: 'Shadow Walk is on, so your Tracks are frozen.' }
       : {

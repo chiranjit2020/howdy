@@ -234,6 +234,44 @@ export function BoundaryForm({
   );
 }
 
+/** Story views (ADR-047), reciprocal like read receipts: off also hides who viewed mine. Saves on switching. */
+export function StoryViewsForm({ initial }: { initial: boolean }) {
+  const router = useRouter();
+  const toast = useToast();
+  const [on, setOn] = useState(initial);
+  const [error, setError] = useState<string | undefined>();
+
+  async function set(value: boolean) {
+    const before = on;
+    setOn(value);
+    setError(undefined);
+    const res = await apiRequest('PATCH', '/api/me/porch', { storyViews: value });
+    if (res.ok) {
+      toast({ title: value ? 'Story views are on.' : 'Story views are off.', tone: 'success' });
+      router.refresh();
+    } else {
+      setOn(before);
+      setError(res.error?.message ?? 'That did not save. Try again.');
+    }
+  }
+
+  return (
+    <ClayCard>
+      <Switch
+        label="Story views"
+        hint={
+          on
+            ? 'Pals who also have this on see that you viewed their Stories, and you see who viewed yours.'
+            : 'Nobody sees that you viewed their Stories, and you do not see who viewed yours. Reactions still show.'
+        }
+        checked={on}
+        onCheckedChange={set}
+      />
+      {error && <FormMessage tone="error">{error}</FormMessage>}
+    </ClayCard>
+  );
+}
+
 const POSTING_LABEL: Record<FencePosting, string> = {
   members: 'Any Howdy member who can read it',
   posse: 'My Pals only',

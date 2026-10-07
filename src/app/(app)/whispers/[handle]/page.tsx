@@ -11,9 +11,18 @@ import { ThreadView } from './thread-view';
 export const metadata = { title: 'Whisper', robots: { index: false, follow: false } };
 
 /** One private thread. A thread I may not open is a plain 404 — the same for a stranger, a block and a made-up call sign. */
-export default async function ThreadPage({ params }: { params: Promise<{ handle: string }> }) {
+export default async function ThreadPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ handle: string }>;
+  /** `draft`: words to start the reply with — e.g. replying to their Story (ADR-047). Only ever pre-fills MY box. */
+  searchParams: Promise<{ draft?: string | string[] }>;
+}) {
   const user = await requireUser();
   const { handle } = await params;
+  const rawDraft = (await searchParams).draft;
+  const draft = typeof rawDraft === 'string' ? rawDraft.slice(0, 200) : undefined;
   let page;
   try {
     page = await getThread(user.id, handle, {});
@@ -49,6 +58,7 @@ export default async function ThreadPage({ params }: { params: Promise<{ handle:
           initial={{ messages: page.messages, hasMore: page.hasMore, seenUpTo: page.seenUpTo }}
           wsUrl={getEnv().WS_PUBLIC_URL}
           liveChannel={liveChannelFor(user.id)}
+          {...(draft ? { initialDraft: draft } : {})}
         />
       </main>
     </>

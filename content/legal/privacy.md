@@ -8,7 +8,7 @@ Howdy is run by {{operator}}, an individual based in {{country}} ("Howdy", "we",
 
 - We collect what you give us (your email, call sign, what you post) and a little that is needed to keep your account safe. We do not sell your data and we do not show ads.
 - We do not use analytics or tracking tools, and we use only two small cookies (see the [Cookie Policy](/cookies)).
-- A lot of Howdy is built to forget: Signals fade after 12 hours, Whispers after 7 days, and Tracks keep only a date for 7 days.
+- A lot of Howdy is built to forget: Signals and Stories fade after 12 hours, Whispers after 7 days, and Tracks keep only a date for 7 days.
 - Your privacy settings decide who can see your Porch, Signal and Fence. New Porches are visible to signed-in members only.
 - You can delete your account, or download a copy of your data, yourself in the Workshop at any time. You can also ask us to correct your data by writing to [{{contactEmail}}](mailto:{{contactEmail}}).
 
@@ -18,9 +18,9 @@ Howdy is run by {{operator}}, an individual based in {{country}} ("Howdy", "we",
 
 **Your Porch.** Your display name, your bio if you write one (a short line shown under your name), the colour of your portrait, your Portrait photo if you add one, your Signal (a short status), your Porch Light while it is on, and your settings: who can see your Porch and Signal, who can write on your Fence, and which Chimes you want.
 
-**Photos.** When you add a Portrait, or a photo to a Post Card or a Town Hall post, we re-make the picture ourselves (a small square for a Portrait; for a card or a post, the whole picture at most 1280 pixels across). Anything hidden inside the original file, such as the location where it was taken or the camera used, is thrown away and never stored. A card's photo is shown only to the people who can see that card. Before anyone else sees a new photo, an automatic check looks at a small copy of it for sexual content, violence and self-harm (see OpenAI under [Service providers](#service-providers)). A photo that is almost certainly explicit or graphic is turned down; one the check is unsure about is shown only to you until a moderator has looked at it.
+**Photos.** When you add a Portrait, or a photo to a Post Card, a Town Hall post or a Story, we re-make the picture ourselves (a small square for a Portrait; for anything else, the whole picture at most 1280 pixels across). Anything hidden inside the original file, such as the location where it was taken or the camera used, is thrown away and never stored. A card's photo is shown only to the people who can see that card, and a Story only to the Pals it is for. Before anyone else sees a new photo, an automatic check looks at a small copy of it for sexual content, violence and self-harm (see OpenAI under [Service providers](#service-providers)). A photo that is almost certainly explicit or graphic is turned down; one the check is unsure about is shown only to you until a moderator has looked at it.
 
-**What you post and do.** Post Cards and replies, Yos, Tributes you write or receive, Marks you give, Whispers you send, Time Capsules you seal, Town Halls you start or join, posts, replies and reactions in Town Halls, and reports you file.
+**What you post and do.** Post Cards and replies, Yos, Tributes you write or receive, Marks you give, Whispers you send, Time Capsules you seal, Stories you share and the Stories you view or react to, Town Halls you start or join, posts, replies and reactions in Town Halls, and reports you file.
 
 **Your connections.** Who is in your Pals, and requests between you. Also the private choices you make about others: Close Pals, Scouting, Mute, Restrict and Block. Those last ones are visible only to you. The other person is never told.
 
@@ -82,6 +82,14 @@ Tracks tell you who has recently stopped by your Porch. They are built to be vag
 - **Who sees it:** your Pals, or only the Pals you marked as Close, as you choose each time. Nobody is notified when it comes on: it is only seen by Pals who look at their Home page or your Porch. It is not shown to anyone you have blocked or restricted, or who has blocked or muted you.
 - **No history:** we keep only the light that is on now. When you switch it off it is deleted, and a light that has gone out is deleted within a day, so nobody can see when you were last around.
 
+## Stories
+
+- **What it is:** one photo, with a short caption if you like, that disappears 12 hours after you share it. You can take it down sooner.
+- **Who sees it:** your Pals, or only the Pals you marked as Close, as you choose each time. It is not shown to anyone you have blocked or restricted, or who has blocked or muted you, nor to someone who is no longer your Pal.
+- **Who viewed it:** when you open a Pal's Story we note that you did, so Howdy knows which Stories you have seen. Your Pal is told it was you only if you both have "Story views" on in the Workshop (it is on to start with). If either of you turns it off, neither of you sees who viewed. Nobody is told whose switch is off. Someone you have restricted or blocked is never shown as a viewer.
+- **Reactions:** if you react to a Story, its owner sees your reaction and is sent a Chime, whatever your Story views setting. "Reply" opens a Whisper to them.
+- **Gone after 12 hours:** past its 12 hours a Story, its photo, who viewed it and the reactions to it are no longer shown to anyone, and they are deleted within a day. A Story that was reported keeps a copy of its caption with the report.
+
 ## Pals you may know
 
 On your Pals page we may suggest people who are Pals with at least two of your Pals, and show which of your Pals you share. In the same way, you may be suggested to people who share at least two Pals with you. This is worked out from Pal connections only, when the page is opened; nothing else about you is used, and no profile of you is built for it. Nobody is suggested to anyone they have blocked, muted or restricted (or who did so to them), or whom they have asked or been asked by before, and nobody whose Porch is set to Pals only. You can turn this off in the Workshop ("Suggest me to Pals of my Pals"), and "Not now" stops a suggestion for good.
@@ -98,6 +106,7 @@ On your Pals page we may suggest people who are Pals with at least two of your P
 
 - **Signal:** 12 hours after you set it.
 - **Porch Light:** until you switch it off, and within a day of it going out on its own.
+- **Stories:** shown for 12 hours (or until you take one down), with who viewed and reacted; all of it is deleted within a day of the 12 hours ending.
 - **Time Capsules:** until the day they open (or until you take one back); after that, until the person it was for deletes it. A Town Hall's capsule becomes a post on its day and is then kept like any post.
 - **Whispers:** 7 days after they are sent (or sooner, if a thread is burned). The words of a Whisper someone reported are kept with the report (see below).
 - **Tracks:** 7 days.
@@ -106,7 +115,7 @@ On your Pals page we may suggest people who are Pals with at least two of your P
 - **Requests to join a Town Hall:** 30 days, if nobody lets you in (whether or not they said no).
 - **Invitations (who signed up through whose link):** 30 days after the sign-up.
 - **Town Hall bans:** until the owner or a Deputy lifts the ban, or the Town Hall or the banned account is deleted. When a banned person last asked to join is deleted after 30 days.
-- **Unfinished photo uploads:** about an hour (a photo chosen for a card but never nailed goes too). A replaced or removed Portrait is deleted straight away; a card's (or a Town Hall post's) photo stops being shown the moment its card or post is removed, and its file is deleted within a day.
+- **Unfinished photo uploads:** about an hour (a photo chosen for a card but never nailed goes too). A replaced or removed Portrait is deleted straight away; a card's (or a Town Hall post's, or a Story's) photo stops being shown the moment its card, post or Story is removed or ends, and its file is deleted within a day.
 - **Sessions:** until you sign out, or after 14 days without use (60 days at most), plus 30 days of records so we can help with account problems.
 - **Passkeys, authenticator app and recovery codes:** until you remove them, switch two-step sign-in off, or delete your account. A passkey prompt nobody answered is deleted within a day; an authenticator app you started to link but never finished, after 15 minutes.
 - **Email links:** confirmation links work for 24 hours and reset links for 1 hour. Used and expired links are kept for 7 days.
@@ -123,7 +132,7 @@ We use a few companies to run Howdy. They process data only to provide their ser
 
 - **Vercel:** hosts the website and runs the app.
 - **Neon:** hosts the database.
-- **Cloudflare:** stores Portrait, Post Card and Town Hall photos (R2) and provides our domain's DNS.
+- **Cloudflare:** stores Portrait, Post Card, Town Hall and Story photos (R2) and provides our domain's DNS.
 - **Resend:** sends account emails.
 - A managed **Redis** provider: holds short-lived rate-limit counters.
 - **OpenAI:** checks new photos (above). It is sent only a small copy of the picture we made, never your name, call sign or anything else about you. OpenAI does not keep what its moderation service is sent and does not use it to train its models.

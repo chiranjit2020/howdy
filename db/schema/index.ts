@@ -18,3 +18,4 @@ export * from './capsules';
 export * from './suggestions';
 export * from './lights';
 export * from './invites';
+export * from './stories';

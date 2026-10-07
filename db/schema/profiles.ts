@@ -40,6 +40,11 @@ export const profiles = pgTable(
      * someone has them off is never shown, so a missing "Seen" also covers for a Restrict (ADR-021).
      */
     readReceipts: boolean('read_receipts').notNull().default(true),
+    /**
+     * Story views, reciprocal (ADR-047): when on, my views of others' Stories are recorded and I see who viewed mine;
+     * when off, neither. Private: whether someone has it off is never shown.
+     */
+    storyViews: boolean('story_views').notNull().default(true),
     /** Suggest me to Pals of my Pals ("Pals you may know", Phase 13 / ADR-029). On by default; switch off in the Workshop. */
     discoverable: boolean('discoverable').notNull().default(true),
     createdAt: tstz('created_at').notNull().defaultNow(),

@@ -1,6 +1,6 @@
 # Howdy Build Status
 
-_Last updated: 2026-10-06_
+_Last updated: 2026-10-07_
 
 ## Current Phase
 
@@ -8,6 +8,28 @@ _Last updated: 2026-10-06_
 Town Hall feed ADR-033, Dynamic Island ADR-034). Production: Vercel `sin1` + Neon `howdy-sg` (`howdy_prod`), Resend
 mail, R2 photos, Upstash Redis; a push to `main` deploys. Production does not migrate on deploy: apply new migrations
 to `howdy_dev` and the Singapore `howdy_prod` first.
+
+## 2026-10-07 — Stories (ADR-047)
+
+Decisions taken with you: **photo only, gone after 12 hours**; **Pals, or Close Pals only, per Story**; who viewed is
+**reciprocal** (one "Story views" switch in the Workshop, on by default; a restricted person is never listed);
+**react** with the five kinds, and **Reply** opens a Whisper quoting the Story; optional caption ≤ 80 characters.
+
+- [x] Home: a ring of Stories (mine first, then Pals with new ones); add one (photo, caption, audience); a viewer with
+      Previous / Pause / Next, reactions, "Reply in a Whisper", Flag; for mine: who viewed and reacted, take it down.
+- [x] One reach rule for ring, list and photo (`palsReaching` + Close + active author + held photo to its owner only);
+      a viewer never learns the audience; anything else is the same 404.
+- [x] Views recorded for the viewer's own rings; named to the author only while both share; reactions always shown and
+      Chime once ("X reacted to your Story"); restricted/blocked people never listed (`relationships.limitedAmong`).
+- [x] Gone after 12 hours everywhere; `purgeExpiredStories` (daily, before the card-photo clean-up) deletes rows, views,
+      reactions and the file. One photo, one home: a card, a Town Hall post or a Story (`media_one_home`).
+- [x] Flag a Story → a `card_photo` report on that photo with the caption as evidence; "remove card photo" ends it.
+- [x] "Download my data": live Stories with photos, and the Story views setting. Privacy 1.18.0. Welcome page lists Stories.
+- [x] Migration `0039_stories` on the local test + e2e databases.
+- [x] Tests: `tests/security/stories.test.ts` (23), `tests/e2e/stories.spec.ts` (320 px phones, clean WebP, axe,
+      targets). Full vitest 1504/1504, build, e2e 24/24 (stories, welcome, ranch, whispers, data-export, chimes,
+      porch-light). Mutation check `.dev/mutate-stories.mjs`: 20/20 caught ("changing a reaction rings again" first
+      survived — Chimes are one per person — so the test now checks the bell stays dark after it was read).
 
 ## 2026-10-07 — A photo on a Town Hall post (ADR-046) — shipped
 
@@ -837,6 +859,6 @@ call or waits for real use:
 
 ## Architectural Decisions
 
-ADR-001 … ADR-046 in `docs/decisions/`; lifecycle and deletion design in `docs/DATA_LIFECYCLE.md`; Whispers threat model in
+ADR-001 … ADR-047 in `docs/decisions/`; lifecycle and deletion design in `docs/DATA_LIFECYCLE.md`; Whispers threat model in
 `docs/WHISPERS_THREAT_MODEL.md`.
 

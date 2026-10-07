@@ -36,10 +36,10 @@ export const LEGAL_DOCS: Record<LegalSlug, LegalDoc> = {
     short: 'Privacy',
     description:
       'What Howdy collects, why, how long it is kept, who can see it, and the choices and rights you have.',
-    version: '1.17.0',
+    version: '1.18.0',
     acceptVersion: '1.1.0',
-    effective: '2026-10-06',
-    updated: '2026-10-06',
+    effective: '2026-10-07',
+    updated: '2026-10-07',
   },
   terms: {
     slug: 'terms',

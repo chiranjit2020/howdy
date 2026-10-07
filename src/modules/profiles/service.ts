@@ -83,6 +83,8 @@ export interface OwnRanch extends RanchView {
   fenceReview: boolean;
   shadowWalk: boolean;
   readReceipts: boolean;
+  /** Story views, reciprocal (ADR-047). */
+  storyViews: boolean;
   /** May I be suggested to Pals of my Pals ("Pals you may know", Phase 13)? */
   discoverable: boolean;
 }
@@ -99,6 +101,7 @@ export interface RanchPatch {
   fenceReview?: boolean | undefined;
   shadowWalk?: boolean | undefined;
   readReceipts?: boolean | undefined;
+  storyViews?: boolean | undefined;
   discoverable?: boolean | undefined;
 }
 
@@ -127,6 +130,7 @@ interface Row {
   fenceReview: boolean;
   shadowWalk: boolean;
   readReceipts: boolean;
+  storyViews: boolean;
   discoverable: boolean;
   earnedTick: boolean;
 }
@@ -147,6 +151,7 @@ const SELECT = {
   fenceReview: profiles.fenceReview,
   shadowWalk: profiles.shadowWalk,
   readReceipts: profiles.readReceipts,
+  storyViews: profiles.storyViews,
   discoverable: profiles.discoverable,
   earnedTick,
 } as const;
@@ -224,6 +229,7 @@ export async function getOwnRanch(userId: string, now: Date = new Date()): Promi
     fenceReview: row.fenceReview,
     shadowWalk: row.shadowWalk,
     readReceipts: row.readReceipts,
+    storyViews: row.storyViews,
     discoverable: row.discoverable,
   };
 }
@@ -452,6 +458,7 @@ export async function updateRanch(userId: string, patch: RanchPatch): Promise<Ow
   if (patch.fenceReview !== undefined) set.fenceReview = patch.fenceReview;
   if (patch.shadowWalk !== undefined) set.shadowWalk = patch.shadowWalk;
   if (patch.readReceipts !== undefined) set.readReceipts = patch.readReceipts;
+  if (patch.storyViews !== undefined) set.storyViews = patch.storyViews;
   if (patch.discoverable !== undefined) set.discoverable = patch.discoverable;
   await getDb().update(profiles).set(set).where(eq(profiles.userId, userId));
   return getOwnRanch(userId);
@@ -501,6 +508,19 @@ export async function isShadowWalking(userId: string): Promise<boolean> {
     .where(eq(profiles.userId, userId))
     .limit(1);
   return row?.on ?? false;
+}
+
+/**
+ * Which of these people share their Story views (ADR-047)? Private: only the stories module asks, and it never says who
+ * has it off.
+ */
+export async function sharingStoryViews(userIds: string[]): Promise<Set<string>> {
+  if (userIds.length === 0) return new Set();
+  const rows = await getDb()
+    .select({ userId: profiles.userId })
+    .from(profiles)
+    .where(and(inArray(profiles.userId, [...new Set(userIds)]), eq(profiles.storyViews, true)));
+  return new Set(rows.map((r) => r.userId));
 }
 
 /** Do both of these people have read receipts on? Private: only the whispers module asks, and it never says which one is off. */

@@ -31,6 +31,8 @@ users ──┬─< credentials      ON DELETE CASCADE   (1:1, password hash)
         ├─< time_capsules    ON DELETE CASCADE   (both author_id and recipient_id — Phase 12, ADR-028)
         ├─< town_hall_capsules ON DELETE CASCADE (author_id; also cascades from town_halls.id — ADR-043)
         ├─< porch_lights     ON DELETE CASCADE   (user_id; at most one row, only while the light is on — ADR-032)
+        ├─< stories          ON DELETE CASCADE   (author_id; story_views / story_reactions cascade from it and from
+                                                  viewer_id / user_id; 12 hours at most — ADR-047)
         ├─< suspensions      ON DELETE CASCADE   (user_id; created_by / lifted_by / appeal_reviewed_by SET NULL — ADR-023)
         ├─< audit_log        ON DELETE SET NULL  (trail survives, anonymised)
         └─< reports          ON DELETE SET NULL  (reporter and target; evidence survives, identifiers go; card_id,
@@ -115,7 +117,7 @@ streamed and never kept on the server. See ADR-037 for exactly what is and is no
 | **Whispers** (`messages`) | **7 days** from being sent, or at once by "Burn Thread" (either person, both sides — except a burner who was blocked or restricted only clears their own view, ADR-038) | `purgeOldWhispers()` (in `pnpm jobs:purge`); threads left empty are dropped with them |
 | Chimes (`notifications`) | read: 30 days after being read; unread: 90 days after being rung | `purgeOldChimes()` (in `pnpm jobs:purge`) |
 | **Portrait files** (`media`) | a live Portrait until replaced/removed or the account is deleted; an **unfinished upload 60 minutes**; a replaced/removed file is deleted at once and, if storage failed, retried by the job | `purgeStaleMedia()` (in `pnpm jobs:purge`); removal deletes the object first, then the row |
-| Post Card and Town Hall post photos (`media` kind `card_photo`, ADR-031 / ADR-046: `card_id` or `hall_post_id`, never both) | with their card; never served once the card is gone (its `card_id` goes to null) and the file is deleted by the job; a photo never nailed: 60 minutes | `purgeDetachedCardPhotos()` (in `pnpm jobs:purge`); `deleteAllMediaFor` on account deletion |
+| Post Card, Town Hall post and Story photos (`media` kind `card_photo`, ADR-031 / ADR-046 / ADR-047: at most one of `card_id`, `hall_post_id`, `story_id`) | with their card, post or Story; never served once the card is gone (its `card_id` goes to null) and the file is deleted by the job; a photo never nailed: 60 minutes | `purgeDetachedCardPhotos()` (in `pnpm jobs:purge`); `deleteAllMediaFor` on account deletion |
 | Waiting cards / replies (`status` pending or held) | 30 days from being written, then dropped if the owner never answered | `purgeStaleWaiting()` (in `pnpm jobs:purge`) |
 | Published cards, replies, Yos | until removed by their writer / the Fence owner, or an account is deleted | people; account deletion |
 | Waiting Tributes (`status` pending) | 30 days from being written, then dropped if the owner never answered | `purgeStaleTributes()` (in `pnpm jobs:purge`) |
@@ -132,6 +134,7 @@ streamed and never kept on the server. See ADR-037 for exactly what is and is no
 | Invitations (`invitations`: invitee, inviter, when, redeemed) | **30 days after sign-up**, redeemed or not (feeds the weekly cap per link and the one Pal request) | `purgeOldInvitations()` (in `pnpm jobs:purge`); deleted with either account |
 | Memories | nothing stored — worked out when read | — |
 | Porch Light (`porch_lights`: audience, ≤ 60-char note, lit/until times) | only while on (≤ 2 hours); switching off deletes it; one that went out is deleted within a day — no history of when someone was around | the person; `purgeExpiredLights()` (in `pnpm jobs:purge`); account deletion |
+| **Stories** (`stories`, `story_views`, `story_reactions`, ADR-047) | shown for **12 hours** (or until taken down by the author, or its photo removed by a moderator); then never served, and deleted with its views and reactions by the next daily run; the photo's file in the same run | the author; `purgeExpiredStories()` then `purgeDetachedCardPhotos()` (in `pnpm jobs:purge`); account deletion |
 | Closing accounts (`users.status = 'pending_deletion'`) | 14 days from the request, then deleted for good | `purgeDeletedAccounts()` (in `pnpm jobs:purge`) |
 | Held-back call signs (`retired_handles`, a keyed hash only) | 90 days after the account is deleted | `purgeFreedHandles()` (in `pnpm jobs:purge`) |
 | Tracks / typing / presence (future) | seconds → days, per ADR-006 | their own jobs |

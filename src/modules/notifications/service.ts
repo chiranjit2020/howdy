@@ -53,7 +53,8 @@ export type ChimeType =
   | 'townhall_made_owner'
   | 'capsule_opened'
   | 'hall_reply_created'
-  | 'hall_reaction_given';
+  | 'hall_reaction_given'
+  | 'story_reacted';
 
 const CATEGORY: Record<ChimeType, ChimeCategory> = {
   posse_requested: 'posse',
@@ -77,6 +78,7 @@ const CATEGORY: Record<ChimeType, ChimeCategory> = {
   capsule_opened: 'capsules',
   hall_reply_created: 'townhalls',
   hall_reaction_given: 'townhalls',
+  story_reacted: 'yo',
 };
 
 /** Chimes the recipient needs in order to act (the owner decides what waits), so a restricted writer still rings them. */
@@ -269,6 +271,9 @@ export async function handleEvent(event: DomainEvent): Promise<void> {
       return deliver(event.postAuthorId, event.actorId, 'hall_reaction_given', null, {
         hallPostId: event.postId,
       });
+    case 'story.reacted':
+      // Person-shaped (ADR-047): one Chime per Pal however many Stories they react to; the Story itself lasts 12 hours.
+      return deliver(event.authorId, event.actorId, 'story_reacted', null, { bump: true });
   }
 }
 
@@ -466,6 +471,8 @@ function describe(userId: string, s: Shown, myHandle: string): { text: string; h
         text: `${name} reacted to your post in a Town Hall.`,
         href: `/town-halls/${s.row.townHallId}`,
       };
+    case 'story_reacted':
+      return { text: `${name} reacted to your Story.`, href: '/home' };
   }
 }
 

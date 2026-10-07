@@ -37,6 +37,7 @@ const ITEM: Record<ChimeType, ItemType> = {
   townhall_request_approved: 'TOWNHALL_ACCEPTED',
   townhall_made_deputy: 'TOWNHALL_ACCEPTED',
   townhall_made_owner: 'TOWNHALL_ACCEPTED',
+  story_reacted: 'YO_DROPPED',
 };
 
 /**

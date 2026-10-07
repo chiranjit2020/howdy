@@ -8,6 +8,7 @@ import { memoriesToday } from '@/modules/memories';
 import { unreadCount } from '@/modules/notifications';
 import { getOwnRanch, getTeamAnnouncement } from '@/modules/profiles';
 import { listMyRelationships } from '@/modules/relationships';
+import { storyRing } from '@/modules/stories';
 import { listTracks } from '@/modules/tracks';
 import { unreadThreads } from '@/modules/whispers';
 import { portraitUrl } from '@/shared/portrait';
@@ -18,6 +19,7 @@ import { clockOf } from '@/shared/calendar';
 import { OpenGates } from './home-actions';
 import { MemoriesCard } from './memories-card';
 import { PorchLightCard } from './porch-light-card';
+import { StoriesStrip } from './stories-strip';
 
 export const metadata = { title: 'Home' };
 
@@ -58,8 +60,14 @@ export default async function HomePage() {
       unreadCount(user.id).catch(() => null),
       listTracks(user.id).catch(() => null),
     ]);
+  // Stories (ADR-047): best-effort, like everything else on Home.
+  const ring = await storyRing(user.id).catch(() => []);
   // One look-up for every photo on the page, whoever it belongs to.
-  await attachPortraits(user.id, [...(memories?.pals.map((p) => p.pal) ?? []), ...lit.map((l) => l.pal)]);
+  await attachPortraits(user.id, [
+    ...ring.map((r) => r.person),
+    ...(memories?.pals.map((p) => p.pal) ?? []),
+    ...lit.map((l) => l.pal),
+  ]);
   const litRows = lit.map((l) => ({ ...l.pal, note: l.note, untilLabel: clockOf(l.until) }));
   const myLightState = mine
     ? { audience: mine.audience, note: mine.note, untilLabel: clockOf(mine.until) }
@@ -114,6 +122,15 @@ export default async function HomePage() {
     <>
       {/* No side padding of its own: the shell's px-4 is the gutter, so the cards use the full phone width. */}
       <main id="main" className="mx-auto flex w-full max-w-xl flex-col gap-4 py-4 sm:gap-6 sm:py-8">
+        <StoriesStrip
+          initial={ring}
+          me={{
+            handle: user.handle,
+            displayName: ranch.displayName,
+            portraitTint: ranch.portraitTint,
+            ...(photo ? { portraitUrl: portraitUrl(user.handle, photo) } : {}),
+          }}
+        />
         <ClayCard className="flex flex-col gap-4 p-4 sm:p-6">
           <div className="flex items-center gap-3">
             <Avatar

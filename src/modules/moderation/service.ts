@@ -50,7 +50,9 @@ export type ReportAbout =
   | { subject: 'portrait'; mediaId: string }
   | { subject: 'whisper'; messageId: string; evidence: string }
   | { subject: 'town_hall'; townHallId: string; evidence: string }
-  | { subject: 'hall_post'; hallPostId: string; evidence: string };
+  | { subject: 'hall_post'; hallPostId: string; evidence: string }
+  /** A Story's photo (ADR-047): the exact photo, with the caption as evidence. Moderators see and can remove it. */
+  | { subject: 'card_photo'; mediaId: string; evidence: string };
 
 const EVIDENCE_MAX = 600;
 
@@ -79,7 +81,7 @@ export async function createReport(
       details: input.details && input.details.length > 0 ? input.details : null,
       evidenceText: evidence ? evidence.slice(0, EVIDENCE_MAX) : null,
       cardId: about?.subject === 'card' ? about.cardId : null,
-      mediaId: about?.subject === 'portrait' ? about.mediaId : null,
+      mediaId: about?.subject === 'portrait' || about?.subject === 'card_photo' ? about.mediaId : null,
       messageId: about?.subject === 'whisper' ? about.messageId : null,
       townHallId: about?.subject === 'town_hall' ? about.townHallId : null,
       hallPostId: about?.subject === 'hall_post' ? about.hallPostId : null,

@@ -26,6 +26,11 @@ const FEATURES: { art: ArtName; name: string; text: string }[] = [
     text: 'Nail a short card (and a photo) to a Pal’s Fence. React with a Yo, Laugh, Fire, Popcorn or Love.',
   },
   {
+    art: 'camera',
+    name: 'Stories',
+    text: 'A photo for your Pals — or just Close Pals — gone after 12 hours. Who viewed it only if you both want it.',
+  },
+  {
     art: 'nav-whispers',
     name: 'Whispers',
     text: 'Private messages that arrive instantly. “Seen” only if you both want it. Burn a thread any time.',

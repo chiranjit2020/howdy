@@ -4,6 +4,7 @@
  */
 export {
   bothShareReceipts,
+  sharingStoryViews,
   clearExpiredSignals,
   clearSignal,
   createProfile,

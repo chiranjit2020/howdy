@@ -10,7 +10,7 @@ import { ExportData } from './export-data';
 import { PeopleControls } from './people-controls';
 import { PortraitForm } from './portrait-form';
 import { SignInSecurity } from './sign-in-security';
-import { BoundaryForm, ChimePrefsForm, FenceRulesForm, TendForm } from './ranch-forms';
+import { BoundaryForm, ChimePrefsForm, FenceRulesForm, StoryViewsForm, TendForm } from './ranch-forms';
 
 export const metadata = { title: 'Workshop' };
 
@@ -44,6 +44,7 @@ export default async function WorkshopPage() {
         discoverable={ranch.discoverable}
         official={ranch.verified}
       />
+      <StoryViewsForm initial={ranch.storyViews} />
       <FenceRulesForm
         fenceVisibility={ranch.fenceVisibility}
         fencePosting={ranch.fencePosting}

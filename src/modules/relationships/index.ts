@@ -10,6 +10,7 @@ export {
   getRelationshipView,
   hasLimited,
   hiddenAuthors,
+  limitedAmong,
   listMyRelationships,
   relationshipOf,
   spendRequestBudget,
