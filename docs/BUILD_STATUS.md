@@ -1,6 +1,6 @@
 # Howdy Build Status
 
-_Last updated: 2026-10-07_
+_Last updated: 2026-10-08_
 
 ## Current Phase
 
@@ -8,6 +8,16 @@ _Last updated: 2026-10-07_
 Town Hall feed ADR-033, Dynamic Island ADR-034). Production: Vercel `sin1` + Neon `howdy-sg` (`howdy_prod`), Resend
 mail, R2 photos, Upstash Redis; a push to `main` deploys. Production does not migrate on deploy: apply new migrations
 to `howdy_dev` and the Singapore `howdy_prod` first.
+
+## 2026-10-08 — Dependency vulnerability patch — shipped
+
+- [x] `pnpm audit` found 4 (1 critical, 3 high). Fixed: **next 16.3.5 → 16.3.8** (critical RCE in `next/og`, used by the
+      welcome share card, GHSA-vcvr-r3jv-pc5j); **sharp 0.35.4 → 0.35.5** (high librsvg flaw in the photo pipeline,
+      GHSA-wq5f-xc86-pv6w). `pnpm.overrides` pin **source-map-js ≥1.2.2** and **http-cache-semantics ≥4.3.0** (transitive DoS).
+- [x] `pnpm audit` now: no known vulnerabilities. Full vitest 1504/1504, build, e2e (welcome share card, stories, portrait)
+      green. Commit `a5f9caf`; live verified (health 200, `/welcome` share card 200 image/png).
+- [ ] Still open (security backlog): CSAM hash-scanning (Cloudflare tool + NCMEC reporting) before wider launch; the
+      security docs the master prompt asks for (ATTACK-MAPPING, SECURITY_SCORECARD, INCIDENT_RESPONSE).
 
 ## 2026-10-07 — Stories (ADR-047)
 
