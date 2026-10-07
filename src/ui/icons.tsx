@@ -69,3 +69,9 @@ export const ToolsIcon = (p: IconProps) => (
 export const TownHallIcon = (p: IconProps) => (
   <Svg d="M4 10L12 4L20 10M6 10v9M10 10v9M14 10v9M18 10v9M3 21h18" {...p} />
 );
+export const EyeIcon = (p: IconProps) => (
+  <Svg d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" {...p} />
+);
+export const PlusIcon = (p: IconProps) => <Svg d="M12 5v14M5 12h14" {...p} />;
+export const PauseIcon = (p: IconProps) => <Svg d="M9 5v14M15 5v14" strokeWidth="2.5" {...p} />;
+export const PlayIcon = (p: IconProps) => <Svg d="M8 5l11 7-11 7z" {...p} />;

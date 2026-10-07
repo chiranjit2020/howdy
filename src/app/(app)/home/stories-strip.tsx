@@ -1,24 +1,17 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
-import type { StoryItem, StoryRingItem } from '@/modules/stories';
-import { REACTION_KINDS, type ReactionKind } from '@/shared/validation/fence';
+import { useState, type FormEvent } from 'react';
+import type { StoryRingItem } from '@/modules/stories';
 import { STORY_CAPTION_MAX, type StoryAudience } from '@/shared/validation/stories';
-import { apiRequest, postJson } from '@/ui/auth/api';
+import { postJson } from '@/ui/auth/api';
 import { FormMessage } from '@/ui/auth/form-parts';
-import { Img } from '@/ui/art/img';
 import { cn } from '@/ui/cn';
-import { REACTION_LABEL, ReactionArt } from '@/ui/howdy';
-import { ReportDialog } from '@/ui/howdy/report-dialog';
-import { RelativeTime } from '@/ui/howdy/time';
 import { uploadPhoto } from '@/ui/media/upload-photo';
-import { Avatar, Button, ConfirmationDialog, Input, Modal, Select, useToast } from '@/ui/primitives';
+import { Avatar, Button, Input, Modal, useToast } from '@/ui/primitives';
+import { StoryViewer } from './story-viewer';
 
-/** A Story moves on by itself after this long, unless the person is doing something with it. */
-const ADVANCE_MS = 6000;
-
-type Wire = StoryItem;
+const AUDIENCE_LABEL: Record<StoryAudience, string> = { pals: 'All my Pals', close: 'Close Pals only' };
 
 /**
  * Stories on Home (ADR-047): a row of rings — mine first, then Pals with Stories for me (a pink ring = not seen yet).
@@ -124,283 +117,6 @@ export function StoriesStrip({
   );
 }
 
-/** One person's Stories, one at a time: tap Next / Previous, or let it move on. */
-function StoryViewer({
-  ring,
-  onClose,
-  onAdd,
-}: {
-  ring: StoryRingItem;
-  onClose: () => void;
-  /** Mine only: add another Story. */
-  onAdd: () => void;
-}) {
-  const toast = useToast();
-  const [items, setItems] = useState<Wire[] | null>(null);
-  const [index, setIndex] = useState(0);
-  const [paused, setPaused] = useState(false);
-  const [error, setError] = useState<string | undefined>();
-  const [reporting, setReporting] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-  const [showViewers, setShowViewers] = useState(false);
-  const viewed = useRef(new Set<string>());
-
-  useEffect(() => {
-    let live = true;
-    void apiRequest<{ stories: Wire[] }>('GET', `/api/porch/${ring.person.handle}/stories`).then((res) => {
-      if (!live) return;
-      if (res.ok && res.data) setItems(res.data.stories);
-      else setError('This Story is no longer here.');
-    });
-    return () => {
-      live = false;
-    };
-  }, [ring.person.handle]);
-
-  const story = items?.[index];
-
-  // Opening a Story records that I saw it (once); who may know is decided on the server.
-  useEffect(() => {
-    if (!story || story.mine || viewed.current.has(story.id)) return;
-    viewed.current.add(story.id);
-    void postJson(`/api/stories/${story.id}/view`, {});
-  }, [story]);
-
-  const next = useCallback(() => {
-    if (!items) return;
-    if (index + 1 < items.length) setIndex(index + 1);
-    else onClose();
-  }, [index, items, onClose]);
-
-  useEffect(() => {
-    if (!story || paused) return;
-    const t = setTimeout(next, ADVANCE_MS);
-    return () => clearTimeout(t);
-  }, [story, paused, next]);
-
-  async function react(kind: ReactionKind) {
-    if (!story) return;
-    setPaused(true);
-    const to = story.myReaction === kind ? null : kind;
-    const res = await postJson<{ myReaction: ReactionKind | null }>(`/api/stories/${story.id}/react`, {
-      kind: to,
-    });
-    if (res.ok && res.data) {
-      const mine = res.data.myReaction;
-      setItems((all) => all && all.map((s) => (s.id === story.id ? { ...s, myReaction: mine } : s)));
-    } else setError(res.error?.message ?? 'That did not work.');
-  }
-
-  async function remove() {
-    if (!story) return;
-    const res = await apiRequest('DELETE', `/api/stories/${story.id}`);
-    setDeleting(false);
-    if (!res.ok) return setError(res.error?.message ?? 'That did not work.');
-    toast({ title: 'Story taken down.', tone: 'success' });
-    const left = items!.filter((s) => s.id !== story.id);
-    if (left.length === 0) return onClose();
-    setItems(left);
-    setIndex(Math.min(index, left.length - 1));
-  }
-
-  const replyHref = story
-    ? `/whispers/${ring.person.handle}?draft=${encodeURIComponent(
-        `Replying to your Story${story.caption ? ` (“${story.caption}”)` : ''}: `,
-      )}`
-    : '#';
-
-  return (
-    <Modal open onClose={onClose} title={ring.mine ? 'Your Story' : `${ring.person.displayName}’s Story`}>
-      {error && <FormMessage tone="error">{error}</FormMessage>}
-      {!items && !error && <p className="text-caption text-text-secondary">Opening…</p>}
-      {story && items && (
-        <div className="flex flex-col gap-3">
-          {/* One bar per Story; the current one is filled. */}
-          <div className="flex gap-1" aria-hidden="true">
-            {items.map((s, i) => (
-              <span
-                key={s.id}
-                className={cn('h-1 flex-1 rounded-pill', i <= index ? 'bg-accent' : 'bg-border')}
-              />
-            ))}
-          </div>
-          <p className="text-caption text-text-secondary">
-            {index + 1} of {items.length} · <RelativeTime date={story.postedAt} />
-            {story.audience === 'close' && ' · Close Pals only'}
-          </p>
-          <figure className="relative overflow-hidden rounded-lg bg-island">
-            <Img
-              src={story.photo.url}
-              width={story.photo.width}
-              height={story.photo.height}
-              alt={
-                story.caption
-                  ? `Story photo: ${story.caption}`
-                  : `A Story photo from ${ring.person.displayName}`
-              }
-              loading="eager"
-              className="max-h-[55vh] w-full object-contain"
-            />
-            {story.caption && (
-              <figcaption className="absolute inset-x-0 bottom-0 bg-island/70 px-3 py-2 text-body font-medium text-on-island">
-                {story.caption}
-              </figcaption>
-            )}
-          </figure>
-          <div className="flex items-center justify-between gap-2">
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={() => setIndex(Math.max(0, index - 1))}
-              disabled={index === 0}
-            >
-              Previous
-            </Button>
-            <Button size="sm" variant="ghost" onClick={() => setPaused((p) => !p)}>
-              {paused ? 'Play' : 'Pause'}
-            </Button>
-            <Button size="sm" variant="secondary" onClick={next}>
-              {index + 1 < items.length ? 'Next' : 'Done'}
-            </Button>
-          </div>
-
-          {!story.mine && (
-            <>
-              <div
-                role="group"
-                aria-label="React to this Story"
-                className="flex flex-wrap justify-center gap-1"
-              >
-                {REACTION_KINDS.map((k) => (
-                  <button
-                    key={k}
-                    type="button"
-                    onClick={() => react(k)}
-                    aria-pressed={story.myReaction === k}
-                    aria-label={REACTION_LABEL[k]}
-                    className={cn(
-                      'inline-flex size-11 items-center justify-center rounded-pill',
-                      story.myReaction === k
-                        ? 'bg-accent-soft shadow-clay-pressed'
-                        : 'hover:bg-surface-sunken',
-                    )}
-                  >
-                    <ReactionArt kind={k} className="size-7" />
-                  </button>
-                ))}
-              </div>
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <a href={replyHref} className="inline-flex min-h-11 items-center text-body font-semibold">
-                  Reply in a Whisper
-                </a>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => {
-                    setPaused(true);
-                    setReporting(true);
-                  }}
-                >
-                  Flag…
-                </Button>
-              </div>
-            </>
-          )}
-
-          {story.mine && (
-            <div className="flex flex-col gap-2">
-              <Button
-                size="sm"
-                variant="ghost"
-                className="self-start"
-                onClick={() => {
-                  setPaused(true);
-                  setShowViewers((v) => !v);
-                }}
-                aria-expanded={showViewers}
-              >
-                {story.viewers ? `Seen by ${story.viewers.length}` : 'Reactions'}
-                {story.reactions &&
-                  story.reactions.length > 0 &&
-                  (story.viewers
-                    ? ` · ${story.reactions.length} more reacted`
-                    : ` · ${story.reactions.length}`)}
-              </Button>
-              {showViewers && (
-                <ul className="flex flex-col gap-2">
-                  {[...(story.viewers ?? []), ...(story.reactions ?? [])].map((v) => (
-                    <li key={v.person.handle} className="flex items-center gap-2">
-                      <Avatar
-                        name={v.person.displayName}
-                        tint={v.person.portraitTint}
-                        src={v.person.portraitUrl}
-                        size="sm"
-                      />
-                      <span className="min-w-0 flex-1 truncate text-body text-text-primary">
-                        {v.person.displayName}
-                      </span>
-                      {v.reaction && (
-                        <>
-                          <ReactionArt kind={v.reaction} className="size-6" />
-                          <span className="sr-only">reacted {REACTION_LABEL[v.reaction]}</span>
-                        </>
-                      )}
-                    </li>
-                  ))}
-                  {story.viewers && story.viewers.length === 0 && (story.reactions?.length ?? 0) === 0 && (
-                    <li className="text-caption text-text-secondary">
-                      Nobody yet — or only people who keep their Story views to themselves.
-                    </li>
-                  )}
-                  {!story.viewers && (
-                    <li className="text-caption text-text-secondary">
-                      Your Story views are off, so you do not see who viewed. Turn them on in the Workshop.
-                    </li>
-                  )}
-                </ul>
-              )}
-              <Button size="sm" variant="secondary" className="self-start" onClick={onAdd}>
-                Add another Story
-              </Button>
-              <Button
-                size="sm"
-                variant="danger"
-                className="self-start"
-                onClick={() => {
-                  setPaused(true);
-                  setDeleting(true);
-                }}
-              >
-                Take this Story down
-              </Button>
-            </div>
-          )}
-        </div>
-      )}
-      {story && (
-        <>
-          <ReportDialog
-            open={reporting}
-            title="Flag this Story"
-            endpoint={`/api/reports/story/${story.id}`}
-            onClose={() => setReporting(false)}
-            onDone={() => toast({ title: 'Thanks. We will take a look.', tone: 'success' })}
-          />
-          <ConfirmationDialog
-            open={deleting}
-            destructive
-            title="Take this Story down?"
-            description="It disappears for everyone right away."
-            confirmLabel="Take it down"
-            onCancel={() => setDeleting(false)}
-            onConfirm={remove}
-          />
-        </>
-      )}
-    </Modal>
-  );
-}
-
 /** Add a Story: choose a photo, an optional caption, and who sees it. */
 function AddStory({ open, onClose, onPosted }: { open: boolean; onClose: () => void; onPosted: () => void }) {
   const toast = useToast();
@@ -451,22 +167,34 @@ function AddStory({ open, onClose, onPosted }: { open: boolean; onClose: () => v
       <form onSubmit={share} noValidate className="flex flex-col gap-3">
         {error && <FormMessage tone="error">{error}</FormMessage>}
         {photo ? (
-          <div className="relative self-start">
-            {/* eslint-disable-next-line @next/next/no-img-element -- a blob: preview; see ui/art/img.tsx */}
-            <img
-              src={photo.preview}
-              alt="The photo you chose for your Story"
-              className={cn('max-h-60 rounded-md object-contain', uploading && 'opacity-60')}
-            />
-            {uploading && <p className="text-metadata text-text-secondary">Uploading…</p>}
+          <div className="flex flex-col items-center gap-1">
+            {/* A phone-shaped preview, caption and all, the way Pals will see it. */}
+            <div className="relative aspect-[9/16] w-32 overflow-hidden rounded-lg bg-island shadow-clay-sm">
+              {/* eslint-disable-next-line @next/next/no-img-element -- a blob: preview; see ui/art/img.tsx */}
+              <img
+                src={photo.preview}
+                alt="The photo you chose for your Story"
+                className={cn('size-full object-cover', uploading && 'opacity-50')}
+              />
+              {uploading && (
+                <p className="absolute inset-0 flex items-center justify-center text-caption font-semibold text-on-island">
+                  Uploading…
+                </p>
+              )}
+              {caption.trim() && (
+                <p className="absolute inset-x-0 bottom-0 bg-linear-to-t from-island/80 to-transparent px-2 pt-6 pb-2 text-center text-metadata font-medium text-on-island [overflow-wrap:anywhere]">
+                  {caption}
+                </p>
+              )}
+            </div>
             <Button type="button" size="sm" variant="ghost" onClick={() => setPhoto(undefined)}>
-              Choose another
+              Change photo
             </Button>
           </div>
         ) : (
-          <label className="flex min-h-24 cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-border-strong bg-surface-sunken p-4 text-center">
+          <label className="mx-auto flex aspect-[9/16] w-32 cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-border-strong bg-surface-sunken p-3 text-center hover:border-accent">
             <span className="text-body font-semibold text-text-primary">Choose a photo</span>
-            <span className="text-caption text-text-secondary">JPEG, PNG or WebP, up to 5 MB</span>
+            <span className="text-metadata text-text-secondary">JPEG, PNG or WebP, up to 5 MB</span>
             <input
               type="file"
               accept="image/jpeg,image/png,image/webp"
@@ -481,15 +209,31 @@ function AddStory({ open, onClose, onPosted }: { open: boolean; onClose: () => v
           onChange={(e) => setCaption(e.target.value)}
           maxLength={STORY_CAPTION_MAX}
         />
-        <Select
-          label="Who sees it"
-          value={audience}
-          onChange={(e) => setAudience(e.target.value as StoryAudience)}
-        >
-          <option value="pals">All my Pals</option>
-          <option value="close">Close Pals only</option>
-        </Select>
-        <Button type="submit" loading={busy} disabled={uploading || !photo?.id} className="self-start">
+        <fieldset className="flex flex-col gap-2">
+          <legend className="mb-1.5 text-caption font-semibold text-text-primary">Who sees it</legend>
+          <div className="grid grid-cols-2 gap-1 rounded-pill bg-surface-sunken p-1">
+            {(['pals', 'close'] as const).map((a) => (
+              <label
+                key={a}
+                className={cn(
+                  'flex min-h-11 cursor-pointer items-center justify-center rounded-pill px-2 text-center text-caption font-semibold transition has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2',
+                  audience === a ? 'bg-surface text-text-primary shadow-clay-sm' : 'text-text-secondary',
+                )}
+              >
+                <input
+                  type="radio"
+                  name="story-audience"
+                  value={a}
+                  checked={audience === a}
+                  onChange={() => setAudience(a)}
+                  className="sr-only"
+                />
+                {AUDIENCE_LABEL[a]}
+              </label>
+            ))}
+          </div>
+        </fieldset>
+        <Button type="submit" loading={busy} disabled={uploading || !photo?.id}>
           Share to Story
         </Button>
       </form>

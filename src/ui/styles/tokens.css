@@ -161,6 +161,17 @@
   /* The welcome page: scenery drifts gently; the first screen rises into place. */
   --animate-drift: drift 7s ease-in-out infinite;
   --animate-rise: rise 0.7s var(--ease-spring) both;
+  /* A Story's bar fills while it shows; the viewer moves on when the fill ends (ADR-047). */
+  --animate-story-fill: story-fill 6s linear forwards;
+
+  @keyframes story-fill {
+    from {
+      transform: scaleX(0);
+    }
+    to {
+      transform: scaleX(1);
+    }
+  }
 
   @keyframes drift {
     0%,

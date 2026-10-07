@@ -47,8 +47,15 @@ const makePals = (a: string, b: string) =>
     [a, b],
   );
 
+// A sunset-ish picture (not a flat colour), so the screenshots show how a real photo sits under the controls.
+const SCENE = `<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1920">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#ffb347"/><stop offset="0.6" stop-color="#ff6f61"/><stop offset="1" stop-color="#3b2a4a"/>
+  </linearGradient></defs>
+  <rect width="1080" height="1920" fill="url(#g)"/><circle cx="540" cy="1100" r="220" fill="#fff3c4"/>
+  <rect y="1300" width="1080" height="620" fill="#2b2140"/></svg>`;
 const photo = () =>
-  sharp({ create: { width: 1080, height: 1920, channels: 3, background: '#d8b4e2' } })
+  sharp(Buffer.from(SCENE))
     .withExif({ IFD0: { Copyright: 'SECRET-STORY-NOTE' } })
     .jpeg()
     .toBuffer();
@@ -77,6 +84,7 @@ test('a Story: shared from Home on a phone, opened by a Pal who reacts and repli
   }).toPass({ timeout: 15_000 });
   await expect(add.getByText('Uploading…')).toHaveCount(0, { timeout: 15_000 });
   await add.getByLabel('Caption (optional)').fill(caption);
+  await owner.page.screenshot({ path: '.dev/story-add.png' });
   expect(await axeViolations(owner.page)).toEqual([]);
   expect(await smallTargets(owner.page)).toEqual([]);
   expect(await horizontalOverflow(owner.page)).toBe(0);
@@ -98,14 +106,19 @@ test('a Story: shared from Home on a phone, opened by a Pal who reacts and repli
   expect(got.headers()['content-type']).toBe('image/webp');
   expect((await got.body()).includes(Buffer.from('SECRET-STORY-NOTE'))).toBe(false);
 
-  await viewer.getByRole('button', { name: 'Fire' }).tap();
-  await expect(viewer.getByRole('button', { name: 'Fire' })).toHaveAttribute('aria-pressed', 'true');
+  await pal.page.screenshot({ path: '.dev/story-viewer-pal.png' });
+  await viewer.getByRole('button', { name: 'React' }).tap();
+  await viewer
+    .getByRole('group', { name: 'React to this Story' })
+    .getByRole('button', { name: 'Fire' })
+    .tap();
+  await expect(viewer.getByRole('button', { name: 'You reacted Fire. Change' })).toBeVisible();
   expect(await axeViolations(pal.page)).toEqual([]);
   expect(await smallTargets(pal.page)).toEqual([]);
   expect(await horizontalOverflow(pal.page)).toBe(0);
 
   // Reply opens a Whisper with the Story quoted in my box — nothing sent yet.
-  await viewer.getByRole('link', { name: 'Reply in a Whisper' }).tap();
+  await viewer.getByRole('link', { name: /^Reply to / }).tap();
   await expect(pal.page).toHaveURL(new RegExp(`/whispers/${owner.handle}\\?draft=`));
   await pageReady(pal.page);
   await expect(pal.page.getByRole('textbox').last()).toHaveValue(`Replying to your Story (“${caption}”): `);
@@ -121,10 +134,16 @@ test('a Story: shared from Home on a phone, opened by a Pal who reacts and repli
   await owner.page.getByRole('button', { name: 'Your Story', exact: true }).tap();
   const mine = owner.page.getByRole('dialog', { name: 'Your Story' });
   await mine.getByRole('button', { name: 'Pause' }).tap();
+  await owner.page.screenshot({ path: '.dev/story-viewer-mine.png' });
   await mine.getByRole('button', { name: 'Seen by 1' }).tap();
   await expect(mine.getByRole('listitem')).toHaveCount(1);
   await expect(mine.getByRole('listitem')).toContainText(/reacted Fire/);
-  await mine.getByRole('button', { name: 'Take this Story down' }).tap();
+  await owner.page.screenshot({ path: '.dev/story-viewer-seen.png' });
+  expect(await axeViolations(owner.page)).toEqual([]);
+  expect(await smallTargets(owner.page)).toEqual([]);
+  await mine.getByRole('button', { name: 'Close list' }).tap();
+  await mine.getByRole('button', { name: 'More' }).tap();
+  await mine.getByRole('menuitem', { name: 'Take this Story down' }).tap();
   await owner.page.getByRole('button', { name: 'Take it down' }).tap();
   await expect(owner.page.getByText('Story taken down.')).toBeVisible();
   await owner.page.goto('/chimes');
