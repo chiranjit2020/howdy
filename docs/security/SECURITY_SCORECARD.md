@@ -31,14 +31,18 @@ _Snapshot: 2026-10-08._
 | **CI/CD security gate** | PASS | `.github/workflows/security.yml`: dependency audit + gitleaks secret scan on every push/PR to main + weekly; local `pnpm check` + e2e before push |
 | **CSAM detection & reporting** | TODO | Planned; `CSAM_RUNBOOK.md` |
 | **Admin/operator account hardening** | PASS | 2FA on Vercel, Neon, Cloudflare, Resend, GitHub and the owner's Google account (owner-confirmed 2026-10-09; recovery codes kept offline) |
-| **Infrastructure / cloud least-privilege** | PARTIAL | Vercel `sin1`, Neon SG, R2 private; **formal IAM/least-priv review: TODO** |
+| **Database least-privilege** | PASS | Site connects as `howdy_app` (rows only: no DDL/grants/TRUNCATE, no UPDATE on `audit_log`); owner login only for migrations. `tests/security/db-app-role.test.ts` + full e2e as `howdy_app`; live 2026-10-09 (`DATABASE_ACCESS.md`) |
+| **Backups / restore** | PARTIAL | Neon point-in-time restore drill passed 2026-10-09 (1 h back, all 45 tables); **history is only 6 h on the free plan, no off-site backup** |
+| **Infrastructure / cloud least-privilege** | PARTIAL | Vercel `sin1`, Neon SG, R2 private, DB app login least-privilege; R2/Resend token scopes not yet reviewed |
 
 ## Top priorities (ranked)
 1. **[you + code]** CSAM hash-matching — start provider applications now (`CSAM_RUNBOOK.md`).
-2. **[review]** DB least-privilege app role + a tested restore.
+2. **[code / you]** Backups beyond Neon's 6-hour history: a nightly encrypted off-site dump, or a paid Neon plan.
+3. **[review]** Scope of the R2 and Resend API tokens (least privilege outside the database).
 
 _Done 2026-10-08: CI security gate (dependency audit + secret scan) — `.github/workflows/security.yml`; automated
 security alerts (`src/modules/admin/alerts.ts`, run by the health report every 30 min). Done 2026-10-09: 2FA on all
-provider accounts; GitHub health watch fixed (matching `CRON_SECRET`)._
+provider accounts; GitHub health watch fixed (matching `CRON_SECRET`); least-privilege database login `howdy_app` live;
+restore drill passed._
 
 _Do not promote any row to PASS without a new test or documented evidence. Update alongside ATTACK-MAPPING.md._

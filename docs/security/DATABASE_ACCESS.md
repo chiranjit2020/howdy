@@ -1,6 +1,6 @@
 # Database access (least privilege) and restore
 
-_Written 2026-10-09. Owner: the site owner. Update when a login, a grant or the backup setup changes._
+_Written 2026-10-09; production switched to `howdy_app` the same day. Owner: the site owner. Update when a login, a grant or the backup setup changes._
 
 ## Two logins, two jobs
 
@@ -67,4 +67,4 @@ Drill log:
 
 | Date | From | Result |
 |---|---|---|
-| — | — | not yet run |
+| 2026-10-09 | `main` at 19:44 UTC (1 h back) | Branch came up in seconds; all 45 tables + 40 migrations present; differences vs live were only that hour's new rows (3 audit entries, 1 message, 1 session, 1 invite link). Branch deleted. |

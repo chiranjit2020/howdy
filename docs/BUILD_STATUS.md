@@ -1,6 +1,6 @@
 # Howdy Build Status
 
-_Last updated: 2026-10-08_
+_Last updated: 2026-10-09_
 
 ## Current Phase
 
@@ -8,6 +8,18 @@ _Last updated: 2026-10-08_
 Town Hall feed ADR-033, Dynamic Island ADR-034). Production: Vercel `sin1` + Neon `howdy-sg` (`howdy_prod`), Resend
 mail, R2 photos, Upstash Redis; a push to `main` deploys. Production does not migrate on deploy: apply new migrations
 to `howdy_dev` and the Singapore `howdy_prod` first.
+
+## 2026-10-09 — Least-privilege database login + restore drill
+
+- [x] `pnpm db:app-role` (`db/roles/app-role.ts`, `scripts/db-app-role.ts`) creates `howdy_app`: row rights on every
+      table, no DDL, grants or TRUNCATE; `audit_log` insert/select/delete only. Default privileges cover new tables as
+      long as migrations run as the owner. Run as the owner; it reads the rights back and refuses if anything is off.
+- [x] Production: Vercel `DATABASE_URL` (Production) = pooled `howdy_app` on `howdy_prod`; owner login only for
+      migrations/scripts (`MIGRATE_DATABASE_URL`). Live verified: health report all ok, live connections are `howdy_app`.
+- [x] Tests: `tests/security/db-app-role.test.ts` (8); full e2e suite (114 passed) with the server as `howdy_app`.
+- [x] Restore drill: Neon branch from 1 h back matched production (see `docs/security/DATABASE_ACCESS.md`).
+- [ ] Neon free plan keeps only **6 h** of history and there is no off-site backup yet.
+- Also 2026-10-09: 2FA on all provider accounts (owner); GitHub health watch fixed (matching `CRON_SECRET`).
 
 ## 2026-10-08 — Mission Console (Control Room redesign from the Stitch design)
 
