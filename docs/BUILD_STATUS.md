@@ -9,6 +9,22 @@ Town Hall feed ADR-033, Dynamic Island ADR-034). Production: Vercel `sin1` + Neo
 mail, R2 photos, Upstash Redis; a push to `main` deploys. Production does not migrate on deploy: apply new migrations
 to `howdy_dev` and the Singapore `howdy_prod` first.
 
+## 2026-10-08 — Mission Console (Control Room redesign from the Stitch design)
+
+- [x] `/admin/security` rebuilt after the user's Stitch "Howdy Control Room" design (desktop 1920×1080 + mobile):
+      sidebar, top bar, range tabs (1h/6h/24h/7d), 6 KPI tiles with sparklines and change vs the previous period,
+      Activity chart (server-rendered SVG: sign-ins, sign-ups, failed sign-ins, reports), System health, Social pulse
+      (Post Cards, Yo's, Tracks, Tributes), Alerts, "was this really them?", Safety overview (queue counts, oldest open
+      reports, sign-in pressure), Recent security events. Auto-refresh every 60 s while visible.
+- [x] User decisions: keep charcoal + ghost white (not the design's navy); **real data only** — the design's fake
+      infrastructure (FastAPI, Phoenix, Sidekiq, S3), geo-IP traffic, IP search and "hashing active"/"chain verified"
+      claims are dropped or replaced; sidebar shows only working links (console + moderation queue).
+- [x] `consoleData()` in `src/modules/admin/console.ts`; `?range` validated with an own-property check (a test caught
+      `?range=constructor` passing the first version). Status tokens pinned to their dark values in
+      `control-room.css` (the CSS build rewrites `light-dark()`, so `color-scheme` alone left danger text unreadable).
+- [x] Tests: `tests/security/admin-console.test.ts` (gate, buckets per range, period compare, social + queue counts);
+      e2e: axe clean, 44px targets, fits 1920×1080, max 14px text, palette, range tab navigation, 320px phone.
+
 ## 2026-10-08 — Security alerts + full-HD Security Center
 
 - [x] Automated security alerts (`src/modules/admin/alerts.ts`): 8 rules over the last hour (account password

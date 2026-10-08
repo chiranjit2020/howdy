@@ -60,7 +60,7 @@ test('an admin sees the Security Center; a non-admin gets a plain 404', async ({
   // The admin sees it.
   await admin.page.goto('/admin/security');
   await pageReady(admin.page);
-  await expect(admin.page.getByRole('heading', { name: /SECURITY CENTER/ })).toBeVisible();
+  await expect(admin.page.getByRole('heading', { name: /Mission Console/ })).toBeVisible();
   // The seeded account shows up under sign-in pressure (6 >= the flag threshold of 5).
   await expect(admin.page.getByText(target.handle, { exact: false }).first()).toBeVisible();
   await expect(admin.page.getByText(/login/).first()).toBeVisible();
@@ -92,6 +92,11 @@ test('an admin sees the Security Center; a non-admin gets a plain 404', async ({
   expect(await axeViolations(admin.page)).toEqual([]);
   expect(await smallTargets(admin.page)).toEqual([]);
   expect(await horizontalOverflow(admin.page)).toBe(0);
+
+  // The range tabs re-read the same console for another window.
+  await admin.page.getByRole('link', { name: '7d', exact: true }).click();
+  await expect(admin.page).toHaveURL(/range=7d/);
+  await expect(admin.page.getByText(/last 7 days/).first()).toBeVisible();
 
   // And it stays readable on a phone.
   await admin.page.setViewportSize({ width: 320, height: 720 });

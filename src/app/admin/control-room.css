@@ -3,6 +3,13 @@
  * attributes. Re-points the island tokens: dark charcoal with ghost-white text, and nothing above 14px.
  */
 .control-room {
+  /* A dark surface even when the member app is in Daylight: native controls dark, and the light-dark() status tokens
+     pinned to their Dusk values (the CSS build rewrites light-dark(), so color-scheme alone does not switch them). */
+  color-scheme: dark;
+  --color-danger: #ff9c94;
+  --color-danger-soft: #4a2530;
+  --color-success-text: #8fdcb0;
+  --color-focus: #9ad7e6;
   --color-island: #1b1c1f;
   --color-island-raised: #25272b;
   --color-on-island: #f8f8ff;

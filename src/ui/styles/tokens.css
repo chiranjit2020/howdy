@@ -89,6 +89,13 @@
   --color-island-raised: #2a2836;
   --color-on-island: #f6f2ea;
   --color-on-island-muted: #b9b3c9;
+  /* Control Room telemetry (admin only, on the island surface): chart series and status accents. Colour marks a
+     signal, never fills a surface. */
+  --color-telemetry: #8b7cff;
+  --color-telemetry-soft: #c7bfff;
+  --color-signal-green: #34d399;
+  --color-signal-amber: #fbbf24;
+  --color-signal-coral: #fb7185;
 
   /* Soft colour shape used on the Ranch cover banner (Dusk variant dimmed so it does not glow). */
   --color-auth-blob-peach: light-dark(#fee8dd, #3a2c3f);
