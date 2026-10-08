@@ -68,7 +68,13 @@ test('an admin sees the Security Center; a non-admin gets a plain 404', async ({
   await expect(admin.page.getByText(/Two step off|Password reset completed/).first()).toBeVisible();
   await expect(admin.page.getByText('Database').first()).toBeVisible();
 
-  await admin.page.screenshot({ path: '.dev/admin-security.png', fullPage: true });
+  // A full-HD control-room screen: everything fits, the page itself never scrolls (lists scroll in their panels).
+  await admin.page.setViewportSize({ width: 1920, height: 1080 });
+  await admin.page.reload();
+  await pageReady(admin.page);
+  const pageHeight = await admin.page.evaluate(() => document.documentElement.scrollHeight);
+  expect(pageHeight).toBeLessThanOrEqual(1080);
+  await admin.page.screenshot({ path: '.dev/admin-security.png' });
   expect(await axeViolations(admin.page)).toEqual([]);
   expect(await smallTargets(admin.page)).toEqual([]);
   expect(await horizontalOverflow(admin.page)).toBe(0);
