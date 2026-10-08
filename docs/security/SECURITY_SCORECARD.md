@@ -26,7 +26,7 @@ _Snapshot: 2026-10-08._
 | **Database security** | PARTIAL | Neon TLS-only, encrypted at rest, migration discipline; **restore test & least-priv app role: review** |
 | **Redis security** | PASS | Upstash, authenticated, TLS, TTL'd; not durable storage; `tests/*/redis*.test.ts` |
 | **Logging / audit** | PASS | Append-only `audit_log` with rich events (login_success/failed, session_revoked, password/2FA changes, moderation actions, account deletion); never logs secrets |
-| **Detection / alerting** | TODO | Telemetry exists (audit + rate-limit counters); no automated alerts yet. See INCIDENT_RESPONSE.md |
+| **Detection / alerting** | PARTIAL | Security Center at `/admin/security` (admin + two-step only) surfaces login-failure pressure, sensitive account changes and health from `audit_log`. No automated alerts yet — someone has to look. See INCIDENT_RESPONSE.md |
 | **Incident response** | PARTIAL | `INCIDENT_RESPONSE.md` drafted 2026-10-08; not yet rehearsed |
 | **CI/CD security gate** | PASS | `.github/workflows/security.yml`: dependency audit + gitleaks secret scan on every push/PR to main + weekly; local `pnpm check` + e2e before push |
 | **CSAM detection & reporting** | TODO | Planned; `CSAM_RUNBOOK.md` |

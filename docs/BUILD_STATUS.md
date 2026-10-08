@@ -9,6 +9,18 @@ Town Hall feed ADR-033, Dynamic Island ADR-034). Production: Vercel `sin1` + Neo
 mail, R2 photos, Upstash Redis; a push to `main` deploys. Production does not migrate on deploy: apply new migrations
 to `howdy_dev` and the Singapore `howdy_prod` first.
 
+## 2026-10-08 — Control Room, first slice: Security Center (`/admin/security`)
+
+- [x] Read-only admin page over data that already exists: 24h/7d counts of security events from `audit_log`, accounts
+      under sign-in pressure (≥5 login or ≥3 two-step failures in 24h), "was this really them?" changes (two-step off,
+      passkey/app removed, resets, recovery codes, deletions), open reports + suspended accounts, the `/api/health` checks.
+      No new data collected, no migration, no new dependency (Howdy's own primitives, not shadcn).
+- [x] Gated: non-admins get the plain 404; an admin without two-step is told to turn it on. `securityOverview()`
+      re-checks the role itself. Module `src/modules/admin` (may read `moderation`, `health`).
+- [x] Tests: `tests/security/admin-security.test.ts`, `tests/e2e/admin-security.spec.ts` (gate, axe, 44px targets, no
+      overflow at 320px).
+- [ ] Not yet: automated alerts (push/email when a threshold trips) — the page is detection you have to look at.
+
 ## 2026-10-08 — Dependency vulnerability patch — shipped
 
 - [x] `pnpm audit` found 4 (1 critical, 3 high). Fixed: **next 16.3.5 → 16.3.8** (critical RCE in `next/og`, used by the

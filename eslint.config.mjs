@@ -68,6 +68,8 @@ const MODULE_DEPENDENCIES = {
   invites: ['profiles', 'relationships'],
   // Stories (ADR-047): names and the Story-views switch, who a Story reaches, and the first-week budgets.
   stories: ['moderation', 'profiles', 'relationships'],
+  // Control Room (admin): read-only views over the audit trail, moderation and health.
+  admin: ['moderation', 'health'],
 };
 const moduleRules = Object.entries(MODULE_DEPENDENCIES).map(([name, allowed]) => {
   const forbidden = Object.keys(MODULE_DEPENDENCIES).filter((m) => m !== name && !allowed.includes(m));
