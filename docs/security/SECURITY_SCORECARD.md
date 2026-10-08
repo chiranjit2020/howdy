@@ -30,15 +30,15 @@ _Snapshot: 2026-10-08._
 | **Incident response** | PARTIAL | `INCIDENT_RESPONSE.md` drafted 2026-10-08; not yet rehearsed |
 | **CI/CD security gate** | PASS | `.github/workflows/security.yml`: dependency audit + gitleaks secret scan on every push/PR to main + weekly; local `pnpm check` + e2e before push |
 | **CSAM detection & reporting** | TODO | Planned; `CSAM_RUNBOOK.md` |
-| **Admin/operator account hardening** | TODO **[you]** | Enable 2FA on Vercel/Neon/Cloudflare/Resend/GitHub (outside the codebase) |
+| **Admin/operator account hardening** | PASS | 2FA on Vercel, Neon, Cloudflare, Resend, GitHub and the owner's Google account (owner-confirmed 2026-10-09; recovery codes kept offline) |
 | **Infrastructure / cloud least-privilege** | PARTIAL | Vercel `sin1`, Neon SG, R2 private; **formal IAM/least-priv review: TODO** |
 
 ## Top priorities (ranked)
-1. **[you]** 2FA on all provider accounts (Vercel, Neon, Cloudflare, Resend, GitHub). Highest value, zero code.
-2. **[you + code]** CSAM hash-matching — start provider applications now (`CSAM_RUNBOOK.md`).
-3. **[code]** Basic detection alerts: `login_failed` spike per account/IP; sudden mass actions (→ the Control Room, see below).
-4. **[review]** DB least-privilege app role + a tested restore.
+1. **[you + code]** CSAM hash-matching — start provider applications now (`CSAM_RUNBOOK.md`).
+2. **[review]** DB least-privilege app role + a tested restore.
 
-_Done 2026-10-08: CI security gate (dependency audit + secret scan) — `.github/workflows/security.yml`._
+_Done 2026-10-08: CI security gate (dependency audit + secret scan) — `.github/workflows/security.yml`; automated
+security alerts (`src/modules/admin/alerts.ts`, run by the health report every 30 min). Done 2026-10-09: 2FA on all
+provider accounts; GitHub health watch fixed (matching `CRON_SECRET`)._
 
 _Do not promote any row to PASS without a new test or documented evidence. Update alongside ATTACK-MAPPING.md._
