@@ -57,6 +57,18 @@ test('an admin sees the Security Center; a non-admin gets a plain 404', async ({
   const resp = await target.page.goto('/admin/security');
   expect(resp?.status()).toBe(404);
 
+  // Only an admin's navigation links to it, straight after Moderation.
+  await target.page.goto('/home');
+  await pageReady(target.page);
+  await expect(target.page.getByRole('link', { name: 'Security Center' })).toHaveCount(0);
+  await admin.page.goto('/home');
+  await pageReady(admin.page);
+  const sidebar = admin.page.getByRole('navigation', { name: 'Primary' });
+  const labels = (await sidebar.getByRole('link').allTextContents()).map((t) => t.trim());
+  expect(labels.slice(-2)).toEqual(['Moderation', 'Security Center']);
+  await sidebar.getByRole('link', { name: 'Security Center' }).click();
+  await expect(admin.page).toHaveURL(/\/admin\/security$/);
+
   // The admin sees it.
   await admin.page.goto('/admin/security');
   await pageReady(admin.page);

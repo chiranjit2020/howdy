@@ -22,7 +22,8 @@ export type ShellNavKey =
   | 'workshop'
   | 'town-halls'
   | 'capsules'
-  | 'moderation';
+  | 'moderation'
+  | 'security';
 
 export interface ShellNavItem {
   key: ShellNavKey;
@@ -43,6 +44,8 @@ const ART: Record<ShellNavKey, ArtName> = {
   'town-halls': 'nav-town-halls',
   capsules: 'nav-capsules',
   moderation: 'nav-moderation',
+  // No icon of its own yet: the Control Room shares Moderation's.
+  security: 'nav-moderation',
 };
 // Loaded at once (not lazily): the navigation is on screen from the first paint.
 const navArt = (name: ArtName) => <Art name={name} size="free" className="size-7" loading="eager" />;

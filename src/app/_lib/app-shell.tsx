@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 import type { ReactNode } from 'react';
+import { adminStanding } from '@/modules/admin';
 import { getCurrentUser, pendingAcceptances } from '@/modules/auth';
 import { getPortraitVersion } from '@/modules/media';
 import { pushPublicKey } from '@/modules/push';
@@ -51,6 +52,8 @@ export async function AppFrame({
     isModerator(user.id).catch(() => false),
   ]);
   if (pending.length > 0) redirect('/agree');
+  // Only staff can be admins, so everyone else skips the extra lookup.
+  const admin = moderator && (await adminStanding(user.id).catch(() => 'not_admin' as const)) !== 'not_admin';
   return (
     <>
       <PwaBoot signedIn unread={unread} vapidKey={pushPublicKey()} />
@@ -65,6 +68,7 @@ export async function AppFrame({
         unreadWhispers={unreadWhispers}
         townHallInvites={invites}
         moderator={moderator}
+        admin={admin}
       >
         {children}
       </AppShell>

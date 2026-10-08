@@ -40,6 +40,7 @@ export function AppShell({
   unreadWhispers = 0,
   townHallInvites = 0,
   moderator = false,
+  admin = false,
   waysIn = true,
   children,
 }: {
@@ -49,6 +50,8 @@ export function AppShell({
   townHallInvites?: number;
   /** Adds the sidebar-only Moderation link. Only a hint: the page and API check the role themselves. */
   moderator?: boolean;
+  /** Adds the Security Center (Control Room) link after Moderation. Also only a hint: /admin checks for itself. */
+  admin?: boolean;
   /** Signed out: offer Step Inside / Stake a Claim in the top bar. Off on the sign-in pages: just the logo, centred. */
   waysIn?: boolean;
   children: ReactNode;
@@ -67,6 +70,7 @@ export function AppShell({
         { key: 'town-halls', href: '/town-halls', label: 'Town Halls', badge: townHallInvites },
         { key: 'capsules', href: '/capsules', label: 'Time Capsules' },
         ...(moderator ? [{ key: 'moderation', href: '/moderation', label: 'Moderation' } as const] : []),
+        ...(admin ? [{ key: 'security', href: '/admin/security', label: 'Security Center' } as const] : []),
       ]
     : [];
 
