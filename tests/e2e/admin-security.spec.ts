@@ -74,6 +74,20 @@ test('an admin sees the Security Center; a non-admin gets a plain 404', async ({
   await pageReady(admin.page);
   const pageHeight = await admin.page.evaluate(() => document.documentElement.scrollHeight);
   expect(pageHeight).toBeLessThanOrEqual(1080);
+  // Dense dashboard type: no text anywhere on the page is larger than 14px.
+  const tooBig = await admin.page.evaluate(() =>
+    [...document.querySelectorAll('main *')]
+      .filter((el) => [...el.childNodes].some((n) => n.nodeType === 3 && n.textContent?.trim()))
+      .filter((el) => parseFloat(getComputedStyle(el).fontSize) > 14)
+      .map((el) => `${getComputedStyle(el).fontSize} <${el.tagName.toLowerCase()} class="${el.className}">`),
+  );
+  expect(tooBig).toEqual([]);
+  // Dark charcoal with ghost-white text (a stylesheet class: the CSP would block an inline style).
+  const colours = await admin.page.evaluate(() => {
+    const cs = getComputedStyle(document.querySelector('.control-room')!);
+    return [cs.backgroundColor, cs.color];
+  });
+  expect(colours).toEqual(['rgb(27, 28, 31)', 'rgb(248, 248, 255)']);
   await admin.page.screenshot({ path: '.dev/admin-security.png' });
   expect(await axeViolations(admin.page)).toEqual([]);
   expect(await smallTargets(admin.page)).toEqual([]);

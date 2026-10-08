@@ -65,6 +65,8 @@ export interface SecurityOverview {
   flagged: { handle: string; loginFailed: number; secondStepFailed: number }[];
   sensitive: SecurityEventRow[];
   recent: SecurityEventRow[];
+  /** Security alerts sent in the last 7 days (newest first). */
+  alerts: { rule: string; severity: string; count: number; handle: string | null; at: string }[];
   safety: { openReports: number; suspendedAccounts: number };
   health: {
     status: 'ok' | 'warn' | 'fail';
@@ -78,74 +80,86 @@ export async function securityOverview(userId: string, now: Date = new Date()): 
   const d1 = new Date(now.getTime() - 24 * 60 * 60 * 1000);
   const d7 = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-  const [counts, flaggedRows, sensitive, recent, openReports, suspended, health] = await Promise.all([
-    // One pass over the week, with a 24h sub-count per event.
-    db
-      .select({
-        event: auditLog.event,
-        d1: sql<number>`count(*) filter (where ${auditLog.createdAt} >= ${d1})::int`,
-        d7: sql<number>`count(*)::int`,
-      })
-      .from(auditLog)
-      .where(and(inArray(auditLog.event, [...COUNTED]), gte(auditLog.createdAt, d7)))
-      .groupBy(auditLog.event),
-    // Accounts taking repeated sign-in failures in the last 24h.
-    db
-      .select({
-        handle: users.handle,
-        loginFailed: sql<number>`count(*) filter (where ${auditLog.event} = 'login_failed')::int`,
-        secondStepFailed: sql<number>`count(*) filter (where ${auditLog.event} = 'second_step_failed')::int`,
-      })
-      .from(auditLog)
-      .innerJoin(users, eq(users.id, auditLog.userId))
-      .where(
-        and(
-          gte(auditLog.createdAt, d1),
-          inArray(auditLog.event, ['login_failed', 'second_step_failed', 'passkey_sign_in_failed']),
-        ),
-      )
-      .groupBy(users.handle)
-      .having(
-        sql`count(*) filter (where ${auditLog.event} = 'login_failed') >= ${LOGIN_FAIL_FLAG}
+  const [counts, flaggedRows, sensitive, recent, alertRows, openReports, suspended, health] =
+    await Promise.all([
+      // One pass over the week, with a 24h sub-count per event.
+      db
+        .select({
+          event: auditLog.event,
+          d1: sql<number>`count(*) filter (where ${auditLog.createdAt} >= ${d1})::int`,
+          d7: sql<number>`count(*)::int`,
+        })
+        .from(auditLog)
+        .where(and(inArray(auditLog.event, [...COUNTED]), gte(auditLog.createdAt, d7)))
+        .groupBy(auditLog.event),
+      // Accounts taking repeated sign-in failures in the last 24h.
+      db
+        .select({
+          handle: users.handle,
+          loginFailed: sql<number>`count(*) filter (where ${auditLog.event} = 'login_failed')::int`,
+          secondStepFailed: sql<number>`count(*) filter (where ${auditLog.event} = 'second_step_failed')::int`,
+        })
+        .from(auditLog)
+        .innerJoin(users, eq(users.id, auditLog.userId))
+        .where(
+          and(
+            gte(auditLog.createdAt, d1),
+            inArray(auditLog.event, ['login_failed', 'second_step_failed', 'passkey_sign_in_failed']),
+          ),
+        )
+        .groupBy(users.handle)
+        .having(
+          sql`count(*) filter (where ${auditLog.event} = 'login_failed') >= ${LOGIN_FAIL_FLAG}
          or count(*) filter (where ${auditLog.event} = 'second_step_failed') >= ${SECOND_STEP_FLAG}`,
-      )
-      .orderBy(desc(sql`count(*)`))
-      .limit(25),
-    // Recent "is this really you?" account changes (7d).
-    db
-      .select({
-        event: auditLog.event,
-        handle: users.handle,
-        at: auditLog.createdAt,
-        requestId: auditLog.requestId,
-      })
-      .from(auditLog)
-      .leftJoin(users, eq(users.id, auditLog.userId))
-      .where(and(inArray(auditLog.event, [...SENSITIVE]), gte(auditLog.createdAt, d7)))
-      .orderBy(desc(auditLog.createdAt))
-      .limit(20),
-    // The latest security events of any kind.
-    db
-      .select({
-        event: auditLog.event,
-        handle: users.handle,
-        at: auditLog.createdAt,
-        requestId: auditLog.requestId,
-      })
-      .from(auditLog)
-      .leftJoin(users, eq(users.id, auditLog.userId))
-      .orderBy(desc(auditLog.createdAt))
-      .limit(25),
-    db
-      .select({ n: sql<number>`count(*)::int` })
-      .from(reports)
-      .where(eq(reports.status, 'open')),
-    db
-      .select({ n: sql<number>`count(*)::int` })
-      .from(users)
-      .where(eq(users.status, 'suspended')),
-    runHealthReport().catch(() => ({ status: 'fail' as const, checks: [] })),
-  ]);
+        )
+        .orderBy(desc(sql`count(*)`))
+        .limit(25),
+      // Recent "is this really you?" account changes (7d).
+      db
+        .select({
+          event: auditLog.event,
+          handle: users.handle,
+          at: auditLog.createdAt,
+          requestId: auditLog.requestId,
+        })
+        .from(auditLog)
+        .leftJoin(users, eq(users.id, auditLog.userId))
+        .where(and(inArray(auditLog.event, [...SENSITIVE]), gte(auditLog.createdAt, d7)))
+        .orderBy(desc(auditLog.createdAt))
+        .limit(20),
+      // The latest security events of any kind.
+      db
+        .select({
+          event: auditLog.event,
+          handle: users.handle,
+          at: auditLog.createdAt,
+          requestId: auditLog.requestId,
+        })
+        .from(auditLog)
+        .leftJoin(users, eq(users.id, auditLog.userId))
+        .orderBy(desc(auditLog.createdAt))
+        .limit(25),
+      db
+        .select({
+          meta: auditLog.meta,
+          handle: users.handle,
+          at: auditLog.createdAt,
+        })
+        .from(auditLog)
+        .leftJoin(users, eq(users.id, auditLog.userId))
+        .where(and(eq(auditLog.event, 'security_alert'), gte(auditLog.createdAt, d7)))
+        .orderBy(desc(auditLog.createdAt))
+        .limit(50),
+      db
+        .select({ n: sql<number>`count(*)::int` })
+        .from(reports)
+        .where(eq(reports.status, 'open')),
+      db
+        .select({ n: sql<number>`count(*)::int` })
+        .from(users)
+        .where(eq(users.status, 'suspended')),
+      runHealthReport().catch(() => ({ status: 'fail' as const, checks: [] })),
+    ]);
 
   const iso = (d: Date) => d.toISOString();
   return {
@@ -163,6 +177,16 @@ export async function securityOverview(userId: string, now: Date = new Date()): 
       requestId: r.requestId,
     })),
     recent: recent.map((r) => ({ event: r.event, handle: r.handle, at: iso(r.at), requestId: r.requestId })),
+    alerts: alertRows.map((r) => {
+      const m = r.meta as { rule?: string; severity?: string; count?: number };
+      return {
+        rule: m.rule ?? 'unknown',
+        severity: m.severity ?? 'high',
+        count: m.count ?? 0,
+        handle: r.handle,
+        at: iso(r.at),
+      };
+    }),
     safety: { openReports: openReports[0]?.n ?? 0, suspendedAccounts: suspended[0]?.n ?? 0 },
     health: {
       status: health.status,

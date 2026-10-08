@@ -1,3 +1,4 @@
+import { runSecurityAlerts } from '@/modules/admin';
 import { runAndNotify } from '@/modules/health';
 import { getEnv } from '@/platform/config/env';
 import { AppError } from '@/platform/errors';
@@ -15,6 +16,8 @@ export const maxDuration = 30;
  *
  * Answers 200 when everything is fine or only warnings, 503 when something has failed, so the watcher itself fails
  * (and GitHub emails the owner) even if this app could not send its own email.
+ *
+ * Each run also evaluates the security alert rules (Control Room) and emails new alerts to the owner and the admins.
  */
 export const GET = route(async ({ req, log }) => {
   const secret = getEnv().CRON_SECRET;
@@ -22,7 +25,10 @@ export const GET = route(async ({ req, log }) => {
   if (!cronAuthorised(req.headers.get('authorization'), secret)) throw new AppError('UNAUTHENTICATED');
 
   const mode = new URL(req.url).searchParams.get('mode') === 'digest' ? 'digest' : 'watch';
-  const { report, emailed, emailError } = await runAndNotify(mode);
+  const [{ report, emailed, emailError }, alerts] = await Promise.all([
+    runAndNotify(mode),
+    runSecurityAlerts(),
+  ]);
   log.info({
     event: 'health.report',
     mode,
@@ -31,9 +37,19 @@ export const GET = route(async ({ req, log }) => {
     warning: report.checks.filter((c) => c.status === 'warn').map((c) => c.id),
     emailed,
     emailError,
+    securityAlerts: alerts.active.map((a) => a.key),
+    securityAlertsNew: alerts.fresh.length,
+    securityAlertsEmailedTo: alerts.emailedTo,
+    securityAlertsError: alerts.emailError,
   });
   return json(
-    { ...report, emailed, ...(emailError ? { emailError } : {}) },
+    {
+      ...report,
+      emailed,
+      ...(emailError ? { emailError } : {}),
+      // Counts only: the report travels through CI logs, so it carries no handles.
+      securityAlerts: { active: alerts.active.length, new: alerts.fresh.length, emailedTo: alerts.emailedTo },
+    },
     { status: report.status === 'fail' ? 503 : 200 },
   );
 });

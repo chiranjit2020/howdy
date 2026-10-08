@@ -1,0 +1,15 @@
+/*
+ * Control Room palette and type, scoped to the admin pages. A class, not an inline style: the CSP blocks style
+ * attributes. Re-points the island tokens: dark charcoal with ghost-white text, and nothing above 14px.
+ */
+.control-room {
+  --color-island: #1b1c1f;
+  --color-island-raised: #25272b;
+  --color-on-island: #f8f8ff;
+  --color-on-island-muted: #b3b5bd;
+  --text-display: 0.875rem;
+  --text-heading: 0.875rem;
+  --text-title: 0.875rem;
+  --text-body: 0.875rem;
+  font-size: 0.875rem;
+}

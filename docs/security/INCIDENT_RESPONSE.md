@@ -73,16 +73,29 @@ Follow **`CSAM_RUNBOOK.md`** exactly: **block, quarantine (do NOT delete), do no
 report to the authority, legal hold, then suspend**. This is SEV-1 and has legal obligations — your lawyer and the
 runbook govern, not improvisation.
 
-## 8. Detection (what to build — SCORECARD: TODO)
+## 8. Detection (SCORECARD: PARTIAL)
 
-Telemetry exists today (append-only `audit_log`, Redis rate-limit counters). Turn it into alerts:
-- `login_failed` spike per account or per IP → possible brute force/stuffing.
-- `two_step_off` / `password_reset_completed` / `passkey_added` → confirm it was the real user.
-- Sudden **mass actions** from one account (many cards/whispers/marks) → abuse or takeover.
-- `RATE_LIMIT_TRIGGERED` volume → scanning/abuse.
-- Deploy health + error-rate spike → bad release or attack.
+**Built (2026-10-08):** the Security Center at `/admin/security` (admin + two-step only) and automated security
+alerts (`src/modules/admin/alerts.ts`). The alert rules run with every health watch (`/api/health/report`, every 30
+minutes from GitHub Actions) over the last hour of `audit_log`, `suspensions` and `reports`:
 
-Even a daily digest email of these counts would be a large step up from nothing.
+| Rule | Trips at (1 h) | Severity |
+| --- | --- | --- |
+| Password guessing on one account | ≥10 `login_failed` | high |
+| Wrong second steps on one account (password likely known) | ≥3 `second_step_failed` / `passkey_sign_in_failed` | critical |
+| Site-wide sign-in failure spike (credential stuffing) | ≥50 `login_failed` | high |
+| Account-takeover wave | ≥5 two-step off / passkey or app removed / password resets | critical |
+| Any security change on a moderator/admin account | 1 | critical |
+| Mass suspensions by one moderator | ≥10 | critical |
+| Sign-up wave (bots) | ≥100 `signup` | high |
+| Report flood (brigading/raid) | ≥30 reports | high |
+
+A new alert is emailed to `HEALTH_REPORT_TO` and every admin, recorded as `security_alert` in `audit_log` (shown on
+the dashboard), and then stays quiet for 6 h per incident. Emails carry handles and counts only.
+
+**Not built yet:** per-IP signals (the trail holds no IPs, by design), `RATE_LIMIT_TRIGGERED` volume, error-rate
+spikes, mass content actions (many cards/whispers/marks from one account). Alerts depend on the GitHub "Health
+watch" job — if its `CRON_SECRET` does not match Vercel's, the job gets 401 and no alerts run.
 
 ## 9. After every incident
 - Keep the timeline.

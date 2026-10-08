@@ -45,7 +45,7 @@ function Panel({
         tabIndex={0}
         role="region"
         aria-label={title}
-        className="min-h-0 flex-1 rounded-b-md p-4 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-on-island lg:overflow-y-auto"
+        className="min-h-0 flex-1 rounded-b-md p-4 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-on-island xl:overflow-y-auto"
       >
         {children}
       </div>
@@ -92,14 +92,57 @@ function EventTable({ rows, empty }: { rows: SecurityEventRow[]; empty: string }
   );
 }
 
+const RULE_LABEL: Record<string, string> = {
+  account_login_attack: 'Password guessing on an account',
+  second_step_attack: 'Wrong second steps (password likely known)',
+  login_failure_spike: 'Site-wide sign-in failure spike',
+  takeover_wave: 'Account-takeover wave',
+  staff_account_change: 'Security change on a staff account',
+  mass_suspensions: 'Mass suspensions by one moderator',
+  signup_wave: 'Sign-up wave',
+  report_flood: 'Report flood',
+};
+
+function AlertList({ alerts }: { alerts: SecurityOverview['alerts'] }) {
+  if (alerts.length === 0) {
+    return (
+      <p className="text-caption text-on-island-muted">
+        No alerts this week. Rules run every 30 minutes; new ones are emailed to the owner and admins.
+      </p>
+    );
+  }
+  return (
+    <ul className="flex flex-col divide-y divide-on-island/10">
+      {alerts.map((a, i) => (
+        <li key={i} className="flex flex-col gap-0.5 py-1.5 text-body">
+          <span className="flex items-baseline justify-between gap-3">
+            <span className={'min-w-0 ' + (a.severity === 'critical' ? 'text-danger' : 'text-warning')}>
+              {RULE_LABEL[a.rule] ?? a.rule.replace(/_/g, ' ')}
+            </span>
+            <time className="shrink-0 font-mono text-metadata text-on-island-muted tabular-nums">
+              {when(a.at)}
+            </time>
+          </span>
+          <span className="text-metadata text-on-island-muted">
+            {a.severity.toUpperCase()} · {a.count} in an hour{a.handle && ` · ${a.handle}`}
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 const count = (o: SecurityOverview, event: string, win: 'd1' | 'd7' = 'd1') =>
   o.counts.find((c) => c.event === event)?.[win] ?? 0;
 
 export function SecurityView({ data }: { data: SecurityOverview }) {
+  const dayAgo = new Date(data.generatedAt).getTime() - 24 * 60 * 60 * 1000;
+  const isRecent = (at: string) => new Date(at).getTime() >= dayAgo;
+  const alerts24h = data.alerts.filter((a) => isRecent(a.at)).length;
   return (
     <main
       id="main"
-      className="flex w-full flex-col gap-4 px-4 py-5 lg:h-dvh lg:overflow-hidden lg:px-8 lg:py-6"
+      className="flex w-full flex-col gap-4 px-4 py-5 lg:px-8 lg:py-6 xl:h-dvh xl:overflow-hidden"
     >
       <header className="flex shrink-0 flex-wrap items-center justify-between gap-x-6 gap-y-2">
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
@@ -135,7 +178,18 @@ export function SecurityView({ data }: { data: SecurityOverview }) {
       </header>
 
       {/* Last 24 hours at a glance, plus the safety backlog. Colour only where it signals something. */}
-      <div className="grid shrink-0 grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8">
+      <div className="grid shrink-0 grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-9">
+        <Tile
+          n={alerts24h}
+          label="Alerts 24h"
+          tone={
+            data.alerts.some((a) => a.severity === 'critical' && isRecent(a.at))
+              ? 'danger'
+              : alerts24h > 0
+                ? 'warning'
+                : undefined
+          }
+        />
         <Tile
           n={count(data, 'login_failed')}
           label="Login fails 24h"
@@ -162,29 +216,20 @@ export function SecurityView({ data }: { data: SecurityOverview }) {
         <Tile n={data.safety.suspendedAccounts} label="Suspended accounts" />
       </div>
 
-      {/* Desktop: three columns that fill the rest of the screen. Phone: one column, the page scrolls. */}
-      <div className="grid min-h-0 flex-1 gap-4 lg:grid-cols-3 lg:grid-rows-2">
-        <Panel title="Accounts under sign-in pressure (24h)">
-          {data.flagged.length === 0 ? (
-            <p className="text-caption text-on-island-muted">
-              No account hit {`${5}`}+ login failures or repeated 2-step failures. (Only real accounts are
-              logged — unknown emails are not, by design.)
-            </p>
-          ) : (
-            <ul className="flex flex-col divide-y divide-on-island/10">
-              {data.flagged.map((f) => (
-                <li key={f.handle} className="flex items-center justify-between gap-3 py-1.5 text-body">
-                  <span className="min-w-0 flex-1 truncate">{f.handle}</span>
-                  <span className="shrink-0 font-mono text-metadata tabular-nums text-warning">
-                    {f.loginFailed} login{f.secondStepFailed > 0 && ` · ${f.secondStepFailed} 2-step`}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
+      {/* Full HD: four columns that fill the rest of the screen. Smaller screens: panels flow and the page scrolls. */}
+      <div className="grid min-h-0 flex-1 gap-4 md:grid-cols-2 xl:grid-cols-4 xl:grid-rows-2">
+        <Panel title="Alerts (7d)">
+          <AlertList alerts={data.alerts} />
         </Panel>
 
-        <Panel title="System" className="lg:row-span-2">
+        <Panel title="Sensitive changes (7d) — “was this really them?”" className="xl:row-span-2">
+          <EventTable
+            rows={data.sensitive}
+            empty="No two-step removals, passkey removals or resets this week."
+          />
+        </Panel>
+
+        <Panel title="System" className="xl:row-span-2">
           <ul className="flex flex-col divide-y divide-on-island/10">
             {data.health.checks.length === 0 && (
               <li className="py-1.5 text-caption text-on-island-muted">Health report unavailable.</li>
@@ -207,15 +252,28 @@ export function SecurityView({ data }: { data: SecurityOverview }) {
           </ul>
         </Panel>
 
-        <Panel title="Recent security events" className="lg:row-span-2">
+        <Panel title="Recent security events" className="xl:row-span-2">
           <EventTable rows={data.recent} empty="Nothing recorded yet." />
         </Panel>
 
-        <Panel title="Sensitive changes (7d) — “was this really them?”">
-          <EventTable
-            rows={data.sensitive}
-            empty="No two-step removals, passkey removals or resets this week."
-          />
+        <Panel title="Accounts under sign-in pressure (24h)">
+          {data.flagged.length === 0 ? (
+            <p className="text-caption text-on-island-muted">
+              No account hit {`${5}`}+ login failures or repeated 2-step failures. (Only real accounts are
+              logged — unknown emails are not, by design.)
+            </p>
+          ) : (
+            <ul className="flex flex-col divide-y divide-on-island/10">
+              {data.flagged.map((f) => (
+                <li key={f.handle} className="flex items-center justify-between gap-3 py-1.5 text-body">
+                  <span className="min-w-0 flex-1 truncate">{f.handle}</span>
+                  <span className="shrink-0 font-mono text-metadata tabular-nums text-warning">
+                    {f.loginFailed} login{f.secondStepFailed > 0 && ` · ${f.secondStepFailed} 2-step`}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
         </Panel>
       </div>
 

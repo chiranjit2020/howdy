@@ -9,6 +9,21 @@ Town Hall feed ADR-033, Dynamic Island ADR-034). Production: Vercel `sin1` + Neo
 mail, R2 photos, Upstash Redis; a push to `main` deploys. Production does not migrate on deploy: apply new migrations
 to `howdy_dev` and the Singapore `howdy_prod` first.
 
+## 2026-10-08 — Security alerts + full-HD Security Center
+
+- [x] Automated security alerts (`src/modules/admin/alerts.ts`): 8 rules over the last hour (account password
+      guessing, wrong second steps, site-wide failure spike, takeover wave, any security change on a staff account,
+      mass suspensions by one moderator, sign-up wave, report flood). Run with every `/api/health/report` call; new
+      alerts are recorded as `security_alert` in `audit_log`, emailed to `HEALTH_REPORT_TO` + every admin, quiet 6 h
+      per incident. Rules in `docs/security/INCIDENT_RESPONSE.md` §8.
+- [x] Security Center: fills 1920×1080 with no page scroll (4 columns at ≥1280px, lists scroll in panels), Alerts
+      panel + "Alerts 24h" tile, dark charcoal + ghost-white (#F8F8FF), no text above 14px. Theme is a stylesheet
+      class (`control-room.css`) — the CSP blocks inline styles, which had silently dropped the first attempt.
+- [x] Tests: `tests/security/admin-alerts.test.ts` (11; every rule at/below threshold, 1 h window, de-dupe, mail
+      content), 10/10 mutants killed; e2e checks no page scroll at 1920×1080, max font 14px, the palette.
+- [ ] The GitHub Health watch gets 401 (its `CRON_SECRET` ≠ Vercel's), so neither health nor security alerts run on
+      schedule until the repo secret is fixed.
+
 ## 2026-10-08 — Control Room, first slice: Security Center (`/admin/security`)
 
 - [x] Read-only admin page over data that already exists: 24h/7d counts of security events from `audit_log`, accounts
