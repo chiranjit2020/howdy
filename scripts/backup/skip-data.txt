@@ -1,0 +1,14 @@
+# Tables whose ROWS the nightly backup leaves out (their structure is still backed up).
+# Short-lived by promise (privacy policy "How long we keep things"), or sign-in secrets nobody should restore.
+# A backup is kept 30 days; copying these into it would keep them far longer than we say.
+# One table name per line. tests/security/db-backup.test.ts checks this list against the database.
+messages
+stories
+story_views
+story_reactions
+tracks
+porch_lights
+sessions
+push_subscriptions
+email_tokens
+webauthn_challenges

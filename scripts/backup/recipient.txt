@@ -1,0 +1,3 @@
+# Public key the nightly backup is encrypted to (age, https://age-encryption.org). Safe to publish.
+# The matching PRIVATE key is held only by the owner, offline. Without it no backup can be read.
+age1l6hx40teylk3gdhala78s98hsv7naer4pp7nr4wn8wtc6fpepvfsz2nzkj

@@ -124,7 +124,7 @@ On your Pals page we may suggest people who are Pals with at least two of your P
 - **Security records:** 12 months, then deleted. If an account is deleted first, its records stay for the rest of that time with the link to the account removed, because they are needed to investigate abuse.
 - **Rate-limit counters:** up to one hour.
 
-Deleted data may remain in encrypted backups kept by our database provider for a short time before those backups expire.
+**Backups:** every night we make an encrypted copy of the database so that Howdy can be recovered after an accident or an attack. Each copy is kept for **30 days** and then deleted, so something you delete can stay in these copies for up to 30 days after you delete it; nobody looks at them unless we have to restore Howdy. They are encrypted before they leave the job that makes them, with a key only we hold. To keep our promises about short-lived things, the copies **leave out** Whispers, Stories (with who viewed and reacted), Tracks, Porch Lights, sign-in sessions and email links. Our database provider also keeps its own short history of changes (6 hours).
 
 ## Service providers
 
@@ -132,7 +132,8 @@ We use a few companies to run Howdy. They process data only to provide their ser
 
 - **Vercel:** hosts the website and runs the app.
 - **Neon:** hosts the database.
-- **Cloudflare:** stores Portrait, Post Card, Town Hall and Story photos (R2) and provides our domain's DNS.
+- **Cloudflare:** stores Portrait, Post Card, Town Hall and Story photos (R2), stores our encrypted nightly backups (R2; Cloudflare cannot read them), and provides our domain's DNS.
+- **GitHub:** runs the nightly backup job. The copy exists unencrypted only inside that short-lived job, which checks it and encrypts it before storing it anywhere; it is not kept by GitHub.
 - **Resend:** sends account emails.
 - A managed **Redis** provider: holds short-lived rate-limit counters.
 - **OpenAI:** checks new photos (above). It is sent only a small copy of the picture we made, never your name, call sign or anything else about you. OpenAI does not keep what its moderation service is sent and does not use it to train its models.

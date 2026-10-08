@@ -139,6 +139,8 @@ streamed and never kept on the server. See ADR-037 for exactly what is and is no
 | Held-back call signs (`retired_handles`, a keyed hash only) | 90 days after the account is deleted | `purgeFreedHandles()` (in `pnpm jobs:purge`) |
 | Tracks / typing / presence (future) | seconds → days, per ADR-006 | their own jobs |
 | Logs | no passwords, tokens, cookies or message/Signal bodies (redacted) | log platform retention |
+| **Nightly backups** (encrypted `pg_dump` in R2 `howdy-backups`) | **30 days**, then the bucket's lifecycle rule deletes them. Leave out the rows of `scripts/backup/skip-data.txt` (Whispers, Stories, Tracks, Porch Lights, sessions, push subscriptions, email links, passkey challenges), so those promises hold | R2 lifecycle rule; `docs/security/DATABASE_ACCESS.md` |
+| Neon point-in-time history | 6 hours (free plan) | Neon |
 
 **Running the jobs:** `pnpm jobs:purge` runs every purge and prints a JSON summary; it is idempotent. **In production it runs daily** as a Vercel Cron (`/api/jobs/purge`, 04:00 UTC, authorised by `CRON_SECRET`; ADR-019). The Privacy Policy states these periods, and `tests/unit/legal.test.ts` fails if its figures drift from the constants here.
 

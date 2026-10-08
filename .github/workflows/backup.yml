@@ -1,0 +1,110 @@
+# Nightly backup of the production database, off Neon (whose own history is only 6 hours on the free plan).
+#
+# 1. pg_dump through the read-only `howdy_backup` login, leaving out the rows of short-lived tables (skip-data.txt).
+# 2. Restore the dump into a throwaway PostgreSQL in this job and check it (every night is a restore test).
+# 3. Encrypt it with age to the public key in scripts/backup/recipient.txt. Only the owner holds the private key, so
+#    neither GitHub nor Cloudflare can read a backup.
+# 4. Upload it to the private R2 bucket `howdy-backups`, whose lifecycle rule deletes backups after 30 days.
+#
+# Repository secrets: BACKUP_DATABASE_URL (howdy_backup, DIRECT host), R2_BACKUP_ACCOUNT_ID, R2_BACKUP_ACCESS_KEY_ID,
+# R2_BACKUP_SECRET_ACCESS_KEY (a token for that one bucket). See docs/security/DATABASE_ACCESS.md.
+name: Backup
+
+on:
+  schedule:
+    - cron: '30 21 * * *' # 03:00 in India, the quietest hour
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    services:
+      scratch:
+        image: postgres:18
+        env:
+          POSTGRES_PASSWORD: scratch
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready --health-interval 2s --health-timeout 5s --health-retries 30
+    env:
+      SCRATCH_URL: postgres://postgres:scratch@localhost:5432/postgres
+      BUCKET: howdy-backups
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Install PostgreSQL 18 client and age
+        run: |
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl -fsSL -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt noble-pgdg main" \
+            | sudo tee /etc/apt/sources.list.d/pgdg.list > /dev/null
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client-18 age > /dev/null
+          echo /usr/lib/postgresql/18/bin >> "$GITHUB_PATH"
+
+      - name: Dump
+        env:
+          BACKUP_DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
+        run: |
+          if [ -z "$BACKUP_DATABASE_URL" ]; then echo "::error::BACKUP_DATABASE_URL is not set"; exit 1; fi
+          pg_dump --version
+          bash scripts/backup/dump.sh "$RUNNER_TEMP/howdy.dump"
+          ls -l "$RUNNER_TEMP/howdy.dump"
+          echo "DUMP_SHA256=$(sha256sum "$RUNNER_TEMP/howdy.dump" | cut -d' ' -f1)" >> "$GITHUB_ENV"
+
+      - name: Restore test (into a throwaway database)
+        env:
+          BACKUP_DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
+        run: |
+          bash scripts/backup/restore.sh "$RUNNER_TEMP/howdy.dump" "$SCRATCH_URL"
+          tables="select string_agg(tablename, ',' order by tablename) from pg_tables where schemaname = 'public'"
+          src=$(psql "$BACKUP_DATABASE_URL" -Atc "$tables")
+          got=$(psql "$SCRATCH_URL" -Atc "$tables")
+          [ "$src" = "$got" ] || { echo "::error::restored tables differ from production"; exit 1; }
+          mig="select count(*) from drizzle.__drizzle_migrations"
+          [ "$(psql "$BACKUP_DATABASE_URL" -Atc "$mig")" = "$(psql "$SCRATCH_URL" -Atc "$mig")" ] \
+            || { echo "::error::migration count differs"; exit 1; }
+          [ "$(psql "$SCRATCH_URL" -Atc 'select count(*) from users')" -gt 0 ] || { echo "::error::no users restored"; exit 1; }
+          while IFS= read -r t; do
+            t="${t%%#*}"; t="${t//[[:space:]]/}"; [ -z "$t" ] && continue
+            n=$(psql "$SCRATCH_URL" -Atc "select count(*) from public.\"$t\"")
+            [ "$n" = "0" ] || { echo "::error::$t was supposed to be left out but has $n rows"; exit 1; }
+          done < scripts/backup/skip-data.txt
+          echo "Restored $(echo "$got" | tr ',' '\n' | wc -l) tables; rows per table:"
+          psql "$SCRATCH_URL" -Atc "select string_agg(relname || '=' || n_live_tup, ' ' order by relname) from pg_stat_user_tables" || true
+
+      - name: Encrypt
+        run: |
+          age --encrypt --recipients-file scripts/backup/recipient.txt \
+            --output "$RUNNER_TEMP/howdy.dump.age" "$RUNNER_TEMP/howdy.dump"
+          rm -f "$RUNNER_TEMP/howdy.dump"
+          head -c 21 "$RUNNER_TEMP/howdy.dump.age" | grep -q 'age-encryption.org/v1' || { echo "::error::not an age file"; exit 1; }
+
+      - name: Upload to R2
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_BACKUP_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_BACKUP_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          # Newer AWS CLIs add checksums R2 may not accept; only send them when the API requires it.
+          AWS_REQUEST_CHECKSUM_CALCULATION: WHEN_REQUIRED
+          AWS_RESPONSE_CHECKSUM_VALIDATION: WHEN_REQUIRED
+          ACCOUNT: ${{ secrets.R2_BACKUP_ACCOUNT_ID }}
+        run: |
+          if [ -z "$ACCOUNT" ] || [ -z "$AWS_ACCESS_KEY_ID" ]; then echo "::error::R2_BACKUP_* secrets are not set"; exit 1; fi
+          endpoint="https://${ACCOUNT}.r2.cloudflarestorage.com"
+          key="howdy-prod/$(date -u +%Y/%m)/howdy-prod-$(date -u +%Y%m%dT%H%M%SZ).dump.age"
+          aws s3api put-object --endpoint-url "$endpoint" --bucket "$BUCKET" --key "$key" \
+            --body "$RUNNER_TEMP/howdy.dump.age" --metadata "dump-sha256=$DUMP_SHA256" > /dev/null
+          size=$(aws s3api head-object --endpoint-url "$endpoint" --bucket "$BUCKET" --key "$key" --query ContentLength --output text)
+          [ "$size" = "$(stat -c %s "$RUNNER_TEMP/howdy.dump.age")" ] || { echo "::error::uploaded size differs"; exit 1; }
+          echo "Uploaded $key ($size bytes; plaintext sha256 $DUMP_SHA256)"

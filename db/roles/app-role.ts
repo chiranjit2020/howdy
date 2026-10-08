@@ -28,23 +28,23 @@ export type AppRoleCheck = {
 const q = (name: string) => `"${name}"`;
 
 /**
- * Creates the role (or resets its password) and (re)applies its grants. Must run as the login that owns the tables
- * and runs migrations. Idempotent.
+ * Checks a role name and password, and that this connection is the owner login (it owns every table, and runs the
+ * migrations). Returns the database name. Shared by every login this folder sets up.
  */
-export async function applyAppRole(
+export async function assertOwnerSetup(
   client: ClientBase,
   role: string,
   password: string,
-): Promise<AppRoleCheck> {
+): Promise<{ db: string }> {
   if (!ROLE_NAME.test(role)) throw new Error(`invalid role name "${role}"`);
   if (password.length < MIN_APP_PASSWORD_LENGTH) {
-    throw new Error(`the app login's password must be at least ${MIN_APP_PASSWORD_LENGTH} characters`);
+    throw new Error(`the login's password must be at least ${MIN_APP_PASSWORD_LENGTH} characters`);
   }
   const { rows: me } = await client.query<{ me: string; db: string }>(
     'select current_user as me, current_database() as db',
   );
   const owner = me[0]!.me;
-  if (owner === role) throw new Error('run this as the owner login, not as the app login');
+  if (owner === role) throw new Error('run this as the owner login, not as the login being set up');
   const { rows: foreign } = await client.query<{ tablename: string; tableowner: string }>(
     `select tablename, tableowner from pg_tables where schemaname = 'public' and tableowner <> current_user`,
   );
@@ -54,19 +54,39 @@ export async function applyAppRole(
         foreign.map((t) => `${t.tablename} (${t.tableowner})`).join(', '),
     );
   }
+  return { db: me[0]!.db };
+}
 
+/** CREATE ROLE or ALTER ROLE (same attributes, new password): a login with no special powers. */
+export async function upsertLogin(client: ClientBase, role: string, password: string): Promise<void> {
   const r = q(role);
   const pw = client.escapeLiteral(password);
   const attrs = 'login nosuperuser nocreatedb nocreaterole noreplication nobypassrls';
+  const { rowCount } = await client.query('select 1 from pg_roles where rolname = $1', [role]);
+  await client.query(
+    rowCount
+      ? `alter role ${r} with ${attrs} password ${pw}`
+      : `create role ${r} with ${attrs} password ${pw}`,
+  );
+}
+
+export const quoteIdent = q;
+
+/**
+ * Creates the role (or resets its password) and (re)applies its grants. Must run as the login that owns the tables
+ * and runs migrations. Idempotent.
+ */
+export async function applyAppRole(
+  client: ClientBase,
+  role: string,
+  password: string,
+): Promise<AppRoleCheck> {
+  const { db } = await assertOwnerSetup(client, role, password);
+  const r = q(role);
   await client.query('begin');
   try {
-    const { rowCount } = await client.query('select 1 from pg_roles where rolname = $1', [role]);
-    await client.query(
-      rowCount
-        ? `alter role ${r} with ${attrs} password ${pw}`
-        : `create role ${r} with ${attrs} password ${pw}`,
-    );
-    await client.query(`grant connect on database ${q(me[0]!.db)} to ${r}`);
+    await upsertLogin(client, role, password);
+    await client.query(`grant connect on database ${q(db)} to ${r}`);
     // Nobody but the owner creates objects in public (already the default from PostgreSQL 15).
     await client.query('revoke create on schema public from public');
     await client.query(`grant usage on schema public to ${r}`);
