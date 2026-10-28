@@ -79,71 +79,69 @@ export function AppShell({
 
   return (
     <div className="daylight-only min-h-dvh">
-      <header
-        className={cn(
-          'sticky top-0 z-30 border-b border-border/60 bg-background/90 backdrop-blur',
-          !me && bare && 'hidden',
-        )}
-      >
-        <div
-          className={cn(
-            'mx-auto flex h-16 w-full max-w-7xl items-center gap-2 px-4 min-[360px]:gap-4 md:px-6',
-            logoOnly ? 'justify-center' : 'justify-between',
-          )}
-        >
-          <HowdyLogo size={me || logoOnly ? 'xs' : 'bar'} href={me ? '/home' : '/gate'} />
-          {logoOnly ? null : me ? (
-            <div className="flex items-center gap-3">
-              {/* Decorative: a little bird that hops beside the bell, and now and then flies off to visit a card
+      {/* Bare pages (signed out) leave the bar out altogether; their card carries the logo. */}
+      {(me || !bare) && (
+        <header className="sticky top-0 z-30 border-b border-border/60 bg-background/90 backdrop-blur">
+          <div
+            className={cn(
+              'mx-auto flex h-16 w-full max-w-7xl items-center gap-2 px-4 min-[360px]:gap-4 md:px-6',
+              logoOnly ? 'justify-center' : 'justify-between',
+            )}
+          >
+            <HowdyLogo size={me || logoOnly ? 'xs' : 'bar'} href={me ? '/home' : '/gate'} />
+            {logoOnly ? null : me ? (
+              <div className="flex items-center gap-3">
+                {/* Decorative: a little bird that hops beside the bell, and now and then flies off to visit a card
                   (BirdVisitor); its spot stays empty until it is back. */}
-              <span
-                aria-hidden="true"
-                data-howdy-bird
-                className="pointer-events-none transition-opacity duration-500 select-none [:root[data-bird-away]_&]:opacity-0 [:root[data-bird-away]_&]:duration-0"
-              >
-                <Art name="bird" size="free" className="w-9 origin-bottom animate-bird-hop" />
-              </span>
-              <Link
-                href="/notifications"
-                aria-label={unread > 0 ? `Notifications, ${unread} unread` : 'Notifications'}
-                className="relative grid size-11 place-items-center rounded-pill bg-surface text-heading text-text-primary no-underline shadow-clay-sm"
-              >
-                <Art name="nav-chimes" size="free" className="size-8" loading="eager" />
-                {unread > 0 && (
-                  <span
-                    aria-hidden="true"
-                    className="absolute -top-1 -right-1 grid min-w-5 place-items-center rounded-pill bg-accent px-1 text-metadata font-semibold text-on-accent"
-                  >
-                    {unread > 99 ? '99+' : unread}
-                  </span>
-                )}
-              </Link>
-              {/* A real 44 px box (an inline link around an image is shorter than its picture, and too small to tap).
+                <span
+                  aria-hidden="true"
+                  data-howdy-bird
+                  className="pointer-events-none transition-opacity duration-500 select-none [:root[data-bird-away]_&]:opacity-0 [:root[data-bird-away]_&]:duration-0"
+                >
+                  <Art name="bird" size="free" className="w-9 origin-bottom animate-bird-hop" />
+                </span>
+                <Link
+                  href="/notifications"
+                  aria-label={unread > 0 ? `Notifications, ${unread} unread` : 'Notifications'}
+                  className="relative grid size-11 place-items-center rounded-pill bg-surface text-heading text-text-primary no-underline shadow-clay-sm"
+                >
+                  <Art name="nav-chimes" size="free" className="size-8" loading="eager" />
+                  {unread > 0 && (
+                    <span
+                      aria-hidden="true"
+                      className="absolute -top-1 -right-1 grid min-w-5 place-items-center rounded-pill bg-accent px-1 text-metadata font-semibold text-on-accent"
+                    >
+                      {unread > 99 ? '99+' : unread}
+                    </span>
+                  )}
+                </Link>
+                {/* A real 44 px box (an inline link around an image is shorter than its picture, and too small to tap).
                   Phones have your picture in the tab bar instead, so it shows here from md up only. */}
-              <Link
-                href={`/profile/${me.handle}`}
-                aria-label="Your profile"
-                className="hidden size-11 rounded-pill md:inline-flex"
-              >
-                <Avatar name={me.displayName} src={me.portraitUrl} tint={me.portraitTint} size="md" />
-              </Link>
-              <ShellMoreMenu items={items} />
-            </div>
-          ) : (
-            // Two equal pills: the Howdy name, and underneath what it plainly means.
-            <div className="grid grid-cols-2 gap-2">
-              <Link href="/login" className={cn(AUTH_PILL, AUTH_PILL_SECONDARY)}>
-                <span className={AUTH_PILL_LABEL}>Log in</span>
-                <span className="text-metadata text-text-secondary">Sign in</span>
-              </Link>
-              <Link href="/signup" className={cn(AUTH_PILL, AUTH_PILL_PRIMARY)}>
-                <span className={AUTH_PILL_LABEL}>Sign up</span>
-                <span className="text-metadata">Create account</span>
-              </Link>
-            </div>
-          )}
-        </div>
-      </header>
+                <Link
+                  href={`/profile/${me.handle}`}
+                  aria-label="Your profile"
+                  className="hidden size-11 rounded-pill md:inline-flex"
+                >
+                  <Avatar name={me.displayName} src={me.portraitUrl} tint={me.portraitTint} size="md" />
+                </Link>
+                <ShellMoreMenu items={items} />
+              </div>
+            ) : (
+              // Two equal pills: the Howdy name, and underneath what it plainly means.
+              <div className="grid grid-cols-2 gap-2">
+                <Link href="/login" className={cn(AUTH_PILL, AUTH_PILL_SECONDARY)}>
+                  <span className={AUTH_PILL_LABEL}>Log in</span>
+                  <span className="text-metadata text-text-secondary">Sign in</span>
+                </Link>
+                <Link href="/signup" className={cn(AUTH_PILL, AUTH_PILL_PRIMARY)}>
+                  <span className={AUTH_PILL_LABEL}>Sign up</span>
+                  <span className="text-metadata">Create account</span>
+                </Link>
+              </div>
+            )}
+          </div>
+        </header>
+      )}
 
       <div className="mx-auto flex w-full max-w-7xl gap-8 px-4 md:px-6">
         {me && (
