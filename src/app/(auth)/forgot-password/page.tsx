@@ -1,14 +1,15 @@
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/modules/auth';
+import { EntryCard } from '@/ui/auth/entry-shell';
 import { ForgotForm } from './forgot-form';
 
 export const metadata = { title: 'Forgot password?' };
 
-export default async function LostYourKeyPage() {
+export default async function ForgotPasswordPage() {
   if (await getCurrentUser()) redirect('/home');
   return (
-    <main id="main" className="mx-auto flex w-full max-w-md flex-col gap-6 px-4 py-8">
+    <EntryCard>
       <ForgotForm />
-    </main>
+    </EntryCard>
   );
 }

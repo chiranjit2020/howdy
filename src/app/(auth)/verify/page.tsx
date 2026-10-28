@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { ClayCard } from '@/ui/primitives';
+import { EntryCard, EntryHeading } from '@/ui/auth/entry-shell';
+import { buttonClasses } from '@/ui/primitives';
 import { VerifyPanel } from './verify-panel';
 
 // The link carries a secret token: never leak it through the Referer header.
@@ -11,22 +12,18 @@ export default async function VerifyPage({
   searchParams: Promise<{ token?: string | string[] }>;
 }) {
   const { token } = await searchParams;
-  if (typeof token !== 'string' || token.length === 0) {
-    return (
-      <main id="main" className="mx-auto flex w-full max-w-md flex-col gap-6 px-4 py-8">
-        <ClayCard className="flex flex-col gap-3 p-8">
-          <h1 className="text-heading text-text-primary">That link is incomplete</h1>
-          <p className="text-body text-text-secondary">Open the link from your email again.</p>
-          <Link href="/login" className="inline-flex min-h-11 items-center">
+  return (
+    <EntryCard>
+      {typeof token !== 'string' || token.length === 0 ? (
+        <>
+          <EntryHeading title="That link is incomplete">Open the link from your email again.</EntryHeading>
+          <Link href="/login" className={buttonClasses({ variant: 'secondary', fullWidth: true })}>
             Log in
           </Link>
-        </ClayCard>
-      </main>
-    );
-  }
-  return (
-    <main id="main" className="mx-auto flex w-full max-w-md flex-col gap-6 px-4 py-8">
-      <VerifyPanel token={token} />
-    </main>
+        </>
+      ) : (
+        <VerifyPanel token={token} />
+      )}
+    </EntryCard>
   );
 }

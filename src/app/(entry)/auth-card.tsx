@@ -1,9 +1,7 @@
 'use client';
 
-import Link from 'next/link';
 import { useEffect, useState, type MouseEvent } from 'react';
-import { LEGAL_FACTS } from '@/shared/legal';
-import { Img } from '@/ui/art/img';
+import { EntryFooter, EntryLogo } from '@/ui/auth/entry-shell';
 import { Card } from '@/ui/primitives';
 import { ClaimForm } from './signup/claim-form';
 import { LoginForm } from './login/login-form';
@@ -25,13 +23,6 @@ const MODES: Record<AuthMode, { title: string; prompt: string; other: AuthMode; 
     otherLabel: 'Log in',
   },
 };
-
-/** Help is a plain email for now: there is no help centre yet. */
-const FOOTER_LINKS = [
-  { href: '/terms', label: 'Terms' },
-  { href: '/privacy', label: 'Privacy' },
-  { href: `mailto:${LEGAL_FACTS.contactEmail}?subject=Help%20with%20Howdy`, label: 'Help' },
-];
 
 /**
  * One card for logging in and creating an account. The footer link swaps the form in place instead of navigating, and
@@ -87,44 +78,5 @@ export function AuthCard({
       </Card>
       <EntryFooter />
     </>
-  );
-}
-
-/** The brand mark that leads every entry card (these pages have no top bar). min-h-11 keeps the link tappable. */
-export function EntryLogo() {
-  return (
-    <Link
-      href="/gate"
-      className="inline-flex min-h-11 items-center self-center no-underline hover:no-underline"
-    >
-      <Img
-        src="/brand/howdy-wordmark.png"
-        width={766}
-        height={243}
-        alt="Howdy"
-        loading="eager"
-        className="h-auto w-28 sm:w-32"
-      />
-    </Link>
-  );
-}
-
-/** Entry pages have no site footer, so the essentials sit right under the card. */
-export function EntryFooter() {
-  return (
-    <nav aria-label="Legal" className="mt-2">
-      <ul className="flex items-center justify-center gap-5 text-metadata">
-        {FOOTER_LINKS.map(({ href, label }) => (
-          <li key={label}>
-            <a
-              href={href}
-              className="inline-flex min-h-11 items-center text-text-secondary no-underline hover:text-text-primary hover:underline"
-            >
-              {label}
-            </a>
-          </li>
-        ))}
-      </ul>
-    </nav>
   );
 }

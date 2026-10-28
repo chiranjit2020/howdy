@@ -4,8 +4,9 @@ import Link from 'next/link';
 import { useState, type FormEvent } from 'react';
 import { emailOnlySchema } from '@/shared/validation/auth';
 import { postJson } from '@/ui/auth/api';
+import { EntryHeading } from '@/ui/auth/entry-shell';
 import { FormMessage } from '@/ui/auth/form-parts';
-import { Button, ClayCard, Input } from '@/ui/primitives';
+import { Button, Input } from '@/ui/primitives';
 
 export function ForgotForm() {
   const [email, setEmail] = useState('');
@@ -35,47 +36,43 @@ export function ForgotForm() {
 
   if (done) {
     return (
-      <ClayCard className="flex flex-col gap-4 p-8">
-        <h1 className="text-heading text-text-primary">Check your email</h1>
-        <p className="text-body text-text-secondary">
+      <>
+        <EntryHeading title="Check your email">
           If there is a Howdy account for that address, a link to choose a new password is on its way. It
           works once and expires in 1 hour.
-        </p>
-        <Link href="/login" className="inline-flex min-h-11 items-center">
+        </EntryHeading>
+        <Link href="/login" className="inline-flex min-h-11 items-center justify-center text-caption">
           Back to log in
         </Link>
-      </ClayCard>
+      </>
     );
   }
 
   return (
-    <ClayCard className="p-8">
-      <form onSubmit={onSubmit} noValidate className="flex flex-col gap-5">
-        <div>
-          <h1 className="text-heading text-text-primary">Forgot password?</h1>
-          <p className="text-body text-text-secondary">Misplaced it? We will send a link to your email.</p>
-        </div>
-        {error && (
-          <FormMessage tone="error" focusKey={attempt}>
-            {error}
-          </FormMessage>
-        )}
-        <Input
-          label="Email address"
-          name="email"
-          type="email"
-          autoComplete="email"
-          inputMode="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-        <Button type="submit" size="lg" fullWidth loading={busy}>
-          Send the link
-        </Button>
-        <Link href="/login" className="inline-flex min-h-11 items-center justify-center text-caption">
-          Back to log in
-        </Link>
-      </form>
-    </ClayCard>
+    <form onSubmit={onSubmit} noValidate className="flex flex-col gap-4">
+      <EntryHeading title="Forgot password?">
+        Enter your email and we will send you a link to choose a new one.
+      </EntryHeading>
+      {error && (
+        <FormMessage tone="error" focusKey={attempt}>
+          {error}
+        </FormMessage>
+      )}
+      <Input
+        label="Email address"
+        name="email"
+        type="email"
+        autoComplete="email"
+        inputMode="email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+      />
+      <Button type="submit" fullWidth loading={busy}>
+        Send the link
+      </Button>
+      <Link href="/login" className="inline-flex min-h-11 items-center justify-center text-caption">
+        Back to log in
+      </Link>
+    </form>
   );
 }

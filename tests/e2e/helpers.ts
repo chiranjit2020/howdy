@@ -167,7 +167,7 @@ export async function confirmEmailVia(page: Page, email: string) {
   const mail = await waitForMail(email, /confirm/i);
   await page.goto(pathOf(linkFrom(mail.text)));
   await page.getByRole('button', { name: 'Confirm my email' }).click();
-  await page.getByRole('heading', { name: 'Account created!' }).waitFor();
+  await page.getByRole('heading', { name: 'Account created' }).waitFor();
 }
 
 export async function stepInsideVia(page: Page, identifier: string, password: string) {

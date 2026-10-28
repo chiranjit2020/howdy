@@ -3,9 +3,9 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { postJson } from '@/ui/auth/api';
-import { Glyph } from '@/ui/art/glyph';
+import { EntryHeading } from '@/ui/auth/entry-shell';
 import { FormMessage } from '@/ui/auth/form-parts';
-import { Button, ClayCard } from '@/ui/primitives';
+import { Button, buttonClasses } from '@/ui/primitives';
 
 /**
  * Confirming needs a deliberate click (a POST), not just opening the link: mail scanners and link previewers fetch
@@ -27,29 +27,26 @@ export function VerifyPanel({ token }: { token: string }) {
 
   if (state === 'done') {
     return (
-      <ClayCard className="flex flex-col items-center gap-3 p-8 text-center">
-        <Glyph emoji="📜" size="hero" />
-        <h1 className="text-heading text-text-primary">Account created!</h1>
-        <p className="text-body text-text-secondary">Your email is confirmed. Welcome to Howdy.</p>
-        <Link href="/login" className="inline-flex min-h-11 items-center font-semibold">
+      <>
+        <EntryHeading title="Account created">Your email is confirmed. Welcome to Howdy.</EntryHeading>
+        <Link href="/login" className={buttonClasses({ fullWidth: true })}>
           Log in
         </Link>
-      </ClayCard>
+      </>
     );
   }
 
   return (
-    <ClayCard className="flex flex-col gap-4 p-8">
-      <h1 className="text-heading text-text-primary">Confirm your email</h1>
-      <p className="text-body text-text-secondary">One tap and your claim is official.</p>
+    <>
+      <EntryHeading title="Confirm your email">One tap and your account is ready.</EntryHeading>
       {state === 'failed' && (
         <FormMessage tone="error" focusKey={1}>
           {message} <Link href="/login">Log in</Link> and we can send a new link.
         </FormMessage>
       )}
-      <Button size="lg" fullWidth onClick={confirm} loading={state === 'busy'}>
+      <Button fullWidth onClick={confirm} loading={state === 'busy'}>
         Confirm my email
       </Button>
-    </ClayCard>
+    </>
   );
 }
