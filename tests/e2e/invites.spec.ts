@@ -30,13 +30,13 @@ async function member(browser: Browser, tag: string) {
 }
 
 test.describe('Invite links (production build, real CSP)', () => {
-  test('a friend joins through my link and I get their Pal request', async ({ browser }) => {
+  test('a friend joins through my link and I get their friend request', async ({ browser }) => {
     test.slow(); // two people signing up on phones
     const rick = await member(browser, 'invrick');
     const problems = await watchProblems(rick.page);
 
     // My link, on the Pals page.
-    await rick.page.goto('/pals');
+    await rick.page.goto('/friends');
     await pageReady(rick.page);
     await expect(rick.page.getByRole('heading', { name: 'Invite friends to Howdy' })).toBeVisible();
     const link = (await rick.page.getByText(/\/i\/[A-Za-z0-9]{10}$/).textContent())!.trim();
@@ -63,10 +63,10 @@ test.describe('Invite links (production build, real CSP)', () => {
     expect(card.headers()['content-type']).toContain('image/png');
     await page
       .locator('#main')
-      .getByRole('link', { name: /^Stake a Claim/ })
+      .getByRole('link', { name: /^Sign up/ })
       .first()
       .click();
-    await expect(page).toHaveURL(/\/stake-a-claim\?invite=/);
+    await expect(page).toHaveURL(/\/signup\?invite=/);
     await expect(page.getByText(/invited you\. Once you confirm your email/)).toBeVisible();
     await page.getByLabel('Username').fill(friend.handle);
     await page.getByLabel('Email address').fill(friend.email);
@@ -98,10 +98,10 @@ test.describe('Invite links (production build, real CSP)', () => {
     await expect(page.getByText(/invited you/)).toHaveCount(0);
     await page
       .locator('#main')
-      .getByRole('link', { name: /^Stake a Claim/ })
+      .getByRole('link', { name: /^Sign up/ })
       .first()
       .click();
-    await expect(page).toHaveURL(/\/stake-a-claim$/);
+    await expect(page).toHaveURL(/\/signup$/);
     await ctx.close();
   });
 });

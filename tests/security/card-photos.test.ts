@@ -67,7 +67,7 @@ const openFence = (p: P) =>
   );
 
 describe('adding a photo', () => {
-  it('on my own Fence: the card carries it, re-encoded, at most 1280 px, with no hidden data', async () => {
+  it('on my own wall: the card carries it, re-encoded, at most 1280 px, with no hidden data', async () => {
     const me = await person('me');
     const id = await photoOf(me, await jpegWithSecrets());
     const r = await nail(me.handle, { body: 'Look at this', photoId: id }, as(me));
@@ -90,14 +90,14 @@ describe('adding a photo', () => {
     expect(r.data.card!.photo).toMatchObject({ width: 300, height: 200 });
   });
 
-  it("on someone else's Fence only as their Pal; a non-Pal who may post words is refused, and no card is made", async () => {
+  it("on someone else's wall only as their friend; a non-Pal who may post words is refused, and no card is made", async () => {
     const owner = await person('owner');
     const pal = await person('pal');
     const stranger = await person('stranger');
     await openFence(owner);
     await pals(owner, pal);
     expect(
-      (await nail(owner.handle, { body: 'from a pal', photoId: await photoOf(pal) }, as(pal))).status,
+      (await nail(owner.handle, { body: 'from a friend', photoId: await photoOf(pal) }, as(pal))).status,
     ).toBe(201);
     const before = await cardCount();
     const refused = await nail(
@@ -131,7 +131,7 @@ describe('adding a photo', () => {
     expect(await cardCount()).toBe(before);
   });
 
-  it('starting a Porch photo upload no longer throws away an unfinished card photo', async () => {
+  it('starting a profile photo upload no longer throws away an unfinished card photo', async () => {
     const me = await person('me');
     const start = await call(
       startRoute,
@@ -154,7 +154,7 @@ describe('adding a photo', () => {
 });
 
 describe('who sees the photo: exactly who sees the card', () => {
-  it('a hidden Fence, a waiting card, a blocked or suspended writer, and signed-out on a members Fence are all 404', async () => {
+  it('a hidden wall, a waiting card, a blocked or suspended writer, and signed-out on a members wall are all 404', async () => {
     const owner = await person('owner');
     const pal = await person('pal');
     const stranger = await person('stranger');
@@ -177,7 +177,7 @@ describe('who sees the photo: exactly who sees the card', () => {
     expect((await seePhoto(card, as(stranger))).status).toBe(404);
   });
 
-  it("someone I muted, or who is suspended, on a Fence I can read: their card's photo is not shown to me", async () => {
+  it("someone I muted, or who is suspended, on a wall I can read: their card's photo is not shown to me", async () => {
     const owner = await person('owner');
     const writer = await person('writer');
     const viewer = await person('viewer');
@@ -192,7 +192,7 @@ describe('who sees the photo: exactly who sees the card', () => {
     expect((await seePhoto(card, as(owner))).status).toBe(404);
   });
 
-  it('an everyone Fence shows it signed out too', async () => {
+  it('an everyone wall shows it signed out too', async () => {
     const owner = await person('owner');
     // A Fence is only as open as its Porch: both open to everyone.
     await q(
@@ -204,7 +204,7 @@ describe('who sees the photo: exactly who sees the card', () => {
     expect((await seePhoto(card)).status).toBe(200);
   });
 
-  it('a card waiting for approval: only its writer and the Fence owner see the photo', async () => {
+  it('a card waiting for approval: only its writer and the wall owner see the photo', async () => {
     const owner = await person('owner');
     const pal = await person('pal');
     const other = await person('other');

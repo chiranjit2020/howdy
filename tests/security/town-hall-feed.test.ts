@@ -39,7 +39,7 @@ const as = (p: { cookie: string }) => ({ cookie: p.cookie });
 /** An open Town Hall owned by `owner`, with `members` joined. */
 async function hall(owner: P, members: P[] = [], visibility = 'open'): Promise<string> {
   const id = (
-    await create({ name: 'Porch Talk', description: 'Chatting on the porch.', visibility }, as(owner))
+    await create({ name: 'Profile Talk', description: 'Chatting on the porch.', visibility }, as(owner))
   ).data.townHall!.id;
   for (const m of members) {
     if (visibility === 'invite') {
@@ -136,7 +136,7 @@ describe('who can read and write the feed', () => {
     expect((await feed(id, as(owner), '?cursor=garbage!')).status).toBe(400);
   });
 
-  it('is rate limited per person per Town Hall', async () => {
+  it('is rate limited per person per group', async () => {
     const owner = await person('owner');
     const id = await hall(owner);
     let status = 0;
@@ -208,7 +208,7 @@ describe('taking things down', () => {
     expect(await ids(id, owner)).toEqual([]);
   });
 
-  it('a writer can still take back a post after leaving the Town Hall', async () => {
+  it('a writer can still take back a post after leaving the group', async () => {
     const owner = await person('owner');
     const ann = await person('ann');
     const id = await hall(owner, [ann]);
@@ -219,7 +219,7 @@ describe('taking things down', () => {
     expect(await ids(id, owner)).toEqual([]);
   });
 
-  it('deleting the Town Hall deletes its feed', async () => {
+  it('deleting the group deletes its feed', async () => {
     const owner = await person('owner');
     const id = await hall(owner);
     await post(id, { body: 'gone soon' }, as(owner));
@@ -269,7 +269,7 @@ describe('blocks and mutes', () => {
   });
 });
 
-describe('auto-hold (ADR-024) in a Town Hall', () => {
+describe('auto-hold (ADR-024) in a group', () => {
   it(`${AUTO_HOLD_REPORTERS} reporters: posts and replies wait for the owner, looking posted to the writer`, async () => {
     const owner = await person('owner');
     const target = await person('target');
@@ -307,7 +307,7 @@ describe('auto-hold (ADR-024) in a Town Hall', () => {
     expect((await feed(id, as(bob))).data.posts!.find((x) => x.id === open.id)!.replies).toHaveLength(1);
   });
 
-  it('one reporter fewer holds nothing, and the owner is never held in their own Town Hall', async () => {
+  it('one reporter fewer holds nothing, and the owner is never held in their own group', async () => {
     const owner = await person('owner');
     const target = await person('target');
     const bob = await person('bob');
@@ -359,8 +359,8 @@ describe('reporting a post (ADR-025)', () => {
   });
 });
 
-describe('Chimes (ADR-033)', () => {
-  it("a reply or a new reaction rings the post's writer only, linking to the Town Hall", async () => {
+describe('Notifications (ADR-033)', () => {
+  it("a reply or a new reaction rings the post's writer only, linking to the group", async () => {
     const owner = await person('owner');
     const ann = await person('ann');
     const bob = await person('bob');
@@ -374,13 +374,13 @@ describe('Chimes (ADR-033)', () => {
 
     const mine = (await chimesOf(as(ann))).data.chimes!;
     expect(mine.map((c) => c.type).sort()).toEqual(['hall_reaction_given', 'hall_reply_created']);
-    expect(new Set(mine.map((c) => c.href))).toEqual(new Set([`/town-halls/${id}`]));
-    expect(mine.map((c) => c.text)).toContain(`${bob.handle} replied to your post in a Town Hall.`);
+    expect(new Set(mine.map((c) => c.href))).toEqual(new Set([`/groups/${id}`]));
+    expect(mine.map((c) => c.text)).toContain(`${bob.handle} replied to your post in a group.`);
     // Other members (the owner included) are not rung for every reply.
     expect((await chimesOf(as(owner))).data.chimes).toEqual([]);
   });
 
-  it('vanish once I leave the Town Hall, or the post is taken down', async () => {
+  it('vanish once I leave the group, or the post is taken down', async () => {
     const owner = await person('owner');
     const ann = await person('ann');
     const bob = await person('bob');
@@ -398,7 +398,7 @@ describe('Chimes (ADR-033)', () => {
     expect((await chimesOf(as(ann))).data.chimes).toEqual([]);
   });
 
-  it('the Town Halls Chime switch silences them', async () => {
+  it('the groups notification switch silences them', async () => {
     const owner = await person('owner');
     const ann = await person('ann');
     const id = await hall(owner, [ann]);

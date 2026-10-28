@@ -49,9 +49,9 @@ async function mount(vapidKey: string | undefined = 'k'.repeat(87)) {
     await vi.advanceTimersByTimeAsync(4500);
   });
 }
-const pill = () => screen.queryByRole('button', { name: 'Get Chimes on this phone' });
+const pill = () => screen.queryByRole('button', { name: 'Get notifications on this phone' });
 
-describe('the "Get Chimes on this phone" island', () => {
+describe('the "Get notifications on this phone" island', () => {
   it('appears on an Android phone that has not been asked yet', async () => {
     await mount();
     expect(pill()).toBeInTheDocument();
@@ -86,7 +86,7 @@ describe('the "Get Chimes on this phone" island', () => {
     await act(async () => {
       await vi.advanceTimersByTimeAsync(1500); // opens by itself
     });
-    await user.click(screen.getByRole('button', { name: 'Turn on Chimes' }));
+    await user.click(screen.getByRole('button', { name: 'Turn on notifications' }));
     expect(pwa.enablePush).toHaveBeenCalledOnce();
     expect(pill()).not.toBeInTheDocument();
     expect(localStorage.getItem(KEY)).toBeNull(); // turned on: nothing to snooze
@@ -99,7 +99,7 @@ describe('the "Get Chimes on this phone" island', () => {
     await act(async () => {
       await vi.advanceTimersByTimeAsync(1500);
     });
-    await user.click(screen.getByRole('button', { name: 'Turn on Chimes' }));
+    await user.click(screen.getByRole('button', { name: 'Turn on notifications' }));
     expect(localStorage.getItem(KEY)).not.toBeNull();
     act(() => resetIsland());
 

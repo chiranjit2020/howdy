@@ -50,7 +50,7 @@ async function world() {
 }
 
 describe('who is suggested', () => {
-  it('Pals of at least two of my Pals, with how many and which, and never someone with only one', async () => {
+  it('Friends of at least two of my friends, with how many and which, and never someone with only one', async () => {
     const { me, a, b, x } = await world();
     const s = await suggested(me);
     expect(s.map((v) => v.handle)).toEqual([x.handle]);
@@ -58,7 +58,7 @@ describe('who is suggested', () => {
     expect(s[0]!.via.map((v) => v.handle).sort()).toEqual([a.handle, b.handle].sort());
   });
 
-  it('more shared Pals first', async () => {
+  it('more shared friends first', async () => {
     const { me, a, b, x } = await world();
     const c = await person('cora');
     const z = await person('zed');
@@ -67,7 +67,7 @@ describe('who is suggested', () => {
     expect(await handles(me)).toEqual([z.handle, x.handle]);
   });
 
-  it('not my Pals already, not me', async () => {
+  it('not my friends already, not me', async () => {
     const { me, x } = await world();
     await pals(me, x);
     expect(await handles(me)).toEqual([]);
@@ -106,7 +106,7 @@ describe('who is suggested', () => {
     }
   });
 
-  it('nobody suspended, nobody who switched suggestions off, nobody whose Porch is Pals-only', async () => {
+  it('nobody suspended, nobody who switched suggestions off, nobody whose profile is Pals-only', async () => {
     for (const setup of ['suspended', 'off', 'private'] as const) {
       kit = await freshAuthState();
       setRateLimiter({ consume: async () => ({ allowed: true, remaining: 999, retryAfterSec: 0 }) });
@@ -120,7 +120,7 @@ describe('who is suggested', () => {
     }
   });
 
-  it('switching it off works through the Workshop setting', async () => {
+  it('switching it off works through Settings setting', async () => {
     const { me, x } = await world();
     const { PATCH } = await import('@/app/api/me/porch/route');
     expect((await call(PATCH, 'PATCH', '/api/me/porch', { discoverable: false }, as(x))).status).toBe(200);
@@ -146,7 +146,7 @@ describe('Not now', () => {
     );
   });
 
-  it('the same answer for a real person, a made-up call sign and myself', async () => {
+  it('the same answer for a real person, a made-up username and myself', async () => {
     const { me } = await world();
     for (const handle of ['nobody_here_at_all', me.handle]) {
       expect(

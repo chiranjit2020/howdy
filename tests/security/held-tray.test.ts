@@ -47,7 +47,7 @@ async function restrictedThread() {
 }
 
 describe('the held tray', () => {
-  it('shows me the Whispers held back from me, with who sent them; nothing that reached me normally', async () => {
+  it('shows me the messages held back from me, with who sent them; nothing that reached me normally', async () => {
     const { me, them } = await restrictedThread();
     const t = await tray(me);
     expect(t.status).toBe(200);
@@ -67,7 +67,7 @@ describe('the held tray', () => {
     expect((await tray(me)).held).toHaveLength(1);
   });
 
-  it('reading it tells the sender nothing: no read position, no Seen, no Chime', async () => {
+  it('reading it tells the sender nothing: no read position, no Seen, no notification', async () => {
     const { me } = await restrictedThread();
     const before = (await q('select low_read_seq, high_read_seq, last_seq from conversations')).rows;
     const chimes = (await q('select count(*)::int n from notifications')).rows[0].n;
@@ -78,7 +78,7 @@ describe('the held tray', () => {
     expect((await q('select count(*)::int n from notifications')).rows[0].n).toBe(chimes);
   });
 
-  it('lifting the restriction does not move old held Whispers into the thread; new ones arrive normally', async () => {
+  it('lifting the restriction does not move old held messages into the thread; new ones arrive normally', async () => {
     const { me, them } = await restrictedThread();
     await doAct(them.handle, 'unrestrict', as(me));
     await whisper(me.handle, 'after unrestricting', as(them));

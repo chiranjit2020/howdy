@@ -7,7 +7,7 @@ import { ReactIcon } from '../icons';
 import { Popover } from '../primitives/popover';
 
 export const REACTION_LABEL: Record<ReactionKind, string> = {
-  yo: 'Yo',
+  yo: 'Wave',
   laugh: 'Laugh',
   fire: 'Fire',
   popcorn: 'Popcorn',

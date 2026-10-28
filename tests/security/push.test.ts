@@ -125,7 +125,7 @@ describe('subscribing a device', () => {
 });
 
 describe('what gets pushed', () => {
-  it('a Whisper pushes the Chime line to the recipient — never the words — and nothing to the sender', async () => {
+  it('a message pushes the notification line to the recipient — never the words — and nothing to the sender', async () => {
     const { a, b } = await pals();
     const bd = device();
     const ad = device();
@@ -135,7 +135,7 @@ describe('what gets pushed', () => {
     expect(to(ad)).toHaveLength(0);
     expect(to(bd)).toHaveLength(1);
     const p = to(bd)[0]!.payload;
-    expect(p).toMatchObject({ title: 'Howdy', url: `/whispers/${a.handle}`, tag: `whisper:${a.handle}` });
+    expect(p).toMatchObject({ title: 'Howdy', url: `/messages/${a.handle}`, tag: `whisper:${a.handle}` });
     expect(p.body).toMatch(/whispered to you\.$/);
     expect(JSON.stringify(p)).not.toContain('secret plan');
     expect(JSON.stringify(p)).not.toMatch(/[0-9a-f]{8}-[0-9a-f]{4}-/); // no ids of people

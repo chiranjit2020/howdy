@@ -26,56 +26,56 @@ async function person(browser: Browser, tag: string, opts: Parameters<typeof new
 const signalOn = (page: Page, text: string) => page.locator('p', { hasText: text }).first();
 
 async function saveBoundaries(page: Page, ranch: string, signal: string) {
-  await page.goto('/workshop');
-  await page.getByLabel('Who can visit your Porch?').selectOption(ranch);
-  await page.getByLabel('Who can read your Signal?').selectOption(signal);
-  await page.getByRole('button', { name: 'Save Boundary Lines' }).click();
-  await expect(page.getByRole('status').filter({ hasText: 'Boundary Lines updated' })).toBeVisible();
+  await page.goto('/settings');
+  await page.getByLabel('Who can visit your profile?').selectOption(ranch);
+  await page.getByLabel('Who can read your status?').selectOption(signal);
+  await page.getByRole('button', { name: 'Save Privacy' }).click();
+  await expect(page.getByRole('status').filter({ hasText: 'Privacy updated' })).toBeVisible();
 }
 
-test.describe('Ranch, Signal and Workshop (production build, real CSP)', () => {
-  test('tend your own Ranch: Signal, display name and portrait', async ({ browser }) => {
+test.describe('Ranch, Signal and Settings (production build, real CSP)', () => {
+  test('tend your own Ranch: Signal, display name and profile photo', async ({ browser }) => {
     const a = await person(browser, 'tender');
     const problems = await watchProblems(a.page);
 
-    await a.page.getByRole('link', { name: 'Visit your Porch' }).click();
-    await expect(a.page).toHaveURL(new RegExp(`/porch/${a.handle}$`));
+    await a.page.getByRole('link', { name: 'Visit your profile' }).click();
+    await expect(a.page).toHaveURL(new RegExp(`/profile/${a.handle}$`));
     await expect(a.page.getByRole('heading', { level: 1, name: a.handle })).toBeVisible(); // display name defaults to the handle
 
     // Signal: set, see it (and the box empties for the next one), remove it.
     await a.page.getByLabel('What is the vibe right now?').fill('In the zone. Send chai.');
-    await a.page.getByRole('button', { name: 'Set Signal' }).click();
+    await a.page.getByRole('button', { name: 'Set status' }).click();
     await expect(signalOn(a.page, 'In the zone. Send chai.').filter({ hasText: /h left/ })).toBeVisible();
     await expect(a.page.getByLabel('What is the vibe right now?')).toHaveValue('');
     await a.page.reload();
     await expect(a.page.getByLabel('What is the vibe right now?')).toHaveValue('');
-    await a.page.getByRole('button', { name: 'Remove Signal' }).click();
+    await a.page.getByRole('button', { name: 'Remove status' }).click();
     await expect(signalOn(a.page, 'In the zone. Send chai.').filter({ hasText: /h left/ })).toHaveCount(0);
 
     // A link in a Signal is refused, on the field, with a reason.
     await a.page.getByLabel('What is the vibe right now?').fill('follow me http://spam.example');
-    await a.page.getByRole('button', { name: 'Set Signal' }).click();
+    await a.page.getByRole('button', { name: 'Set status' }).click();
     await expect(a.page.getByText(/Links are not allowed/)).toBeVisible();
 
     // Workshop: display name + portrait colour.
-    await a.page.getByRole('link', { name: 'Workshop', exact: true }).first().click();
-    await expect(a.page).toHaveURL(/\/workshop$/);
+    await a.page.getByRole('link', { name: 'Settings', exact: true }).first().click();
+    await expect(a.page).toHaveURL(/\/settings$/);
     await a.page.getByLabel('Display name').fill('  Priya   Sharma ');
     await a.page.getByLabel('Bio').fill('Chai lover.   Weekend cyclist <b>hi</b>');
     // The colour is a circle you tap (its label); the radio inside is for screen readers.
     await a.page.locator('label', { has: a.page.getByRole('radio', { name: 'Mint' }) }).click();
     await expect(a.page.getByRole('radio', { name: 'Mint' })).toBeChecked();
     await a.page.getByRole('button', { name: 'Save', exact: true }).click();
-    await expect(a.page.getByRole('status').filter({ hasText: 'Porch swept' })).toBeVisible();
+    await expect(a.page.getByRole('status').filter({ hasText: 'Profile swept' })).toBeVisible();
 
-    await a.page.goto(`/porch/${a.handle}`);
+    await a.page.goto(`/profile/${a.handle}`);
     await expect(a.page.getByRole('heading', { level: 1, name: 'Priya Sharma' })).toBeVisible(); // normalised
     await expect(a.page.getByText(`@${a.handle}`)).toBeVisible(); // the call sign never changes
     // The bio shows under the name as plain text (normalised, markup shown as typed, never rendered).
     await expect(a.page.getByText('Chai lover. Weekend cyclist <b>hi</b>', { exact: true })).toBeVisible();
 
     // A link in the display name or the bio is refused too, on its own field.
-    await a.page.goto('/workshop');
+    await a.page.goto('/settings');
     await a.page.getByLabel('Display name').fill('Visit win-prizes.com');
     await a.page.getByRole('button', { name: 'Save', exact: true }).click();
     await expect(a.page.getByText(/Links are not allowed/)).toBeVisible();
@@ -87,8 +87,8 @@ test.describe('Ranch, Signal and Workshop (production build, real CSP)', () => {
     // Clearing the bio removes it from the Porch.
     await a.page.getByLabel('Bio').fill('');
     await a.page.getByRole('button', { name: 'Save', exact: true }).click();
-    await expect(a.page.getByRole('status').filter({ hasText: 'Porch swept' })).toBeVisible();
-    await a.page.goto(`/porch/${a.handle}`);
+    await expect(a.page.getByRole('status').filter({ hasText: 'Profile swept' })).toBeVisible();
+    await a.page.goto(`/profile/${a.handle}`);
     await expect(a.page.getByText('Chai lover.', { exact: false })).toHaveCount(0);
 
     expect(problems).toEqual([]);
@@ -101,35 +101,35 @@ test.describe('Ranch, Signal and Workshop (production build, real CSP)', () => {
     const anon = await newContext(browser);
     const anonPage = await anon.newPage();
 
-    await a.page.goto(`/porch/${a.handle}`);
+    await a.page.goto(`/profile/${a.handle}`);
     await a.page.getByLabel('What is the vibe right now?').fill('Members-only vibe');
-    await a.page.getByRole('button', { name: 'Set Signal' }).click();
+    await a.page.getByRole('button', { name: 'Set status' }).click();
     await expect(signalOn(a.page, 'Members-only vibe').filter({ hasText: /h left/ })).toBeVisible();
 
     // Default: a signed-in member sees the Ranch and the Signal.
-    await b.page.goto(`/porch/${a.handle}`);
+    await b.page.goto(`/profile/${a.handle}`);
     await expect(b.page.getByRole('heading', { level: 1, name: a.handle })).toBeVisible();
     await expect(signalOn(b.page, 'Members-only vibe')).toBeVisible();
     await expect(b.page.getByLabel('What is the vibe right now?')).toHaveCount(0); // no owner controls for visitors
-    await expect(b.page.getByRole('link', { name: 'Tend your Porch' })).toHaveCount(0);
+    await expect(b.page.getByRole('link', { name: 'Edit your profile' })).toHaveCount(0);
 
     // A signed-out visitor gets the SAME screen for a hidden Ranch and one that does not exist.
     // Read each page only once it has streamed in: right after goto, `main` may still be the "Loading…" outline.
     const settled = () => expect(anonPage.getByRole('main')).not.toContainText('Loading…');
-    const hidden = await anonPage.goto(`/porch/${a.handle}`);
+    const hidden = await anonPage.goto(`/profile/${a.handle}`);
     await settled();
     const hiddenText = await anonPage.getByRole('main').innerText();
-    const missing = await anonPage.goto('/porch/nobody_home_zzz');
+    const missing = await anonPage.goto('/profile/nobody_home_zzz');
     await settled();
     const missingText = await anonPage.getByRole('main').innerText();
     expect(hidden?.status()).toBe(missing?.status());
     expect(hiddenText).toBe(missingText);
-    expect(hiddenText).toMatch(/Step inside to visit this Porch/);
+    expect(hiddenText).toMatch(/Log in to visit this profile/);
     expect(hiddenText).not.toContain(a.handle);
 
     // Open the Ranch to everyone (Signal still members-only): signed-out sees the Ranch but NOT the Signal.
     await saveBoundaries(a.page, 'everyone', 'members');
-    await anonPage.goto(`/porch/${a.handle}`);
+    await anonPage.goto(`/profile/${a.handle}`);
     await expect(anonPage.getByRole('heading', { level: 1, name: a.handle })).toBeVisible();
     await expect(anonPage.getByText('Members-only vibe')).toHaveCount(0);
     await expect(signalOn(b.page, 'Members-only vibe')).toBeVisible(); // members still do, after a reload:
@@ -142,29 +142,29 @@ test.describe('Ranch, Signal and Workshop (production build, real CSP)', () => {
     await expect(b.page.getByRole('heading', { level: 1, name: a.handle })).toBeVisible();
     await expect(b.page.getByText('Members-only vibe')).toHaveCount(0);
     expect(await b.page.content()).not.toContain('Members-only vibe');
-    await a.page.goto(`/porch/${a.handle}`);
+    await a.page.goto(`/profile/${a.handle}`);
     await expect(signalOn(a.page, 'Members-only vibe').filter({ hasText: /h left/ })).toBeVisible(); // owner still sees it
 
     // Ranch to posse: a signed-in stranger now gets a real 404, and a signed-out visitor the generic prompt.
     await saveBoundaries(a.page, 'posse', 'posse');
-    const notFound = await b.page.goto(`/porch/${a.handle}`);
+    const notFound = await b.page.goto(`/profile/${a.handle}`);
     expect(notFound?.status()).toBe(404);
     await expect(b.page.getByRole('heading', { level: 1, name: a.handle })).toHaveCount(0);
-    await anonPage.goto(`/porch/${a.handle}`);
-    await expect(anonPage.getByRole('main')).toContainText('Step inside to visit this Porch');
+    await anonPage.goto(`/profile/${a.handle}`);
+    await expect(anonPage.getByRole('main')).toContainText('Log in to visit this profile');
 
     // The owner can always open their own Ranch.
-    await a.page.goto(`/porch/${a.handle}`);
+    await a.page.goto(`/profile/${a.handle}`);
     await expect(a.page.getByRole('heading', { level: 1, name: a.handle })).toBeVisible();
 
     await Promise.all([a.ctx.close(), b.ctx.close(), anon.close()]);
   });
 
-  test('the Workshop and the API refuse signed-out visitors', async ({ browser }) => {
+  test('Settings and the API refuse signed-out visitors', async ({ browser }) => {
     const ctx = await newContext(browser);
     const page = await ctx.newPage();
-    await page.goto('/workshop');
-    await expect(page).toHaveURL(/\/step-inside$/);
+    await page.goto('/settings');
+    await expect(page).toHaveURL(/\/login$/);
     expect((await ctx.request.get('/api/me/porch')).status()).toBe(401);
     expect(
       (
@@ -178,12 +178,12 @@ test.describe('Ranch, Signal and Workshop (production build, real CSP)', () => {
   });
 });
 
-test.describe('Ranch and Workshop: accessibility and layout in a real browser', () => {
+test.describe('Ranch and Settings: accessibility and layout in a real browser', () => {
   for (const scheme of ['light', 'dark'] as const) {
     test(`axe finds no violations, including real colour contrast (${scheme})`, async ({ browser }) => {
       const a = await person(browser, `axe${scheme[0]}`, { colorScheme: scheme, bypassCSP: true });
       const source = axeSource();
-      for (const path of [`/porch/${a.handle}`, '/workshop', '/home', '/porch/nobody_home_zzz']) {
+      for (const path of [`/profile/${a.handle}`, '/settings', '/home', '/profile/nobody_home_zzz']) {
         await a.page.goto(path);
         await pageReady(a.page);
         await a.page.evaluate(() => document.fonts.ready);
@@ -214,7 +214,7 @@ test.describe('Ranch and Workshop: accessibility and layout in a real browser', 
       isMobile: true,
       viewport: { width: 320, height: 700 },
     });
-    for (const path of [`/porch/${a.handle}`, '/workshop', '/home']) {
+    for (const path of [`/profile/${a.handle}`, '/settings', '/home']) {
       await a.page.goto(path);
       await pageReady(a.page);
       expect(await horizontalOverflow(a.page), `${path} overflow`).toBeLessThanOrEqual(0);

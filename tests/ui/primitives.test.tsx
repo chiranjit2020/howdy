@@ -40,18 +40,18 @@ describe('accessibility (axe)', () => {
         <Button loading>Saving</Button>
         <IconButton label="Close">×</IconButton>
         <Input label="Handle" hint="3–24 chars" />
-        <Input label="Secret Knock" type="password" error="Too short" />
+        <Input label="password" type="password" error="Too short" />
         <Textarea label="Signal" maxLength={80} showCount />
         <Select label="Visibility" defaultValue="a">
           <option value="a">Anyone</option>
         </Select>
         <Checkbox label="Review cards" />
         <fieldset>
-          <legend>Whispers</legend>
+          <legend>Messages</legend>
           <Radio name="w" label="Posse" defaultChecked />
           <Radio name="w" label="Anyone" />
         </fieldset>
-        <Switch label="Shadow Walk" checked onCheckedChange={() => undefined} />
+        <Switch label="Private browsing" checked onCheckedChange={() => undefined} />
         <Avatar name="Sneha Roy" online />
         <Badge>New</Badge>
         <Chip selected onSelect={() => undefined}>
@@ -71,7 +71,7 @@ describe('accessibility (axe)', () => {
           label="Main"
           items={[
             { href: '/a', label: 'Ranch', current: true },
-            { href: '/b', label: 'Fence' },
+            { href: '/b', label: 'Wall' },
           ]}
         />
         <EmptyState title="Nothing yet" description="Come back later" />
@@ -99,12 +99,12 @@ describe('Button', () => {
 
 describe('form fields', () => {
   it('links label, hint and error to the control', () => {
-    render(<Input label="Handle" hint="Pick a call sign" error="Taken" />);
+    render(<Input label="Handle" hint="Pick a username" error="Taken" />);
     const input = screen.getByLabelText('Handle');
     expect(input).toHaveAttribute('aria-invalid', 'true');
     const described = input.getAttribute('aria-describedby')!.split(' ');
     expect(described.map((id) => document.getElementById(id)?.textContent)).toEqual([
-      'Pick a call sign',
+      'Pick a username',
       'Taken',
     ]);
   });
@@ -124,12 +124,12 @@ describe('form fields', () => {
 describe('Switch', () => {
   function Demo() {
     const [on, setOn] = useState(false);
-    return <Switch label="Shadow Walk" checked={on} onCheckedChange={setOn} />;
+    return <Switch label="Private browsing" checked={on} onCheckedChange={setOn} />;
   }
   it('toggles with the keyboard and exposes aria-checked', async () => {
     const user = userEvent.setup();
     render(<Demo />);
-    const sw = screen.getByRole('switch', { name: 'Shadow Walk' });
+    const sw = screen.getByRole('switch', { name: 'Private browsing' });
     expect(sw).toHaveAttribute('aria-checked', 'false');
     await user.tab();
     expect(sw).toHaveFocus();
@@ -142,8 +142,8 @@ describe('Switch', () => {
 
 describe('Tabs', () => {
   const tabs = [
-    { id: 'a', label: 'Fence', panel: <p>fence panel</p> },
-    { id: 'b', label: 'Tributes', panel: <p>tributes panel</p> },
+    { id: 'a', label: 'Wall', panel: <p>wall panel</p> },
+    { id: 'b', label: 'Testimonials', panel: <p>testimonials panel</p> },
     { id: 'c', label: 'Posse', panel: <p>posse panel</p> },
   ];
 
@@ -157,8 +157,8 @@ describe('Tabs', () => {
     await user.keyboard('{ArrowRight}');
     expect(t2).toHaveFocus();
     expect(t2).toHaveAttribute('aria-selected', 'true');
-    expect(screen.getByText('tributes panel')).toBeVisible();
-    expect(screen.queryByText('fence panel')).not.toBeInTheDocument();
+    expect(screen.getByText('testimonials panel')).toBeVisible();
+    expect(screen.queryByText('wall panel')).not.toBeInTheDocument();
     await user.keyboard('{End}');
     expect(t3).toHaveFocus();
     await user.keyboard('{ArrowRight}'); // wraps
@@ -169,7 +169,7 @@ describe('Tabs', () => {
 
   it('panel is labelled by its tab', () => {
     render(<Tabs label="Ranch" tabs={tabs} />);
-    expect(screen.getByRole('tabpanel')).toHaveAccessibleName('Fence');
+    expect(screen.getByRole('tabpanel')).toHaveAccessibleName('Wall');
   });
 });
 
@@ -407,14 +407,14 @@ describe('Modal and ConfirmationDialog', () => {
       <ConfirmationDialog
         open
         destructive
-        title="Burn the Deed?"
+        title="Delete account?"
         description="This cannot be undone."
         confirmLabel="Burn it"
         onConfirm={onConfirm}
         onCancel={onCancel}
       />,
     );
-    expect(screen.getByRole('alertdialog', { name: 'Burn the Deed?', hidden: true })).toBeInTheDocument();
+    expect(screen.getByRole('alertdialog', { name: 'Delete account?', hidden: true })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Cancel' })).toHaveFocus();
     await user.click(screen.getByRole('button', { name: 'Burn it' }));
     expect(onConfirm).toHaveBeenCalledTimes(1);
@@ -450,11 +450,11 @@ describe('Navigation', () => {
         label="Main"
         items={[
           { href: '/a', label: 'Ranch', current: true },
-          { href: '/b', label: 'Fence' },
+          { href: '/b', label: 'Wall' },
         ]}
       />,
     );
     expect(screen.getByRole('link', { name: 'Ranch' })).toHaveAttribute('aria-current', 'page');
-    expect(screen.getByRole('link', { name: 'Fence' })).not.toHaveAttribute('aria-current');
+    expect(screen.getByRole('link', { name: 'Wall' })).not.toHaveAttribute('aria-current');
   });
 });

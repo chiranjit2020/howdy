@@ -85,14 +85,14 @@ export function AppOnPhone({ vapidKey }: { vapidKey: string | undefined }) {
           <div className="flex flex-wrap items-center gap-3">
             <p className="min-w-0 flex-[1_1_12rem] text-caption text-text-secondary">
               {push === 'on'
-                ? 'Notifications are on for this device. You will hear about Whispers and Chimes even when Howdy is closed.'
+                ? 'Notifications are on for this device. You will hear about messages and notifications even when Howdy is closed.'
                 : push === 'blocked'
                   ? 'Notifications are blocked for Howdy. Allow them in your browser’s site settings, then come back.'
                   : push === 'unsupported'
                     ? os === 'ios' && !installed
                       ? 'On iPhone, notifications work once Howdy is on your Home Screen. Install it, then open it from there.'
                       : 'This browser cannot show notifications while Howdy is closed.'
-                    : 'Get a notification for Whispers and Chimes, even when Howdy is closed.'}
+                    : 'Get a notification for messages and notifications, even when Howdy is closed.'}
             </p>
             {(push === 'on' || push === 'off') && (
               <Button

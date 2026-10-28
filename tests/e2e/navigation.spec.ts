@@ -48,9 +48,9 @@ test('on a 320 px phone, "More" reaches every page that is not a tab — Moderat
   await makeStaff(db, me.handle);
   const problems = await watchProblems(me.page);
   const pages: [string, RegExp][] = [
-    ['Tracks', /\/tracks$/],
-    ['Workshop', /\/workshop$/],
-    ['Town Halls', /\/town-halls$/],
+    ['Visitors', /\/visitors$/],
+    ['Settings', /\/settings$/],
+    ['Groups', /\/groups$/],
     ['Time Capsules', /\/capsules$/],
     ['Moderation', /\/moderation$/],
   ];
@@ -61,7 +61,7 @@ test('on a 320 px phone, "More" reaches every page that is not a tab — Moderat
     await me.page.getByRole('button', { name: /^More pages/ }).click();
     const menu = me.page.getByRole('menu', { name: 'More' });
     await expect(menu).toBeVisible();
-    if (label === 'Tracks') {
+    if (label === 'Visitors') {
       expect(await axeViolations(me.page)).toEqual([]);
       expect(await smallTargets(me.page)).toEqual([]);
     }
@@ -73,7 +73,7 @@ test('on a 320 px phone, "More" reaches every page that is not a tab — Moderat
   await me.page.getByRole('menu', { name: 'More' }).getByRole('menuitem', { name: 'Sign out' }).click();
   await expect(me.page).toHaveURL(/\/gate$/);
   await me.page.goto('/home');
-  await expect(me.page).toHaveURL(/\/step-inside$/);
+  await expect(me.page).toHaveURL(/\/login$/);
   expect(problems).toEqual([]);
   await me.ctx.close();
 });
@@ -84,7 +84,7 @@ test('on a desktop the sidebar has them, and there is no "More" button', async (
   await pageReady(me.page);
   await expect(me.page.getByRole('button', { name: /^More pages/ })).toBeHidden();
   const sidebar = me.page.getByRole('navigation', { name: 'Primary' }).first();
-  for (const label of ['Tracks', 'Workshop', 'Town Halls', 'Time Capsules']) {
+  for (const label of ['Visitors', 'Settings', 'Groups', 'Time Capsules']) {
     await expect(sidebar.getByRole('link', { name: new RegExp(`^${label}`) })).toBeVisible();
   }
   await me.ctx.close();
@@ -97,13 +97,13 @@ test('every loading outline streams inside the shell (top bar first), never on a
   const me = await person(browser, 'navload', { viewport: { width: 1280, height: 800 } });
   for (const path of [
     '/home',
-    '/pals',
-    '/chimes',
-    '/tracks',
-    '/whispers',
-    '/town-halls',
-    '/workshop',
-    `/porch/${me.handle}`,
+    '/friends',
+    '/notifications',
+    '/visitors',
+    '/messages',
+    '/groups',
+    '/settings',
+    `/profile/${me.handle}`,
   ]) {
     const html = await (await me.page.request.get(path)).text();
     const outline = html.indexOf('aria-busy="true"');

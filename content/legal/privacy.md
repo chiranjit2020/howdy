@@ -1,4 +1,4 @@
-Howdy is a small-circle social place: your Porch, your Pals, Post Cards on your Fence, Whispers between two people, and Town Halls for groups. This policy explains what we collect to run it, why, how long we keep it, who can see it, and what you can do about it. We have tried to write it the way we would explain it to a friend.
+Howdy is a small-circle social place: your profile, your friends, posts on your wall, messages between two people, and groups for groups. This policy explains what we collect to run it, why, how long we keep it, who can see it, and what you can do about it. We have tried to write it the way we would explain it to a friend.
 
 Howdy is run by {{operator}}, an individual based in {{country}} ("Howdy", "we", "us"). If anything here is unclear, write to [{{contactEmail}}](mailto:{{contactEmail}}).
 
@@ -6,27 +6,27 @@ Howdy is run by {{operator}}, an individual based in {{country}} ("Howdy", "we",
 
 ## The short version
 
-- We collect what you give us (your email, call sign, what you post) and a little that is needed to keep your account safe. We do not sell your data and we do not show ads.
+- We collect what you give us (your email, username, what you post) and a little that is needed to keep your account safe. We do not sell your data and we do not show ads.
 - We do not use analytics or tracking tools, and we use only two small cookies (see the [Cookie Policy](/cookies)).
-- A lot of Howdy is built to forget: Signals and Stories fade after 12 hours, Whispers after 7 days, and Tracks keep only a date for 7 days.
-- Your privacy settings decide who can see your Porch, Signal and Fence. New Porches are visible to signed-in members only.
-- You can delete your account, or download a copy of your data, yourself in the Workshop at any time. You can also ask us to correct your data by writing to [{{contactEmail}}](mailto:{{contactEmail}}).
+- A lot of Howdy is built to forget: Statuses and Stories fade after 12 hours, messages after 7 days, and profile visits keep only a date for 7 days.
+- Your privacy settings decide who can see your profile, status and wall. New profiles are visible to signed-in members only.
+- You can delete your account, or download a copy of your data, yourself in Settings at any time. You can also ask us to correct your data by writing to [{{contactEmail}}](mailto:{{contactEmail}}).
 
 ## Information we collect
 
-**Account information.** Your email address, your call sign (handle), your display name and your password. We never store your password itself, only a one-way scrambled form of it (a hash) that cannot be turned back into the password. We also record when you confirmed your email.
+**Account information.** Your email address, your username (handle), your display name and your password. We never store your password itself, only a one-way scrambled form of it (a hash) that cannot be turned back into the password. We also record when you confirmed your email.
 
-**Your Porch.** Your display name, your bio if you write one (a short line shown under your name), the colour of your portrait, your Portrait photo if you add one, your Signal (a short status), your Porch Light while it is on, and your settings: who can see your Porch and Signal, who can write on your Fence, and which Chimes you want.
+**Your profile.** Your display name, your bio if you write one (a short line shown under your name), the colour of your profile photo, your profile photo if you add one, your status (a short line that fades), whether you are free to talk while that is on, and your settings: who can see your profile and status, who can write on your wall, and which notifications you want.
 
-**Photos.** When you add a Portrait, or a photo to a Post Card, a Town Hall post or a Story, we re-make the picture ourselves (a small square for a Portrait; for anything else, the whole picture at most 1280 pixels across). Anything hidden inside the original file, such as the location where it was taken or the camera used, is thrown away and never stored. A card's photo is shown only to the people who can see that card, and a Story only to the Pals it is for. Before anyone else sees a new photo, an automatic check looks at a small copy of it for sexual content, violence and self-harm (see OpenAI under [Service providers](#service-providers)). A photo that is almost certainly explicit or graphic is turned down; one the check is unsure about is shown only to you until a moderator has looked at it.
+**Photos.** When you add a profile photo, or a photo to a post, a group post or a Story, we re-make the picture ourselves (a small square for a profile photo; for anything else, the whole picture at most 1280 pixels across). Anything hidden inside the original file, such as the location where it was taken or the camera used, is thrown away and never stored. A post's photo is shown only to the people who can see that post, and a Story only to the friends it is for. Before anyone else sees a new photo, an automatic check looks at a small copy of it for sexual content, violence and self-harm (see OpenAI under [Service providers](#service-providers)). A photo that is almost certainly explicit or graphic is turned down; one the check is unsure about is shown only to you until a moderator has looked at it.
 
-**What you post and do.** Post Cards and replies, Yos, Tributes you write or receive, Marks you give, Whispers you send, Time Capsules you seal, Stories you share and the Stories you view or react to, Town Halls you start or join, posts, replies and reactions in Town Halls, and reports you file.
+**What you post and do.** Posts and replies, waves and other reactions, testimonials you write or receive, badges you give, messages you send, Time Capsules you seal, Stories you share and the Stories you view or react to, groups you start or join, posts, replies and reactions in groups, and reports you file.
 
-**Your connections.** Who is in your Pals, and requests between you. Also the private choices you make about others: Close Pals, Scouting, Mute, Restrict and Block. Those last ones are visible only to you. The other person is never told.
+**Your connections.** Who is in your friends, and requests between you. Also the private choices you make about others: Close friends, following, Mute, Restrict and Block. Those last ones are visible only to you. The other person is never told.
 
-**Tracks.** When you open someone else's Porch while signed in, we may note that you visited, as a date only. See [Tracks and Shadow Walk](#tracks-and-shadow-walk) below.
+**Profile visits.** When you open someone else's profile while signed in, we may note that you visited, as a date only. See [Profile visitors and Private browsing](#profile-visitors-and-private-browsing) below.
 
-**Chimes.** Your notifications: who did what, and when.
+**Notifications.** Your notifications: who did what, and when.
 
 **Two-step sign-in (if you turn it on).** For a **passkey**, the passkey's public key and its ID, a rough label for the device you added it on (such as "Chrome on Android"), whether it is synced to a password manager, and when it was added and last used. Your fingerprint, face or screen lock never leaves your device: your phone or computer checks it, and Howdy only receives a signed "yes". For an **authenticator app**, the shared key the app uses to make codes, stored encrypted. Your **recovery codes** are stored only in a scrambled form that cannot be turned back into the codes.
 
@@ -38,11 +38,11 @@ Howdy is run by {{operator}}, an individual based in {{country}} ("Howdy", "we",
 
 ## How we use it
 
-- **To run Howdy:** show your Porch and posts to the people you allow, deliver Whispers and Chimes, and connect you with your Pals.
+- **To run Howdy:** show your profile and posts to the people you allow, deliver messages and notifications, and connect you with your friends.
 - **To keep your account safe:** sign you in, keep you signed in, send confirmation and password-reset emails, and let you see and end your sessions.
-- **To prevent abuse:** rate limits, blocking and muting, and reviewing reports against the [Campfire Rules](/campfire-rules).
+- **To prevent abuse:** rate limits, blocking and muting, and reviewing reports against the [Community Guidelines](/community-guidelines).
 - **To moderate:** when something is reported, a moderator may look at the report and the words it is about, and may remove content or suspend an account under the [Terms](/terms). We keep a record of a suspension (the reason, how long, and any appeal you write) for as long as your account exists.
-- **To keep it working:** find and fix errors and slowness. Our logs are written so that they do not contain passwords, session tokens, cookies, Whisper text or Signal text.
+- **To keep it working:** find and fix errors and slowness. Our logs are written so that they do not contain passwords, session tokens, cookies, message text or status text.
 - **To talk to you:** send emails about your account (confirmation, password resets, and important changes such as updates to these documents). We do not send marketing emails.
 
 We do not sell your information, share it with advertisers, or use it to build advertising profiles.
@@ -51,80 +51,80 @@ We do not sell your information, share it with advertisers, or use it to build a
 
 Your settings decide most of it.
 
-- **Your Porch and Signal** can be visible to everyone, to signed-in members (the default), or to your Pals only.
-- **Your Fence** follows your settings for who may read it and who may write on it. You can review cards before they appear, and remove anything on your own Fence.
-- **Whispers** are only ever between the two people in the conversation.
-- **Town Halls:** the list of who is in a Town Hall, and its posts, replies and reactions, are visible only to its members. Its owner can remove any post in it, and Deputies the owner appoints can remove posts by ordinary members. If you ask to join a Town Hall that needs approval, its owner and Deputies see your name, call sign and portrait, and when you asked. If they say no, you are not told; the request simply runs out. Its owner and Deputies can also ban someone from it: they keep a list of who is banned, when and by whom, and a banned person is not told — to them the Town Hall simply never answers a request to join.
-- **Invite links:** your personal invite link shows your display name, and nothing else from your Porch, to anyone who opens it. If someone signs up through it, we remember that you invited them; once they confirm their email, a Pal request goes from them to you, which you can accept or decline like any other. You can reset your link at any time, and the old one stops working.
-- **Tributes and Marks** can come from your Pals and from your Town Hall neighbours: people who have been members of a Town Hall with you for at least 14 days. To tell, we keep when each member joined a Town Hall. Tributes wait for your approval before anyone sees them; your Vibe Matrix shows only how many Marks of each kind you have. For the Trusted tick we note whether each Mark came from a Pal, because only Pals' Marks count toward it.
+- **Your profile and status** can be visible to everyone, to signed-in members (the default), or to your friends only.
+- **Your wall** follows your settings for who may read it and who may write on it. You can review posts before they appear, and remove anything on your own wall.
+- **Messages** are only ever between the two people in the conversation.
+- **Groups:** the list of who is in a group, and its posts, replies and reactions, are visible only to its members. Its owner can remove any post in it, and Deputies the owner appoints can remove posts by ordinary members. If you ask to join a group that needs approval, its owner and Deputies see your name, username and profile photo, and when you asked. If they say no, you are not told; the request simply runs out. Its owner and Deputies can also ban someone from it: they keep a list of who is banned, when and by whom, and a banned person is not told — to them the group simply never answers a request to join.
+- **Invite links:** your personal invite link shows your display name, and nothing else from your profile, to anyone who opens it. If someone signs up through it, we remember that you invited them; once they confirm their email, a friend request goes from them to you, which you can accept or decline like any other. You can reset your link at any time, and the old one stops working.
+- **Testimonials and badges** can come from your friends and from your group neighbours: people who have been members of a group with you for at least 14 days. To tell, we keep when each member joined a group. Testimonials wait for your approval before anyone sees them; your profile shows only how many badges of each kind you have. For the Trusted tick we note whether each badge came from a friend, because only friends' badges count toward it.
 - **Blocks, mutes and restrictions** are private to you, and a block hides the two of you from each other.
-- **Moderators** can see reports and the content they are about (a Post Card, a photo, one reported Whisper, a Town Hall's name and description, a Town Hall post), and photos the automatic check held back, and may act on them.
+- **Moderators** can see reports and the content they are about (a post, a photo, one reported message, a group's name and description, a group post), and photos the automatic check held back, and may act on them.
 
-## Tracks and Shadow Walk
+## Profile visitors and Private browsing
 
-Tracks tell you who has recently stopped by your Porch. They are built to be vague on purpose.
+Your visitor list tells you who has recently stopped by your profile. They are built to be vague on purpose.
 
 - **What is stored:** only the two people and the date of the latest visit. No time of day, no count, no device and no location.
-- **Who is named:** you see the names of visitors who are your Pals. Everyone else is only counted, and muted or blocked people are not even counted. Times are shown only as Today, Yesterday or This week.
-- **Shadow Walk:** turn it on and your visits are not recorded at all. While it is on, your own Tracks are paused too. Nobody else can see whether you use it.
+- **Who is named:** you see the names of visitors who are your friends. Everyone else is only counted, and muted or blocked people are not even counted. Times are shown only as Today, Yesterday or This week.
+- **Private browsing:** turn it on and your visits are not recorded at all. While it is on, your own visitor list is paused too. Nobody else can see whether you use it.
 - **Nothing for signed-out visitors,** blocked people, or suspended accounts.
 - **How long:** 7 days. After that the visit is gone.
 
 ## Time Capsules and Memories
 
-- **Time Capsules:** words you seal for your future self or for one of your Pals, to open on a day you choose. Until that day nobody can read them in Howdy, not even you (you can take one back, which deletes it). They are stored on our servers, not end-to-end encrypted. On the day, a capsule to a Pal opens only if you are still Pals and neither of you has blocked the other; otherwise it is deleted. Once open it belongs to the person it was for, and stays until they delete it.
-- **Time Capsules for a Town Hall:** its owner and Deputies can seal words for the whole Town Hall, sealed the same way. Its members see who sealed one and the day it opens, never the words. On that day it becomes a post in the Town Hall's feed, by the person who sealed it and marked with when it was sealed, even if they have left the Town Hall since; from then on it is like any other post there. The person who sealed it can take it back before then, and so can the owner if a Deputy sealed it.
-- **Memories:** "On this day" on your Home page shows Post Cards on your own Fence, the day you became Pals with someone, and Tributes written to you, from earlier years. Only you see them. Nothing extra is stored for this: they are worked out from what is still there, and something removed, or someone you have blocked or muted, does not come back as a memory.
+- **Time Capsules:** words you seal for your future self or for one of your friends, to open on a day you choose. Until that day nobody can read them in Howdy, not even you (you can take one back, which deletes it). They are stored on our servers, not end-to-end encrypted. On the day, a capsule to a friend opens only if you are still friends and neither of you has blocked the other; otherwise it is deleted. Once open it belongs to the person it was for, and stays until they delete it.
+- **Time Capsules for a group:** its owner and Deputies can seal words for the whole group, sealed the same way. Its members see who sealed one and the day it opens, never the words. On that day it becomes a post in the group's feed, by the person who sealed it and marked with when it was sealed, even if they have left the group since; from then on it is like any other post there. The person who sealed it can take it back before then, and so can the owner if a Deputy sealed it.
+- **Memories:** "On this day" on your Home page shows posts on your own wall, the day you became friends with someone, and testimonials written to you, from earlier years. Only you see them. Nothing extra is stored for this: they are worked out from what is still there, and something removed, or someone you have blocked or muted, does not come back as a memory.
 
-## Porch Light
+## Free to talk
 
 - **What it is:** a light you switch on for 30 minutes, 1 hour or 2 hours to show you are free to talk, with a short note if you like. It turns itself off.
-- **Who sees it:** your Pals, or only the Pals you marked as Close, as you choose each time. Nobody is notified when it comes on: it is only seen by Pals who look at their Home page or your Porch. It is not shown to anyone you have blocked or restricted, or who has blocked or muted you.
+- **Who sees it:** your friends, or only the friends you marked as Close, as you choose each time. Nobody is notified when it comes on: it is only seen by friends who look at their Home page or your profile. It is not shown to anyone you have blocked or restricted, or who has blocked or muted you.
 - **No history:** we keep only the light that is on now. When you switch it off it is deleted, and a light that has gone out is deleted within a day, so nobody can see when you were last around.
 
 ## Stories
 
 - **What it is:** one photo, with a short caption if you like, that disappears 12 hours after you share it. You can take it down sooner.
-- **Who sees it:** your Pals, or only the Pals you marked as Close, as you choose each time. It is not shown to anyone you have blocked or restricted, or who has blocked or muted you, nor to someone who is no longer your Pal.
-- **Who viewed it:** when you open a Pal's Story we note that you did, so Howdy knows which Stories you have seen. Your Pal is told it was you only if you both have "Story views" on in the Workshop (it is on to start with). If either of you turns it off, neither of you sees who viewed. Nobody is told whose switch is off. Someone you have restricted or blocked is never shown as a viewer.
-- **Reactions:** if you react to a Story, its owner sees your reaction and is sent a Chime, whatever your Story views setting. "Reply" opens a Whisper to them.
+- **Who sees it:** your friends, or only the friends you marked as Close, as you choose each time. It is not shown to anyone you have blocked or restricted, or who has blocked or muted you, nor to someone who is no longer your friend.
+- **Who viewed it:** when you open a friend's Story we note that you did, so Howdy knows which Stories you have seen. Your friend is told it was you only if you both have "Story views" on in Settings (it is on to start with). If either of you turns it off, neither of you sees who viewed. Nobody is told whose switch is off. Someone you have restricted or blocked is never shown as a viewer.
+- **Reactions:** if you react to a Story, its owner sees your reaction and is sent a notification, whatever your Story views setting. "Reply" opens a message to them.
 - **Gone after 12 hours:** past its 12 hours a Story, its photo, who viewed it and the reactions to it are no longer shown to anyone, and they are deleted within a day. A Story that was reported keeps a copy of its caption with the report.
 
-## Pals you may know
+## Friends you may know
 
-On your Pals page we may suggest people who are Pals with at least two of your Pals, and show which of your Pals you share. In the same way, you may be suggested to people who share at least two Pals with you. This is worked out from Pal connections only, when the page is opened; nothing else about you is used, and no profile of you is built for it. Nobody is suggested to anyone they have blocked, muted or restricted (or who did so to them), or whom they have asked or been asked by before, and nobody whose Porch is set to Pals only. You can turn this off in the Workshop ("Suggest me to Pals of my Pals"), and "Not now" stops a suggestion for good.
+On your friends page we may suggest people who are friends with at least two of your friends, and show which of your friends you share. In the same way, you may be suggested to people who share at least two friends with you. This is worked out from friend connections only, when the page is opened; nothing else about you is used, and no profile of you is built for it. Nobody is suggested to anyone they have blocked, muted or restricted (or who did so to them), or whom they have asked or been asked by before, and nobody whose profile is set to friends only. You can turn this off in Settings ("Suggest me to friends of my friends"), and "Not now" stops a suggestion for good.
 
-## Whispers
+## Messages
 
-- **Private:** a Whisper can be read only by the two people in the conversation. You can only Whisper someone who is in your Pals, and a block or leaving Pals closes the conversation.
-- **If a Whisper is reported:** the person who received it can report that one Whisper, even after blocking you. Our moderators then see only that Whisper's words, never the rest of the conversation, and those words are kept with the report as evidence after the Whisper itself is deleted.
+- **Private:** a message can be read only by the two people in the conversation. You can only message someone who is in your friends, and a block or leaving friends closes the conversation.
+- **If a message is reported:** the person who received it can report that one message, even after blocking you. Our moderators then see only that message's words, never the rest of the conversation, and those words are kept with the report as evidence after the message itself is deleted.
 - **No read receipts:** the other person is never told whether or when you read their message.
-- **Short-lived:** Whispers are deleted 7 days after they are sent. Either person can also Burn a Thread, which deletes it for both of you at once — with one exception, for safety: if one of you has blocked or restricted the other, a burn by the person who was blocked or restricted clears the thread only from their own view. The other person keeps it, so they can still report it, until it is deleted 7 days after being sent.
-- **Stored securely, not end-to-end encrypted.** Whispers travel over encrypted connections and are stored on our servers, so they are not end-to-end encrypted. Please do not use Whispers for passwords, financial details or anything you would not want stored for a week.
+- **Short-lived:** Messages are deleted 7 days after they are sent. Either person can also Burn a Thread, which deletes it for both of you at once — with one exception, for safety: if one of you has blocked or restricted the other, a burn by the person who was blocked or restricted clears the thread only from their own view. The other person keeps it, so they can still report it, until it is deleted 7 days after being sent.
+- **Stored securely, not end-to-end encrypted.** Messages travel over encrypted connections and are stored on our servers, so they are not end-to-end encrypted. Please do not use messages for passwords, financial details or anything you would not want stored for a week.
 
 ## How long we keep things
 
-- **Signal:** 12 hours after you set it.
-- **Porch Light:** until you switch it off, and within a day of it going out on its own.
+- **Status:** 12 hours after you set it.
+- **Free to talk:** until you switch it off, and within a day of it going out on its own.
 - **Stories:** shown for 12 hours (or until you take one down), with who viewed and reacted; all of it is deleted within a day of the 12 hours ending.
-- **Time Capsules:** until the day they open (or until you take one back); after that, until the person it was for deletes it. A Town Hall's capsule becomes a post on its day and is then kept like any post.
-- **Whispers:** 7 days after they are sent (or sooner, if a thread is burned). The words of a Whisper someone reported are kept with the report (see below).
-- **Tracks:** 7 days.
-- **Chimes:** 30 days after you read them, or 90 days if you never do.
-- **Post Cards waiting for approval, waiting Tributes, and Town Hall posts waiting for the owner:** 30 days, if they are not approved.
-- **Requests to join a Town Hall:** 30 days, if nobody lets you in (whether or not they said no).
+- **Time Capsules:** until the day they open (or until you take one back); after that, until the person it was for deletes it. A group's capsule becomes a post on its day and is then kept like any post.
+- **Messages:** 7 days after they are sent (or sooner, if a thread is burned). The words of a message someone reported are kept with the report (see below).
+- **Profile visits:** 7 days.
+- **Notifications:** 30 days after you read them, or 90 days if you never do.
+- **Posts waiting for approval, waiting testimonials, and group posts waiting for the owner:** 30 days, if they are not approved.
+- **Requests to join a group:** 30 days, if nobody lets you in (whether or not they said no).
 - **Invitations (who signed up through whose link):** 30 days after the sign-up.
-- **Town Hall bans:** until the owner or a Deputy lifts the ban, or the Town Hall or the banned account is deleted. When a banned person last asked to join is deleted after 30 days.
-- **Unfinished photo uploads:** about an hour (a photo chosen for a card but never nailed goes too). A replaced or removed Portrait is deleted straight away; a card's (or a Town Hall post's, or a Story's) photo stops being shown the moment its card, post or Story is removed or ends, and its file is deleted within a day.
-- **Sessions:** until you sign out, or after 14 days without use (60 days at most), plus 30 days of records so we can help with account problems.
+- **Group bans:** until the owner or a Deputy lifts the ban, or the group or the banned account is deleted. When a banned person last asked to join is deleted after 30 days.
+- **Unfinished photo uploads:** about an hour (a photo chosen for a post but never posted goes too). A replaced or removed profile photo is deleted straight away; a post's (or a group post's, or a Story's) photo stops being shown the moment its post or Story is removed or ends, and its file is deleted within a day.
+- **Sessions:** until you sign out, or after 14 days without use (30 days at most, or a day if you did not ask us to remember the device), plus 30 days of records so we can help with account problems.
 - **Passkeys, authenticator app and recovery codes:** until you remove them, switch two-step sign-in off, or delete your account. A passkey prompt nobody answered is deleted within a day; an authenticator app you started to link but never finished, after 15 minutes.
 - **Email links:** confirmation links work for 24 hours and reset links for 1 hour. Used and expired links are kept for 7 days.
-- **Your account, Porch, posts, Pals, Marks and Town Halls:** for as long as you keep your account, or until you or the person they are on removes them.
+- **Your account, profile, posts, friends, badges and groups:** for as long as you keep your account, or until you or the person they are on removes them.
 - **Reports:** while a report is open, and for 1 year after a moderator closes it, then deleted, including the words it was about and who reported whom. If an account is deleted first, its reports stay for that time with the link to the account removed.
 - **Security records:** 12 months, then deleted. If an account is deleted first, its records stay for the rest of that time with the link to the account removed, because they are needed to investigate abuse.
 - **Rate-limit counters:** up to one hour.
 
-**Backups:** every night we make an encrypted copy of the database so that Howdy can be recovered after an accident or an attack. Each copy is kept for **30 days** and then deleted, so something you delete can stay in these copies for up to 30 days after you delete it; nobody looks at them unless we have to restore Howdy. They are encrypted before they leave the job that makes them, with a key only we hold. To keep our promises about short-lived things, the copies **leave out** Whispers, Stories (with who viewed and reacted), Tracks, Porch Lights, sign-in sessions and email links. Our database provider also keeps its own short history of changes (6 hours).
+**Backups:** every night we make an encrypted copy of the database so that Howdy can be recovered after an accident or an attack. Each copy is kept for **30 days** and then deleted, so something you delete can stay in these copies for up to 30 days after you delete it; nobody looks at them unless we have to restore Howdy. They are encrypted before they leave the job that makes them, with a key only we hold. To keep our promises about short-lived things, the copies **leave out** Messages, Stories (with who viewed and reacted), profile visits, who is free to talk, sign-in sessions and email links. Our database provider also keeps its own short history of changes (6 hours).
 
 ## Service providers
 
@@ -132,12 +132,12 @@ We use a few companies to run Howdy. They process data only to provide their ser
 
 - **Vercel:** hosts the website and runs the app.
 - **Neon:** hosts the database.
-- **Cloudflare:** stores Portrait, Post Card, Town Hall and Story photos (R2), stores our encrypted nightly backups (R2; Cloudflare cannot read them), and provides our domain's DNS.
+- **Cloudflare:** stores profile photo, post, group and Story photos (R2), stores our encrypted nightly backups (R2; Cloudflare cannot read them), and provides our domain's DNS.
 - **GitHub:** runs the nightly backup job. The copy exists unencrypted only inside that short-lived job, which checks it and encrypts it before storing it anywhere; it is not kept by GitHub.
 - **Resend:** sends account emails.
 - A managed **Redis** provider: holds short-lived rate-limit counters.
-- **OpenAI:** checks new photos (above). It is sent only a small copy of the picture we made, never your name, call sign or anything else about you. OpenAI does not keep what its moderation service is sent and does not use it to train its models.
-- **Ably:** makes new Whispers appear at once. When a Whisper arrives, Howdy sends your browser a signal that simply says "something new" — never the words, never who sent it, and never your name. Ably sees your browser's connection (such as its IP address) while a Whispers page is open, but not who you are.
+- **OpenAI:** checks new photos (above). It is sent only a small copy of the picture we made, never your name, username or anything else about you. OpenAI does not keep what its moderation service is sent and does not use it to train its models.
+- **Ably:** makes new messages appear at once. When a message arrives, Howdy sends your browser a signal that simply says "something new" — never the words, never who sent it, and never your name. Ably sees your browser's connection (such as its IP address) while a messages page is open, but not who you are.
 
 These providers may store and process data outside {{country}}, including in the United States and Singapore.
 
@@ -157,14 +157,14 @@ No system is perfectly secure. If we learn of a breach that affects your persona
 
 ## Your rights and choices
 
-**In the app, at any time:** change your display name, bio, Portrait and privacy settings in the Workshop; delete your own Post Cards (with their photos), replies and Tributes; burn Whisper threads; turn on Shadow Walk; mute, restrict or block people; choose which Chimes you get; sign out other devices; and download your data (see Export below).
+**In the app, at any time:** change your display name, bio, profile photo and privacy settings in Settings; delete your own posts (with their photos), replies and testimonials; burn message threads; turn on Private browsing; mute, restrict or block people; choose which notifications you get; sign out other devices; and download your data (see Export below).
 
 **By writing to us at [{{contactEmail}}](mailto:{{contactEmail}}),** from the email address on your account, you can ask:
 
 - **Access:** for a summary of the personal data we hold about you and what we do with it.
 - **Correction:** to correct or complete information that is wrong.
-- **Deletion:** to delete your account, yourself, in the Workshop (or from the sign-in page if your account is suspended). It is closed at once: you are signed out everywhere and your Porch disappears. For 14 days you can still keep it by signing in; after that it is deleted for good, with your Porch, Post Cards, replies, Whispers, Pals, Tributes, Marks, Town Halls you own (unless you have a Deputy there, who then becomes its owner) and your photo, except for the records described in [How long we keep things](#how-long-we-keep-things). We email you when it closes and when it is deleted. Your call sign is kept from anyone else for 90 days (we store only a scrambled form of it, not the name), so nobody can take it straight away to pretend to be you.
-- **Export:** download a copy yourself, at once, with "Download my data" in the Workshop (your password is asked for again, and a few downloads a day are allowed). It is a ZIP file: your account and settings, everything you wrote, your photos, and what Howdy shows you (cards on your Fence, Whispers in your threads, Tributes on your Porch). Other people appear only by call sign and name, and only if Howdy would show them to you that day; it never includes anyone else's email or private choices, who gave you which Mark, or the words of a sealed Time Capsule. You can also write to us for a copy.
+- **Deletion:** to delete your account, yourself, in Settings (or from the sign-in page if your account is suspended). It is closed at once: you are signed out everywhere and your profile disappears. For 14 days you can still keep it by signing in; after that it is deleted for good, with your profile, posts, replies, messages, friends, testimonials, badges, groups you own (unless you have a Deputy there, who then becomes its owner) and your photo, except for the records described in [How long we keep things](#how-long-we-keep-things). We email you when it closes and when it is deleted. Your username is kept from anyone else for 90 days (we store only a scrambled form of it, not the name), so nobody can take it straight away to pretend to be you.
+- **Export:** download a copy yourself, at once, with "Download my data" in Settings (your password is asked for again, and a few downloads a day are allowed). It is a ZIP file: your account and settings, everything you wrote, your photos, and what Howdy shows you (posts on your wall, messages in your threads, testimonials on your profile). Other people appear only by username and name, and only if Howdy would show them to you that day; it never includes anyone else's email or private choices, who gave you which badge, or the words of a sealed Time Capsule. You can also write to us for a copy.
 - **Withdrawing consent:** you may withdraw your consent at any time by deleting your account. This does not affect anything done before.
 - **Nominating someone:** you may name another person to exercise these rights for you if you die or become unable to.
 

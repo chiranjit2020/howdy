@@ -4,12 +4,12 @@ import { Badge, type Tone } from '../primitives/badge';
 const MAP: Partial<Record<RelationshipState, { label: string; tone: Tone }>> = {
   PASSERBY: { label: 'Passerby', tone: 'neutral' },
   REQUESTED: { label: 'Requested', tone: 'info' },
-  POSSE: { label: 'Pal', tone: 'success' },
-  CLOSE_POSSE: { label: 'Close Pal', tone: 'accent' },
-  SCOUTING: { label: 'Scouting', tone: 'mystery' },
+  POSSE: { label: 'Friend', tone: 'success' },
+  CLOSE_POSSE: { label: 'Close friend', tone: 'accent' },
+  SCOUTING: { label: 'Following', tone: 'mystery' },
   MUTED: { label: 'Muted', tone: 'neutral' },
   RESTRICTED: { label: 'Restricted', tone: 'warning' },
-  BLOCKED: { label: 'Outlaw', tone: 'danger' },
+  BLOCKED: { label: 'Blocked', tone: 'danger' },
 };
 
 /** Relationship label. UNKNOWN renders nothing. Text always accompanies colour. */

@@ -9,7 +9,7 @@
  * Keep the dates honest: `updated` is when the words last changed, `effective` when this version took effect.
  */
 
-export const LEGAL_SLUGS = ['privacy', 'terms', 'campfire-rules', 'cookies'] as const;
+export const LEGAL_SLUGS = ['privacy', 'terms', 'community-guidelines', 'cookies'] as const;
 export type LegalSlug = (typeof LEGAL_SLUGS)[number];
 
 /** The documents a person must agree to (at Stake a Claim, and again when their `acceptVersion` moves). */
@@ -36,38 +36,38 @@ export const LEGAL_DOCS: Record<LegalSlug, LegalDoc> = {
     short: 'Privacy',
     description:
       'What Howdy collects, why, how long it is kept, who can see it, and the choices and rights you have.',
-    version: '1.19.0',
+    version: '1.20.0',
     acceptVersion: '1.1.0',
-    effective: '2026-10-09',
-    updated: '2026-10-09',
+    effective: '2026-10-29',
+    updated: '2026-10-29',
   },
   terms: {
     slug: 'terms',
     title: 'Terms of Service',
     short: 'Terms',
     description: 'The agreement between you and Howdy: who may use it, what you own, and what we may do.',
-    version: '1.2.0',
+    version: '1.2.1',
     acceptVersion: '1.0.0',
-    effective: '2026-09-30',
-    updated: '2026-09-30',
+    effective: '2026-10-29',
+    updated: '2026-10-29',
   },
-  'campfire-rules': {
-    slug: 'campfire-rules',
-    title: 'Campfire Rules',
-    short: 'Campfire Rules',
+  'community-guidelines': {
+    slug: 'community-guidelines',
+    title: 'Community Guidelines',
+    short: 'Community Guidelines',
     description: 'How we look after each other on Howdy: the community guidelines, in plain words.',
-    version: '1.1.0',
-    effective: '2026-09-29',
-    updated: '2026-09-29',
+    version: '1.2.0',
+    effective: '2026-10-29',
+    updated: '2026-10-29',
   },
   cookies: {
     slug: 'cookies',
     title: 'Cookie Policy',
     short: 'Cookies',
     description: 'The two small cookies Howdy uses, what each one is for, and how to control them.',
-    version: '1.1.0',
-    effective: '2026-10-01',
-    updated: '2026-10-01',
+    version: '1.2.0',
+    effective: '2026-10-29',
+    updated: '2026-10-29',
   },
 };
 

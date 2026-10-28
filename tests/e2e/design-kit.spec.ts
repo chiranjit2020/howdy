@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { horizontalOverflow } from './helpers';
 
-const KIT = '/workshop/kit';
+const KIT = '/settings/kit';
 
 // Records every CSP violation and console error so a page that "looks fine" but is silently blocked still fails.
 async function watch(page: Page) {
@@ -64,7 +64,7 @@ test.describe('design kit (production build, real CSP)', () => {
     await dp.goto(KIT);
     expect(await bg(dp)).toBe('rgb(30, 27, 46)'); // Dusk
     // Force Daylight while the system is dark.
-    await dp.getByRole('button', { name: 'Daylight' }).click();
+    await dp.getByRole('button', { name: 'Light' }).click();
     expect(await bg(dp)).toBe('rgb(248, 245, 238)');
     await dp.reload();
     await expect(dp.locator('html')).toHaveAttribute('data-theme', 'daylight'); // server-rendered from the cookie
@@ -79,7 +79,7 @@ test.describe('design kit (production build, real CSP)', () => {
     await page.goto(KIT);
     const trigger = page.getByRole('button', { name: 'Modal', exact: true });
     await trigger.click();
-    const dialog = page.getByRole('dialog', { name: 'Tend your Porch' });
+    const dialog = page.getByRole('dialog', { name: 'Edit your profile' });
     await expect(dialog).toBeVisible();
     await expect(dialog.locator(':focus')).toHaveCount(1);
     await page.keyboard.press('Escape');
@@ -100,28 +100,26 @@ test.describe('design kit (production build, real CSP)', () => {
     await expect(trigger).toBeFocused();
   });
 
-  test('Post Card flips to its back; only the visible face exists and focus follows', async ({ page }) => {
+  test('Post flips to its back; only the visible face exists and focus follows', async ({ page }) => {
     await page.goto(KIT);
-    const card = page.getByRole('article', { name: 'Post Card from Sneha Roy' });
+    const card = page.getByRole('article', { name: 'Post from Sneha Roy' });
     await expect(card.getByText('Bringing coffee down now.')).toHaveCount(0); // back not rendered yet
     await card.getByRole('button', { name: /Flip/ }).click();
-    await expect(card.getByRole('heading', { name: 'Scribbles' })).toBeVisible();
+    await expect(card.getByRole('heading', { name: 'Replies' })).toBeVisible();
     await expect(card.getByText('Bringing coffee down now.')).toBeVisible();
-    await expect(card.getByRole('button', { name: 'Back to card' })).toBeFocused();
+    await expect(card.getByRole('button', { name: 'Back to post' })).toBeFocused();
     // The flip is a real, named animation on the newly shown face.
     const anim = await card.locator('> div').evaluate((el) => getComputedStyle(el).animationName);
     expect(anim).toBe('flip-in');
-    await card.getByRole('button', { name: 'Back to card' }).click();
+    await card.getByRole('button', { name: 'Back to post' }).click();
     await expect(card.getByText('Are we hitting the late-night canteen run')).toBeVisible();
     await expect(card.getByRole('button', { name: /Flip/ })).toBeFocused();
   });
 
-  test('a Post Card is only as tall as its own content (no dead space from the hidden face)', async ({
-    page,
-  }) => {
+  test('a post is only as tall as its own content (no dead space from the hidden face)', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 900 });
     await page.goto(KIT);
-    const box = await page.getByRole('article', { name: 'Post Card from Rahul Das' }).boundingBox();
+    const box = await page.getByRole('article', { name: 'Post from Rahul Das' }).boundingBox();
     expect(box!.height).toBeLessThan(220);
   });
 
@@ -129,7 +127,7 @@ test.describe('design kit (production build, real CSP)', () => {
     const ctx = await browser.newContext({ reducedMotion: 'reduce' });
     const page = await ctx.newPage();
     await page.goto(KIT);
-    const card = page.getByRole('article', { name: 'Post Card from Sneha Roy' });
+    const card = page.getByRole('article', { name: 'Post from Sneha Roy' });
     await card.getByRole('button', { name: /Flip/ }).click();
     const duration = await card.locator('> div').evaluate((el) => getComputedStyle(el).animationDuration);
     expect(parseFloat(duration)).toBeLessThan(0.01);

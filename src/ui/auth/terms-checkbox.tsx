@@ -41,8 +41,8 @@ export function TermsCheckbox({
       hint={
         <>
           Please also read the{' '}
-          <a href="/campfire-rules" target="_blank" rel="noopener" className={LINK}>
-            Campfire Rules
+          <a href="/community-guidelines" target="_blank" rel="noopener" className={LINK}>
+            Community Guidelines
           </a>
           .
         </>

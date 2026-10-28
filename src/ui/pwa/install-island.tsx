@@ -77,8 +77,8 @@ export function InstallIsland() {
         expanded: (close) => (
           <div className="flex flex-col gap-3">
             <p className="text-caption text-on-island-muted">
-              Howdy opens from your home screen like any app: full screen, faster, and with Chimes on your
-              phone.
+              Howdy opens from your home screen like any app: full screen, faster, and with notifications on
+              your phone.
             </p>
             {browser === 'offer' ? (
               <Button

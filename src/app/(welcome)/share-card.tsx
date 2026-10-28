@@ -119,7 +119,7 @@ export async function shareCard(kicker: string = 'A small-circle social world'):
           borderRadius: 999,
         }}
       >
-        Stake a Claim — it’s free
+        Sign up — it’s free
       </div>
     </div>,
     {

@@ -91,7 +91,7 @@ describe('Restrict: the words are held, and the writer is never told', () => {
     expect((await waiting(as(owner))).data.cards).toEqual([]);
   });
 
-  it('only the Fence owner can approve — the writer, a bystander and a stranger all get the same 404 as a missing card', async () => {
+  it('only the wall owner can approve — the writer, a bystander and a stranger all get the same 404 as a missing card', async () => {
     const { owner, friend } = await wall();
     const bystander = await person('bystander');
     await doAct(friend.handle, 'restrict', as(owner));
@@ -175,7 +175,7 @@ describe('Review mode: honest "waiting for approval" for everyone else', () => {
     expect((await waiting(as(owner))).data.cards).toHaveLength(1);
   });
 
-  it('the queue is the owner’s alone: it has no id to change and shows nothing of other Fences', async () => {
+  it('the queue is the owner’s alone: it has no id to change and shows nothing of other walls', async () => {
     const { owner, friend } = await wall();
     await patchRanch({ fenceReview: true }, as(owner));
     await nail(owner.handle, { body: 'waiting' }, as(friend));
@@ -251,7 +251,7 @@ describe('Mute and Block change what YOU see', () => {
     expect((await fenceOf(owner.handle, as(other))).data.cards).toHaveLength(1);
   });
 
-  it('a block hides both people’s words from each other on any Fence, in either direction', async () => {
+  it('a block hides both people’s words from each other on any wall, in either direction', async () => {
     const owner = await person('owner');
     await patchRanch({ fencePosting: 'members' }, as(owner));
     const a = await person('alice');
@@ -464,7 +464,7 @@ describe('replies', () => {
     expect((await replyTo(id, { body: 'still room' }, as(other))).status).toBe(201);
   });
 
-  it('respects the Fence’s posting rule; blocked, missing and waiting-card targets are the same 404', async () => {
+  it('respects the wall’s posting rule; blocked, missing and waiting-card targets are the same 404', async () => {
     const owner = await person('owner'); // default: only the Posse may write
     const stranger = await person('stranger');
     const villain = await person('villain');
@@ -501,7 +501,7 @@ describe('replies', () => {
 });
 
 describe('taking things down', () => {
-  it('the writer and the Fence owner can remove a card (replies and Yos go with it); nobody else, and nobody can tell', async () => {
+  it('the writer and the wall owner can remove a card (replies and Yos go with it); nobody else, and nobody can tell', async () => {
     const { owner, friend } = await wall();
     const other = await person('other');
     const id = (await nail(owner.handle, { body: 'from friend' }, as(friend))).data.card!.id;
@@ -533,7 +533,7 @@ describe('taking things down', () => {
     expect((await scrape(id, as(friend))).status).toBe(200);
   });
 
-  it('replies: the writer, the Fence owner — and nobody else; the card’s writer has no power over others’ replies', async () => {
+  it('replies: the writer, the wall owner — and nobody else; the card’s writer has no power over others’ replies', async () => {
     const { owner, friend } = await wall();
     const other = await person('other');
     const id = (await nail(owner.handle, { body: 'from friend' }, as(friend))).data.card!.id;
@@ -597,7 +597,7 @@ describe('Flag trouble on a card', () => {
 });
 
 describe('lifecycle and integrity', () => {
-  it('deleting a user removes their cards, replies and Yos, and the cards other people left on their Fence', async () => {
+  it('deleting a user removes their cards, replies and Yos, and the cards other people left on their wall', async () => {
     const { owner, friend } = await wall();
     const c1 = (await nail(owner.handle, { body: 'on owner by friend' }, as(friend))).data.card!.id;
     const c2 = (await nail(friend.handle, { body: 'on friend' }, as(friend))).data.card!.id;
@@ -637,7 +637,7 @@ describe('lifecycle and integrity', () => {
     );
   });
 
-  it('nothing in any Fence response exposes emails, user ids or privacy settings', async () => {
+  it('nothing in any wall response exposes emails, user ids or privacy settings', async () => {
     const { owner, friend } = await wall();
     await patchRanch({ fenceReview: false }, as(owner));
     const id = (await nail(owner.handle, { body: 'hello' }, as(friend))).data.card!.id;

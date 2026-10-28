@@ -88,7 +88,7 @@ describe('the directory', () => {
     expect(names).not.toContain('Secret One');
   });
 
-  it('marks a Town Hall as joined once you have joined it', async () => {
+  it('marks a group as joined once you have joined it', async () => {
     const owner = await person('owner');
     const made = await create(make(), as(owner));
     const id = made.data.townHall!.id;
@@ -145,7 +145,7 @@ describe('joining and leaving', () => {
     expect(await memberCount()).toBe(2); // owner + joiner, not 3
   });
 
-  it('cannot self-join an invite-only Town Hall', async () => {
+  it('cannot self-join an invite-only group', async () => {
     const owner = await person('owner');
     const made = await create(make({ visibility: 'invite' }), as(owner));
     const stranger = await person('stranger');
@@ -195,7 +195,7 @@ describe('invites', () => {
     expect(await memberCount()).toBe(2); // owner + one invited row, no duplicates
   });
 
-  it('is rate limited per Town Hall (stricter than the per-person budget, so one hall cannot eat the whole thing)', async () => {
+  it('is rate limited per group (stricter than the per-person budget, so one hall cannot eat the whole thing)', async () => {
     const owner = await person('owner');
     const made = await create(make({ visibility: 'invite' }), as(owner));
     const id = made.data.townHall!.id;
@@ -207,7 +207,7 @@ describe('invites', () => {
     expect(status).toBe(429);
   });
 
-  it('is also rate limited per inviter, across several Town Halls (below any one hall’s own limit)', async () => {
+  it('is also rate limited per inviter, across several groups (below any one hall’s own limit)', async () => {
     const owner = await person('owner');
     const ownerId = await userId(owner.handle);
     let status = 0;
@@ -260,7 +260,7 @@ describe('invites', () => {
 });
 
 describe('the roster', () => {
-  it('only active members may read it; a non-member gets the same 404 as a missing Town Hall', async () => {
+  it('only active members may read it; a non-member gets the same 404 as a missing group', async () => {
     const owner = await person('owner');
     const made = await create(make(), as(owner));
     const id = made.data.townHall!.id;
@@ -320,7 +320,7 @@ describe('updating and deleting', () => {
 });
 
 describe('"mine"', () => {
-  it('lists every Town Hall I belong to, whatever its visibility, and nothing I do not belong to', async () => {
+  it('lists every group I belong to, whatever its visibility, and nothing I do not belong to', async () => {
     const owner = await person('owner');
     const open = await create(make({ name: 'Open', visibility: 'open' }), as(owner));
     const secret = await create(make({ name: 'Secret', visibility: 'invite' }), as(owner));
@@ -336,7 +336,7 @@ describe('"mine"', () => {
   });
 });
 
-describe('Chimes', () => {
+describe('Notifications', () => {
   it('an invite rings the invitee; accepting rings the owner back; a muted inviter rings nobody', async () => {
     const owner = await person('owner');
     const made = await create(make({ visibility: 'invite' }), as(owner));
@@ -398,7 +398,7 @@ describe('database invariants', () => {
     ).rejects.toThrow(/town_hall_members_owner_active/);
   });
 
-  it('at most one owner row per Town Hall, enforced by the database itself', async () => {
+  it('at most one owner row per group, enforced by the database itself', async () => {
     const owner = await person('owner');
     const friend = await person('friend');
     const made = await create(make(), as(owner));
@@ -411,7 +411,7 @@ describe('database invariants', () => {
     ).rejects.toThrow(/town_hall_members_one_owner_idx/);
   });
 
-  it('deleting the owner deletes the Town Hall (cascade); deleting a regular member only drops their row', async () => {
+  it('deleting the owner deletes the group (cascade); deleting a regular member only drops their row', async () => {
     const owner = await person('owner');
     const made = await create(make(), as(owner));
     const id = made.data.townHall!.id;

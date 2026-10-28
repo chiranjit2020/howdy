@@ -85,7 +85,7 @@ describe('who can open a Ranch (privacy defaults and settings)', () => {
     expect((own.data.ranch as { isOwner: boolean }).isOwner).toBe(true);
   });
 
-  it('handles are matched case-insensitively', async () => {
+  it('usernames are matched case-insensitively', async () => {
     const { a, b } = await twoUsers();
     expect((await viewRanch(b.handle.toUpperCase(), { cookie: a.cookie })).status).toBe(200);
   });

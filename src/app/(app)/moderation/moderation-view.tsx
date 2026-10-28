@@ -40,10 +40,10 @@ const SUBJECT: Record<
 > = {
   person: { label: 'Account', said: '', gone: '', remove: null },
   card: {
-    label: 'Post Card',
-    said: 'The reported Post Card said:',
-    gone: 'The card has already been removed.',
-    remove: { action: 'remove_card', label: 'Remove card' },
+    label: 'Post',
+    said: 'The reported post said:',
+    gone: 'The post has already been removed.',
+    remove: { action: 'remove_card', label: 'Remove post' },
   },
   portrait: {
     label: 'Photo',
@@ -52,26 +52,26 @@ const SUBJECT: Record<
     remove: { action: 'remove_portrait', label: 'Remove photo' },
   },
   card_photo: {
-    label: 'Card photo',
+    label: 'Post photo',
     said: '',
     gone: 'The photo has since been removed.',
     remove: { action: 'remove_card_photo', label: 'Remove photo' },
   },
   whisper: {
-    label: 'Whisper',
-    said: 'The reported Whisper said:',
-    gone: 'The Whisper is gone (removed, burned, or 7 days old).',
-    remove: { action: 'remove_whisper', label: 'Remove Whisper' },
+    label: 'Message',
+    said: 'The reported message said:',
+    gone: 'The message is gone (removed, burned, or 7 days old).',
+    remove: { action: 'remove_whisper', label: 'Remove message' },
   },
   town_hall: {
-    label: 'Town Hall',
-    said: 'The reported Town Hall is called, and says:',
-    gone: 'The Town Hall has already been removed.',
-    remove: { action: 'remove_town_hall', label: 'Remove Town Hall' },
+    label: 'Group',
+    said: 'The reported group is called, and says:',
+    gone: 'The group has already been removed.',
+    remove: { action: 'remove_town_hall', label: 'Remove group' },
   },
   hall_post: {
-    label: 'Town Hall post',
-    said: 'The reported Town Hall post said:',
+    label: 'Group post',
+    said: 'The reported group post said:',
     gone: 'The post has already been removed.',
     remove: { action: 'remove_hall_post', label: 'Remove post' },
   },
@@ -492,7 +492,7 @@ function AccountLookup() {
       `/api/moderation/accounts/${encodeURIComponent(h)}`,
     );
     setFound(res.ok && res.data ? res.data.account : null);
-    if (!res.ok) setError(res.status === 404 ? 'No account with that call sign.' : res.error?.message);
+    if (!res.ok) setError(res.status === 404 ? 'No account with that username.' : res.error?.message);
   }
 
   async function lookUp(e: FormEvent) {
@@ -533,7 +533,7 @@ function AccountLookup() {
         </h2>
         <form onSubmit={lookUp} className="flex flex-wrap items-end gap-2">
           <Input
-            label="Call sign"
+            label="Username"
             value={handle}
             onChange={(e) => setHandle(e.target.value)}
             autoComplete="off"

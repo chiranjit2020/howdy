@@ -65,7 +65,7 @@ async function say(from: P, to: P, body: string, clientId = newId()) {
   return r;
 }
 
-describe('who may whisper', () => {
+describe('who may message', () => {
   it('two people in each other’s Posse can, both ways, and each sees the whole thread', async () => {
     const { a, b } = await friends();
     await say(a, b, 'hello bob');
@@ -77,7 +77,7 @@ describe('who may whisper', () => {
     expect(view.map((m) => m.seq)).toEqual([1, 2]);
   });
 
-  it('strangers, pending requests, scouting, blocks, suspended people and a made-up call sign are ALL the same 404', async () => {
+  it('strangers, pending requests, scouting, blocks, suspended people and a made-up username are ALL the same 404', async () => {
     const a = await person('alice');
     const stranger = await person('stranger');
     const asked = await person('asked');
@@ -119,7 +119,7 @@ describe('who may whisper', () => {
     expect(await bodies(a.handle, as(b))).toEqual(['before']); // the history is still there once they are Posse again
   });
 
-  it('leaving the Posse closes the thread; a person whose request is only pending cannot whisper', async () => {
+  it('leaving the Posse closes the thread; a person whose request is only pending cannot message', async () => {
     const { a, b } = await friends();
     await say(a, b, 'hi');
     await doAct(b.handle, 'leave', as(a));
@@ -136,7 +136,7 @@ describe('who may whisper', () => {
   });
 });
 
-describe('what a Whisper may contain', () => {
+describe('what a message may contain', () => {
   it('280 characters fit, 281 do not; whitespace is normalised; text is kept as text', async () => {
     const { a, b } = await friends();
     expect((await whisper(b.handle, 'a'.repeat(280), as(a))).status).toBe(201);
@@ -214,7 +214,7 @@ describe('what a Whisper may contain', () => {
     expect(await count('messages')).toBe(0);
   });
 
-  it('a malformed call sign in the URL is the same 404 and never reaches a query', async () => {
+  it('a malformed username in the URL is the same 404 and never reaches a query', async () => {
     const { a } = await friends();
     for (const h of ["x'; drop table users;--", 'a', '../etc', 'x'.repeat(200), '%00']) {
       later();
@@ -256,7 +256,7 @@ describe('numbering and safe retries', () => {
     expect(await count('messages')).toBe(2);
   });
 
-  it('ten Whispers at once get ten different, consecutive numbers with nothing lost or doubled', async () => {
+  it('ten messages at once get ten different, consecutive numbers with nothing lost or doubled', async () => {
     const { a, b } = await friends();
     setRateLimiter(NO_LIMIT); // the burst allowance is not what is under test
     const results = await Promise.all(
@@ -379,7 +379,7 @@ describe('reading, unread and the badge', () => {
     expect(await whisperBell(as(me))).toBe(0);
   });
 
-  it('marking read is refused for people I cannot whisper with (same 404), and validates its input', async () => {
+  it('marking read is refused for people I cannot message with (same 404), and validates its input', async () => {
     const { a, b } = await friends();
     const stranger = await person('stranger');
     expect((await readTo(stranger.handle, 1, as(a))).status).toBe(404);
@@ -444,7 +444,7 @@ describe('Seen (read receipts, ADR-021)', () => {
     expect(await seenBy(b.handle, a)).toBe(1);
   });
 
-  it('the setting is private: another person’s Porch never shows it', async () => {
+  it('the setting is private: another person’s profile never shows it', async () => {
     const { a, b } = await friends();
     await patchRanch({ readReceipts: false }, as(b));
     const porch = await viewRanch(b.handle, as(a));
@@ -514,7 +514,7 @@ describe('paging a thread', () => {
   });
 });
 
-describe('Burn Thread', () => {
+describe('Delete conversation', () => {
   it('either person can delete the whole thread for both, always — and the same answer for a thread that never existed', async () => {
     const { a, b } = await friends();
     const stranger = await person('stranger');
@@ -628,7 +628,7 @@ describe('Burn for me (ADR-038): a blocked or restricted burner cannot wipe the 
     expect(await count('messages')).toBe(0);
   });
 
-  it('the burner’s new Whispers still reach the other person, each side with its own numbering', async () => {
+  it('the burner’s new messages still reach the other person, each side with its own numbering', async () => {
     const { a, b } = await friends();
     await doAct(b.handle, 'restrict', as(a));
     await say(a, b, 'before');
@@ -647,7 +647,7 @@ describe('Burn for me (ADR-038): a blocked or restricted burner cannot wipe the 
 });
 
 describe('limits reveal nothing', () => {
-  it('the per-second allowance trips the same way for a blocked person, a stranger and a made-up call sign', async () => {
+  it('the per-second allowance trips the same way for a blocked person, a stranger and a made-up username', async () => {
     const a = await person('alice');
     const villain = await person('villain');
     const stranger = await person('stranger');
@@ -690,7 +690,7 @@ describe('limits reveal nothing', () => {
     expect(await count('messages')).toBe(60);
   });
 
-  it('a Whisper that is refused rings nothing and stores nothing', async () => {
+  it('a message that is refused rings nothing and stores nothing', async () => {
     const a = await person('alice');
     const stranger = await person('stranger');
     await whisper(stranger.handle, 'hi', as(a));
@@ -699,8 +699,8 @@ describe('limits reveal nothing', () => {
   });
 });
 
-describe('Chimes for Whispers', () => {
-  it('a Whisper rings the recipient once per thread (repeats re-ring, never pile up), with a link to the thread', async () => {
+describe('Notifications for messages', () => {
+  it('a message rings the recipient once per thread (repeats re-ring, never pile up), with a link to the thread', async () => {
     const { a, b } = await friends();
     await say(a, b, 'one');
     await say(a, b, 'two');
@@ -709,13 +709,13 @@ describe('Chimes for Whispers', () => {
     expect(list[0]).toMatchObject({
       type: 'whisper_received',
       text: `${a.handle} whispered to you.`,
-      href: `/whispers/${a.handle}`,
+      href: `/messages/${a.handle}`,
       unread: true,
     });
     expect(await bell(as(a))).toBe(0);
   });
 
-  it('a muted person, a restricted person and a switched-off kind ring nothing; a closed thread hides an old Chime', async () => {
+  it('a muted person, a restricted person and a switched-off kind ring nothing; a closed thread hides an old notification', async () => {
     const { a, b } = await friends();
     await doAct(b.handle, 'mute', as(a));
     await say(b, a, 'from muted');
@@ -733,7 +733,7 @@ describe('Chimes for Whispers', () => {
 });
 
 describe('retention, integrity and cleanup', () => {
-  it('deletes Whispers older than 7 days and threads left empty; keeps the rest', async () => {
+  it('deletes messages older than 7 days and threads left empty; keeps the rest', async () => {
     const { a, b } = await friends();
     const c = await person('carol');
     await posse(a, c);
@@ -777,7 +777,7 @@ describe('retention, integrity and cleanup', () => {
     ).rejects.toThrow(/conversations_pair_idx/);
   });
 
-  it('deleting a person removes their threads and every Whisper in them', async () => {
+  it('deleting a person removes their threads and every message in them', async () => {
     const { a, b } = await friends();
     await say(a, b, 'x');
     await say(b, a, 'y');

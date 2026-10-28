@@ -153,7 +153,7 @@ export async function moderatorStanding(userId: string): Promise<ModeratorStandi
 }
 
 export const STAFF_TWO_STEP_MESSAGE =
-  'Moderation needs two-step sign-in. Turn it on under Sign-in security in your Workshop.';
+  'Moderation needs two-step sign-in. Turn it on under Sign-in security in your Settings.';
 
 /**
  * Everyone else gets the same plain 404 as a page that does not exist: the moderation area is not advertised. Staff
@@ -535,7 +535,7 @@ export async function dismissReport(
 export async function removeReportedCard(moderatorId: string, reportId: string): Promise<void> {
   const row = await reportToActOn(moderatorId, reportId);
   const cardId = row.cardId;
-  if (!cardId) throw new AppError('BAD_REQUEST', { message: 'This report is not about a Post Card.' });
+  if (!cardId) throw new AppError('BAD_REQUEST', { message: 'This report is not about a post.' });
   await getDb().transaction(async (tx) => {
     await closeReport(tx, moderatorId, reportId, 'actioned');
     await tx.delete(postCards).where(eq(postCards.id, cardId));
@@ -556,8 +556,8 @@ function pointerFor(
     hall_post: row.hallPostId,
   }[subject];
   const what = {
-    whisper: 'a Whisper',
-    town_hall: 'a Town Hall',
+    whisper: 'a message',
+    town_hall: 'a group',
     portrait: 'a photo',
     card_photo: 'a photo',
     hall_post: 'a post',

@@ -180,7 +180,7 @@ async function statusOfAccount(handle: string) {
   return (await q('select status from users where handle = $1', [handle])).rows[0].status as string;
 }
 
-describe('reporting a Whisper', () => {
+describe('reporting a message', () => {
   async function thread() {
     const sender = await person('sender');
     const recipient = await person('recipient');
@@ -216,7 +216,7 @@ describe('reporting a Whisper', () => {
     expect((await reportWhisper(id, REASON, as(recipient))).status).toBe(202);
   });
 
-  it('my own Whisper, someone else’s thread and a made-up id are all the same 404; a held one only its recipient may report', async () => {
+  it('my own message, someone else’s thread and a made-up id are all the same 404; a held one only its recipient may report', async () => {
     const { sender, recipient, id, myId } = await thread();
     const outsider = await person('outsider');
     const missing = await reportWhisper('00000000-0000-4000-8000-000000000000', REASON, as(recipient));
@@ -254,7 +254,7 @@ describe('reporting a Whisper', () => {
     expect(await audit('whisper_removed')).toHaveLength(1);
   });
 
-  it('once the Whisper is gone (7-day retention) the report remains, but there is nothing to remove', async () => {
+  it('once the message is gone (7-day retention) the report remains, but there is nothing to remove', async () => {
     const { recipient, id } = await thread();
     const mod = await moderator();
     await reportWhisper(id, REASON, as(recipient));
@@ -265,7 +265,7 @@ describe('reporting a Whisper', () => {
   });
 });
 
-describe('reporting a Town Hall', () => {
+describe('reporting a group', () => {
   async function hall(visibility = 'open') {
     const owner = await person('owner');
     const r = await createTownHall({ name: 'Bad Hall', description: 'Rude things', visibility }, as(owner));
@@ -290,7 +290,7 @@ describe('reporting a Town Hall', () => {
     expect(await audit('town_hall_removed')).toHaveLength(1);
   });
 
-  it('an invite-only Town Hall I cannot see, my own, and a made-up id are all the same 404', async () => {
+  it('an invite-only group I cannot see, my own, and a made-up id are all the same 404', async () => {
     const { owner, id } = await hall('invite');
     const reporter = await person('reporter');
     const missing = await reportHall('00000000-0000-4000-8000-000000000000', REASON, as(reporter));

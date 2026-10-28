@@ -36,7 +36,7 @@ const as = (p: { cookie: string }) => ({ cookie: p.cookie });
 
 async function hall(owner: P, joiners: P[] = [], extra: Record<string, unknown> = {}): Promise<string> {
   const r = await create(
-    { name: 'Porch Talk', description: 'Chatting on the porch.', visibility: 'open', ...extra },
+    { name: 'Profile Talk', description: 'Chatting on the porch.', visibility: 'open', ...extra },
     as(owner),
   );
   expect(r.status).toBe(201);
@@ -59,7 +59,7 @@ const roleOf = async (id: string, viewer: P, handle: string) =>
   (await members(id, as(viewer))).data.members!.find((m) => m.handle === handle)?.role;
 
 describe('Deputies', () => {
-  it('only the owner appoints one; it shows on the roster, the hall and in Chimes', async () => {
+  it('only the owner appoints one; it shows on the roster, the hall and in notifications', async () => {
     const owner = await person('owner');
     const dep = await person('dep');
     const ann = await person('ann');
@@ -159,7 +159,7 @@ describe('Deputies', () => {
 });
 
 describe('ask to join', () => {
-  it('a Town Hall that needs approval: asking leaves a request every staff member hears about', async () => {
+  it('a group that needs approval: asking leaves a request every staff member hears about', async () => {
     const { owner, dep, id } = await staffed();
     await update(id, { joinRule: 'approval' }, as(owner));
     const eve = await person('eve');
@@ -187,7 +187,7 @@ describe('ask to join', () => {
     expect((await mine(as(ann))).data.townHalls!.find((t) => t.id === id)!.requestsWaiting).toBeNull();
   });
 
-  it('let in: a member at once, with a Chime', async () => {
+  it('let in: a member at once, with a notification', async () => {
     const owner = await person('owner');
     const id = await hall(owner, [], { joinRule: 'approval' });
     const eve = await person('eve');
@@ -262,7 +262,7 @@ describe('ask to join', () => {
     expect((await getOne(id, as(fred))).data.townHall!.membership).toBe('active');
   });
 
-  it('invite-only Town Halls are unaffected: nobody can ask, and a made-up id is still a 404', async () => {
+  it('invite-only groups are unaffected: nobody can ask, and a made-up id is still a 404', async () => {
     const owner = await person('owner');
     const id = await hall(owner, [], { visibility: 'invite', joinRule: 'approval' });
     const eve = await person('eve');
@@ -291,7 +291,7 @@ describe('ask to join', () => {
   });
 });
 
-describe('handing a Town Hall over', () => {
+describe('handing a group over', () => {
   it('only to a Deputy, only by the owner; the old owner becomes a Deputy', async () => {
     const { owner, dep, ann, id } = await staffed();
     expect((await memberAction(id, ann.handle, 'make_owner', as(owner))).status).toBe(400);

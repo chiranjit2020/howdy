@@ -23,7 +23,7 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
 /** Protected pages call this: unauthenticated visitors are sent to Step Inside. The check is server-side. */
 export async function requireUser(): Promise<SessionUser> {
   const user = await getCurrentUser();
-  if (!user) redirect('/step-inside');
+  if (!user) redirect('/login');
   return user;
 }
 

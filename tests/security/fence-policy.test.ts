@@ -63,7 +63,7 @@ function oracle(
 }
 
 describe('canFence matches an independent oracle over every combination', () => {
-  it('covers actors × relationships × ranch × fence × posting × review × restricted × actions', () => {
+  it('covers actors × relationships × ranch × wall × posting × review × restricted × actions', () => {
     let checked = 0;
     for (const { name, actor } of actors)
       for (const relationship of RELATIONSHIP_STATES)
@@ -84,7 +84,7 @@ describe('canFence matches an independent oracle over every combination', () => 
                 const want = oracle(actor, action, fence, relationship).allow;
                 expect(
                   got,
-                  `${name} / ${relationship} / ranch=${ranchVisibility} fence=${fenceVisibility} posting=${fencePosting} / ${action}`,
+                  `${name} / ${relationship} / ranch=${ranchVisibility} wall=${fenceVisibility} posting=${fencePosting} / ${action}`,
                 ).toBe(want);
                 checked++;
               }

@@ -40,7 +40,7 @@ async function staffed() {
   const dep = await person('dep');
   const ann = await person('ann');
   const r = await create(
-    { name: 'Porch Talk', description: 'Chatting on the porch.', visibility: 'open' },
+    { name: 'Profile Talk', description: 'Chatting on the porch.', visibility: 'open' },
     as(owner),
   );
   const id = r.data.townHall!.id as string;
@@ -93,7 +93,7 @@ describe('sealing', () => {
     ).toBe(422);
   });
 
-  it('at most 10 waiting per Town Hall', async () => {
+  it('at most 10 waiting per group', async () => {
     const { owner, dep, id } = await staffed();
     for (let i = 0; i < 5; i++) await seal(id, owner);
     for (let i = 0; i < 5; i++) await seal(id, dep);
@@ -208,7 +208,7 @@ describe('taking one back', () => {
 });
 
 describe('when things go', () => {
-  it("the writer's account or the Town Hall takes its capsules with it", async () => {
+  it("the writer's account or the group takes its capsules with it", async () => {
     const { owner, dep, id } = await staffed();
     await seal(id, dep);
     await seal(id, owner);

@@ -129,7 +129,7 @@ export function StoryViewer({
 
   const firstName = ring.person.displayName.split(' ')[0] ?? ring.person.displayName;
   const replyHref = story
-    ? `/whispers/${ring.person.handle}?draft=${encodeURIComponent(
+    ? `/messages/${ring.person.handle}?draft=${encodeURIComponent(
         `Replying to your Story${story.caption ? ` (“${story.caption}”)` : ''}: `,
       )}`
     : '#';
@@ -223,7 +223,7 @@ export function StoryViewer({
                       <>
                         <span aria-hidden="true">·</span>
                         <StarIcon className="text-metadata" />
-                        Close Pals
+                        Close friends
                       </>
                     )}
                     {items && items.length > 1 && (
@@ -402,7 +402,7 @@ export function StoryViewer({
             )}
             {!seen && (
               <li className="py-2 text-caption text-text-secondary">
-                Your Story views are off, so you do not see who viewed. Turn them on in the Workshop.
+                Your Story views are off, so you do not see who viewed. Turn them on in Settings.
               </li>
             )}
           </ViewersSheet>

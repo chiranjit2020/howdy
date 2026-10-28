@@ -39,7 +39,7 @@ async function checkPhone(page: Page) {
   expect(await horizontalOverflow(page)).toBe(0);
 }
 
-test.describe('Town Hall bans (production build, real CSP)', () => {
+test.describe('Group bans (production build, real CSP)', () => {
   test('a Deputy bans a member, who only ever sees an unanswered request; lifting lets them back', async ({
     browser,
   }) => {
@@ -48,12 +48,12 @@ test.describe('Town Hall bans (production build, real CSP)', () => {
     const dep = await person(browser, 'tbdep', PHONE);
     const eve = await person(browser, 'tbeve', PHONE);
     const problems = await watchProblems(dep.page);
-    const name = `Open Porch ${Date.now().toString(36)}`;
+    const name = `Open profile ${Date.now().toString(36)}`;
 
     // An "anyone can join" Town Hall.
-    await owner.page.goto('/town-halls');
+    await owner.page.goto('/groups');
     await pageReady(owner.page);
-    await owner.page.getByRole('button', { name: 'Start a Town Hall' }).click();
+    await owner.page.getByRole('button', { name: 'Start a group' }).click();
     await owner.page.getByLabel('Name').fill(name);
     await owner.page.getByLabel('What is it about?').fill('Anyone welcome.');
     await owner.page.getByRole('button', { name: 'Start it' }).click();

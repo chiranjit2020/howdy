@@ -51,7 +51,7 @@ const DEFAULT_MESSAGE: Record<ErrorCode, string> = {
   SECOND_STEP_REQUIRED: 'Enter the code from your authenticator app, or use a recovery code.',
   BAD_REQUEST: 'That request was not understood.',
   VALIDATION_FAILED: 'Some fields need another look.',
-  UNAUTHENTICATED: 'You need to step inside first.',
+  UNAUTHENTICATED: 'You need to log in first.',
   FORBIDDEN: 'You are not allowed to do that.',
   NOT_FOUND: 'We could not find that.',
   CONFLICT: 'That conflicts with the current state.',

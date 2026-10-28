@@ -8,7 +8,7 @@ import { AppShell } from '@/ui/shell/app-shell';
 import { axeViolations } from './setup';
 
 // The navigation marks the current page from the URL; there is no router in a unit test.
-vi.mock('next/navigation', () => ({ usePathname: () => '/workshop', useRouter: () => ({ push: () => {} }) }));
+vi.mock('next/navigation', () => ({ usePathname: () => '/settings', useRouter: () => ({ push: () => {} }) }));
 
 const XSS = '<img src=x onerror=alert(1)><script>alert(2)</script>';
 
@@ -44,7 +44,7 @@ describe('Ranch rendering treats user text as text', () => {
   });
 });
 
-describe('Avatar portrait tint', () => {
+describe('Avatar profile photo tint', () => {
   it('uses the chosen tint, with dark on-colour text, for every option', () => {
     const fills = new Set<string>();
     for (const tint of PORTRAIT_TINTS) {
@@ -75,7 +75,7 @@ describe('Avatar portrait tint', () => {
 });
 
 describe('AppShell', () => {
-  it('signed in: Home / My Porch / Pals / Workshop with the current page marked, and unread counts as text', () => {
+  it('signed in: Home / My profile / Friends / Settings with the current page marked, and unread counts as text', () => {
     render(
       <AppShell me={{ handle: 'chiru', displayName: 'Chiru' }} unread={3} unreadWhispers={2}>
         <main>page</main>
@@ -85,16 +85,19 @@ describe('AppShell', () => {
     const navs = screen.getAllByRole('navigation', { name: 'Primary' });
     expect(navs).toHaveLength(2);
     const nav = within(navs[0]!);
-    expect(nav.getByRole('link', { name: 'My Porch' })).toHaveAttribute('href', '/porch/chiru');
-    expect(nav.getByRole('link', { name: 'Pals' })).toHaveAttribute('href', '/pals');
-    expect(nav.getByRole('link', { name: 'Workshop' })).toHaveAttribute('aria-current', 'page');
+    expect(nav.getByRole('link', { name: 'My profile' })).toHaveAttribute('href', '/profile/chiru');
+    expect(nav.getByRole('link', { name: 'Friends' })).toHaveAttribute('href', '/friends');
+    expect(nav.getByRole('link', { name: 'Settings' })).toHaveAttribute('aria-current', 'page');
     expect(nav.getByRole('link', { name: 'Home' })).not.toHaveAttribute('aria-current');
     // The count is text (not only a coloured pill), and the link still starts with its label.
-    expect(nav.getByRole('link', { name: /^Chimes/ })).toHaveTextContent(/3\s*unread/);
-    expect(nav.getByRole('link', { name: /^Whispers/ })).toHaveTextContent(/2\s*unread/);
+    expect(nav.getByRole('link', { name: /^Notifications/ })).toHaveTextContent(/3\s*unread/);
+    expect(nav.getByRole('link', { name: /^Messages/ })).toHaveTextContent(/2\s*unread/);
     // The top bar: a bell that says how many are unread, and the way to your own Ranch.
-    expect(screen.getByRole('link', { name: 'Notifications, 3 unread' })).toHaveAttribute('href', '/chimes');
-    expect(screen.getByRole('link', { name: 'Your Porch' })).toHaveAttribute('href', '/porch/chiru');
+    expect(screen.getByRole('link', { name: 'Notifications, 3 unread' })).toHaveAttribute(
+      'href',
+      '/notifications',
+    );
+    expect(screen.getByRole('link', { name: 'Your profile' })).toHaveAttribute('href', '/profile/chiru');
     // Phones: the pages that are not tabs are behind "More" (CSS hides it from md up).
     expect(screen.getByRole('button', { name: 'More pages' })).toHaveAttribute('aria-haspopup', 'menu');
   });
@@ -104,9 +107,9 @@ describe('AppShell', () => {
         <main>page</main>
       </AppShell>,
     );
-    expect(screen.getByRole('link', { name: /^Step Inside/ })).toHaveAttribute('href', '/step-inside');
-    expect(screen.getByRole('link', { name: /^Stake a Claim/ })).toHaveAttribute('href', '/stake-a-claim');
-    expect(screen.queryByRole('link', { name: 'My Porch' })).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /^Log in/ })).toHaveAttribute('href', '/login');
+    expect(screen.getByRole('link', { name: /^Sign up/ })).toHaveAttribute('href', '/signup');
+    expect(screen.queryByRole('link', { name: 'My profile' })).not.toBeInTheDocument();
     expect(screen.queryByRole('navigation', { name: 'Primary' })).not.toBeInTheDocument();
   });
   it('signed out on the sign-in pages: just the logo (the page itself is the way in)', () => {
@@ -118,6 +121,6 @@ describe('AppShell', () => {
     const bar = screen.getByRole('banner');
     expect(within(bar).getAllByRole('link')).toHaveLength(1);
     expect(within(bar).getByRole('link', { name: 'Howdy' })).toHaveAttribute('href', '/gate');
-    expect(screen.queryByRole('link', { name: /^Step Inside/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /^Log in/ })).not.toBeInTheDocument();
   });
 });

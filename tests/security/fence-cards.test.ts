@@ -25,7 +25,7 @@ async function posse(a: P, b: P) {
 }
 
 describe('who may nail a card', () => {
-  it('by default the Fence is readable by members but only the Posse may write on it', async () => {
+  it('by default the wall is readable by members but only the Posse may write on it', async () => {
     const owner = await person('owner');
     const friend = await person('friend');
     const stranger = await person('stranger');
@@ -46,7 +46,7 @@ describe('who may nail a card', () => {
     expect(await cardCount()).toBe(1);
   });
 
-  it('the owner can always write on their own Fence, even when nobody else may', async () => {
+  it('the owner can always write on their own wall, even when nobody else may', async () => {
     const owner = await person('owner');
     await patchRanch({ fencePosting: 'nobody' }, as(owner));
     expect((await nail(owner.handle, { body: 'Mine' }, as(owner))).status).toBe(201);
@@ -65,7 +65,7 @@ describe('who may nail a card', () => {
     expect(await cardCount()).toBe(1);
   });
 
-  it('a Fence never opens wider than its Ranch: a posse-only Ranch is 404 even with an "everyone" Fence', async () => {
+  it('a wall never opens wider than its Ranch: a posse-only Ranch is 404 even with an "everyone" Wall', async () => {
     const owner = await person('owner');
     const stranger = await person('stranger');
     await patchRanch(
@@ -77,7 +77,7 @@ describe('who may nail a card', () => {
     expect((await nail(owner.handle, { body: 'Let me in' }, as(stranger))).status).toBe(404);
   });
 
-  it('an "everyone" Fence can be read signed-out, read-only', async () => {
+  it('an "everyone" Wall can be read signed-out, read-only', async () => {
     const owner = await person('owner');
     await patchRanch({ ranchVisibility: 'everyone', fenceVisibility: 'everyone' }, as(owner));
     await nail(owner.handle, { body: 'Public words' }, as(owner));
@@ -89,8 +89,8 @@ describe('who may nail a card', () => {
   });
 });
 
-describe('hidden ≡ missing (a Fence you cannot read is never confirmed)', () => {
-  it('a members-only Fence looks the same signed out as a Fence that does not exist', async () => {
+describe('hidden ≡ missing (a wall you cannot read is never confirmed)', () => {
+  it('a members-only wall looks the same signed out as a wall that does not exist', async () => {
     const owner = await person('owner');
     const real = await fenceOf(owner.handle);
     const ghost = await fenceOf('nobody_here');
@@ -98,7 +98,7 @@ describe('hidden ≡ missing (a Fence you cannot read is never confirmed)', () =
     expect(stable(real.data)).toBe(stable(ghost.data));
   });
 
-  it('a blocked person gets exactly the answer a missing Fence gives — for reading and for writing', async () => {
+  it('a blocked person gets exactly the answer a missing wall gives — for reading and for writing', async () => {
     const owner = await person('owner');
     const villain = await person('villain');
     await patchRanch(
@@ -119,7 +119,7 @@ describe('hidden ≡ missing (a Fence you cannot read is never confirmed)', () =
     expect(await cardCount()).toBe(0);
   });
 
-  it('the block also hides the blocked person’s Fence from the blocker', async () => {
+  it('the block also hides the blocked person’s wall from the blocker', async () => {
     const owner = await person('owner');
     const villain = await person('villain');
     await patchRanch({ ranchVisibility: 'everyone', fenceVisibility: 'everyone' }, as(villain));
@@ -128,7 +128,7 @@ describe('hidden ≡ missing (a Fence you cannot read is never confirmed)', () =
     expect((await fenceOf(villain.handle, as(owner))).status).toBe(404);
   });
 
-  it('a suspended owner’s Fence disappears; a suspended writer cannot write', async () => {
+  it('a suspended owner’s wall disappears; a suspended writer cannot write', async () => {
     const owner = await person('owner');
     const friend = await person('friend');
     await posse(owner, friend);
@@ -152,7 +152,7 @@ describe('hidden ≡ missing (a Fence you cannot read is never confirmed)', () =
 });
 
 describe('rate limits', () => {
-  it('3 cards per hour per person per Fence (the source’s rule) — a 429 with Retry-After, and the wall is unharmed', async () => {
+  it('3 cards per hour per person per wall (the source’s rule) — a 429 with Retry-After, and the wall is unharmed', async () => {
     const owner = await person('owner');
     const friend = await person('friend');
     await posse(owner, friend);
@@ -165,7 +165,7 @@ describe('rate limits', () => {
     expect(await cardCount()).toBe(RATE.postPerFence.limit);
   });
 
-  it('a different Fence has its own allowance', async () => {
+  it('a different wall has its own allowance', async () => {
     const a = await person('alice');
     const b = await person('bob');
     const c = await person('carol');
@@ -266,7 +266,7 @@ describe('input is validated and the server decides everything else', () => {
     expect(r.data.card!.body).toBe('<img src=x onerror=alert(1)>');
   });
 
-  it('extra fields cannot choose the writer, the Fence, the status or the time (no mass assignment)', async () => {
+  it('extra fields cannot choose the writer, the wall, the status or the time (no mass assignment)', async () => {
     const { owner, writer } = await setup();
     const other = await person('other');
     const otherId = await userId(other.handle);
@@ -337,7 +337,7 @@ describe('newest first, and paging never repeats or skips', () => {
     expect(small).toEqual(stamps);
   });
 
-  it('the last page has no cursor; an empty Fence gives an empty page', async () => {
+  it('the last page has no cursor; an empty wall gives an empty page', async () => {
     const owner = await person('owner');
     const empty = await fenceOf(owner.handle, as(owner));
     expect(empty.data).toMatchObject({ cards: [], nextCursor: null, isOwner: true });
@@ -366,7 +366,7 @@ describe('newest first, and paging never repeats or skips', () => {
     }
   });
 
-  it('a cursor grants nothing: using one from another Fence returns only this Fence’s cards, and a hidden Fence stays 404', async () => {
+  it('a cursor grants nothing: using one from another wall returns only this wall’s cards, and a hidden wall stays 404', async () => {
     const a = await person('alice');
     const b = await person('bob');
     for (let i = 0; i < 3; i++) await nail(a.handle, { body: `a${i}` }, as(a));
@@ -381,7 +381,7 @@ describe('newest first, and paging never repeats or skips', () => {
     expect((await fenceOf(a.handle, as(villain), `?cursor=${cursorFromA}`)).status).toBe(404);
   });
 
-  it('cards from many different owners never leak into one Fence', async () => {
+  it('cards from many different owners never leak into one wall', async () => {
     const a = await person('alice');
     const b = await person('bob');
     await nail(a.handle, { body: 'on alice' }, as(a));

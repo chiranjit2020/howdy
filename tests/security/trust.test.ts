@@ -40,7 +40,7 @@ const seen = (id: string, daysAgo = 0) =>
     [id, randomBytes(32), daysAgo],
   );
 const portrait = (id: string) =>
-  q("insert into media (owner_id, kind, status, object_key) values ($1, 'portrait', 'ready', $2)", [
+  q("insert into media (owner_id, kind, status, object_key) values ($1, 'profile photo', 'ready', $2)", [
     id,
     `portraits/${randomUUID()}.webp`,
   ]);
@@ -126,7 +126,7 @@ describe('Marks that do not count', () => {
     expect(await failing(p.id)).toContain('markGivers');
   });
 
-  it('a Mark from a Town Hall neighbour (not a Pal) does not count (ADR-044)', async () => {
+  it('a Mark from a group neighbour (not a friend) does not count (ADR-044)', async () => {
     const p = await qualified();
     await q('update marks set from_pal = false where rater_id = $1', [p.givers.at(-1)]);
     expect(await failing(p.id)).toEqual(['markGivers']);
@@ -163,7 +163,7 @@ describe('standing and activity', () => {
     expect(await failing(p.id)).toEqual([]);
   });
 
-  it('a quiet spell loses it; losing a Pal loses it', async () => {
+  it('a quiet spell loses it; losing a friend loses it', async () => {
     const p = await qualified();
     await q("update sessions set last_seen_at = now() - ($2 || ' days')::interval where user_id = $1", [
       p.id,
@@ -175,7 +175,7 @@ describe('standing and activity', () => {
     expect(await failing(p.id)).toEqual(['pals']);
   });
 
-  it('a Pal whose account is no longer active does not count as a Pal', async () => {
+  it('a friend whose account is no longer active does not count as a friend', async () => {
     const p = await qualified();
     await q("update users set status = 'suspended' where id = $1", [p.givers[0]]);
     expect(await failing(p.id)).toContain('pals');
@@ -201,7 +201,7 @@ describe('the team account', () => {
 });
 
 describe('what other people see', () => {
-  it('the Porch says `trusted` once earned, and nothing about why', async () => {
+  it('the profile says `trusted` once earned, and nothing about why', async () => {
     const owner = await signedInUser(kit, uniqueUser('owner'));
     await patchRanch({ ranchVisibility: 'everyone' }, { cookie: owner.cookie });
     const id = await userId(owner.handle);

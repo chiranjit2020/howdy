@@ -47,10 +47,10 @@ async function untilUnread(p: Person, n: number) {
 }
 
 const bellLink = (page: Page) =>
-  page.getByRole('navigation', { name: 'Primary' }).getByRole('link', { name: /^Chimes/ });
+  page.getByRole('navigation', { name: 'Primary' }).getByRole('link', { name: /^Notifications/ });
 
-test.describe('Chimes in a real browser (production build, real CSP)', () => {
-  test('ring, badge, open, mark read, mute hides — and Chime settings switch a kind off', async ({
+test.describe('Notifications in a real browser (production build, real CSP)', () => {
+  test('ring, badge, open, mark read, mute hides — and notification settings switch a kind off', async ({
     browser,
   }) => {
     const a = await person(browser, 'bellowner');
@@ -61,21 +61,21 @@ test.describe('Chimes in a real browser (production build, real CSP)', () => {
     expect((await api(b, `/api/relationships/${a.handle}`, { action: 'request' })).ok()).toBe(true);
     await untilUnread(a, 1);
     await a.page.goto('/home');
-    await expect(bellLink(a.page)).toHaveAccessibleName(/^Chimes\s*,\s*1 unread$/);
+    await expect(bellLink(a.page)).toHaveAccessibleName(/^Notifications\s*,\s*1 unread$/);
     await b.page.goto('/home'); // Bob never rings his own bell
-    await expect(bellLink(b.page)).toHaveAccessibleName('Chimes');
+    await expect(bellLink(b.page)).toHaveAccessibleName('Notifications');
 
     // She opens Chimes (which reads it), still sees it marked new for this visit, and following it goes to the Pals page.
     await bellLink(a.page).click();
-    await expect(a.page.getByRole('heading', { name: 'Chimes', level: 1 })).toBeVisible();
-    const item = a.page.getByRole('link', { name: /wants to be your Pal/ });
+    await expect(a.page.getByRole('heading', { name: 'Notifications', level: 1 })).toBeVisible();
+    const item = a.page.getByRole('link', { name: /wants to be your friend/ });
     await expect(item).toContainText('Unread');
     await item.click();
-    await expect(a.page).toHaveURL(/\/pals$/);
+    await expect(a.page).toHaveURL(/\/friends$/);
     await untilUnread(a, 0);
-    await a.page.goto('/chimes');
+    await a.page.goto('/notifications');
     await expect(a.page.getByRole('status')).toHaveText('All caught up');
-    await expect(bellLink(a.page)).toHaveAccessibleName('Chimes');
+    await expect(bellLink(a.page)).toHaveAccessibleName('Notifications');
 
     // Alice accepts (Bob is told), Bob nails a card and gives a Yo; opening Chimes reads them and clears the bell.
     expect((await api(a, `/api/relationships/${b.handle}`, { action: 'accept' })).ok()).toBe(true);
@@ -86,11 +86,11 @@ test.describe('Chimes in a real browser (production build, real CSP)', () => {
     const cardId = ((await ownCard.json()) as { card: { id: string } }).card.id;
     expect((await api(b, `/api/cards/${cardId}/yo`, { on: true })).ok()).toBe(true);
     await untilUnread(a, 2);
-    await a.page.goto('/chimes');
-    await expect(a.page.getByText(`${b.handle} nailed a card to your Fence.`)).toBeVisible();
-    await expect(a.page.getByText(`${b.handle} reacted to your card.`)).toBeVisible();
+    await a.page.goto('/notifications');
+    await expect(a.page.getByText(`${b.handle} posted on your wall.`)).toBeVisible();
+    await expect(a.page.getByText(`${b.handle} reacted to your post.`)).toBeVisible();
     await expect(a.page.getByRole('status')).toHaveText('2 new');
-    await expect(bellLink(a.page)).toHaveAccessibleName('Chimes'); // cleared without a reload
+    await expect(bellLink(a.page)).toHaveAccessibleName('Notifications'); // cleared without a reload
     await untilUnread(a, 0);
     await a.page.reload();
     await expect(a.page.getByRole('status')).toHaveText('All caught up');
@@ -102,17 +102,17 @@ test.describe('Chimes in a real browser (production build, real CSP)', () => {
     expect((await api(a, `/api/relationships/${b.handle}`, { action: 'unmute' })).ok()).toBe(true);
 
     // Chime settings: switching Reactions off means a new Yo does not ring.
-    await a.page.goto('/workshop');
+    await a.page.goto('/settings');
     await a.page.getByRole('switch', { name: /^Reactions When/ }).click();
-    await expect(a.page.getByRole('status').filter({ hasText: 'Chime settings saved' })).toBeVisible();
+    await expect(a.page.getByRole('status').filter({ hasText: 'Notification settings saved' })).toBeVisible();
     const second = await api(a, `/api/porch/${a.handle}/fence`, { body: 'Second card' });
     const id2 = ((await second.json()) as { card: { id: string } }).card.id;
     expect((await api(b, `/api/cards/${id2}/yo`, { on: true })).ok()).toBe(true);
     await api(b, `/api/cards/${id2}/replies`, { body: 'a reply' }); // replies are still on
     await untilUnread(a, 1); // the earlier ones were marked read; only this reply is new — this Yo did not ring
-    await a.page.goto('/chimes');
-    await expect(a.page.getByText('scribbled a reply on your card')).toBeVisible();
-    await expect(a.page.getByText(`${b.handle} reacted to your card.`)).toHaveCount(1); // only the earlier one
+    await a.page.goto('/notifications');
+    await expect(a.page.getByText('replied to your post')).toBeVisible();
+    await expect(a.page.getByText(`${b.handle} reacted to your post.`)).toHaveCount(1); // only the earlier one
 
     expect(problems).toEqual([]);
     await Promise.all([a.ctx.close(), b.ctx.close()]);
@@ -129,8 +129,8 @@ test.describe('Chimes in a real browser (production build, real CSP)', () => {
     const posted = await api(b, `/api/porch/${a.handle}/fence`, { body: 'Quiet words' });
     const id = ((await posted.json()) as { card: { id: string } }).card.id;
     await untilUnread(a, 2); // the accept-era Posse chime is Alice's? No: Bob asked, Alice accepted -> Bob rang; Alice got the ask + this
-    await a.page.goto('/chimes');
-    await expect(a.page.getByText(`A card from ${b.handle} is waiting for your approval.`)).toBeVisible();
+    await a.page.goto('/notifications');
+    await expect(a.page.getByText(`A post from ${b.handle} is waiting for your approval.`)).toBeVisible();
     const before = ((await (await b.page.request.get('/api/me/chimes/unread')).json()) as { unread: number })
       .unread;
     expect((await api(a, `/api/cards/${id}/approve`, {})).ok()).toBe(true);
@@ -142,7 +142,7 @@ test.describe('Chimes in a real browser (production build, real CSP)', () => {
   });
 });
 
-test.describe('Chimes: accessibility and layout in a real browser', () => {
+test.describe('Notifications: accessibility and layout in a real browser', () => {
   async function seed(browser: Browser, opts: Parameters<typeof newContext>[1]) {
     const a = await person(browser, `ca${Date.now().toString(36).slice(-4)}`, opts);
     const b = await person(browser, `cb${Date.now().toString(36).slice(-4)}`, opts);
@@ -165,7 +165,7 @@ test.describe('Chimes: accessibility and layout in a real browser', () => {
     test(`axe finds no violations, including real colour contrast (${scheme})`, async ({ browser }) => {
       const { a, b } = await seed(browser, { colorScheme: scheme, bypassCSP: true, reducedMotion: 'reduce' });
       const source = axeSource();
-      for (const path of ['/chimes', '/workshop', '/home']) {
+      for (const path of ['/notifications', '/settings', '/home']) {
         await a.page.goto(path);
         await pageReady(a.page);
         await a.page.evaluate(() => document.fonts.ready);
@@ -201,7 +201,7 @@ test.describe('Chimes: accessibility and layout in a real browser', () => {
       isMobile: true,
       viewport: { width: 320, height: 700 },
     });
-    for (const path of ['/chimes', '/workshop', '/home']) {
+    for (const path of ['/notifications', '/settings', '/home']) {
       await a.page.goto(path);
       await pageReady(a.page);
       expect(await horizontalOverflow(a.page), `${path} overflow`).toBeLessThanOrEqual(0);

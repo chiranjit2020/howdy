@@ -22,7 +22,7 @@ const fenceText = (max: number, emptyMessage: string, what: string) =>
         .refine((s) => !hasLink(s), `Links are not allowed in ${what.toLowerCase()}.`),
     );
 
-export const cardBodySchema = fenceText(LIMITS.POST_CARD_MAX, 'Write something to nail up.', 'A Post Card');
+export const cardBodySchema = fenceText(LIMITS.POST_CARD_MAX, 'Write something to post.', 'A post');
 export const replyBodySchema = fenceText(LIMITS.REPLY_MAX, 'Write a reply.', 'A reply');
 
 /** A card's words, and optionally one finished photo of mine (ADR-031) to nail with them. */

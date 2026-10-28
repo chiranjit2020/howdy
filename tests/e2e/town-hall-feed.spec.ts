@@ -41,7 +41,7 @@ const postFrom = (page: Page, handle: string) => page.getByRole('article', { nam
 
 /** Reach the Town Hall the way a person would: Town Halls → Mine → Open. */
 async function openByTapping(p: Person, name: string, id: string) {
-  await p.page.goto('/town-halls');
+  await p.page.goto('/groups');
   await pageReady(p.page);
   await p.page.getByRole('tab', { name: /^Mine/ }).tap();
   await p.page
@@ -50,11 +50,11 @@ async function openByTapping(p: Person, name: string, id: string) {
     .getByRole('link')
     .first()
     .tap();
-  await expect(p.page).toHaveURL(new RegExp(`/town-halls/${id}$`));
+  await expect(p.page).toHaveURL(new RegExp(`/groups/${id}$`));
   await pageReady(p.page);
 }
 
-test.describe('Town Hall feed (production build, real CSP, phone)', () => {
+test.describe('Group feed (production build, real CSP, phone)', () => {
   test('a member posts; another reacts and replies; the writer is Chimed; outsiders see no feed', async ({
     browser,
   }) => {
@@ -63,7 +63,7 @@ test.describe('Town Hall feed (production build, real CSP, phone)', () => {
     const outsider = await person(browser, 'feedout');
     const problems = await watchProblems(ann.page);
 
-    const name = `Porch Talk ${Date.now().toString(36)}`;
+    const name = `Profile Talk ${Date.now().toString(36)}`;
     const made = await api(owner, '/api/town-halls', {
       name,
       description: 'Chatting on the porch.',
@@ -76,7 +76,7 @@ test.describe('Town Hall feed (production build, real CSP, phone)', () => {
     // Ann posts from the Town Hall's page.
     await openByTapping(ann, name, id);
     await expect(ann.page.getByRole('heading', { name: 'The feed' })).toBeVisible();
-    await ann.page.getByLabel('Post to this Town Hall').fill('Who is up for chai on Sunday?');
+    await ann.page.getByLabel('Post to this group').fill('Who is up for chai on Sunday?');
     await ann.page.getByRole('button', { name: 'Post', exact: true }).tap();
     await expect(postFrom(ann.page, ann.handle)).toContainText('Who is up for chai on Sunday?');
 
@@ -84,23 +84,23 @@ test.describe('Town Hall feed (production build, real CSP, phone)', () => {
     await openByTapping(owner, name, id);
     const theirPost = postFrom(owner.page, ann.handle);
     await expect(theirPost).toContainText('Who is up for chai on Sunday?');
-    await theirPost.getByRole('button', { name: 'Yo', exact: true }).tap();
-    await expect(theirPost.getByRole('button', { name: 'Yo', exact: true })).toHaveAttribute(
+    await theirPost.getByRole('button', { name: 'Wave', exact: true }).tap();
+    await expect(theirPost.getByRole('button', { name: 'Wave', exact: true })).toHaveAttribute(
       'aria-pressed',
       'true',
     );
     await theirPost.getByRole('button', { name: /Flip/ }).tap();
-    await owner.page.getByLabel('Scribble a reply').fill('Count me in!');
-    await owner.page.getByRole('button', { name: 'Scribble', exact: true }).tap();
+    await owner.page.getByLabel('Write a reply').fill('Count me in!');
+    await owner.page.getByRole('button', { name: 'Reply', exact: true }).tap();
     await expect(owner.page.getByText('Count me in!')).toBeVisible();
 
     // Ann's bell has both, and they lead back to the Town Hall.
-    await ann.page.goto('/chimes');
+    await ann.page.goto('/notifications');
     await pageReady(ann.page);
-    await expect(ann.page.getByText(`${owner.handle} replied to your post in a Town Hall.`)).toBeVisible();
-    await expect(ann.page.getByText(`${owner.handle} reacted to your post in a Town Hall.`)).toBeVisible();
-    await ann.page.getByText(`${owner.handle} replied to your post in a Town Hall.`).tap();
-    await expect(ann.page).toHaveURL(new RegExp(`/town-halls/${id}$`));
+    await expect(ann.page.getByText(`${owner.handle} replied to your post in a group.`)).toBeVisible();
+    await expect(ann.page.getByText(`${owner.handle} reacted to your post in a group.`)).toBeVisible();
+    await ann.page.getByText(`${owner.handle} replied to your post in a group.`).tap();
+    await expect(ann.page).toHaveURL(new RegExp(`/groups/${id}$`));
     await pageReady(ann.page);
     await expect(postFrom(ann.page, ann.handle)).toBeVisible();
 
@@ -110,7 +110,7 @@ test.describe('Town Hall feed (production build, real CSP, phone)', () => {
     expect(await horizontalOverflow(ann.page)).toBe(0);
 
     // Someone who has not joined sees the Town Hall but no feed, and the feed's address answers 404.
-    await outsider.page.goto(`/town-halls/${id}`);
+    await outsider.page.goto(`/groups/${id}`);
     await pageReady(outsider.page);
     await expect(outsider.page.getByRole('button', { name: 'Join' })).toBeVisible();
     await expect(outsider.page.getByRole('heading', { name: 'The feed' })).toHaveCount(0);

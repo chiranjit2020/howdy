@@ -59,7 +59,7 @@ describe('Flag trouble', () => {
     expect(await rows()).toHaveLength(2);
   });
 
-  it('handles are case-insensitive; an unknown, malformed or suspended target is a plain 404', async () => {
+  it('usernames are case-insensitive; an unknown, malformed or suspended target is a plain 404', async () => {
     const a = await person('reporter');
     const b = await person('reported');
     expect((await report({ handle: b.handle.toUpperCase(), reason: 'spam' }, as(a))).status).toBe(202);

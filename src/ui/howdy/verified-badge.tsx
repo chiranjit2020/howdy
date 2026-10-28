@@ -20,7 +20,10 @@ export function VerifiedBadge({ className }: { className?: string }) {
  */
 export function TrustedBadge({ className }: { className?: string }) {
   return (
-    <span title="Trusted · earned from Pals" className={cn('inline-flex shrink-0 align-[-0.2em]', className)}>
+    <span
+      title="Trusted · earned from friends"
+      className={cn('inline-flex shrink-0 align-[-0.2em]', className)}
+    >
       <svg
         viewBox="0 0 24 24"
         width="1.15em"

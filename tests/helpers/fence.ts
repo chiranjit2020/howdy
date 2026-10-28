@@ -114,7 +114,7 @@ export async function allBodies(handle: string, opts: Opts = {}, limit = 20): Pr
   let cursor: string | null | undefined;
   for (let i = 0; i < 100; i++) {
     const r = await fenceOf(handle, opts, `?limit=${limit}${cursor ? `&cursor=${cursor}` : ''}`);
-    if (r.status !== 200) throw new Error(`fence read failed: ${r.text}`);
+    if (r.status !== 200) throw new Error(`wall read failed: ${r.text}`);
     out.push(...r.data.cards!.map((c) => c.body));
     cursor = r.data.nextCursor;
     if (!cursor) return out;

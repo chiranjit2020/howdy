@@ -162,7 +162,7 @@ export async function giveMark(raterId: string, handle: string, kind: MarkKind):
   if (!acc) throw new AppError('NOT_FOUND');
   const relationship = acc.relationship.relationship;
   if (!can(actor, 'mark:give', acc.ranch, await giveContext(raterId, targetId, relationship)).allow) {
-    throw new AppError('FORBIDDEN', { message: 'Only Pals and Town Hall neighbours can give a Mark.' });
+    throw new AppError('FORBIDDEN', { message: 'Only friends and group neighbours can give a badge.' });
   }
   // Recorded so the Trusted tick can count Pals' Marks only (ADR-044).
   const fromPal = inPosse(relationship);
@@ -183,7 +183,9 @@ export async function giveMark(raterId: string, handle: string, kind: MarkKind):
       returning id`);
   });
   if (inserted.rows.length === 0) {
-    throw new AppError('CONFLICT', { message: 'You can Mark this person again once the cooldown is over.' });
+    throw new AppError('CONFLICT', {
+      message: 'You can give this person a badge again once the cooldown is over.',
+    });
   }
   emit({ type: 'mark.given', raterId, targetId });
   return { kind };

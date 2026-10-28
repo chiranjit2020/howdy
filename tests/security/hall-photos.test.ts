@@ -64,7 +64,7 @@ async function seePhoto(postId: string, viewer: { cookie?: string } = {}) {
 /** A Town Hall with an owner and the given members. */
 async function hall(owner: P, members: P[] = [], visibility = 'open'): Promise<string> {
   const r = await create(
-    { name: 'Porch Talk', description: 'Chatting on the porch.', visibility },
+    { name: 'Profile Talk', description: 'Chatting on the porch.', visibility },
     as(owner),
   );
   const id = r.data.townHall!.id as string;
@@ -108,8 +108,8 @@ describe('posting a photo', () => {
     expect((await post(id, { body: 'Again', photoId: annPhoto }, as(ann))).status).toBe(422);
     // A photo already nailed to a Post Card cannot also go in a Town Hall — and the other way round.
     const cardPhoto = await photoOf(ann);
-    expect((await nail(ann.handle, { body: 'On my Fence', photoId: cardPhoto }, as(ann))).status).toBe(201);
-    expect((await post(id, { body: 'Card photo', photoId: cardPhoto }, as(ann))).status).toBe(422);
+    expect((await nail(ann.handle, { body: 'On my wall', photoId: cardPhoto }, as(ann))).status).toBe(201);
+    expect((await post(id, { body: 'Post photo', photoId: cardPhoto }, as(ann))).status).toBe(422);
     const hallPhoto = (await postWithPhoto(id, ann, 'Hall first')).photo!.url.split('v=')[1]!;
     expect((await nail(ann.handle, { body: 'Reuse', photoId: hallPhoto }, as(ann))).status).toBe(422);
     expect(await count()).toBe(2);
@@ -209,7 +209,7 @@ describe('it goes with its post', () => {
 });
 
 describe('moderators', () => {
-  it('see the photo on a reported Town Hall post; nobody else can open it that way', async () => {
+  it('see the photo on a reported group post; nobody else can open it that way', async () => {
     const owner = await person('owner');
     const ann = await person('ann');
     const mod = await person('mod');

@@ -28,7 +28,7 @@ export default async function CapsulesPage() {
       <div className="flex flex-col gap-1">
         <h1 className="text-heading text-text-primary">Time Capsules</h1>
         <p className="text-caption text-text-secondary">
-          Seal a few words for your future self or one of your Pals. Nobody can read them — not even you —
+          Seal a few words for your future self or one of your friends. Nobody can read them — not even you —
           until the day they open.
         </p>
       </div>

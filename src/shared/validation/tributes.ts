@@ -15,10 +15,10 @@ export const tributeBodySchema = z
   .pipe(
     z
       .string()
-      .min(1, 'Write something to leave as a Tribute.')
+      .min(1, 'Write something to leave as a testimonial.')
       .max(LIMITS.TRIBUTE_MAX, `At most ${LIMITS.TRIBUTE_MAX} characters.`)
-      .refine((s) => !hasDisguisingChars(s), 'A Tribute contains characters that are not allowed.')
-      .refine((s) => !hasLink(s), 'Links are not allowed in a Tribute.'),
+      .refine((s) => !hasDisguisingChars(s), 'A testimonial contains characters that are not allowed.')
+      .refine((s) => !hasLink(s), 'Links are not allowed in a testimonial.'),
   );
 
 export const giveTributeSchema = z.object({ body: tributeBodySchema });

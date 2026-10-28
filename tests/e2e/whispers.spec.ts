@@ -40,12 +40,12 @@ const status = (page: Page) =>
     .filter({ hasText: /Live|Connecting|Reconnecting|Signed out|within a few seconds/ });
 
 async function say(page: Page, text: string) {
-  await page.getByLabel(/^Whisper to /).fill(text);
-  await page.getByLabel(/^Whisper to /).press('Enter');
+  await page.getByLabel(/^Message to /).fill(text);
+  await page.getByLabel(/^Message to /).press('Enter');
 }
 
-test.describe('Whispers in a real browser (production build, real CSP, real WebSocket process)', () => {
-  test('start from a Ranch, talk live in both directions, read state stays private, Burn Thread', async ({
+test.describe('Messages in a real browser (production build, real CSP, real WebSocket process)', () => {
+  test('start from a Ranch, talk live in both directions, read state stays private, Delete conversation', async ({
     browser,
   }) => {
     const a = await person(browser, 'wa');
@@ -54,12 +54,12 @@ test.describe('Whispers in a real browser (production build, real CSP, real WebS
     const problems = await watchProblems(a.page);
 
     // Alice opens Bob's Ranch and starts a Whisper from the button there.
-    await a.page.goto(`/porch/${b.handle}`);
-    await a.page.getByRole('link', { name: 'Whisper', exact: true }).click();
-    await expect(a.page).toHaveURL(new RegExp(`/whispers/${b.handle}$`));
+    await a.page.goto(`/profile/${b.handle}`);
+    await a.page.getByRole('link', { name: 'Message', exact: true }).click();
+    await expect(a.page).toHaveURL(new RegExp(`/messages/${b.handle}$`));
     await expect(status(a.page)).toHaveText('Live'); // the CSP allowed exactly this socket, and the session cookie authenticated it
 
-    await b.page.goto(`/whispers/${a.handle}`);
+    await b.page.goto(`/messages/${a.handle}`);
     await expect(status(b.page)).toHaveText('Live');
 
     // A message reaches the other person without any reload.
@@ -69,7 +69,7 @@ test.describe('Whispers in a real browser (production build, real CSP, real WebS
     await expect(log(b.page).getByText('Howdy Bob, live from the ranch')).toBeVisible();
     await say(b.page, 'Howdy Alice!');
     await expect(log(a.page).getByText('Howdy Alice!')).toBeVisible();
-    await expect(a.page.getByLabel(/^Whisper to /)).toHaveValue('');
+    await expect(a.page.getByLabel(/^Message to /)).toHaveValue('');
 
     // Read receipts are on for both (the default) and Alice has the thread open: Bob's Whisper turns "Seen" by itself.
     await expect(log(b.page).getByText('Seen', { exact: true })).toBeVisible({ timeout: 20_000 });
@@ -87,8 +87,8 @@ test.describe('Whispers in a real browser (production build, real CSP, real WebS
     await say(a.page, 'Are you around?');
     await expect(log(a.page).getByText('Are you around?')).toBeVisible();
     await expect(async () => {
-      await b.page.goto('/whispers');
-      await expect(b.page.getByRole('link', { name: /^Whispers\s*,\s*1 unread$/ })).toBeVisible();
+      await b.page.goto('/messages');
+      await expect(b.page.getByRole('link', { name: /^Messages\s*,\s*1 unread$/ })).toBeVisible();
     }).toPass({ timeout: 10_000 });
     await expect(b.page.getByRole('link', { name: new RegExp(a.handle) })).toContainText('Are you around?');
     await b.page.getByRole('link', { name: new RegExp(a.handle) }).click();
@@ -106,11 +106,11 @@ test.describe('Whispers in a real browser (production build, real CSP, real WebS
       await a.page.getByRole('button', { name: 'Thread options' }).click();
       await a.page.getByRole('menuitem', { name: item }).click();
     };
-    await more('Flag a Whisper…');
+    await more('Flag a message…');
     await expect(a.page.getByText(/under the one that is the problem/)).toBeVisible();
-    await expect(log(a.page).getByRole('button', { name: 'Flag this Whisper' }).first()).toBeVisible();
+    await expect(log(a.page).getByRole('button', { name: 'Flag this message' }).first()).toBeVisible();
     await a.page.getByRole('button', { name: 'Done', exact: true }).click();
-    await expect(log(a.page).getByRole('button', { name: 'Flag this Whisper' })).toHaveCount(0);
+    await expect(log(a.page).getByRole('button', { name: 'Flag this message' })).toHaveCount(0);
 
     // Burn Thread: confirmation first, then it is gone for both.
     await more('Burn thread…');
@@ -119,8 +119,8 @@ test.describe('Whispers in a real browser (production build, real CSP, real WebS
     await expect(log(a.page).getByText('Are you around?')).toBeVisible();
     await more('Burn thread…');
     await a.page.getByRole('button', { name: 'Burn it' }).click();
-    await expect(a.page).toHaveURL(/\/whispers$/);
-    await expect(a.page.getByText('No Whispers yet')).toBeVisible();
+    await expect(a.page).toHaveURL(/\/messages$/);
+    await expect(a.page.getByText('No messages yet')).toBeVisible();
     await b.page.reload();
     await expect(log(b.page).getByText('Howdy Bob, live from the ranch')).toHaveCount(0);
 
@@ -136,10 +136,10 @@ test.describe('Whispers in a real browser (production build, real CSP, real WebS
     await makePosse(b, a);
     // Alice's socket can never connect (a network that blocks WebSockets, or a dead server).
     await a.page.routeWebSocket(/localhost:3301/, (ws) => void ws.close());
-    await a.page.goto(`/whispers/${b.handle}`);
+    await a.page.goto(`/messages/${b.handle}`);
     await expect(status(a.page)).toContainText('Reconnecting');
 
-    await b.page.goto(`/whispers/${a.handle}`);
+    await b.page.goto(`/messages/${a.handle}`);
     await expect(status(b.page)).toHaveText('Live');
 
     await say(a.page, 'sent over plain HTTP');
@@ -163,24 +163,24 @@ test.describe('Whispers in a real browser (production build, real CSP, real WebS
 
     // Restrict: Carol's words look sent to Carol, and Alice sees nothing at all.
     expect((await api(a, `/api/relationships/${c.handle}`, { action: 'restrict' })).ok()).toBe(true);
-    await c.page.goto(`/whispers/${a.handle}`);
-    await a.page.goto(`/whispers/${c.handle}`);
+    await c.page.goto(`/messages/${a.handle}`);
+    await a.page.goto(`/messages/${c.handle}`);
     await say(c.page, 'held words from Carol');
     await expect(log(c.page).getByText('held words from Carol')).toBeVisible();
     await expect(log(c.page).getByText('Sent', { exact: true })).toBeVisible();
     await a.page.waitForTimeout(1200);
     await expect(log(a.page).getByText('held words from Carol')).toHaveCount(0);
-    await a.page.goto('/whispers');
-    await expect(a.page.getByText('No Whispers yet')).toBeVisible();
+    await a.page.goto('/messages');
+    await expect(a.page.getByText('No messages yet')).toBeVisible();
 
     // Block: Bob is in a live thread when Alice blocks him. His next send fails; the thread is now a plain 404.
-    await b.page.goto(`/whispers/${a.handle}`);
+    await b.page.goto(`/messages/${a.handle}`);
     await expect(status(b.page)).toHaveText('Live');
     expect((await api(a, `/api/relationships/${b.handle}`, { action: 'block' })).ok()).toBe(true);
     await say(b.page, 'are you there?');
     await expect(b.page.getByText('Not sent')).toBeVisible();
     await expect(b.page.getByRole('button', { name: 'Try again' })).toBeVisible();
-    expect((await b.page.goto(`/whispers/${a.handle}`))?.status()).toBe(404);
+    expect((await b.page.goto(`/messages/${a.handle}`))?.status()).toBe(404);
     await Promise.all([a.ctx.close(), b.ctx.close(), c.ctx.close()]);
   });
 
@@ -188,7 +188,7 @@ test.describe('Whispers in a real browser (production build, real CSP, real WebS
     const a = await person(browser, 'wh');
     const b = await person(browser, 'wi');
     await makePosse(b, a);
-    await a.page.goto(`/whispers/${b.handle}`);
+    await a.page.goto(`/messages/${b.handle}`);
     await expect(status(a.page)).toHaveText('Live');
     expect((await api(a, '/api/auth/logout', {})).ok()).toBe(true);
     await expect(status(a.page)).toContainText('Signed out', { timeout: 15_000 });
@@ -196,7 +196,7 @@ test.describe('Whispers in a real browser (production build, real CSP, real WebS
   });
 });
 
-test.describe('Whispers: accessibility and layout in a real browser', () => {
+test.describe('Messages: accessibility and layout in a real browser', () => {
   async function seed(browser: Browser, opts: Parameters<typeof newContext>[1]) {
     const a = await person(browser, `xa${Date.now().toString(36).slice(-4)}`, opts);
     const b = await person(browser, `xb${Date.now().toString(36).slice(-4)}`, opts);
@@ -217,7 +217,7 @@ test.describe('Whispers: accessibility and layout in a real browser', () => {
     test(`axe finds no violations, including real colour contrast (${scheme})`, async ({ browser }) => {
       const { a, b } = await seed(browser, { colorScheme: scheme, bypassCSP: true, reducedMotion: 'reduce' });
       const source = axeSource();
-      for (const path of ['/whispers', `/whispers/${b.handle}`, '/workshop', `/porch/${b.handle}`]) {
+      for (const path of ['/messages', `/messages/${b.handle}`, '/settings', `/profile/${b.handle}`]) {
         await a.page.goto(path);
         await pageReady(a.page);
         await a.page.evaluate(() => document.fonts.ready);
@@ -247,7 +247,7 @@ test.describe('Whispers: accessibility and layout in a real browser', () => {
     });
   }
 
-  test('no horizontal scroll at 320px, every control is at least 44px, and a long unbroken Whisper stays in its bubble', async ({
+  test('no horizontal scroll at 320px, every control is at least 44px, and a long unbroken message stays in its bubble', async ({
     browser,
   }) => {
     const { a, b } = await seed(browser, {
@@ -255,7 +255,7 @@ test.describe('Whispers: accessibility and layout in a real browser', () => {
       isMobile: true,
       viewport: { width: 320, height: 700 },
     });
-    for (const path of ['/whispers', `/whispers/${b.handle}`]) {
+    for (const path of ['/messages', `/messages/${b.handle}`]) {
       await a.page.goto(path);
       await pageReady(a.page);
       expect(await horizontalOverflow(a.page), `${path} overflow`).toBeLessThanOrEqual(0);

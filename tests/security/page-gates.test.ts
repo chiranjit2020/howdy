@@ -31,8 +31,8 @@ async function pals(a: P, b: P) {
   await doAct(a.handle, 'accept', as(b));
 }
 
-describe('the Porch gate', () => {
-  it('agrees with the page: members-only is open to members, pals-only only to Pals, missing and malformed are closed', async () => {
+describe('the profile gate', () => {
+  it('agrees with the page: members-only is open to members, pals-only only to friends, missing and malformed are closed', async () => {
     const owner = await person('owner');
     const friend = await person('friend');
     const stranger = await person('stranger');
@@ -78,8 +78,8 @@ describe('the Porch gate', () => {
   });
 });
 
-describe('the Whisper thread gate', () => {
-  it('open only between Pals; closed for strangers, blocks, yourself and made-up call signs', async () => {
+describe('the message thread gate', () => {
+  it('open only between friends; closed for strangers, blocks, yourself and made-up usernames', async () => {
     const a = await person('alice');
     const b = await person('bob');
     const c = await person('carol');
@@ -94,8 +94,8 @@ describe('the Whisper thread gate', () => {
   });
 });
 
-describe('the Town Hall gate', () => {
-  it('open and members Town Halls are open; invite-only only with an invite or membership; bad ids are closed, not errors', async () => {
+describe('the group gate', () => {
+  it('open and members groups are open; invite-only only with an invite or membership; bad ids are closed, not errors', async () => {
     const owner = await person('owner');
     const guest = await person('guest');
     const outsider = await person('outsider');

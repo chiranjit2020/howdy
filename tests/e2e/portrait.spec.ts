@@ -41,14 +41,14 @@ const portraits = (page: Page) =>
     };
   });
 
-test.describe('Portrait (production build, real CSP, local file storage)', () => {
+test.describe('Profile photo (production build, real CSP, local file storage)', () => {
   test('upload, see it everywhere it belongs, keep it private, remove it', async ({ browser }) => {
     const a = await person(browser, 'shutter');
     const b = await person(browser, 'viewer');
     const problems = await watchProblems(a.page);
 
     // A wrong kind of file is refused in the browser, and nothing is stored.
-    await a.page.goto('/workshop');
+    await a.page.goto('/settings');
     const chooser = a.page.locator('input[type=file]');
     // Retried: a file picked before the page has hydrated fires no React handler (seen once in a full run).
     await expect(async () => {
@@ -63,7 +63,7 @@ test.describe('Portrait (production build, real CSP, local file storage)', () =>
 
     // A real photo goes straight to storage, is decoded on the server, and shows up.
     await chooser.setInputFiles({ name: 'me.jpg', mimeType: 'image/jpeg', buffer: await photo() });
-    await expect(a.page.getByRole('status').filter({ hasText: 'Portrait updated.' })).toBeVisible({
+    await expect(a.page.getByRole('status').filter({ hasText: 'Profile photo updated.' })).toBeVisible({
       timeout: 30_000,
     });
     await expect.poll(async () => (await portraits(a.page)).decoded, { timeout: 15_000 }).toBe(true);
@@ -82,28 +82,28 @@ test.describe('Portrait (production build, real CSP, local file storage)', () =>
     });
 
     // On the Ranch: in the top bar, in the header, and on the phone tab bar's Porch tab (in the page even where it is hidden).
-    await a.page.goto(`/porch/${a.handle}`);
+    await a.page.goto(`/profile/${a.handle}`);
     await expect.poll(async () => (await portraits(a.page)).count).toBe(3);
     await expect.poll(async () => (await portraits(a.page)).decoded, { timeout: 15_000 }).toBe(true);
 
     // Another member who may open the Ranch sees it; a signed-out visitor gets nothing.
-    await b.page.goto(`/porch/${a.handle}`);
+    await b.page.goto(`/profile/${a.handle}`);
     await expect.poll(async () => (await portraits(b.page)).decoded).toBe(true);
     const anon = await newContext(browser);
     expect((await anon.request.get(src!)).status()).toBe(404);
     await anon.close();
 
     // Hide the Ranch from non-Posse members: the photo goes with it, at the very next request.
-    await a.page.goto('/workshop');
-    await a.page.getByLabel('Who can visit your Porch?').selectOption('posse');
-    await a.page.getByRole('button', { name: 'Save Boundary Lines' }).click();
-    await expect(a.page.getByRole('status').filter({ hasText: 'Boundary Lines updated' })).toBeVisible();
+    await a.page.goto('/settings');
+    await a.page.getByLabel('Who can visit your profile?').selectOption('posse');
+    await a.page.getByRole('button', { name: 'Save Privacy' }).click();
+    await expect(a.page.getByRole('status').filter({ hasText: 'Privacy updated' })).toBeVisible();
     expect((await b.page.request.get(src!)).status()).toBe(404);
 
     // Remove it: the initials come back and the address stops working.
-    await a.page.goto('/workshop');
+    await a.page.goto('/settings');
     await a.page.getByRole('button', { name: 'Remove photo' }).click();
-    await expect(a.page.getByRole('status').filter({ hasText: 'Portrait removed.' })).toBeVisible();
+    await expect(a.page.getByRole('status').filter({ hasText: 'Profile photo removed.' })).toBeVisible();
     await expect.poll(async () => (await portraits(a.page)).count).toBe(0);
     expect((await a.page.request.get(src!)).status()).toBe(404);
 

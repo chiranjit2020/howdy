@@ -75,7 +75,7 @@ const cleanText = (max: number, emptyMessage: string, what: string) =>
     );
 
 export const displayNameSchema = cleanText(DISPLAY_NAME_MAX, 'Enter a display name.', 'Your name');
-export const signalSchema = cleanText(LIMITS.SIGNAL_MAX, 'Say something, or clear your Signal.', 'A Signal');
+export const signalSchema = cleanText(LIMITS.SIGNAL_MAX, 'Say something, or clear your status.', 'A status');
 
 /** A short bio. Empty clears it. Screened like every public line: no links, no disguising characters. */
 export const bioSchema = z

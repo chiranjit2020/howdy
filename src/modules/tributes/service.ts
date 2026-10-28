@@ -233,7 +233,9 @@ export async function giveTribute(authorId: string, handle: string, body: string
   if (!acc) throw new AppError('NOT_FOUND');
   const ctx = await giveContext(authorId, ownerId, acc.relationship.relationship);
   if (!can(actor, 'tribute:give', acc.ranch, ctx).allow) {
-    throw new AppError('FORBIDDEN', { message: 'Only Pals and Town Hall neighbours can leave a Tribute.' });
+    throw new AppError('FORBIDDEN', {
+      message: 'Only friends and group neighbours can leave a testimonial.',
+    });
   }
   await enforceRateLimit(`tributes:give:${authorId}:${ownerId}`, RATE.givePerOwner);
   const [row] = await getDb()

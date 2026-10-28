@@ -4,7 +4,7 @@ These terms are the agreement between you and {{operator}}, who runs Howdy from 
 
 ## Agreeing to these terms
 
-By creating an account, or by using Howdy, you agree to these Terms, the [Privacy Policy](/privacy) and the [Campfire Rules](/campfire-rules). If you do not agree, please do not use Howdy.
+By creating an account, or by using Howdy, you agree to these Terms, the [Privacy Policy](/privacy) and the [Community Guidelines](/community-guidelines). If you do not agree, please do not use Howdy.
 
 ## Who can use Howdy
 
@@ -16,16 +16,16 @@ By creating an account, or by using Howdy, you agree to these Terms, the [Privac
 
 - Give a real email address that you control, and keep it up to date. We use it to confirm your account and to reach you.
 - Keep your password secret and do not share your account. You are responsible for what happens on your account, unless someone got in because of a failure on our side.
-- If you think someone else has used your account, change your password and sign out your other sessions from the Workshop, then tell us.
-- Your call sign must not pretend to be someone else, or mislead people about who you are.
+- If you think someone else has used your account, change your password and sign out your other sessions from Settings, then tell us.
+- Your username must not pretend to be someone else, or mislead people about who you are.
 
 ## Your content
 
-**It is yours.** You keep ownership of what you post on Howdy: Post Cards, replies, Tributes, Whispers, Signals, photos and anything else you create ("your content").
+**It is yours.** You keep ownership of what you post on Howdy: Posts, replies, testimonials, messages, statuses, photos and anything else you create ("your content").
 
 **The permission you give us.** So that we can run Howdy, you give us a worldwide, non-exclusive, royalty-free permission to store, copy, resize, display and deliver your content, only for the purpose of operating and improving Howdy, and only to the people your settings allow. This permission ends when your content is deleted, except for copies we must keep for the reasons in the Privacy Policy (for example, reports and security records) and copies in backups until they expire.
 
-**What you promise.** You have the right to post what you post, and it does not break the law, the [Campfire Rules](/campfire-rules), or anyone else's rights (such as copyright, trademark or privacy).
+**What you promise.** You have the right to post what you post, and it does not break the law, the [Community Guidelines](/community-guidelines), or anyone else's rights (such as copyright, trademark or privacy).
 
 **Other people's content** belongs to them. Do not copy it off Howdy, repost it or use it elsewhere without their permission.
 
@@ -33,7 +33,7 @@ By creating an account, or by using Howdy, you agree to these Terms, the [Privac
 
 When you use Howdy, do not:
 
-- break the [Campfire Rules](/campfire-rules), including harassment, hate, threats, doxxing, impersonation and spam;
+- break the [Community Guidelines](/community-guidelines), including harassment, hate, threats, doxxing, impersonation and spam;
 - post anything illegal, or anything that sexualises minors, in any way;
 - post anything the law forbids, including content that is obscene, defamatory, invasive of someone's privacy, or that threatens the unity, integrity, defence, security or sovereignty of India or public order;
 - scrape, harvest or collect other people's information, or use bots or automated accounts, without our written permission;
@@ -45,8 +45,8 @@ When you use Howdy, do not:
 
 ## Moderation, reports and suspension
 
-- **Anyone can report** a person, a Post Card, a photo, a Whisper they received, or a Town Hall. Reports go to our moderators. The person reported is not told who reported them.
-- **What we may do:** remove content, limit features, or suspend or close an account that breaks these Terms or the Campfire Rules, or where we must do so by law. We may also act to protect someone's safety, or Howdy itself.
+- **Anyone can report** a person, a post, a photo, a message they received, or a group. Reports go to our moderators. The person reported is not told who reported them.
+- **What we may do:** remove content, limit features, or suspend or close an account that breaks these Terms or the Community Guidelines, or where we must do so by law. We may also act to protect someone's safety, or Howdy itself.
 - **How we decide:** a person makes every moderation decision. We try to be fair and proportionate, and to look at the whole situation.
 - **Suspension** signs the account out everywhere and hides it. It lasts 7 days, 30 days, or until we lift it. When you try to sign in, we tell you why and until when. We may lift a suspension early if it was a mistake, or once the problem is dealt with.
 - **If you disagree** with a suspension, you can appeal once, right there on the sign-in page, and a person will read it and answer. For any other decision about your content or your account, write to [{{contactEmail}}](mailto:{{contactEmail}}) and a person will look at it again.
@@ -67,7 +67,7 @@ Each version of these Terms has a version number and a date at the top. If we ma
 
 ## Ending your account
 
-You can stop using Howdy at any time, and you can delete your account yourself in the Workshop. It closes at once and is deleted for good after 14 days, unless you sign in before then and keep it. You can also write to [{{contactEmail}}](mailto:{{contactEmail}}) from its email address.
+You can stop using Howdy at any time, and you can delete your account yourself in Settings. It closes at once and is deleted for good after 14 days, unless you sign in before then and keep it. You can also write to [{{contactEmail}}](mailto:{{contactEmail}}) from its email address.
 
 We may suspend or close your account under [Moderation, reports and suspension](#moderation-reports-and-suspension), or if we stop running Howdy (in which case we will tell you first, if we can).
 

@@ -1,0 +1,69 @@
+import { withCards } from '@/app/_lib/social';
+import { requireUser, twoStepSummary } from '@/modules/auth';
+import { getPortraitVersion } from '@/modules/media';
+import { getPrefs } from '@/modules/notifications';
+import { getOwnRanch } from '@/modules/profiles';
+import { listMyRelationships } from '@/modules/relationships';
+import { portraitUrl } from '@/shared/portrait';
+import { DeleteAccount } from './delete-account';
+import { ExportData } from './export-data';
+import { PeopleControls } from './people-controls';
+import { PortraitForm } from './portrait-form';
+import { SignInSecurity } from './sign-in-security';
+import { BoundaryForm, ChimePrefsForm, FenceRulesForm, StoryViewsForm, TendForm } from './ranch-forms';
+
+export const metadata = { title: 'Settings' };
+
+/** The Workshop (settings). Protected: the session is checked on the server before any of this renders. */
+export default async function WorkshopPage() {
+  const user = await requireUser();
+  const [ranch, prefs, lists, photo, security] = await Promise.all([
+    getOwnRanch(user.id),
+    getPrefs(user.id),
+    listMyRelationships(user.id).then((r) => withCards(r, user.id)),
+    getPortraitVersion(user.id, { userId: user.id }).catch(() => null),
+    twoStepSummary(user.id),
+  ]);
+  return (
+    <main id="main" className="mx-auto flex max-w-xl flex-col gap-4 py-4 sm:gap-6 sm:py-8">
+      <h1 className="text-heading text-text-primary">Settings</h1>
+      <PortraitForm
+        displayName={ranch.displayName}
+        portraitTint={ranch.portraitTint}
+        portraitSrc={photo ? portraitUrl(user.handle, photo) : null}
+      />
+      <TendForm
+        displayName={ranch.displayName}
+        bio={ranch.bio ?? ''}
+        portraitTint={ranch.portraitTint}
+        handle={user.handle}
+      />
+      <BoundaryForm
+        ranchVisibility={ranch.ranchVisibility}
+        signalVisibility={ranch.signalVisibility}
+        discoverable={ranch.discoverable}
+        official={ranch.verified}
+      />
+      <StoryViewsForm initial={ranch.storyViews} />
+      <FenceRulesForm
+        fenceVisibility={ranch.fenceVisibility}
+        fencePosting={ranch.fencePosting}
+        fenceReview={ranch.fenceReview}
+      />
+      <ChimePrefsForm initial={prefs} />
+      <PeopleControls blocked={lists.blocked} muted={lists.muted} restricted={lists.restricted} />
+      <SignInSecurity
+        view={{
+          ...security,
+          passkeys: security.passkeys.map((p) => ({
+            ...p,
+            createdAt: p.createdAt.toISOString(),
+            lastUsedAt: p.lastUsedAt?.toISOString() ?? null,
+          })),
+        }}
+      />
+      <ExportData />
+      <DeleteAccount />
+    </main>
+  );
+}

@@ -98,7 +98,7 @@ export function VibeMatrix({
         {ORDER.map((kind) => {
           const n = counts[kind];
           const pct = total > 0 ? Math.round((n / total) * 100) : 0;
-          const marks = `${n} ${n === 1 ? 'Mark' : 'Marks'}`;
+          const marks = `${n} ${n === 1 ? 'badge' : 'badges'}`;
           return (
             <li key={kind} className="flex items-center gap-3">
               <Art name={MARK_ART[kind]} size="free" className="size-8 shrink-0" />
@@ -126,7 +126,7 @@ export function VibeMatrix({
                   </span>
                   <span className="shrink-0 text-right font-mono text-body font-semibold text-text-primary">
                     {n}
-                    <span className="sr-only"> {n === 1 ? 'Mark' : 'Marks'}</span>
+                    <span className="sr-only"> {n === 1 ? 'badge' : 'badges'}</span>
                   </span>
                 </>
               )}
@@ -135,12 +135,12 @@ export function VibeMatrix({
         })}
       </ul>
       <p className="text-caption text-text-secondary">
-        {total} {total === 1 ? 'Mark' : 'Marks'} total.
+        {total} {total === 1 ? 'badge' : 'badges'} total.
         {!showPercent && ` The percentages show up after ${PERCENT_AFTER} — ${toGo} to go.`}
       </p>
       {onGive && (
         <div className="flex flex-col gap-2">
-          <div className="flex flex-wrap gap-2" role="group" aria-label="Award a Mark">
+          <div className="flex flex-wrap gap-2" role="group" aria-label="Give a badge">
             {ORDER.map((kind) => (
               <button
                 key={kind}

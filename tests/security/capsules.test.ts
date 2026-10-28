@@ -72,7 +72,7 @@ describe('sealing', () => {
     expect(m.text).not.toContain('secret words');
   });
 
-  it('to a Pal: they see that one is coming and when, never the words', async () => {
+  it('to a friend: they see that one is coming and when, never the words', async () => {
     const a = await person('alice');
     const b = await person('bob');
     await pals(a, b);
@@ -86,7 +86,7 @@ describe('sealing', () => {
     expect((await mine(a)).text).not.toContain('secret surprise');
   });
 
-  it('only to a Pal: a stranger, a made-up call sign and myself-by-name are all the same 404', async () => {
+  it('only to a friend: a stranger, a made-up username and myself-by-name are all the same 404', async () => {
     const a = await person('alice');
     const stranger = await person('stranger');
     const missing = await seal(a, 'nobody_home_here', 'hi');
@@ -98,7 +98,7 @@ describe('sealing', () => {
     expect((await q('select count(*)::int n from time_capsules')).rows[0].n).toBe(0);
   });
 
-  it('a blocked Pal is not a Pal', async () => {
+  it('a blocked friend is not a friend', async () => {
     const a = await person('alice');
     const b = await person('bob');
     await pals(a, b);
@@ -127,7 +127,7 @@ describe('sealing', () => {
     }
   });
 
-  it('at most 3 waiting for one Pal and 20 in all', async () => {
+  it('at most 3 waiting for one friend and 20 in all', async () => {
     const a = await person('alice');
     const b = await person('bob');
     await pals(a, b);
@@ -150,7 +150,7 @@ describe('sealing', () => {
 });
 
 describe('opening', () => {
-  it('on its day it opens when the recipient looks, with a Chime; the words appear only now', async () => {
+  it('on its day it opens when the recipient looks, with a notification; the words appear only now', async () => {
     const a = await person('alice');
     const b = await person('bob');
     await pals(a, b);
@@ -186,7 +186,7 @@ describe('opening', () => {
     expect(await chimes()).toHaveLength(1);
   });
 
-  it('no longer Pals on the day: it never opens, and the words are deleted', async () => {
+  it('no longer friends on the day: it never opens, and the words are deleted', async () => {
     const a = await person('alice');
     const b = await person('bob');
     await pals(a, b);
@@ -226,7 +226,7 @@ describe('opening', () => {
     expect(await openDue()).toEqual({ capsulesOpened: 1, capsulesDropped: 0 });
   });
 
-  it('with Time Capsule Chimes switched off it still opens, quietly', async () => {
+  it('with Time Capsule notifications switched off it still opens, quietly', async () => {
     const me = await person('me');
     await q(
       'insert into notification_prefs (user_id, capsules) select id, false from users where handle = $1',

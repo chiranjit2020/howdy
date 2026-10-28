@@ -196,7 +196,7 @@ describe('posting', () => {
     // A Story photo cannot go on a card either.
     expect((await nail(a.handle, { body: 'Reuse', photoId: used }, as(a))).status).toBe(422);
     const carded = await photoOf(a);
-    expect((await nail(a.handle, { body: 'On my Fence', photoId: carded }, as(a))).status).toBe(201);
+    expect((await nail(a.handle, { body: 'On my wall', photoId: carded }, as(a))).status).toBe(201);
     expect((await postRaw(a, { photoId: carded })).status).toBe(422);
     const stale = await photoOf(a);
     await q(`update media set created_at = now() - interval '56 minutes' where id = $1`, [stale]);
@@ -223,7 +223,7 @@ describe('posting', () => {
 });
 
 describe('who sees it', () => {
-  it('all Pals: my Pals do; a stranger, someone I only asked, and a made-up id get the same 404', async () => {
+  it('all friends: my friends do; a stranger, someone I only asked, and a made-up id get the same 404', async () => {
     const [a, pal, stranger, asked] = await Promise.all([
       person('alice'),
       person('pal'),
@@ -242,7 +242,7 @@ describe('who sees it', () => {
     expect(await seePhoto('not-a-uuid', as(pal))).toBe(404);
   });
 
-  it('Close Pals only: only Pals I marked Close — their marking me does not count, and unmarking ends it', async () => {
+  it('Close friends only: only friends I marked Close — their marking me does not count, and unmarking ends it', async () => {
     const [a, close, other] = await Promise.all([person('alice'), person('close'), person('other')]);
     await pals(a, close);
     await pals(a, other);
@@ -418,7 +418,7 @@ describe('views (reciprocal)', () => {
 });
 
 describe('reactions', () => {
-  it('a Pal reacts: the author is told once (changing the kind rings nothing) and sees what it was', async () => {
+  it('a friend reacts: the author is told once (changing the kind rings nothing) and sees what it was', async () => {
     const [a, pal] = await Promise.all([person('alice'), person('pal')]);
     await pals(a, pal);
     const id = await story(a);

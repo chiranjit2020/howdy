@@ -63,7 +63,7 @@ test.describe('Suspensions and appeals (production build, real CSP)', () => {
     const notice = member.page.getByRole('region', { name: 'Your account is suspended' });
     await expect(notice).toBeVisible();
     await expect(notice.getByText('Spam', { exact: true })).toBeVisible();
-    await expect(member.page).toHaveURL(/\/step-inside$/);
+    await expect(member.page).toHaveURL(/\/login$/);
     expect(await axeViolations(member.page)).toEqual([]);
     expect(await smallTargets(member.page)).toEqual([]);
 
@@ -89,7 +89,7 @@ test.describe('Suspensions and appeals (production build, real CSP)', () => {
     await Promise.all([mod.ctx.close(), member.ctx.close()]);
   });
 
-  test('the held tray: a restricted Pal’s Whisper waits there, not in the thread, and can be flagged (ADR-026)', async ({
+  test('the held tray: a restricted friend’s message waits there, not in the thread, and can be flagged (ADR-026)', async ({
     browser,
   }) => {
     const phone = { hasTouch: true, isMobile: true, viewport: { width: 320, height: 700 } };
@@ -106,18 +106,18 @@ test.describe('Suspensions and appeals (production build, real CSP)', () => {
       (await post(them, `/api/whispers/${me.handle}`, { clientId: crypto.randomUUID(), body: words })).ok(),
     ).toBe(true);
 
-    await me.page.goto('/whispers');
+    await me.page.goto('/messages');
     await pageReady(me.page);
     await me.page.getByRole('link', { name: /Held back from people you restricted \(1\)/ }).click();
-    await expect(me.page).toHaveURL(/\/whispers\/held$/);
-    const held = me.page.getByRole('list', { name: 'Held Whispers' }).getByRole('listitem');
+    await expect(me.page).toHaveURL(/\/messages\/held$/);
+    const held = me.page.getByRole('list', { name: 'Held messages' }).getByRole('listitem');
     await expect(held).toHaveCount(1);
     await expect(held.getByText(words)).toBeVisible();
     expect(await axeViolations(me.page)).toEqual([]);
     expect(await smallTargets(me.page)).toEqual([]);
     expect(await horizontalOverflow(me.page)).toBe(0);
 
-    await held.getByRole('button', { name: 'Flag this Whisper' }).click();
+    await held.getByRole('button', { name: 'Flag this message' }).click();
     await me.page.getByRole('button', { name: 'Send report' }).click();
     await expect(me.page.getByText('Thanks. We will take a look.')).toBeVisible();
     expect(problems).toEqual([]);

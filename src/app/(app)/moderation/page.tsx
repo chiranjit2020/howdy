@@ -21,7 +21,7 @@ export default async function ModerationPage() {
         <h1 className="text-heading text-text-primary">Moderation</h1>
         <section className="flex flex-col gap-3 rounded-md bg-surface-sunken p-4">
           <p className="text-body text-text-primary">{STAFF_TWO_STEP_MESSAGE}</p>
-          <Link href="/workshop#sign-in-security" className="inline-flex min-h-11 items-center self-start">
+          <Link href="/settings#sign-in-security" className="inline-flex min-h-11 items-center self-start">
             Go to Sign-in security
           </Link>
         </section>

@@ -32,7 +32,7 @@ async function person(browser: Browser, tag: string, opts: Parameters<typeof new
   return { ...account, ctx, page };
 }
 
-test.describe('Town Hall Time Capsules (production build, real CSP)', () => {
+test.describe('Group Time Capsules (production build, real CSP)', () => {
   test('sealed from a phone, seen coming by a member, opened as a stamped post on its day', async ({
     browser,
   }) => {
@@ -40,12 +40,12 @@ test.describe('Town Hall Time Capsules (production build, real CSP)', () => {
     const owner = await person(browser, 'tcowner', PHONE);
     const ann = await person(browser, 'tcann', PHONE);
     const problems = await watchProblems(owner.page);
-    const name = `Capsule Porch ${Date.now().toString(36)}`;
+    const name = `Capsule profile ${Date.now().toString(36)}`;
     const words = `Howdy from the past ${Date.now().toString(36)}`;
 
-    await owner.page.goto('/town-halls');
+    await owner.page.goto('/groups');
     await pageReady(owner.page);
-    await owner.page.getByRole('button', { name: 'Start a Town Hall' }).click();
+    await owner.page.getByRole('button', { name: 'Start a group' }).click();
     await owner.page.getByLabel('Name').fill(name);
     await owner.page.getByLabel('What is it about?').fill('Letters to later.');
     await owner.page.getByRole('button', { name: 'Start it' }).click();

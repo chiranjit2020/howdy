@@ -36,7 +36,7 @@ const photo = () =>
     .jpeg()
     .toBuffer();
 
-test('a photo in a Town Hall post: chosen on a phone, seen by another member, no hidden data', async ({
+test('a photo in a group post: chosen on a phone, seen by another member, no hidden data', async ({
   browser,
 }) => {
   test.slow(); // two people signing up on phones
@@ -44,10 +44,10 @@ test('a photo in a Town Hall post: chosen on a phone, seen by another member, no
   const ann = await person(browser, 'hpann');
   const problems = await watchProblems(owner.page);
 
-  await owner.page.goto('/town-halls');
+  await owner.page.goto('/groups');
   await pageReady(owner.page);
-  await owner.page.getByRole('button', { name: 'Start a Town Hall' }).click();
-  await owner.page.getByLabel('Name').fill(`Photo Porch ${Date.now().toString(36)}`);
+  await owner.page.getByRole('button', { name: 'Start a group' }).click();
+  await owner.page.getByLabel('Name').fill(`Photo profile ${Date.now().toString(36)}`);
   await owner.page.getByLabel('What is it about?').fill('Pictures welcome.');
   await owner.page.getByRole('button', { name: 'Start it' }).click();
   await owner.page.getByRole('tab', { name: /^Mine/ }).click();
@@ -70,7 +70,7 @@ test('a photo in a Town Hall post: chosen on a phone, seen by another member, no
     await expect(owner.page.getByAltText('The photo you chose for this post')).toBeVisible({ timeout: 1000 });
   }).toPass({ timeout: 15_000 });
   await expect(owner.page.getByText('Uploading…')).toHaveCount(0, { timeout: 15_000 });
-  await owner.page.getByLabel('Post to this Town Hall').fill('The garden this morning');
+  await owner.page.getByLabel('Post to this group').fill('The garden this morning');
   await owner.page.getByRole('button', { name: 'Post', exact: true }).click();
   const mine = owner.page.getByRole('img', { name: /Photo on this post from/ });
   await expect(mine).toBeVisible();

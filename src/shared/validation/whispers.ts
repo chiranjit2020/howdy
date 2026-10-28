@@ -19,7 +19,7 @@ export const whisperBodySchema = z
   .pipe(
     z
       .string()
-      .min(1, 'Write something to whisper.')
+      .min(1, 'Write something to message.')
       .max(LIMITS.WHISPER_MAX, `At most ${LIMITS.WHISPER_MAX} characters.`)
       .refine((s) => !hasDisguisingChars(s), 'That contains characters that are not allowed.'),
   );

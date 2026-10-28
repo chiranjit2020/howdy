@@ -32,13 +32,13 @@ const clean = (max: number, emptyMessage: string, what: string) =>
         .refine((s) => !hasLink(s), `Links are not allowed in ${what.toLowerCase()}.`),
     );
 
-export const townHallNameSchema = clean(LIMITS.TOWNHALL_NAME_MAX, 'Give it a name.', 'A Town Hall name').pipe(
+export const townHallNameSchema = clean(LIMITS.TOWNHALL_NAME_MAX, 'Give it a name.', 'A group name').pipe(
   z.string().min(LIMITS.TOWNHALL_NAME_MIN, `At least ${LIMITS.TOWNHALL_NAME_MIN} characters.`),
 );
 export const townHallDescriptionSchema = clean(
   LIMITS.TOWNHALL_DESCRIPTION_MAX,
   'Say what it is about.',
-  'A Town Hall description',
+  'A group description',
 );
 export const townHallVisibilitySchema = z.enum(TOWNHALL_VISIBILITIES);
 

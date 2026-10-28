@@ -87,34 +87,34 @@ export default async function HomePage() {
 
   const glance: Glance[] = [
     {
-      href: '/whispers',
+      href: '/messages',
       art: 'nav-whispers',
       value: whispers,
-      label: whispers === 1 ? 'Unread Whisper' : 'Unread Whispers',
+      label: whispers === 1 ? 'Unread message' : 'Unread messages',
       waiting: (whispers ?? 0) > 0,
     },
     {
-      href: '/chimes',
+      href: '/notifications',
       art: 'nav-chimes',
       value: chimes,
-      label: chimes === 1 ? 'New Chime' : 'New Chimes',
+      label: chimes === 1 ? 'New notification' : 'New notifications',
       waiting: (chimes ?? 0) > 0,
     },
     {
-      href: '/pals',
+      href: '/friends',
       art: 'nav-pals',
       value: lists.posse.length,
-      label: lists.posse.length === 1 ? 'Pal' : 'Pals',
+      label: lists.posse.length === 1 ? 'Friend' : 'Friends',
       note: requests > 0 ? `${requests} ${requests === 1 ? 'request' : 'requests'} waiting` : undefined,
       waiting: requests > 0,
     },
     {
-      href: '/tracks',
+      href: '/visitors',
       art: 'nav-tracks',
       // On Shadow Walk your own Tracks are frozen, so there is honestly nothing to count.
       value: tracks?.frozen ? null : visitsToday,
-      label: 'Porch visits today',
-      note: tracks?.frozen ? 'Shadow Walk is on' : undefined,
+      label: 'Profile visits today',
+      note: tracks?.frozen ? 'Private browsing is on' : undefined,
     },
   ];
 
@@ -187,8 +187,8 @@ export default async function HomePage() {
             </ul>
           </section>
 
-          <Link href={`/porch/${user.handle}`} className={cn(buttonClasses({ size: 'sm' }), 'self-start')}>
-            Visit your Porch
+          <Link href={`/profile/${user.handle}`} className={cn(buttonClasses({ size: 'sm' }), 'self-start')}>
+            Visit your profile
           </Link>
         </ClayCard>
         <PorchLightCard lit={litRows} mine={myLightState} />
@@ -199,7 +199,7 @@ export default async function HomePage() {
             </h2>
             <p className="text-body break-words text-text-primary">{announcement.text}</p>
             <p className="text-caption text-text-secondary">
-              <Link href={`/porch/${announcement.author.handle}`} className="font-semibold">
+              <Link href={`/profile/${announcement.author.handle}`} className="font-semibold">
                 {announcement.author.displayName}
               </Link>
               {announcement.author.verified && <VerifiedBadge className="ml-1" />}

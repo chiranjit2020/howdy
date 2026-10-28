@@ -127,7 +127,7 @@ describe('asking for my data', () => {
     expect((await exportOf(b)).status).toBe(429);
   });
 
-  it('carries my Portrait, byte for byte', async () => {
+  it('carries my profile photo, byte for byte', async () => {
     const a = await person('alice');
     expect((await uploadPortrait(a.cookie, await jpeg(400, 400))).done?.status).toBe(200);
     const r = await exportOf(a);
@@ -138,11 +138,11 @@ describe('asking for my data', () => {
 });
 
 describe('what is in it: exactly what the app shows me', () => {
-  it('my words and my settings; other people only by call sign and name — never their email or id', async () => {
+  it('my words and my settings; other people only by username and name — never their email or id', async () => {
     const a = await person('alice');
     const b = await person('bob');
     await pals(a, b);
-    expect((await nail(a.handle, { body: 'Mine on my Fence' }, as(a))).status).toBe(201);
+    expect((await nail(a.handle, { body: 'Mine on my wall' }, as(a))).status).toBe(201);
     expect((await nail(a.handle, { body: 'From Bob' }, as(b))).status).toBe(201);
     expect((await nail(b.handle, { body: 'Alice was here' }, as(a))).status).toBe(201);
     await whisper(b.handle, 'psst', as(a));
@@ -151,7 +151,7 @@ describe('what is in it: exactly what the app shows me', () => {
     const { text, data } = await dataOf(a);
     expect(data.fence.onMyFence.map((c: { words: string }) => c.words).sort()).toEqual([
       'From Bob',
-      'Mine on my Fence',
+      'Mine on my wall',
     ]);
     expect(data.fence.cardsINailedElsewhere).toMatchObject([
       { words: 'Alice was here', state: 'posted', onTheFenceOf: { callSign: b.handle } },
@@ -193,11 +193,11 @@ describe('what is in it: exactly what the app shows me', () => {
     expect(data.pals.pals).toEqual([]);
   });
 
-  it('someone who blocked me is not in my file at all — not my card on their Fence, not my Mark, not my Tribute', async () => {
+  it('someone who blocked me is not in my file at all — not my card on their wall, not my Mark, not my testimonial', async () => {
     const me = await person('me');
     const them = await person('them');
     await pals(me, them);
-    expect((await nail(them.handle, { body: 'on their Fence' }, as(me))).status).toBe(201);
+    expect((await nail(them.handle, { body: 'on their wall' }, as(me))).status).toBe(201);
     expect((await giveMarkTo(them.handle, 'gem', as(me))).status).toBeLessThan(300);
     expect((await leaveTribute(them.handle, { body: 'a kind word' }, as(me))).status).toBeLessThan(300);
     await whisper(them.handle, 'hello', as(me));
@@ -207,7 +207,7 @@ describe('what is in it: exactly what the app shows me', () => {
     await doAct(me.handle, 'block', as(them));
     const { text } = await dataOf(me);
     expect(text).not.toContain(them.handle);
-    expect(text).not.toContain('on their Fence');
+    expect(text).not.toContain('on their wall');
     expect(text).not.toContain('a kind word');
     // and the person who blocked sees their own block list
     expect((await dataOf(them)).data.pals.blocked).toMatchObject([{ callSign: me.handle }]);
@@ -229,7 +229,7 @@ describe('what is in it: exactly what the app shows me', () => {
     }
   });
 
-  it('a Whisper held back from me is in my held tray, not my thread; the sender sees it as sent', async () => {
+  it('a message held back from me is in my held tray, not my thread; the sender sees it as sent', async () => {
     const me = await person('me');
     const them = await person('them');
     await pals(me, them);

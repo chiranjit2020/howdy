@@ -108,7 +108,7 @@ describe('the listening token', () => {
   });
 });
 
-describe('who is rung when a Whisper is sent', () => {
+describe('who is rung when a message is sent', () => {
   async function pals() {
     const a = await person('alice');
     const b = await person('bob');

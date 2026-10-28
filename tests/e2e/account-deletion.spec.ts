@@ -33,17 +33,17 @@ async function person(browser: Browser, tag: string) {
 }
 
 test.describe('Account deletion (production build, real CSP)', () => {
-  test('Burn the Deed closes it; signing in within 14 days offers to keep it, and keeping it signs me in', async ({
+  test('Delete account closes it; signing in within 14 days offers to keep it, and keeping it signs me in', async ({
     browser,
   }) => {
     const me = await person(browser, 'leaver');
     const problems = await watchProblems(me.page);
 
-    await me.page.goto('/workshop');
+    await me.page.goto('/settings');
     await pageReady(me.page);
     const card = me.page
       .locator('.clay')
-      .filter({ has: me.page.getByRole('heading', { name: 'Burn the Deed' }) });
+      .filter({ has: me.page.getByRole('heading', { name: 'Delete account' }) });
     await card.getByLabel('Your password').fill(me.password);
     await card.getByRole('button', { name: 'Delete my account…' }).click();
     await me.page.getByRole('button', { name: 'Yes, delete it' }).click();
@@ -51,8 +51,8 @@ test.describe('Account deletion (production build, real CSP)', () => {
     expect(await horizontalOverflow(me.page)).toBe(0);
 
     // Signed out everywhere: the Workshop now sends me to sign in.
-    await me.page.goto('/workshop');
-    await expect(me.page).toHaveURL(/\/step-inside/);
+    await me.page.goto('/settings');
+    await expect(me.page).toHaveURL(/\/login/);
 
     await stepInsideVia(me.page, me.email, me.password);
     const notice = me.page.getByRole('region', { name: 'Your account is closing' });

@@ -34,10 +34,10 @@ async function makePals(asker: Person, asked: Person) {
   expect((await api(asked, `/api/relationships/${asker.handle}`, { action: 'accept' })).ok()).toBe(true);
 }
 
-const picks = (page: Page) => page.getByRole('group', { name: 'Award a Mark' });
+const picks = (page: Page) => page.getByRole('group', { name: 'Give a badge' });
 
 test.describe('Marks and the Vibe Matrix (production build, real CSP)', () => {
-  test('a Pal awards one Mark, sees it counted, then waits 30 days; the owner and a stranger cannot award', async ({
+  test('a friend awards one Mark, sees it counted, then waits 30 days; the owner and a stranger cannot award', async ({
     browser,
   }) => {
     const a = await person(browser, 'markowner');
@@ -47,11 +47,11 @@ test.describe('Marks and the Vibe Matrix (production build, real CSP)', () => {
     await makePals(b, a);
 
     // Bob opens Alice's Porch: plain counts (nothing earned yet), each Mark's meaning, and five picks.
-    await b.page.goto(`/porch/${a.handle}`);
+    await b.page.goto(`/profile/${a.handle}`);
     await pageReady(b.page);
     const box = b.page;
     await expect(box.getByText('Rare, genuinely valuable')).toBeVisible();
-    await expect(box.getByText('0 Marks total. The percentages show up after 20 — 20 to go.')).toBeVisible();
+    await expect(box.getByText('0 badges total. The percentages show up after 20 — 20 to go.')).toBeVisible();
     for (const kind of ['Gem', 'Pure', 'Chill', 'Sharp', 'Bold'])
       await expect(picks(b.page).getByRole('button', { name: kind })).toBeEnabled();
 
@@ -59,16 +59,16 @@ test.describe('Marks and the Vibe Matrix (production build, real CSP)', () => {
     await picks(b.page).getByRole('button', { name: 'Sharp' }).click();
     await expect(b.page.getByText('You gave a Sharp Mark.')).toBeVisible();
     await expect(box.getByText('1 Mark total. The percentages show up after 20 — 19 to go.')).toBeVisible();
-    await expect(box.getByText('You can Mark them again in 30 days.')).toBeVisible();
+    await expect(box.getByText('You can give them a badge again in 30 days.')).toBeVisible();
     for (const kind of ['Gem', 'Pure', 'Chill', 'Sharp', 'Bold'])
       await expect(picks(b.page).getByRole('button', { name: kind })).toBeDisabled();
 
     // It really was saved: a reload keeps the count and the wait.
     await b.page.reload();
     await pageReady(b.page);
-    await expect(b.page.getByText(/^1 Mark total\./)).toBeVisible();
+    await expect(b.page.getByText(/^1 badge total\./)).toBeVisible();
     await expect(picks(b.page).getByRole('button', { name: 'Gem' })).toBeDisabled();
-    await expect(b.page.getByText('You can Mark them again in 30 days.')).toBeVisible();
+    await expect(b.page.getByText('You can give them a badge again in 30 days.')).toBeVisible();
 
     // Alice is told someone gave her a Mark, never which kind; her own Porch shows the count and no picks.
     await expect
@@ -79,18 +79,18 @@ test.describe('Marks and the Vibe Matrix (production build, real CSP)', () => {
           ).chimes.map((x) => x.text),
         { timeout: 10_000 },
       )
-      .toContain(`${b.handle} gave you a Mark.`);
-    await a.page.goto(`/porch/${a.handle}`);
+      .toContain(`${b.handle} gave you a badge.`);
+    await a.page.goto(`/profile/${a.handle}`);
     await pageReady(a.page);
-    await expect(a.page.getByText(/^1 Mark total\./)).toBeVisible();
+    await expect(a.page.getByText(/^1 badge total\./)).toBeVisible();
     await expect(picks(a.page)).toHaveCount(0);
 
     // Carol is not Alice's Pal: she sees the tally, but the picks are closed (and nothing says why).
-    await c.page.goto(`/porch/${a.handle}`);
+    await c.page.goto(`/profile/${a.handle}`);
     await pageReady(c.page);
-    await expect(c.page.getByText(/^1 Mark total\./)).toBeVisible();
+    await expect(c.page.getByText(/^1 badge total\./)).toBeVisible();
     await expect(picks(c.page).getByRole('button', { name: 'Gem' })).toBeDisabled();
-    await expect(c.page.getByText(/Mark them again/)).toHaveCount(0);
+    await expect(c.page.getByText(/give them a badge again/)).toHaveCount(0);
     expect((await api(c, `/api/porch/${a.handle}/marks`, { kind: 'gem' })).status()).toBe(403);
 
     expect(problems).toEqual([]);
@@ -106,10 +106,10 @@ test.describe('Marks and the Vibe Matrix (production build, real CSP)', () => {
   }
 
   for (const scheme of ['light', 'dark'] as const) {
-    test(`axe finds no violations on a Porch with Marks (${scheme})`, async ({ browser }) => {
+    test(`axe finds no violations on a profile with Marks (${scheme})`, async ({ browser }) => {
       const { a, b } = await seed(browser, { colorScheme: scheme, bypassCSP: true, reducedMotion: 'reduce' });
       for (const p of [a, b]) {
-        await p.page.goto(`/porch/${a.handle}`);
+        await p.page.goto(`/profile/${a.handle}`);
         await pageReady(p.page);
         expect(await axeViolations(p.page), `${p === a ? 'owner' : 'pal'} (${scheme})`).toEqual([]);
       }
@@ -125,7 +125,7 @@ test.describe('Marks and the Vibe Matrix (production build, real CSP)', () => {
       isMobile: true,
       viewport: { width: 320, height: 700 },
     });
-    await b.page.goto(`/porch/${a.handle}`);
+    await b.page.goto(`/profile/${a.handle}`);
     await pageReady(b.page);
     expect(await horizontalOverflow(b.page)).toBeLessThanOrEqual(0);
     expect(await smallTargets(b.page)).toEqual([]);

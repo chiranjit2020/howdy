@@ -23,7 +23,7 @@ export function TributeCard({ body, authorHandle, status, pinned, actions }: Tri
         {pinned && (
           <Badge tone="warning">
             <Glyph emoji="📜" className="mr-1" />
-            Pinned Tribute
+            Pinned testimonial
           </Badge>
         )}
         {/* Only its author ever sees a waiting Tribute; the approving is the owner's, so not "your" approval. */}

@@ -34,11 +34,21 @@ export const RESERVED_HANDLES: ReadonlySet<string> = new Set([
   'fence',
   'tracks',
   'whispers',
-  // Fixed words under /whispers/… and /api/whispers/…, where a call sign would otherwise land on the same URL.
+  // Fixed words under /messages/… and /api/whispers/…, where a call sign would otherwise land on the same URL.
   'unread',
   'held',
   'workshop',
   'gate',
+  // The everyday page names (2026-10-29), reserved like the old ones they replaced.
+  'messages',
+  'profile',
+  'friends',
+  'settings',
+  'groups',
+  'notifications',
+  'visitors',
+  'login',
+  'signup',
   'null',
   'undefined',
   'anonymous',

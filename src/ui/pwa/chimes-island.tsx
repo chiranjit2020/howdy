@@ -47,14 +47,14 @@ export function ChimesIsland({ vapidKey }: { vapidKey: string | undefined }) {
         id: ID,
         priority: 5,
         icon: <Art name="nav-chimes" size="free" className="size-6" />,
-        label: 'Get Chimes on this phone',
+        label: 'Get notifications on this phone',
         autoExpandMs: 1200,
         onDismiss: snooze,
         expanded: () => (
           <div className="flex flex-col gap-3">
             <p className="text-caption text-on-island-muted">
-              Hear about Whispers, replies and Pal requests even when Howdy is closed. You can switch kinds
-              off in Chimes.
+              Hear about messages, replies and friend requests even when Howdy is closed. You can switch kinds
+              off in Settings.
             </p>
             <Button
               size="sm"
@@ -66,7 +66,7 @@ export function ChimesIsland({ vapidKey }: { vapidKey: string | undefined }) {
                 dismissActivity(ID);
               }}
             >
-              Turn on Chimes
+              Turn on notifications
             </Button>
           </div>
         ),

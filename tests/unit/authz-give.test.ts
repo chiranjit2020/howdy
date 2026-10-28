@@ -25,7 +25,7 @@ function oracle(action: Action, actor: Actor, rel: RelationshipState, neighbour:
   return action === 'whisper:exchange' ? pals : pals || neighbour;
 }
 
-describe('can(): Tributes, Marks and Whispers with Town Hall neighbours (ADR-044)', () => {
+describe('can(): Testimonials, Marks and messages with group neighbours (ADR-044)', () => {
   it('match an independent oracle over every action × actor × relationship × neighbour', () => {
     let n = 0;
     for (const action of ['tribute:give', 'mark:give', 'whisper:exchange'] as const)
@@ -41,7 +41,7 @@ describe('can(): Tributes, Marks and Whispers with Town Hall neighbours (ADR-044
     expect(n).toBe(3 * actors.length * RELATIONSHIP_STATES.length * 2);
   });
 
-  it('a neighbour who is not a Pal may give a Mark or a Tribute, but never Whisper', () => {
+  it('a neighbour who is not a friend may give a Mark or a testimonial, but never message', () => {
     const me: Actor = { kind: 'user', id: ME, status: 'active' };
     const ctx = { relationship: 'UNKNOWN' as RelationshipState, neighbour: true };
     expect(can(me, 'mark:give', RANCH, ctx).allow).toBe(true);

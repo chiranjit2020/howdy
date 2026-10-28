@@ -36,7 +36,7 @@ describe('semantic colour tokens', () => {
     expect(tokens.size).toBeGreaterThan(25);
   });
 
-  it('every Dusk value differs from Daylight for surface/text tokens (a real second theme)', () => {
+  it('every Dark value differs from Light for surface/text tokens (a real second theme)', () => {
     for (const n of ['background', 'surface', 'text-primary', 'text-secondary', 'text-muted', 'border']) {
       expect(get(n, 'light'), n).not.toBe(get(n, 'dark'));
     }
@@ -138,7 +138,7 @@ describe('design-system discipline', () => {
     expect(offenders).toEqual([]);
   });
 
-  it('the browser theme-color meta values match the background tokens (Daylight and Dusk)', () => {
+  it('the browser theme-color meta values match the background tokens (Light and Dark)', () => {
     const layout = readFileSync('src/app/layout.tsx', 'utf8');
     const light = /prefers-color-scheme: light\)',\s*color: '(#[0-9a-f]{6})'/i.exec(layout)?.[1];
     const dark = /prefers-color-scheme: dark\)',\s*color: '(#[0-9a-f]{6})'/i.exec(layout)?.[1];
@@ -146,7 +146,7 @@ describe('design-system discipline', () => {
     expect(dark?.toLowerCase()).toBe(get('background', 'dark'));
   });
 
-  it('the welcome share image uses the Daylight palette', () => {
+  it('the welcome share image uses the Light palette', () => {
     const image = readFileSync('src/app/(welcome)/share-card.tsx', 'utf8');
     const pinned = {
       CREAM: 'background',
@@ -161,7 +161,7 @@ describe('design-system discipline', () => {
     }
   });
 
-  it('the web app manifest colours match the Daylight background token (the installed app opens in Daylight)', () => {
+  it('the web app manifest colours match the Light background token (the installed app opens in Light)', () => {
     const manifest = readFileSync('src/app/manifest.ts', 'utf8');
     for (const key of ['background_color', 'theme_color']) {
       const value = new RegExp(`${key}: '(#[0-9a-f]{6})'`, 'i').exec(manifest)?.[1];

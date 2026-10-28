@@ -607,7 +607,7 @@ export async function act(
     case 'leave': {
       if (mine?.role === 'owner') {
         throw new AppError('BAD_REQUEST', {
-          message: 'The owner cannot leave — hand the Town Hall to a Deputy, or delete it.',
+          message: 'The owner cannot leave — hand the group to a Deputy, or delete it.',
         });
       }
       const ban = mine ? null : await banOf(townHallId, userId);
@@ -708,7 +708,7 @@ export async function invite(inviterId: string, townHallId: string, handle: stri
   await hallForStaff(inviterId, townHallId);
   await enforceRateLimit(`townhalls:invite:${townHallId}`, RATE.invitePerHall);
   const target = await resolveHandle(handle);
-  if (!target) throw new AppError('NOT_FOUND', { message: 'No one has that call sign.' });
+  if (!target) throw new AppError('NOT_FOUND', { message: 'No one has that username.' });
   if (target.userId === inviterId) throw new AppError('BAD_REQUEST', { message: 'You are already in it.' });
 
   const theirs = await myMembership(target.userId, townHallId);
@@ -761,7 +761,7 @@ export async function removeMember(staffId: string, townHallId: string, targetHa
   if (!target) throw new AppError('NOT_FOUND');
   if (target.userId === staffId) {
     throw new AppError('BAD_REQUEST', {
-      message: role === 'owner' ? 'Hand the Town Hall over or delete it instead.' : 'Use "Leave" instead.',
+      message: role === 'owner' ? 'Hand the group over or delete it instead.' : 'Use "Leave" instead.',
     });
   }
   const theirs = await myMembership(target.userId, townHallId);
@@ -783,7 +783,7 @@ export async function banPerson(staffId: string, townHallId: string, handle: str
   await enforceRateLimit(`townhalls:manage:${staffId}`, RATE.manage);
   const { role } = await hallForStaff(staffId, townHallId);
   const target = await resolveHandle(handle);
-  if (!target) throw new AppError('NOT_FOUND', { message: 'No one has that call sign.' });
+  if (!target) throw new AppError('NOT_FOUND', { message: 'No one has that username.' });
   if (target.userId === staffId) throw new AppError('BAD_REQUEST', { message: 'You cannot ban yourself.' });
   await getDb().transaction(async (tx) => {
     await lockPerson(tx, townHallId, target.userId);

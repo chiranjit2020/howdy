@@ -68,7 +68,7 @@ describe('my invite link', () => {
     expect(await inviterName(next)).toBe(rick.handle);
   });
 
-  it('shows the display name only — never the call sign', async () => {
+  it('shows the display name only — never the username', async () => {
     const rick = await settledUser(kit, uniqueUser('rick'));
     const { code } = await linkOf(rick);
     await q(
@@ -97,7 +97,7 @@ describe('my invite link', () => {
 });
 
 describe('signing up through a link', () => {
-  it('sends a Pal request to the inviter once the email is confirmed — not before, and nothing more', async () => {
+  it('sends a friend request to the inviter once the email is confirmed — not before, and nothing more', async () => {
     const rick = await settledUser(kit, uniqueUser('rick'));
     const { code } = await linkOf(rick);
     const meera = { ...uniqueUser('meera'), invite: code };

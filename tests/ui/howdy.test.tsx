@@ -69,7 +69,7 @@ describe('YoButton', () => {
     const user = userEvent.setup();
     const onToggle = vi.fn();
     const { rerender } = render(<YoButton count={1} active={false} onToggle={onToggle} />);
-    const btn = screen.getByRole('button', { name: /Yo/ });
+    const btn = screen.getByRole('button', { name: /Wave/ });
     expect(btn).toHaveAttribute('aria-pressed', 'false');
     expect(screen.getByLabelText('1 Yo')).toBeInTheDocument();
     await user.click(btn);
@@ -88,7 +88,7 @@ describe('VibeMatrix', () => {
     expect(screen.getByText('Rare, genuinely valuable')).toBeInTheDocument();
     expect(screen.getByText((_, el) => el?.textContent === '12 Marks')).toBeInTheDocument(); // count + hidden word
     expect(
-      screen.getByText(/19 Marks total\. The percentages show up after 20 — 1 to go\./),
+      screen.getByText(/19 badges total\. The percentages show up after 20 — 1 to go\./),
     ).toBeInTheDocument();
     expect(screen.queryByRole('img', { name: /%$/ })).not.toBeInTheDocument();
 
@@ -101,26 +101,26 @@ describe('VibeMatrix', () => {
 
   it('offers five picks only when there is somewhere to send them, disabled with the reason when not allowed', () => {
     const { rerender } = render(<VibeMatrix counts={counts(0, 0)} total={0} />);
-    expect(screen.queryByRole('group', { name: 'Award a Mark' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('group', { name: 'Give a badge' })).not.toBeInTheDocument();
     rerender(
       <VibeMatrix
         counts={counts(0, 0)}
         total={0}
         canGive={false}
         onGive={() => undefined}
-        disabledHint="You can Mark them again in 3 days."
+        disabledHint="You can give them a badge again in 3 days."
       />,
     );
     expect(screen.getAllByRole('button')).toHaveLength(5);
     for (const b of screen.getAllByRole('button')) expect(b).toBeDisabled();
-    expect(screen.getByText('You can Mark them again in 3 days.')).toBeInTheDocument();
+    expect(screen.getByText('You can give them a badge again in 3 days.')).toBeInTheDocument();
   });
 });
 
 describe('TipHatButton', () => {
   it('is disabled and says so once tipped', () => {
     render(<TipHatButton tipped onTip={() => undefined} />);
-    expect(screen.getByRole('button', { name: 'Hat tipped' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Poked' })).toBeDisabled();
   });
 });
 
@@ -129,7 +129,7 @@ describe('PostCard', () => {
     render(card());
     expect(screen.getByText('Late-night canteen run?')).toBeInTheDocument();
     expect(screen.queryByText('Bringing coffee.')).not.toBeInTheDocument();
-    expect(screen.queryByRole('heading', { name: 'Scribbles' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Replies' })).not.toBeInTheDocument();
     expect(screen.queryByRole('textbox')).not.toBeInTheDocument(); // reply composer lives on the back
   });
 
@@ -138,7 +138,7 @@ describe('PostCard', () => {
     render(card());
     await user.click(screen.getByRole('button', { name: /Flip/ }));
     expect(screen.queryByText('Late-night canteen run?')).not.toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Scribbles' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Replies' })).toBeInTheDocument();
     expect(screen.getByText('Bringing coffee.')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Back to card/ })).toHaveFocus();
     await user.click(screen.getByRole('button', { name: /Back to card/ }));
@@ -223,7 +223,7 @@ describe('PostCardComposer', () => {
     const user = userEvent.setup();
     const onSubmit = vi.fn();
     render(<PostCardComposer kind="card" onSubmit={onSubmit} />);
-    const submit = screen.getByRole('button', { name: 'Nail to Fence' });
+    const submit = screen.getByRole('button', { name: 'Post' });
     expect(submit).toBeDisabled();
     await user.type(screen.getByRole('textbox'), '   ');
     expect(submit).toBeDisabled();
@@ -233,9 +233,9 @@ describe('PostCardComposer', () => {
     const user = userEvent.setup();
     const onSubmit = vi.fn();
     render(<PostCardComposer kind="card" onSubmit={onSubmit} />);
-    await user.type(screen.getByRole('textbox'), '  hello fence  ');
-    await user.click(screen.getByRole('button', { name: 'Nail to Fence' }));
-    expect(onSubmit).toHaveBeenCalledExactlyOnceWith('hello fence', undefined);
+    await user.type(screen.getByRole('textbox'), '  hello wall  ');
+    await user.click(screen.getByRole('button', { name: 'Post' }));
+    expect(onSubmit).toHaveBeenCalledExactlyOnceWith('hello wall', undefined);
     expect(screen.getByRole('textbox')).toHaveValue('');
   });
 });
@@ -266,7 +266,7 @@ describe('TrackItem (privacy)', () => {
 });
 
 describe('TributeCard', () => {
-  it('pending tributes show the approval state and owner actions; published ones do not', () => {
+  it('pending testimonials show the approval state and owner actions; published ones do not', () => {
     const { rerender } = render(
       <TributeCard
         status="pending"
@@ -299,9 +299,9 @@ describe('PosseBadge', () => {
       unmount();
     }
   });
-  it('shows a block as "Outlaw"', () => {
+  it('shows a block as "Block"', () => {
     render(<PosseBadge state="BLOCKED" />);
-    expect(screen.getByText('Outlaw')).toBeInTheDocument();
+    expect(screen.getByText('Block')).toBeInTheDocument();
   });
 });
 
@@ -319,10 +319,10 @@ describe('WhisperBubble', () => {
   });
 });
 
-describe('Fence', () => {
+describe('Wall', () => {
   it('shows an empty state when there are no cards, and no "older" button unless there is more', () => {
     render(<Fence />);
-    expect(screen.getByText('Nothing nailed up yet')).toBeInTheDocument();
+    expect(screen.getByText('No posts yet')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Older cards' })).not.toBeInTheDocument();
   });
 
@@ -345,12 +345,12 @@ describe('Fence', () => {
 
   it('is a labelled region', () => {
     render(<Fence />);
-    expect(screen.getByRole('region', { name: 'The Fence' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'The wall' })).toBeInTheDocument();
   });
 });
 
 describe('ChimeItem, TownHallCard, RanchHeader', () => {
-  it('unread chimes are announced as unread', () => {
+  it('unread notifications are announced as unread', () => {
     render(
       <ul>
         <ChimeItem type="YO_DROPPED" text="Sneha dropped a Yo." createdAt={at} unread />
@@ -359,7 +359,7 @@ describe('ChimeItem, TownHallCard, RanchHeader', () => {
     expect(screen.getByText(/Unread:/)).toBeInTheDocument();
   });
 
-  it('town halls show visibility but no member counts', () => {
+  it('groups show visibility but no member counts', () => {
     const { container } = render(
       <TownHallCard name="Night Owls" description="Awake past 2am" visibility="members" />,
     );
@@ -374,7 +374,7 @@ describe('ChimeItem, TownHallCard, RanchHeader', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'Chiranjit' })).toBeInTheDocument();
     expect(screen.getByText('@chiranjit')).toBeInTheDocument();
     expect(screen.getByText('Writing code')).toBeInTheDocument();
-    expect(screen.getByText('Pal')).toBeInTheDocument();
+    expect(screen.getByText('Friend')).toBeInTheDocument();
   });
 
   it('a composed Ranch has no accessibility violations', async () => {
@@ -405,7 +405,7 @@ describe('name badges', () => {
   it('an earned Trusted tick follows the name and is read as "Trusted"', async () => {
     const { container } = render(<RanchHeader displayName="Sneha Roy" handle="sneha" trusted />);
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Sneha Roy (Trusted)');
-    expect(screen.getByTitle('Trusted · earned from Pals')).toBeInTheDocument();
+    expect(screen.getByTitle('Trusted · earned from friends')).toBeInTheDocument();
     expect(await axeViolations(container)).toEqual([]);
   });
 
@@ -416,10 +416,10 @@ describe('name badges', () => {
     expect(h1).not.toHaveTextContent('Trusted');
   });
 
-  it('a Post Card author and a reply author carry the tick too', () => {
+  it('a post author and a reply author carry the tick too', () => {
     render(card({ author: { ...author, trusted: true } }));
     expect(screen.getByText('(Trusted)', { exact: false })).toBeInTheDocument();
     render(<PostCardReply author={{ ...author, trusted: true }} body="nice" createdAt={at} />);
-    expect(screen.getAllByTitle('Trusted · earned from Pals')).toHaveLength(2);
+    expect(screen.getAllByTitle('Trusted · earned from friends')).toHaveLength(2);
   });
 });

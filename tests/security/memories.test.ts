@@ -48,7 +48,7 @@ async function pals(a: P, b: P, since: string) {
 }
 const mem = async (p: P) => memoriesToday(await userId(p.handle));
 
-describe('on this day: cards on my Fence', () => {
+describe('on this day: cards on my wall', () => {
   it('shows cards from this day in earlier years, with how long ago; not today, not other days', async () => {
     const me = await person('me');
     await cardOn(me, me, 'one year', yearsAgo(1));
@@ -85,7 +85,7 @@ describe('on this day: cards on my Fence', () => {
     expect((await mem(me)).cards.map((c) => c.body)).toEqual([`from ${fine.handle}`]);
   });
 
-  it('only my own Fence', async () => {
+  it('only my own wall', async () => {
     const me = await person('me');
     const other = await person('other');
     await cardOn(other, other, 'theirs', yearsAgo(1));
@@ -93,8 +93,8 @@ describe('on this day: cards on my Fence', () => {
   });
 });
 
-describe('Pal anniversaries', () => {
-  it('the day we became Pals, a year or more ago — only while we still are', async () => {
+describe('Friend anniversaries', () => {
+  it('the day we became friends, a year or more ago — only while we still are', async () => {
     const me = await person('me');
     const pal = await person('pal');
     const ex = await person('expal');
@@ -107,7 +107,7 @@ describe('Pal anniversaries', () => {
     expect((await mem(pal)).pals.map((p) => p.pal.handle)).toEqual([me.handle]);
   });
 
-  it('not on the day we became Pals this year', async () => {
+  it('not on the day we became friends this year', async () => {
     const me = await person('me');
     const pal = await person('pal');
     await pals(me, pal, noon(today));
@@ -115,14 +115,14 @@ describe('Pal anniversaries', () => {
   });
 });
 
-describe('Tribute anniversaries', () => {
-  it('a published Tribute written to me on this day; not a pending one, not one taken down', async () => {
+describe('Testimonial anniversaries', () => {
+  it('a published testimonial written to me on this day; not a pending one, not one taken down', async () => {
     const me = await person('me');
     const pal = await person('pal');
     const meId = await userId(me.handle);
     const palId = await userId(pal.handle);
     await q(
-      `insert into tributes (owner_id, author_id, body, status, created_at) values
+      `insert into testimonials (owner_id, author_id, body, status, created_at) values
        ($1, $2, 'kind words', 'published', $3), ($1, $2, 'still waiting', 'pending', $3)`,
       [meId, palId, yearsAgo(1)],
     );
@@ -130,7 +130,7 @@ describe('Tribute anniversaries', () => {
     expect(m.tributes.map((t) => [t.body, t.author.handle, t.yearsAgo])).toEqual([
       ['kind words', pal.handle, 1],
     ]);
-    await q("delete from tributes where body = 'kind words'");
+    await q("delete from testimonials where body = 'kind words'");
     expect((await mem(me)).tributes).toEqual([]);
   });
 });

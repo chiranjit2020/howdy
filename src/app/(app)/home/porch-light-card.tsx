@@ -85,17 +85,17 @@ export function PorchLightCard({ lit, mine }: { lit: LitPalRow[]; mine: MyLightS
         className="flex items-center gap-1.5 text-metadata font-semibold tracking-wider text-text-secondary uppercase"
       >
         <Glyph emoji="💡" size="free" className="size-5" />
-        Porch Lights
+        Free to talk
       </h2>
 
       {lit.length > 0 && (
-        <ul aria-label="Pals free to talk" className="flex flex-col gap-2">
+        <ul aria-label="Friends free to talk" className="flex flex-col gap-2">
           {lit.map((p) => (
             <li key={p.handle} className="flex items-center gap-3">
               <Avatar name={p.displayName} tint={p.portraitTint} src={p.portraitUrl} size="sm" />
               <div className="min-w-0 flex-1">
                 <p className="text-body [overflow-wrap:anywhere] text-text-primary">
-                  <Link href={`/porch/${p.handle}`} className="font-semibold">
+                  <Link href={`/profile/${p.handle}`} className="font-semibold">
                     {p.displayName}
                   </Link>{' '}
                   <span className="text-caption text-text-secondary">is free until {p.untilLabel}</span>
@@ -105,9 +105,9 @@ export function PorchLightCard({ lit, mine }: { lit: LitPalRow[]; mine: MyLightS
                 )}
               </div>
               <Link
-                href={`/whispers/${p.handle}`}
-                aria-label={`Whisper to ${p.displayName}`}
-                title="Whisper"
+                href={`/messages/${p.handle}`}
+                aria-label={`Message to ${p.displayName}`}
+                title="Message"
                 className={iconButton}
               >
                 <Art name="nav-whispers" size="free" className="size-7" />
@@ -123,7 +123,7 @@ export function PorchLightCard({ lit, mine }: { lit: LitPalRow[]; mine: MyLightS
         <div className="flex flex-col gap-2 rounded-md bg-warning/20 p-3">
           <p className="text-body text-text-primary">
             Your light is on until <strong>{mine.untilLabel}</strong>, for{' '}
-            {mine.audience === 'close' ? 'your Close Pals' : 'all your Pals'}.
+            {mine.audience === 'close' ? 'your close friends' : 'all your friends'}.
           </p>
           {mine.note && (
             <p className="text-caption [overflow-wrap:anywhere] text-text-secondary">“{mine.note}”</p>
@@ -152,13 +152,13 @@ export function PorchLightCard({ lit, mine }: { lit: LitPalRow[]; mine: MyLightS
             <legend className="mb-1 text-caption font-semibold text-text-primary">Who sees it?</legend>
             <Radio
               name="light-audience"
-              label="All Pals"
+              label="All friends"
               checked={audience === 'pals'}
               onChange={() => setAudience('pals')}
             />
             <Radio
               name="light-audience"
-              label="Close Pals only"
+              label="Close friends only"
               checked={audience === 'close'}
               onChange={() => setAudience('close')}
             />
@@ -184,13 +184,13 @@ export function PorchLightCard({ lit, mine }: { lit: LitPalRow[]; mine: MyLightS
       ) : (
         <div className="flex flex-col gap-2">
           {lit.length === 0 && (
-            <p className="text-caption text-text-secondary">No Pal has their light on right now.</p>
+            <p className="text-caption text-text-secondary">No friend has their light on right now.</p>
           )}
           <Button variant="secondary" onClick={() => setOpen(true)} className="self-start">
-            Switch on your Porch Light
+            Show you’re free to talk
           </Button>
           <p className="text-metadata text-text-muted">
-            Lets your Pals see you’re free to talk. Nobody is notified, and it turns itself off.
+            Lets your friends see you’re free to talk. Nobody is notified, and it turns itself off.
           </p>
         </div>
       )}

@@ -138,7 +138,7 @@ describe('the legal documents', () => {
   it('the documents a person agrees to have a required version; the others do not', () => {
     expect([...ACCEPTED_DOCS].sort()).toEqual(['privacy', 'terms']);
     for (const d of ACCEPTED_DOCS) expect(requiredVersion(d)).toMatch(SEMVER);
-    expect(LEGAL_DOCS['campfire-rules'].acceptVersion).toBeUndefined();
+    expect(LEGAL_DOCS['community-guidelines'].acceptVersion).toBeUndefined();
     expect(LEGAL_DOCS.cookies.acceptVersion).toBeUndefined();
   });
 
@@ -164,10 +164,10 @@ describe('the legal documents', () => {
     expect(text).toContain('**Security records:** 12 months, then deleted.');
     expect(text).not.toContain('fixed retention period for security records');
     expect(text).toContain(`**Signal:** ${SIGNAL_TTL_MS / 3_600_000} hours`);
-    expect(text).toContain(`**Whispers:** ${WHISPER_RETENTION_DAYS} days`);
+    expect(text).toContain(`**Messages:** ${WHISPER_RETENTION_DAYS} days`);
     expect(text).toContain(`**Tracks:** ${TRACK_DAYS} days`);
     expect(text).toContain(
-      `**Chimes:** ${READ_RETENTION_MS / day} days after you read them, or ${UNREAD_RETENTION_MS / day} days`,
+      `**Notifications:** ${READ_RETENTION_MS / day} days after you read them, or ${UNREAD_RETENTION_MS / day} days`,
     );
   });
 

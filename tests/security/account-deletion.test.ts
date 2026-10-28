@@ -213,7 +213,7 @@ describe('after 14 days the daily job deletes it for good', () => {
   });
 });
 
-describe('the call sign is held back for 90 days', () => {
+describe('the username is held back for 90 days', () => {
   async function deleted() {
     const a = await person('gone');
     await burn(a);

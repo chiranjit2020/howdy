@@ -54,7 +54,7 @@ async function bob() {
   return signedInUser(kit, uniqueUser('bob'));
 }
 
-describe('a new Portrait is decoded, cropped and re-encoded — only pixels survive', () => {
+describe('a new profile photo is decoded, cropped and re-encoded — only pixels survive', () => {
   it('turns a photo into a 512x512 WebP, stores exactly one file, and serves it', async () => {
     const a = await alice();
     const r = await uploadPortrait(a.cookie, await jpeg(1200, 800));
@@ -95,7 +95,7 @@ describe('a new Portrait is decoded, cropped and re-encoded — only pixels surv
     expect(got.bytes.includes(Buffer.from('SECRET-COPYRIGHT-NOTE'))).toBe(false);
   });
 
-  it('replacing a Portrait leaves one live file and one live row, and removes the old file', async () => {
+  it('replacing a profile photo leaves one live file and one live row, and removes the old file', async () => {
     const a = await alice();
     const first = await uploadPortrait(a.cookie, await jpeg());
     const v1 = (first.done!.data.portrait as { version: string }).version;
@@ -249,7 +249,7 @@ describe('the upload URL grants exactly one thing', () => {
   });
 });
 
-describe('only the owner can start, finish or remove their own Portrait', () => {
+describe('only the owner can start, finish or remove their own profile photo', () => {
   it('signed-out callers get 401 everywhere', async () => {
     expect((await startUpload({ contentType: 'image/jpeg', size: 10 })).status).toBe(401);
     expect((await finishUpload('7b0c0a52-6f6a-4d4a-8f0a-0d6f5b8a1c11')).status).toBe(401);
@@ -314,19 +314,19 @@ describe('only the owner can start, finish or remove their own Portrait', () => 
     expect(await mediaRows()).toHaveLength(0);
   });
 
-  it('the database allows one live Portrait per person, and only known states', async () => {
+  it('the database allows one live profile photo per person, and only known states', async () => {
     const a = await alice();
     await uploadPortrait(a.cookie, await jpeg());
     const id = await userId(a.handle);
     await expect(
       q(
-        "insert into media (owner_id, kind, status, object_key) values ($1, 'portrait', 'ready', 'portraits/second.webp')",
+        "insert into media (owner_id, kind, status, object_key) values ($1, 'profile photo', 'ready', 'portraits/second.webp')",
         [id],
       ),
     ).rejects.toThrow(/media_one_ready_per_owner_idx/);
     await expect(
       q(
-        "insert into media (owner_id, kind, status, object_key) values ($1, 'portrait', 'weird', 'portraits/x.webp')",
+        "insert into media (owner_id, kind, status, object_key) values ($1, 'profile photo', 'weird', 'portraits/x.webp')",
         [id],
       ),
     ).rejects.toThrow(/media_status_check/);
@@ -338,7 +338,7 @@ describe('only the owner can start, finish or remove their own Portrait', () => 
     ).rejects.toThrow(/media_kind_check/);
   });
 
-  it('two "finish" requests for the same upload race: one wins, the Portrait survives, nothing leaks', async () => {
+  it('two "finish" requests for the same upload race: one wins, the profile photo survives, nothing leaks', async () => {
     const a = await alice();
     const bytes = await jpeg(900, 900);
     const start = await startUpload({ contentType: 'image/jpeg', size: bytes.length }, as(a));
@@ -378,7 +378,7 @@ describe('cost limits', () => {
   });
 });
 
-describe('who may see a Portrait: the same people who may open the Ranch, and nobody else', () => {
+describe('who may see a profile photo: the same people who may open the Ranch, and nobody else', () => {
   it('signed-out visitors get nothing', async () => {
     const a = await alice();
     await uploadPortrait(a.cookie, await jpeg());

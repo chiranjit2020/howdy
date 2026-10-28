@@ -16,7 +16,7 @@ import {
 const PAGES = [
   { path: '/privacy', title: 'Privacy Policy' },
   { path: '/terms', title: 'Terms of Service' },
-  { path: '/campfire-rules', title: 'Campfire Rules' },
+  { path: '/community-guidelines', title: 'Community Guidelines' },
   { path: '/cookies', title: 'Cookie Policy' },
 ];
 
@@ -65,7 +65,7 @@ test.describe('Legal pages (production build, real CSP)', () => {
         await expect(legal.getByRole('link', { name: new RegExp(q.title.split(' ')[0]!) })).toBeVisible();
     }
     // The footer is on the sign-in pages too.
-    await page.goto('/step-inside');
+    await page.goto('/login');
     await page.getByRole('navigation', { name: 'Legal' }).getByRole('link', { name: 'Privacy' }).click();
     await expect(page).toHaveURL(/\/privacy$/);
     expect(problems).toEqual([]);
@@ -80,12 +80,12 @@ test.describe('Legal pages (production build, real CSP)', () => {
     const page = await ctx.newPage();
     await page.goto('/privacy');
     const toc = page.getByRole('navigation', { name: 'On this page' });
-    const link = toc.getByRole('link', { name: 'Tracks and Shadow Walk' });
+    const link = toc.getByRole('link', { name: 'Profile visitors and Private browsing' });
     await link.focus();
     await expect(link).toBeFocused();
     await page.keyboard.press('Enter');
-    await expect(page).toHaveURL(/#tracks-and-shadow-walk$/);
-    await expect(page.locator('#tracks-and-shadow-walk')).toBeFocused();
+    await expect(page).toHaveURL(/#profile-visitors-and-private-browsing$/);
+    await expect(page.locator('#profile-visitors-and-private-browsing')).toBeFocused();
     await expect(link).toHaveAttribute('aria-current', 'location');
     await ctx.close();
   });
@@ -114,7 +114,7 @@ test.describe('Legal pages (production build, real CSP)', () => {
       const ctx = await newContext(browser, { colorScheme: scheme, bypassCSP: true });
       const page = await ctx.newPage();
       const source = axeSource();
-      for (const p of [...PAGES.map((x) => x.path), '/stake-a-claim']) {
+      for (const p of [...PAGES.map((x) => x.path), '/signup']) {
         await page.goto(p);
         await page.evaluate(() => document.fonts.ready);
         await page.addScriptTag({ content: source });
@@ -136,11 +136,11 @@ test.describe('Legal pages (production build, real CSP)', () => {
 });
 
 test.describe('Agreeing (production build)', () => {
-  test('Stake a Claim will not go ahead until the box is ticked', async ({ browser }) => {
+  test('Sign up will not go ahead until the box is ticked', async ({ browser }) => {
     const ctx = await newContext(browser);
     const page = await ctx.newPage();
     const a = uniqueAccount('untick');
-    await page.goto('/stake-a-claim');
+    await page.goto('/signup');
     await page.getByLabel('Username').fill(a.handle);
     await page.getByLabel('Email address').fill(a.email);
     await page.getByLabel('Password', { exact: true }).fill(a.password);
@@ -167,7 +167,7 @@ test.describe('Agreeing (production build)', () => {
     await a.page.goto('/home');
     await expect(a.page).toHaveURL(/\/agree$/);
     await expect(a.page.getByRole('heading', { level: 1, name: 'A few ground rules' })).toBeVisible();
-    await a.page.goto(`/porch/${a.handle}`);
+    await a.page.goto(`/profile/${a.handle}`);
     await expect(a.page).toHaveURL(/\/agree$/);
     // …but the documents themselves are open to read.
     await a.page.goto('/terms');

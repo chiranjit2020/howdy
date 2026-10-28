@@ -5,7 +5,7 @@ import { Glyph } from '@/ui/art/glyph';
 import { cn } from '@/ui/cn';
 import { buttonClasses, ClayCard } from '@/ui/primitives';
 
-export const metadata = { title: 'The Gate' };
+export const metadata = { title: 'Welcome' };
 
 /** The Gate: the front door. Signed-in visitors go straight to their home. */
 export default async function GatePage() {
@@ -18,27 +18,27 @@ export default async function GatePage() {
     >
       <ClayCard className="flex flex-col items-center gap-4 p-6 text-center sm:p-7">
         <Glyph emoji="🤠" size="hero" />
-        <h1 className="text-heading text-text-primary">Howdy, partner.</h1>
+        <h1 className="text-heading text-text-primary">Welcome to Howdy.</h1>
         <p className="text-body text-text-secondary">
-          A small-circle social world. Post cards, quiet visits and private whispers — no endless feed.
+          A small-circle social world. Posts, quiet visits and private messages — no endless feed.
         </p>
         {/* The Howdy name leads; the line underneath says plainly what each one does. */}
         <div className="mt-1 flex w-full flex-col gap-3">
           <Link
-            href="/stake-a-claim"
+            href="/signup"
             className={cn(buttonClasses({ size: 'lg', fullWidth: true }), 'flex-col gap-1 py-3')}
           >
-            <span className="leading-none">Stake a Claim</span>
+            <span className="leading-none">Sign up</span>
             <span className="text-caption leading-none font-medium">Create your account</span>
           </Link>
           <Link
-            href="/step-inside"
+            href="/login"
             className={cn(
               buttonClasses({ variant: 'secondary', size: 'lg', fullWidth: true }),
               'flex-col gap-1 py-3',
             )}
           >
-            <span className="leading-none">Step Inside</span>
+            <span className="leading-none">Log in</span>
             <span className="text-caption leading-none font-medium text-text-secondary">
               Sign in to continue
             </span>

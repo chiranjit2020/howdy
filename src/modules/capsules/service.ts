@@ -69,7 +69,7 @@ export async function sealCapsule(
       !(await posseMembersAmong(authorId, [other.userId])).has(other.userId)
     ) {
       throw new AppError('NOT_FOUND', {
-        message: 'You can seal a Time Capsule for yourself or one of your Pals.',
+        message: 'You can seal a Time Capsule for yourself or one of your friends.',
       });
     }
     recipientId = other.userId;

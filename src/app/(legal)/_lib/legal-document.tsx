@@ -113,7 +113,7 @@ export function LegalDocument({ slug }: { slug: LegalSlug }) {
   const meta = LEGAL_DOCS[slug];
   const doc = loadLegal(slug);
   const { intro, sections } = group(doc.blocks);
-  const campfire = slug === 'campfire-rules';
+  const campfire = slug === 'community-guidelines';
   const others = LEGAL_SLUGS.filter((s) => s !== slug);
 
   return (

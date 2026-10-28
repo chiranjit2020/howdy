@@ -72,7 +72,7 @@ test.describe('Two-step sign-in (production build, real CSP)', () => {
     const me = await signedInMember(page, 'passkey');
     const problems = await watchProblems(page);
 
-    await page.goto('/workshop');
+    await page.goto('/settings');
     await pageReady(page);
     const card = securityCard(page);
     await card.scrollIntoViewIfNeeded();
@@ -94,7 +94,7 @@ test.describe('Two-step sign-in (production build, real CSP)', () => {
 
     // Signed out: the password alone is no longer enough...
     await ctx.clearCookies();
-    await page.goto('/step-inside');
+    await page.goto('/login');
     await page.getByLabel('Email or username').fill(me.email);
     await page.getByLabel('Password', { exact: true }).fill(me.password);
     await page.getByRole('button', { name: 'Log in', exact: true }).click();
@@ -106,7 +106,7 @@ test.describe('Two-step sign-in (production build, real CSP)', () => {
     await expect(page).toHaveURL(/\/home$/);
 
     await ctx.clearCookies();
-    await page.goto('/step-inside');
+    await page.goto('/login');
     await pageReady(page);
     await page.getByRole('button', { name: 'Log in with a passkey' }).click();
     await expect(page).toHaveURL(/\/home$/);
@@ -120,7 +120,7 @@ test.describe('Two-step sign-in (production build, real CSP)', () => {
     const me = await signedInMember(page, 'totp');
     const problems = await watchProblems(page);
 
-    await page.goto('/workshop');
+    await page.goto('/settings');
     await pageReady(page);
     const card = securityCard(page);
     await card.scrollIntoViewIfNeeded();
@@ -143,7 +143,7 @@ test.describe('Two-step sign-in (production build, real CSP)', () => {
     await expect(card.getByText('Linked', { exact: true })).toBeVisible();
 
     await ctx.clearCookies();
-    await page.goto('/step-inside');
+    await page.goto('/login');
     await page.getByLabel('Email or username').fill(me.email);
     await page.getByLabel('Password', { exact: true }).fill(me.password);
     await page.getByRole('button', { name: 'Log in', exact: true }).click();
@@ -157,7 +157,7 @@ test.describe('Two-step sign-in (production build, real CSP)', () => {
     await expect(page).toHaveURL(/\/home$/);
 
     await ctx.clearCookies();
-    await page.goto('/step-inside');
+    await page.goto('/login');
     await page.getByLabel('Email or username').fill(me.handle);
     await page.getByLabel('Password', { exact: true }).fill(me.password);
     await page.getByRole('button', { name: 'Log in', exact: true }).click();
@@ -165,7 +165,7 @@ test.describe('Two-step sign-in (production build, real CSP)', () => {
     await page.getByRole('button', { name: 'Log in', exact: true }).click();
     await expect(page).toHaveURL(/\/home$/);
 
-    await page.goto('/workshop');
+    await page.goto('/settings');
     await expect(securityCard(page).getByText('9 of 10 left', { exact: false })).toBeVisible();
     expect(problems).toEqual([]);
     await ctx.close();

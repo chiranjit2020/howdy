@@ -22,7 +22,7 @@ const ask = (handle: unknown, opts: { cookie?: string; origin?: string | null } 
   call(askRoute, 'POST', '/api/pals/ask', { handle }, opts);
 const links = async () => (await q('select count(*)::int n from posse_links')).rows[0].n as number;
 
-describe('Ask by call sign (the way in to a private Ranch)', () => {
+describe('Ask by username (the way in to a private Ranch)', () => {
   it('reaches a posse-only Ranch that the asker cannot even open', async () => {
     const owner = await person('owner');
     const asker = await person('asker');
@@ -70,7 +70,7 @@ describe('Ask by call sign (the way in to a private Ranch)', () => {
     expect((await myLists(as(b))).data.incoming).toEqual([]);
   });
 
-  it('validates the call sign shape before doing anything', async () => {
+  it('validates the username shape before doing anything', async () => {
     const a = await person('alice');
     for (const bad of ['', 'ab', '../etc', 'a b', "x'; drop table users;--", 42, null, undefined]) {
       expect((await ask(bad, as(a))).status, JSON.stringify(bad)).toBe(422);
@@ -78,7 +78,7 @@ describe('Ask by call sign (the way in to a private Ranch)', () => {
     expect(await links()).toBe(0);
   });
 
-  it('scanning call signs spends the same daily budget as real asks (20 a day), and fails closed', async () => {
+  it('scanning usernames spends the same daily budget as real asks (20 a day), and fails closed', async () => {
     const a = await person('scanner');
     for (let i = 0; i < RATE.request.limit; i++)
       expect((await ask(`ghost_${i}_zzzz`, as(a))).status).toBe(202);

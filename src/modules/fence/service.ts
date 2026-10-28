@@ -450,7 +450,7 @@ export async function postCard(
   if (!acc) throw new AppError('NOT_FOUND');
   const { fence, ctx } = acc;
   if (!canFence(actor, 'fence:post', fence, ctx).allow) {
-    throw new AppError('FORBIDDEN', { message: 'This Fence is not open for new cards from you.' });
+    throw new AppError('FORBIDDEN', { message: 'This wall is not open for new posts from you.' });
   }
   if (userId !== ownerId) {
     await enforceRateLimit(`fence:post:${userId}:${ownerId}`, RATE.postPerFence);
@@ -458,7 +458,9 @@ export async function postCard(
   }
   // A photo on SOMEONE ELSE's Fence needs their Pal (ADR-031); on my own Fence I may always add one.
   if (photoId && userId !== ownerId && ctx.relationship !== 'POSSE' && ctx.relationship !== 'CLOSE_POSSE') {
-    throw new AppError('FORBIDDEN', { message: 'Only their Pals can add a photo to a card on this Fence.' });
+    throw new AppError('FORBIDDEN', {
+      message: 'Only their friends can add a photo to a post on this wall.',
+    });
   }
   const status = await statusFor(actor, 'card', fence, ctx, userId);
   const row = await getDb().transaction(async (tx) => {
@@ -515,7 +517,7 @@ export async function postReply(userId: string, cardId: string, body: string): P
   if (!loaded || loaded.card.status !== 'published') throw new AppError('NOT_FOUND');
   const { card, fence, ctx, actor } = loaded;
   if (!canFence(actor, 'fence:post', fence, ctx).allow) {
-    throw new AppError('FORBIDDEN', { message: 'This Fence is not open for replies from you.' });
+    throw new AppError('FORBIDDEN', { message: 'This wall is not open for replies from you.' });
   }
   if (userId !== fence.ownerId) {
     await enforceRateLimit(`fence:reply:${userId}:${fence.ownerId}`, RATE.replyPerFence);
@@ -529,7 +531,7 @@ export async function postReply(userId: string, cardId: string, body: string): P
       .from(cardReplies)
       .where(and(eq(cardReplies.cardId, card.id), eq(cardReplies.status, 'published')));
     // Same answer for everybody (restricted writers included), so a full card says nothing about who is restricted.
-    if (n >= REPLIES_PER_CARD) throw new AppError('CONFLICT', { message: 'This card is full.' });
+    if (n >= REPLIES_PER_CARD) throw new AppError('CONFLICT', { message: 'This post is full.' });
     const [inserted] = await tx
       .insert(cardReplies)
       .values({ cardId: card.id, authorId: userId, body, status, createdAt: new Date() })
@@ -584,7 +586,7 @@ export async function setYo(
   if (!loaded || loaded.card.status !== 'published') throw new AppError('NOT_FOUND');
   if (!canFence(loaded.actor, 'fence:react', loaded.fence, loaded.ctx).allow) throw new AppError('NOT_FOUND');
   if (loaded.card.authorId === userId) {
-    throw new AppError('BAD_REQUEST', { message: 'You cannot Yo your own card.' });
+    throw new AppError('BAD_REQUEST', { message: 'You cannot wave at your own post.' });
   }
   const db = getDb();
   const made = await db
@@ -678,7 +680,7 @@ export async function approveReply(ownerId: string, replyId: string): Promise<vo
       .select({ n: count() })
       .from(cardReplies)
       .where(and(eq(cardReplies.cardId, row.cardId), eq(cardReplies.status, 'published')));
-    if (n >= REPLIES_PER_CARD) throw new AppError('CONFLICT', { message: 'That card is full.' });
+    if (n >= REPLIES_PER_CARD) throw new AppError('CONFLICT', { message: 'That post is full.' });
     await tx
       .update(cardReplies)
       .set({ status: 'published', createdAt: new Date() })

@@ -63,14 +63,14 @@ export function AppShell({
   const items: ShellNavItem[] = me
     ? [
         { key: 'home', href: '/home', label: 'Home' },
-        { key: 'ranch', href: `/porch/${me.handle}`, label: 'My Porch' },
-        { key: 'posse', href: '/pals', label: 'Pals' },
-        { key: 'tracks', href: '/tracks', label: 'Tracks' },
-        { key: 'whispers', href: '/whispers', label: 'Whispers', badge: unreadWhispers },
-        { key: 'chimes', href: '/chimes', label: 'Chimes', badge: unread },
+        { key: 'ranch', href: `/profile/${me.handle}`, label: 'My profile' },
+        { key: 'posse', href: '/friends', label: 'Friends' },
+        { key: 'tracks', href: '/visitors', label: 'Visitors' },
+        { key: 'whispers', href: '/messages', label: 'Messages', badge: unreadWhispers },
+        { key: 'chimes', href: '/notifications', label: 'Notifications', badge: unread },
         // Sidebar-only on wide screens; on a phone these are in the top bar's "More" menu (ShellMoreMenu).
-        { key: 'workshop', href: '/workshop', label: 'Workshop' },
-        { key: 'town-halls', href: '/town-halls', label: 'Town Halls', badge: townHallInvites },
+        { key: 'workshop', href: '/settings', label: 'Settings' },
+        { key: 'town-halls', href: '/groups', label: 'Groups', badge: townHallInvites },
         { key: 'capsules', href: '/capsules', label: 'Time Capsules' },
         ...(moderator ? [{ key: 'moderation', href: '/moderation', label: 'Moderation' } as const] : []),
         ...(admin ? [{ key: 'security', href: '/admin/security', label: 'Security Center' } as const] : []),
@@ -104,7 +104,7 @@ export function AppShell({
                 <Art name="bird" size="free" className="w-9 origin-bottom animate-bird-hop" />
               </span>
               <Link
-                href="/chimes"
+                href="/notifications"
                 aria-label={unread > 0 ? `Notifications, ${unread} unread` : 'Notifications'}
                 className="relative grid size-11 place-items-center rounded-pill bg-surface text-heading text-text-primary no-underline shadow-clay-sm"
               >
@@ -121,8 +121,8 @@ export function AppShell({
               {/* A real 44 px box (an inline link around an image is shorter than its picture, and too small to tap).
                   Phones have your picture in the tab bar instead, so it shows here from md up only. */}
               <Link
-                href={`/porch/${me.handle}`}
-                aria-label="Your Porch"
+                href={`/profile/${me.handle}`}
+                aria-label="Your profile"
                 className="hidden size-11 rounded-pill md:inline-flex"
               >
                 <Avatar name={me.displayName} src={me.portraitUrl} tint={me.portraitTint} size="md" />
@@ -132,12 +132,12 @@ export function AppShell({
           ) : (
             // Two equal pills: the Howdy name, and underneath what it plainly means.
             <div className="grid grid-cols-2 gap-2">
-              <Link href="/step-inside" className={cn(AUTH_PILL, AUTH_PILL_SECONDARY)}>
-                <span className={AUTH_PILL_LABEL}>Step Inside</span>
+              <Link href="/login" className={cn(AUTH_PILL, AUTH_PILL_SECONDARY)}>
+                <span className={AUTH_PILL_LABEL}>Log in</span>
                 <span className="text-metadata text-text-secondary">Sign in</span>
               </Link>
-              <Link href="/stake-a-claim" className={cn(AUTH_PILL, AUTH_PILL_PRIMARY)}>
-                <span className={AUTH_PILL_LABEL}>Stake a Claim</span>
+              <Link href="/signup" className={cn(AUTH_PILL, AUTH_PILL_PRIMARY)}>
+                <span className={AUTH_PILL_LABEL}>Sign up</span>
                 <span className="text-metadata">Create account</span>
               </Link>
             </div>

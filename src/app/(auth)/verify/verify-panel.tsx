@@ -29,10 +29,10 @@ export function VerifyPanel({ token }: { token: string }) {
     return (
       <ClayCard className="flex flex-col items-center gap-3 p-8 text-center">
         <Glyph emoji="📜" size="hero" />
-        <h1 className="text-heading text-text-primary">Deed granted!</h1>
+        <h1 className="text-heading text-text-primary">Account created!</h1>
         <p className="text-body text-text-secondary">Your email is confirmed. Welcome to Howdy.</p>
-        <Link href="/step-inside" className="inline-flex min-h-11 items-center font-semibold">
-          Step Inside
+        <Link href="/login" className="inline-flex min-h-11 items-center font-semibold">
+          Log in
         </Link>
       </ClayCard>
     );
@@ -44,7 +44,7 @@ export function VerifyPanel({ token }: { token: string }) {
       <p className="text-body text-text-secondary">One tap and your claim is official.</p>
       {state === 'failed' && (
         <FormMessage tone="error" focusKey={1}>
-          {message} <Link href="/step-inside">Step Inside</Link> and we can send a new link.
+          {message} <Link href="/login">Log in</Link> and we can send a new link.
         </FormMessage>
       )}
       <Button size="lg" fullWidth onClick={confirm} loading={state === 'busy'}>

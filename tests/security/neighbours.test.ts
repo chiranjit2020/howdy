@@ -37,7 +37,7 @@ async function memberFor(hall: string, p: P, days: number) {
 /** A Town Hall with `owner` and `others` in it; everyone a member for `days`. */
 async function hallWith(owner: P, others: P[], days = 15): Promise<string> {
   const r = await create(
-    { name: 'Porch Talk', description: 'Chatting on the porch.', visibility: 'open' },
+    { name: 'Profile Talk', description: 'Chatting on the porch.', visibility: 'open' },
     as(owner),
   );
   const id = r.data.townHall!.id as string;
@@ -52,7 +52,7 @@ const canGive = async (target: P, viewer: P) => ({
 });
 
 describe('who counts as a neighbour', () => {
-  it('two members of one Town Hall for 14+ days may give each other a Mark and a Tribute', async () => {
+  it('two members of one group for 14+ days may give each other a Mark and a testimonial', async () => {
     const ann = await person('ann');
     const bob = await person('bob');
     await open(ann);
@@ -116,7 +116,7 @@ describe('who counts as a neighbour', () => {
     expect((await canGive(ann, cat)).mark).toBe(false);
   });
 
-  it('members of DIFFERENT Town Halls are not neighbours', async () => {
+  it('members of DIFFERENT groups are not neighbours', async () => {
     const ann = await person('ann');
     const bob = await person('bob');
     await open(ann);
@@ -139,7 +139,7 @@ describe('what being neighbours does not change', () => {
     expect((await giveMarkTo(ann.handle, 'gem', as(bob))).status).toBe(404);
   });
 
-  it('a Porch hidden from them stays hidden: nothing to give on', async () => {
+  it('a profile hidden from them stays hidden: nothing to give on', async () => {
     const ann = await person('ann');
     const bob = await person('bob');
     await patchRanch({ ranchVisibility: 'posse' }, as(ann));
@@ -147,7 +147,7 @@ describe('what being neighbours does not change', () => {
     expect((await giveMarkTo(ann.handle, 'gem', as(bob))).status).toBe(404);
   });
 
-  it('Whispers stay Pals-only', async () => {
+  it('Messages stay Pals-only', async () => {
     const ann = await person('ann');
     const bob = await person('bob');
     await open(ann);
@@ -166,8 +166,8 @@ describe('what being neighbours does not change', () => {
   });
 });
 
-describe('which Marks are from a Pal', () => {
-  it('a neighbour’s Mark is recorded as not from a Pal; a Pal’s (even one in the same hall) is', async () => {
+describe('which Marks are from a friend', () => {
+  it('a neighbour’s Mark is recorded as not from a friend; a friend’s (even one in the same hall) is', async () => {
     const ann = await person('ann');
     const bob = await person('bob');
     const pal = await person('pal');

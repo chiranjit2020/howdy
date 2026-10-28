@@ -39,12 +39,30 @@ const nextConfig: NextConfig = {
   async headers() {
     return [{ source: '/:path*', headers: securityHeaders }];
   },
-  // "Posse" became "Pals" and "Ranch" became "Porch": old links and bookmarks keep working. Temporary (307) so browsers
-  // do not cache them forever.
+  // Old page names keep working: links in emails already sent, bookmarks, shared profile links. Temporary (307) so
+  // browsers do not cache them forever. 2026-10-29: Howdy's own words became everyday ones (Pals → Friends, Porch →
+  // Profile, Whispers → Messages …); the 2026-09-27 renames (Posse, Ranch) go straight to the newest address.
   async redirects() {
+    const pages: [string, string][] = [
+      ['/step-inside', '/login'],
+      ['/stake-a-claim', '/signup'],
+      ['/lost-your-key', '/forgot-password'],
+      ['/pals', '/friends'],
+      ['/posse', '/friends'],
+      ['/porch', '/profile'],
+      ['/ranch', '/profile'],
+      ['/whispers', '/messages'],
+      ['/chimes', '/notifications'],
+      ['/workshop', '/settings'],
+      ['/town-halls', '/groups'],
+      ['/tracks', '/visitors'],
+      ['/campfire-rules', '/community-guidelines'],
+    ];
     return [
-      { source: '/posse', destination: '/pals', permanent: false },
-      { source: '/ranch/:handle', destination: '/porch/:handle', permanent: false },
+      ...pages.flatMap(([from, to]) => [
+        { source: from, destination: to, permanent: false },
+        { source: `${from}/:path*`, destination: `${to}/:path*`, permanent: false },
+      ]),
       // The API followed the rename too. 307 keeps the method and body, so a page still open with the old code (right
       // after a deploy) can keep posting until it reloads.
       { source: '/api/ranch/:path*', destination: '/api/porch/:path*', permanent: false },

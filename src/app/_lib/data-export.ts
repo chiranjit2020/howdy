@@ -199,7 +199,7 @@ export async function buildDataExport(userId: string, now: Date = new Date()): P
         })),
     },
     whispers: {
-      note: 'Whispers fade after 7 days, so only the last week is here.',
+      note: 'Messages fade after 7 days, so only the last week is here.',
       threads: whispers.threads.map((t) => ({
         with: who(t.otherId),
         whispers: t.whispers.map((w) => ({
@@ -260,7 +260,7 @@ export async function buildDataExport(userId: string, now: Date = new Date()): P
       photo: cardPhoto(s.photoId),
     })),
     tracks: tracks.frozen
-      ? { shadowWalk: true, note: 'Shadow Walk is on, so your Tracks are frozen.' }
+      ? { shadowWalk: true, note: 'Private browsing is on, so your visitor list is paused.' }
       : {
           palsWhoStoppedBy: tracks.people.map((p) => ({
             callSign: p.handle,
@@ -311,17 +311,17 @@ export async function buildDataExport(userId: string, now: Date = new Date()): P
 function readmeText(callSign: string, at: string): string {
   return `Howdy — your data (@${callSign}), exported ${at}
 
-data.json    Everything in one file: your account and settings, Pals, Post Cards, Whispers,
-             Tributes, Marks, Time Capsules, Tracks, Town Halls and moderation history.
-photos/      Your Portrait, and the photos on the Post Cards and Town Hall posts in data.json.
+data.json    Everything in one file: your account and settings, friends, posts, messages,
+             testimonials, badges, Time Capsules, profile visits, groups and moderation history.
+photos/      Your profile photo, and the photos on the posts and group posts in data.json.
 
 What is in it: everything you gave Howdy, plus what Howdy already shows you (cards on your
-Fence, Whispers in your threads, Tributes on your Porch). Other people appear by call sign
+wall, messages in your threads, testimonials on your profile). Other people appear by username
 and name only, and only if Howdy would show them to you today.
 
 What is not: anyone else's email or private choices, who gave which Mark (Howdy never says),
 the words of sealed Time Capsules (sealed until their day), and things that have already
-faded (Whispers after 7 days, Tracks after 7 days, Signals after 12 hours).
+faded (Messages after 7 days, Tracks after 7 days, Signals after 12 hours).
 
 Questions, or want a correction? Write to the address in the Privacy Policy.
 `;

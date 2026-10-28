@@ -14,7 +14,7 @@ describe('logger redaction', () => {
       event: 'test',
       password: 'hunter2',
       sessionToken: 'tok_abc',
-      body: 'private whisper text',
+      body: 'private message text',
       req: { headers: { cookie: 'session=abc', authorization: 'Bearer xyz' } },
       nested: { password: 'hunter3', token: 'tok_def' },
     });
@@ -24,7 +24,7 @@ describe('logger redaction', () => {
       'hunter3',
       'tok_abc',
       'tok_def',
-      'private whisper text',
+      'private message text',
       'session=abc',
       'Bearer xyz',
     ]) {

@@ -48,7 +48,7 @@ const pals = (a: string, b: string) =>
     [a, b],
   );
 
-test('Pals you may know: shown with shared Pals, asked from the card, or dismissed for good', async ({
+test('Friends you may know: shown with shared friends, asked from the card, or dismissed for good', async ({
   browser,
 }) => {
   const me = await person(browser, 'sugme');
@@ -68,12 +68,12 @@ test('Pals you may know: shown with shared Pals, asked from the card, or dismiss
   await pals(a!.handle, x!.handle);
   await pals(b!.handle, x!.handle);
 
-  await me.page.goto('/pals');
+  await me.page.goto('/friends');
   await pageReady(me.page);
-  const card = me.page.getByRole('region', { name: 'Pals you may know' });
+  const card = me.page.getByRole('region', { name: 'Friends you may know' });
   const row = card.getByRole('listitem').filter({ hasText: `Person ${x!.handle}` });
   await expect(row).toBeVisible();
-  await expect(row.getByText(/^Pals with /)).toBeVisible();
+  await expect(row.getByText(/^Friends with /)).toBeVisible();
   expect(await axeViolations(me.page)).toEqual([]);
   expect(await smallTargets(me.page)).toEqual([]);
   expect(await horizontalOverflow(me.page)).toBe(0);
@@ -82,7 +82,7 @@ test('Pals you may know: shown with shared Pals, asked from the card, or dismiss
   await expect(card).toHaveCount(0);
   await me.page.reload();
   await pageReady(me.page);
-  await expect(me.page.getByRole('region', { name: 'Pals you may know' })).toHaveCount(0);
+  await expect(me.page.getByRole('region', { name: 'Friends you may know' })).toHaveCount(0);
   expect(problems).toEqual([]);
   await me.ctx.close();
 });

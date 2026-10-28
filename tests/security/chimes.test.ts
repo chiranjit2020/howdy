@@ -37,23 +37,23 @@ async function wall() {
   return { owner, friend };
 }
 
-describe('Posse Chimes', () => {
+describe('Posse notifications', () => {
   it('an ask rings the asked person’s bell, an accept rings the asker’s — and nobody rings their own', async () => {
     const a = await person('alice');
     const b = await person('bob');
     await doAct(b.handle, 'request', as(a));
-    expect(await texts(as(b))).toEqual([`${a.handle} wants to be your Pal.`]);
+    expect(await texts(as(b))).toEqual([`${a.handle} wants to be your friend.`]);
     expect((await chimesOf(as(b))).data.chimes![0]).toMatchObject({
       type: 'posse_requested',
-      href: '/pals',
+      href: '/friends',
       unread: true,
     });
     expect(await bell(as(b))).toBe(1);
     expect(await texts(as(a))).toEqual([]);
 
     await doAct(a.handle, 'accept', as(b));
-    expect(await texts(as(a))).toEqual([`${b.handle} said yes. You are Pals now.`]);
-    expect((await chimesOf(as(a))).data.chimes![0]!.href).toBe(`/porch/${b.handle}`);
+    expect(await texts(as(a))).toEqual([`${b.handle} said yes. You are friends now.`]);
+    expect((await chimesOf(as(a))).data.chimes![0]!.href).toBe(`/profile/${b.handle}`);
     expect(await bell(as(b))).toBe(1); // accepting rings nothing for the accepter
   });
 
@@ -104,7 +104,7 @@ describe('Posse Chimes', () => {
     expect(await bell(as(b))).toBe(0);
   });
 
-  it('a Posse Chime from someone the recipient restricted is not sent', async () => {
+  it('a Posse notification from someone the recipient restricted is not sent', async () => {
     const a = await person('alice');
     const r = await person('restricted');
     await doAct(r.handle, 'restrict', as(a));
@@ -113,29 +113,29 @@ describe('Posse Chimes', () => {
   });
 });
 
-describe('Fence Chimes', () => {
-  it('a card on my Fence rings me; my own card, and a Yo/reply on someone else’s card, do not', async () => {
+describe('Wall notifications', () => {
+  it('a card on my wall rings me; my own card, and a Yo/reply on someone else’s card, do not', async () => {
     const { owner, friend } = await wall();
     await nail(owner.handle, { body: 'mine' }, as(owner));
     expect(await bell(as(owner))).toBe(0);
     await nail(owner.handle, { body: 'hello' }, as(friend));
     expect((await chimesOf(as(owner))).data.chimes![0]).toMatchObject({
       type: 'card_created',
-      text: `${friend.handle} nailed a card to your Fence.`,
-      href: `/porch/${owner.handle}`,
+      text: `${friend.handle} posted on your wall.`,
+      href: `/profile/${owner.handle}`,
     });
     expect(await bell(as(friend))).toBe(0);
   });
 
-  it('a reply rings the card’s writer and the Fence owner, never the person who replied', async () => {
+  it('a reply rings the card’s writer and the wall owner, never the person who replied', async () => {
     const { owner, friend } = await wall();
     const third = await person('third');
     const cardId = (await nail(owner.handle, { body: 'from third' }, as(third))).data.card!.id;
     await flushBackground();
     await q('delete from notifications');
     await replyTo(cardId, { body: 'a reply' }, as(friend));
-    expect(await texts(as(third))).toEqual([`${friend.handle} scribbled a reply on your card.`]);
-    expect(await texts(as(owner))).toEqual([`${friend.handle} scribbled a reply on a card on your Fence.`]);
+    expect(await texts(as(third))).toEqual([`${friend.handle} replied to your post.`]);
+    expect(await texts(as(owner))).toEqual([`${friend.handle} replied to a post on your wall.`]);
     expect(await texts(as(friend))).toEqual([]);
     // The card's writer being the owner rings once, not twice.
     const own = (await nail(owner.handle, { body: 'owner card' }, as(owner))).data.card!.id;
@@ -152,7 +152,7 @@ describe('Fence Chimes', () => {
       await yo(id, false, as(friend));
     }
     await yo(id, true, as(friend));
-    expect(await texts(as(owner))).toEqual([`${friend.handle} reacted to your card.`]);
+    expect(await texts(as(owner))).toEqual([`${friend.handle} reacted to your post.`]);
     await markRead({ all: true }, as(owner));
     await yo(id, false, as(friend));
     await yo(id, true, as(friend));
@@ -166,21 +166,21 @@ describe('Fence Chimes', () => {
     const id = (await nail(owner.handle, { body: 'please' }, as(friend))).data.card!.id;
     expect(await types(as(owner))).toEqual(['card_waiting']);
     expect((await chimesOf(as(owner))).data.chimes![0]!.text).toBe(
-      `A card from ${friend.handle} is waiting for your approval.`,
+      `A post from ${friend.handle} is waiting for your approval.`,
     );
     expect(await texts(as(friend))).toEqual([]);
     await approve(id, as(owner));
-    expect(await texts(as(friend))).toEqual([`${owner.handle} approved your card. It is on the Fence now.`]);
+    expect(await texts(as(friend))).toEqual([`${owner.handle} approved your post. It is on the wall now.`]);
   });
 
-  it('Restrict: the owner gets the SAME "waiting" Chime, and approving a held card tells its writer NOTHING (that would reveal it)', async () => {
+  it('Restrict: the owner gets the SAME "waiting" Notification, and approving a held card tells its writer NOTHING (that would reveal it)', async () => {
     const { owner, friend } = await wall();
     await doAct(friend.handle, 'restrict', as(owner));
     const id = (await nail(owner.handle, { body: 'held' }, as(friend))).data.card!.id;
     const held = (await chimesOf(as(owner))).data.chimes![0]!;
     expect(held).toMatchObject({
       type: 'card_waiting',
-      text: `A card from ${friend.handle} is waiting for your approval.`,
+      text: `A post from ${friend.handle} is waiting for your approval.`,
     });
     await approve(id, as(owner));
     expect(await rows()).toBe(1);
@@ -218,7 +218,7 @@ describe('Fence Chimes', () => {
 });
 
 describe('what is shown is decided when it is read', () => {
-  it('blocking someone hides their Chimes at once and the count follows; unmuting brings them back', async () => {
+  it('blocking someone hides their notifications at once and the count follows; unmuting brings them back', async () => {
     const { owner, friend } = await wall();
     const other = await person('other');
     await nail(owner.handle, { body: 'a' }, as(friend));
@@ -226,7 +226,7 @@ describe('what is shown is decided when it is read', () => {
     expect(await bell(as(owner))).toBe(2);
     await doAct(other.handle, 'mute', as(owner));
     expect(await bell(as(owner))).toBe(1);
-    expect(await texts(as(owner))).toEqual([`${friend.handle} nailed a card to your Fence.`]);
+    expect(await texts(as(owner))).toEqual([`${friend.handle} posted on your wall.`]);
     await doAct(other.handle, 'unmute', as(owner));
     expect(await bell(as(owner))).toBe(2);
     await doAct(friend.handle, 'block', as(owner));
@@ -238,7 +238,7 @@ describe('what is shown is decided when it is read', () => {
     expect(await bell(as(owner))).toBe(0);
   });
 
-  it('a suspended actor disappears; a removed card takes its Chimes with it; a deleted person takes theirs', async () => {
+  it('a suspended actor disappears; a removed card takes its notifications with it; a deleted person takes theirs', async () => {
     const { owner, friend } = await wall();
     const other = await person('other');
     const c1 = (await nail(owner.handle, { body: 'a' }, as(friend))).data.card!.id;
@@ -252,7 +252,7 @@ describe('what is shown is decided when it is read', () => {
     expect(await rows()).toBe(0);
   });
 
-  it('a Chime about a Fence I can no longer read is not shown (hidden ≡ missing)', async () => {
+  it('a notification about a wall I can no longer read is not shown (hidden ≡ missing)', async () => {
     const { owner, friend } = await wall();
     const third = await person('third');
     const cardId = (await nail(owner.handle, { body: 'from third' }, as(third))).data.card!.id;
@@ -264,7 +264,7 @@ describe('what is shown is decided when it is read', () => {
     expect(await bell(as(third))).toBe(0);
   });
 
-  it('a Chime about a card is only shown while the card is public (never a waiting card)', async () => {
+  it('a notification about a card is only shown while the card is public (never a waiting card)', async () => {
     const { owner, friend } = await wall();
     const id = (await nail(owner.handle, { body: 'a card' }, as(friend))).data.card!.id;
     await q("update post_cards set status = 'held' where id = $1", [id]);
@@ -298,7 +298,7 @@ describe('the person who acted learns nothing', () => {
     expect((await fenceOf(owner.handle, as(owner))).data.cards!.map((c) => c.body)).toEqual(['still works']);
   });
 
-  it('the same action gets a byte-identical answer whether the recipient hears it, muted the actor, or turned Chimes off', async () => {
+  it('the same action gets a byte-identical answer whether the recipient hears it, muted the actor, or turned notifications off', async () => {
     const { owner, friend } = await wall();
     const id = (await nail(owner.handle, { body: 'a card' }, as(owner))).data.card!.id;
     const shape = (r: { status: number; data: unknown }) =>
@@ -368,7 +368,7 @@ describe('reading, paging and counting', () => {
     expect((await chimesOf(as(me))).data.unread).toBe(99);
   });
 
-  it('hidden people cannot stall paging: the visible Chimes are still reached', async () => {
+  it('hidden people cannot stall paging: the visible notifications are still reached', async () => {
     const me = await person('me');
     const muter = await userId(me.handle);
     await chimeFrom(me.handle, 30, '2026-02-01'); // 30 recent from people I will mute
@@ -408,7 +408,7 @@ describe('reading, paging and counting', () => {
 });
 
 describe('marking read', () => {
-  it('marks the named Chimes or all of them, only ever the caller’s own; repeating is harmless', async () => {
+  it('marks the named notifications or all of them, only ever the caller’s own; repeating is harmless', async () => {
     const { owner, friend } = await wall();
     await nail(owner.handle, { body: 'one' }, as(friend));
     await nail(owner.handle, { body: 'two' }, as(friend));
@@ -438,7 +438,7 @@ describe('marking read', () => {
     expect(await bell(as(other))).toBe(1); // untouched
   });
 
-  it('"all, before" (opening the Chimes page) leaves a Chime that rang after the page was drawn unread', async () => {
+  it('"all, before" (opening the notifications page) leaves a notification that rang after the page was drawn unread', async () => {
     const { owner, friend } = await wall();
     await nail(owner.handle, { body: 'seen on the page' }, as(friend));
     await flushBackground();
@@ -515,7 +515,7 @@ describe('preferences', () => {
 });
 
 describe('retention and integrity', () => {
-  it('drops Chimes read over 30 days ago and unread ones over 90 days old — nothing newer', async () => {
+  it('drops notifications read over 30 days ago and unread ones over 90 days old — nothing newer', async () => {
     const me = await person('me');
     const to = await userId(me.handle);
     const mk = async (createdDaysAgo: number, readDaysAgo: number | null) => {

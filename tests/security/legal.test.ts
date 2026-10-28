@@ -33,7 +33,7 @@ const current = () => [
   { document: 'terms', version: requiredVersion('terms') },
 ];
 
-describe('agreeing at Stake a Claim', () => {
+describe('agreeing at Sign up', () => {
   it.each([
     ['missing', undefined],
     ['false', false],

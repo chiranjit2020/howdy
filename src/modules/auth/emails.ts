@@ -34,8 +34,8 @@ export function alreadyRegisteredMessage(to: string): MailMessage {
       '',
       'Someone (hopefully you) tried to sign up with this email, but it already has a Howdy account.',
       '',
-      `Step inside: ${link('/step-inside')}`,
-      `Lost your key? ${link('/lost-your-key')}`,
+      `Log in: ${link('/login')}`,
+      `Forgot password? ${link('/forgot-password')}`,
       '',
       'If this was not you, you can ignore this email. Nothing has changed.',
     ].join('\n'),
@@ -50,7 +50,7 @@ export function passwordResetMessage(to: string, token: string): MailMessage {
       'Howdy!',
       '',
       'Use this link to choose a new password:',
-      link('/lost-your-key/reset', token),
+      link('/forgot-password/reset', token),
       '',
       'This link works once and expires in 1 hour.',
       'If you did not ask for this, ignore this email. Your password has not changed.',
@@ -66,7 +66,7 @@ export function passwordChangedMessage(to: string): MailMessage {
       'Howdy!',
       '',
       'Your password was just changed and every device was signed out.',
-      `If this was not you, reset it right away: ${link('/lost-your-key')}`,
+      `If this was not you, reset it right away: ${link('/forgot-password')}`,
     ].join('\n'),
   };
 }
@@ -83,11 +83,11 @@ export function deletionScheduledMessage(to: string, deleteOn: Date): MailMessag
       'Howdy.',
       '',
       `You asked us to delete your Howdy account. It is closed now, and on ${longDate(deleteOn)} it will be deleted for good,`,
-      'with your Porch, Post Cards, Whispers, Pals and photo.',
+      'with your profile, posts, messages, friends and photo.',
       '',
-      `Changed your mind? Step inside before then and choose "Keep my account": ${link('/step-inside')}`,
+      `Changed your mind? Log in before then and choose "Keep my account": ${link('/login')}`,
       '',
-      'If this was not you, step inside and keep your account, then change your password right away.',
+      'If this was not you, log in and keep your account, then change your password right away.',
     ].join('\n'),
   };
 }
@@ -100,10 +100,10 @@ export function accountDeletedMessage(to: string): MailMessage {
     text: [
       'Howdy.',
       '',
-      'Your Howdy account has now been deleted, as you asked. Thank you for spending time on the porch.',
+      'Your Howdy account has now been deleted, as you asked. Thank you for spending time on Howdy.',
       '',
       'We keep only what our Privacy Policy describes (for example, reports about your account, with your name removed).',
-      `You are welcome back any time: ${link('/stake-a-claim')}`,
+      `You are welcome back any time: ${link('/signup')}`,
     ].join('\n'),
   };
 }
@@ -165,8 +165,8 @@ export function twoStepChangedMessage(to: string, change: TwoStepChange, extra?:
       line,
       ...(extra ? [extra] : []),
       '',
-      `If this was you, there is nothing to do. If it was not, reset your password now: ${link('/lost-your-key')}`,
-      'and then check "Sign-in security" in your Workshop.',
+      `If this was you, there is nothing to do. If it was not, reset your password now: ${link('/forgot-password')}`,
+      'and then check "Sign-in security" in your Settings.',
     ].join('\n'),
   };
 }

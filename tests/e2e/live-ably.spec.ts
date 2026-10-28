@@ -31,7 +31,7 @@ async function person(browser: Browser, tag: string) {
   return { ...account, ctx, page };
 }
 
-test('a Whisper appears instantly through Ably, and the ring carries no words', async ({ browser }) => {
+test('a message appears instantly through Ably, and the ring carries no words', async ({ browser }) => {
   const a = await person(browser, 'ablya');
   const b = await person(browser, 'ablyb');
   const post = (p: typeof a, path: string, data: unknown) =>
@@ -47,7 +47,7 @@ test('a Whisper appears instantly through Ably, and the ring carries no words', 
   });
   const problems = await watchProblems(b.page);
 
-  await b.page.goto(`/whispers/${a.handle}`);
+  await b.page.goto(`/messages/${a.handle}`);
   await pageReady(b.page);
   await expect(b.page.getByRole('status').filter({ hasText: 'Live' })).toBeVisible({ timeout: 15_000 });
 

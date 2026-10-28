@@ -5,23 +5,23 @@ import { useEffect, useState, type MouseEvent } from 'react';
 import { LEGAL_FACTS } from '@/shared/legal';
 import { Img } from '@/ui/art/img';
 import { Card } from '@/ui/primitives';
-import { ClaimForm } from './stake-a-claim/claim-form';
-import { LoginForm } from './step-inside/login-form';
+import { ClaimForm } from './signup/claim-form';
+import { LoginForm } from './login/login-form';
 
-export type AuthMode = 'step-inside' | 'stake-a-claim';
+export type AuthMode = 'login' | 'signup';
 
 /** Plain words for the essential actions: the page title, and the footer that offers the other form. */
 const MODES: Record<AuthMode, { title: string; prompt: string; other: AuthMode; otherLabel: string }> = {
-  'step-inside': {
+  login: {
     title: 'Log in',
     prompt: 'New to Howdy?',
-    other: 'stake-a-claim',
+    other: 'signup',
     otherLabel: 'Create account',
   },
-  'stake-a-claim': {
+  signup: {
     title: 'Create account',
     prompt: 'Already have an account?',
-    other: 'step-inside',
+    other: 'login',
     otherLabel: 'Log in',
   },
 };
@@ -36,7 +36,7 @@ const FOOTER_LINKS = [
 /**
  * One card for logging in and creating an account. The footer link swaps the form in place instead of navigating, and
  * the address follows along, so a refresh or a shared link opens the same form. It is a real link, so it still works
- * (as a page load) when opened in a new tab. Both addresses (/step-inside and /stake-a-claim) render this card.
+ * (as a page load) when opened in a new tab. Both addresses (/login and /signup) render this card.
  */
 export function AuthCard({
   initial,
@@ -79,7 +79,7 @@ export function AuthCard({
             className="h-auto w-28 sm:w-32"
           />
         </Link>
-        {active === 'step-inside' ? <LoginForm /> : <ClaimForm {...(invite ? { invite } : {})} />}
+        {active === 'login' ? <LoginForm /> : <ClaimForm {...(invite ? { invite } : {})} />}
         <p className="border-t border-border pt-4 text-center text-caption text-text-secondary">
           {mode.prompt}{' '}
           <a

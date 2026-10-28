@@ -12,58 +12,61 @@ const TINTS = ['bg-accent-soft', 'bg-success', 'bg-warning', 'bg-info', 'bg-myst
 const FEATURES: { art: ArtName; name: string; text: string }[] = [
   {
     art: 'nav-porch',
-    name: 'Your Porch',
-    text: 'Your corner of Howdy: a portrait, a few words about you, and a Signal that fades after 12 hours.',
+    name: 'Your profile',
+    text: 'Your corner of Howdy: a profile photo, a few words about you, and a status that fades after 12 hours.',
   },
   {
     art: 'nav-pals',
-    name: 'Pals',
-    text: 'Friends both ways, never followers. Meet Pals you may know, or bring friends in with your own invite link.',
+    name: 'Friends',
+    text: 'Friends both ways, never followers. Meet friends you may know, or bring friends in with your own invite link.',
   },
   {
     art: 'nav-nail',
-    name: 'Post Cards',
-    text: 'Nail a short card (and a photo) to a Pal’s Fence. React with a Yo, Laugh, Fire, Popcorn or Love.',
+    name: 'Posts',
+    text: 'Write a short post (and add a photo) on a friend’s wall. React with a Wave, Laugh, Fire, Popcorn or Love.',
   },
   {
     art: 'camera',
     name: 'Stories',
-    text: 'A photo for your Pals — or just Close Pals — gone after 12 hours. Who viewed it only if you both want it.',
+    text: 'A photo for your friends — or just close friends — gone after 12 hours. Who viewed it only if you both want it.',
   },
   {
     art: 'nav-whispers',
-    name: 'Whispers',
+    name: 'Messages',
     text: 'Private messages that arrive instantly. “Seen” only if you both want it. Burn a thread any time.',
   },
   {
     art: 'nav-tracks',
-    name: 'Tracks',
-    text: 'See who dropped by your Porch — or go on a Shadow Walk and leave no footprints (yours pause too).',
+    name: 'Profile visitors',
+    text: 'See who dropped by your profile — or turn on Private browsing and leave no footprints (yours pause too).',
   },
   {
     art: 'mark-gem',
-    name: 'Tributes & Marks',
-    text: 'Kind words you approve before they show, and five Marks — Gem, Pure, Chill, Sharp, Bold — from Pals and Town Hall neighbours.',
+    name: 'Testimonials & badges',
+    text: 'Kind words you approve before they show, and five badges — Gem, Pure, Chill, Sharp, Bold — from friends and group neighbours.',
   },
   {
     art: 'nav-town-halls',
-    name: 'Town Halls',
+    name: 'Groups',
     text: 'Small communities with their own feed and photos, Deputies who keep order, and “ask to join” when you want it.',
   },
   {
     art: 'nav-capsules',
     name: 'Time Capsules',
-    text: 'Seal words for future you, a Pal or a whole Town Hall. Nobody can read them early — not even you.',
+    text: 'Seal words for future you, a friend or a whole group. Nobody can read them early — not even you.',
   },
   {
     art: 'nav-chimes',
-    name: 'Chimes',
+    name: 'Notifications',
     text: 'Gentle notifications, on your phone too. “On this day” Memories bring back the good bits.',
   },
 ];
 
 const SAFETY: { art: ArtName; text: string }[] = [
-  { art: 'rule-respect-the-campfire', text: 'Campfire Rules that everyone agrees to before they step in' },
+  {
+    art: 'rule-respect-the-campfire',
+    text: 'Community Guidelines that everyone agrees to before they step in',
+  },
   { art: 'rule-respect-boundaries', text: 'Block, restrict and report — quietly. A “no” is never announced' },
   { art: 'rule-keep-it-safe-and-legal', text: 'Passkeys and two-step sign-in to keep your account yours' },
   { art: 'camera', text: 'Photos are checked before they reach anyone' },
@@ -118,7 +121,7 @@ function PhonePeek() {
   return (
     <div
       role="img"
-      aria-label="A peek at Howdy: a Post Card with reactions, a private Whisper, and a Chime saying a Pal gave you a Mark."
+      aria-label="A peek at Howdy: a post with reactions, a private message, and a notification saying a friend gave you a badge."
       className="relative mx-auto w-full max-w-[22rem] lg:max-w-[25rem]"
     >
       <Art
@@ -153,7 +156,7 @@ function PhonePeek() {
               <p className="text-metadata text-text-muted">@meera · just now</p>
             </div>
             <span className="rounded-sm border-2 border-dashed border-border-strong px-2 py-0.5 font-mono text-metadata text-text-secondary">
-              Fence
+              Wall
             </span>
           </div>
           <p className="text-body text-text-primary">
@@ -175,10 +178,10 @@ function PhonePeek() {
         {/* Whisper */}
         <div className="clay flex flex-col gap-2 p-4">
           <p className="flex items-center gap-2 text-caption font-semibold text-text-primary">
-            <Art name="nav-whispers" size="free" className="size-5" loading="eager" /> Whispers · Arjun
+            <Art name="nav-whispers" size="free" className="size-5" loading="eager" /> Messages · Arjun
           </p>
           <p className="max-w-[85%] self-start rounded-lg rounded-bl-sm bg-surface-sunken px-3 py-2 text-caption text-text-primary">
-            Saw your Porch Light on. Still up?
+            Saw you’re free to talk. Still up?
           </p>
           <p className="max-w-[85%] self-end rounded-lg rounded-br-sm bg-accent px-3 py-2 text-caption text-on-accent">
             Always, for you 😄
@@ -189,7 +192,7 @@ function PhonePeek() {
         {/* Chime */}
         <div className="flex items-center gap-3 rounded-pill bg-island px-4 py-2.5 text-on-island shadow-float">
           <Art name="mark-gem" size="free" className="size-7" loading="eager" />
-          <p className="text-caption font-medium">Kavya gave you a Gem Mark</p>
+          <p className="text-caption font-medium">Kavya gave you a Gem badge</p>
         </div>
       </div>
     </div>
@@ -202,7 +205,7 @@ function PhonePeek() {
  * the code to sign-up.
  */
 export function WelcomeStory({ invite }: { invite?: { code: string; invitedBy: string } }) {
-  const join = invite ? `/stake-a-claim?invite=${invite.code}` : '/stake-a-claim';
+  const join = invite ? `/signup?invite=${invite.code}` : '/signup';
   return (
     <>
       <header className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-4 sm:px-6">
@@ -217,8 +220,8 @@ export function WelcomeStory({ invite }: { invite?: { code: string; invitedBy: s
           />
         </Link>
         <nav aria-label="Account" className="flex items-center gap-2">
-          <Link href="/step-inside" className={buttonClasses({ variant: 'ghost', compact: true })}>
-            Step Inside
+          <Link href="/login" className={buttonClasses({ variant: 'ghost', compact: true })}>
+            Log in
           </Link>
           <Link href={join} className={buttonClasses({ compact: true })}>
             Join free
@@ -242,12 +245,12 @@ export function WelcomeStory({ invite }: { invite?: { code: string; invitedBy: s
               </span>
             </h1>
             <p className="max-w-xl text-title font-normal text-text-secondary">
-              Postcards on your fence, quiet visits to your porch and private whispers with your Pals. No
+              Posts on your wall, quiet visits to your profile and private messages with your friends. No
               endless feed. No follower counts. Just the people who matter.
             </p>
             <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
               <Link href={join} className={cn(buttonClasses({ size: 'lg' }), 'nav-action-gloss relative')}>
-                Stake a Claim — it’s free
+                Sign up — it’s free
               </Link>
               <a href="#tour" className={buttonClasses({ variant: 'secondary', size: 'lg' })}>
                 Take the tour
@@ -271,12 +274,12 @@ export function WelcomeStory({ invite }: { invite?: { code: string; invitedBy: s
                   [
                     'fence',
                     'No feed to doom-scroll',
-                    'You visit Fences and Town Halls on purpose. Nothing is ranked, nothing auto-plays, and there is no bottom to fall into.',
+                    'You visit walls and groups on purpose. Nothing is ranked, nothing auto-plays, and there is no bottom to fall into.',
                   ],
                   [
                     'friends',
                     'No follower counts',
-                    'Pals are friends both ways. Nobody competes for numbers, and Marks are kind words, not a leaderboard.',
+                    'Friends are friends both ways. Nobody competes for numbers, and badges are kind words, not a leaderboard.',
                   ],
                   [
                     'chat',
@@ -298,11 +301,7 @@ export function WelcomeStory({ invite }: { invite?: { code: string; invitedBy: s
         </div>
 
         {/* What is built. */}
-        <Section
-          id="tour"
-          kicker="On the porch today"
-          title="Everything here is built and working right now."
-        >
+        <Section id="tour" kicker="Free to talk now" title="Everything here is built and working right now.">
           <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {FEATURES.map((f, i) => (
               <li key={f.name} className="clay flex gap-4 p-5">
@@ -372,12 +371,12 @@ export function WelcomeStory({ invite }: { invite?: { code: string; invitedBy: s
               Pull up a chair.
             </h2>
             <p className="max-w-lg text-title font-normal text-text-secondary">
-              Howdy is free, small on purpose, and better with your people in it. Claim your call sign before
+              Howdy is free, small on purpose, and better with your people in it. Claim your username before
               someone else does.
             </p>
             <div className="flex w-full flex-col justify-center gap-3 sm:w-auto sm:flex-row">
               <Link href={join} className={buttonClasses({ size: 'lg' })}>
-                Stake a Claim
+                Sign up
               </Link>
               <ShareButton />
             </div>
@@ -392,7 +391,7 @@ export function WelcomeStory({ invite }: { invite?: { code: string; invitedBy: s
             aria-label="Legal"
             className="flex flex-wrap justify-center gap-x-4 [&>a]:inline-flex [&>a]:min-h-11 [&>a]:items-center"
           >
-            <Link href="/campfire-rules">Campfire Rules</Link>
+            <Link href="/community-guidelines">Community Guidelines</Link>
             <Link href="/privacy">Privacy</Link>
             <Link href="/terms">Terms</Link>
           </nav>

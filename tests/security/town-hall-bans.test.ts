@@ -37,7 +37,7 @@ const as = (p: { cookie: string }) => ({ cookie: p.cookie });
 
 async function hall(owner: P, joiners: P[] = [], extra: Record<string, unknown> = {}): Promise<string> {
   const r = await create(
-    { name: 'Porch Talk', description: 'Chatting on the porch.', visibility: 'open', ...extra },
+    { name: 'Profile Talk', description: 'Chatting on the porch.', visibility: 'open', ...extra },
     as(owner),
   );
   expect(r.status).toBe(201);
@@ -65,7 +65,7 @@ const shape = async (id: string, p: P) => {
 const banned = (id: string, viewer: P) => bans(id, as(viewer)).then((r) => r.data.bans!.map((b) => b.handle));
 
 describe('banning', () => {
-  it('removes a member, who can never get back into an "anyone can join" Town Hall', async () => {
+  it('removes a member, who can never get back into an "anyone can join" Group', async () => {
     const { owner, ann, id } = await staffed();
     expect((await ban(id, ann.handle, as(owner))).status).toBe(200);
     expect((await members(id, as(ann))).status).toBe(404);
@@ -155,7 +155,7 @@ describe('banning', () => {
     expect(new Set(await banned(id, dep))).toEqual(new Set([ann.handle, stranger.handle, dep2.handle]));
   });
 
-  it('ordinary members and outsiders cannot see, set or lift bans: the same 404 as a Town Hall they do not run', async () => {
+  it('ordinary members and outsiders cannot see, set or lift bans: the same 404 as a group they do not run', async () => {
     const { owner, ann, id } = await staffed();
     const eve = await person('eve');
     await ban(id, eve.handle, as(owner));
@@ -188,7 +188,7 @@ describe('banning', () => {
     ).toBe(1); // the owner alone
   });
 
-  it('an invite-only Town Hall disappears for a banned member', async () => {
+  it('an invite-only group disappears for a banned member', async () => {
     const owner = await person('owner');
     const id = await hall(owner, [], { visibility: 'invite' });
     const eve = await person('eve');
@@ -264,7 +264,7 @@ describe('lifting a ban', () => {
     expect((await invite(id, ann.handle, as(owner))).status).toBe(200);
   });
 
-  it('switching the Town Hall to "ask to join" and back does not lift anyone', async () => {
+  it('switching the group to "ask to join" and back does not lift anyone', async () => {
     const owner = await person('owner');
     const id = await hall(owner);
     const eve = await person('eve');

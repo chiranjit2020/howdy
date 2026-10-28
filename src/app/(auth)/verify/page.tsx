@@ -17,8 +17,8 @@ export default async function VerifyPage({
         <ClayCard className="flex flex-col gap-3 p-8">
           <h1 className="text-heading text-text-primary">That link is incomplete</h1>
           <p className="text-body text-text-secondary">Open the link from your email again.</p>
-          <Link href="/step-inside" className="inline-flex min-h-11 items-center">
-            Step Inside
+          <Link href="/login" className="inline-flex min-h-11 items-center">
+            Log in
           </Link>
         </ClayCard>
       </main>

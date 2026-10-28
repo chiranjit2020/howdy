@@ -66,7 +66,7 @@ describe('client frames', () => {
     expect((parsed as { d: object }).d).toEqual({});
   });
 
-  it('a frame limit that fits a full Whisper with room to spare but not a book', () => {
+  it('a frame limit that fits a full message with room to spare but not a book', () => {
     const biggest = JSON.stringify(
       frame('whisper.send', { handle: 'a'.repeat(24), clientId: id, body: '\u{1F920}'.repeat(280) }),
     );
@@ -75,7 +75,7 @@ describe('client frames', () => {
   });
 });
 
-describe('Whisper text and numbers', () => {
+describe('Message text and numbers', () => {
   it('bodies: 280 fit, disguising characters never', () => {
     expect(whisperBodySchema.safeParse('a'.repeat(280)).success).toBe(true);
     expect(whisperBodySchema.safeParse('a'.repeat(281)).success).toBe(false);

@@ -466,10 +466,10 @@ export function SecurityView({ data }: { data: ConsoleData }) {
                 <div className="grid grid-cols-2 gap-2">
                   {(
                     [
-                      ['Post Cards', data.social.postCards],
-                      ["Yo's sent", data.social.yos],
-                      ['Tracks', data.social.tracks],
-                      ['Tributes', data.social.tributes],
+                      ['Posts', data.social.postCards],
+                      ['Waves sent', data.social.yos],
+                      ['Profile visits', data.social.tracks],
+                      ['Testimonials', data.social.tributes],
                     ] as const
                   ).map(([t, c]) => (
                     <div key={t} className="flex flex-col gap-0.5 rounded-sm bg-on-island/5 px-3 py-1.5">

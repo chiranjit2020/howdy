@@ -60,7 +60,7 @@ const photo = () =>
     .jpeg()
     .toBuffer();
 
-test('a Story: shared from Home on a phone, opened by a Pal who reacts and replies, seen-by for the author', async ({
+test('a Story: shared from Home on a phone, opened by a friend who reacts and replies, seen-by for the author', async ({
   browser,
 }) => {
   test.slow(); // two people signing up on phones
@@ -119,7 +119,7 @@ test('a Story: shared from Home on a phone, opened by a Pal who reacts and repli
 
   // Reply opens a Whisper with the Story quoted in my box — nothing sent yet.
   await viewer.getByRole('link', { name: /^Reply to / }).tap();
-  await expect(pal.page).toHaveURL(new RegExp(`/whispers/${owner.handle}\\?draft=`));
+  await expect(pal.page).toHaveURL(new RegExp(`/messages/${owner.handle}\\?draft=`));
   await pageReady(pal.page);
   await expect(pal.page.getByRole('textbox').last()).toHaveValue(`Replying to your Story (“${caption}”): `);
 
@@ -146,7 +146,7 @@ test('a Story: shared from Home on a phone, opened by a Pal who reacts and repli
   await mine.getByRole('menuitem', { name: 'Take this Story down' }).tap();
   await owner.page.getByRole('button', { name: 'Take it down' }).tap();
   await expect(owner.page.getByText('Story taken down.')).toBeVisible();
-  await owner.page.goto('/chimes');
+  await owner.page.goto('/notifications');
   await pageReady(owner.page);
   await expect(owner.page.getByText(/reacted to your Story\./)).toBeVisible();
 

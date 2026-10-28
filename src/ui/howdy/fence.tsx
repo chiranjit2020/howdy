@@ -14,7 +14,7 @@ export function Fence({
   hasMore,
   onLoadMore,
   loadingMore,
-  emptyHint = 'The Fence is quiet. Nail the first card.',
+  emptyHint = 'The wall is quiet. Write the first post.',
 }: {
   children?: ReactNode;
   composer?: ReactNode;
@@ -29,7 +29,7 @@ export function Fence({
     <section aria-labelledby={headingId} className="flex flex-col gap-4">
       <div className="flex items-center">
         <h2 id={headingId} className="font-display text-heading text-text-primary">
-          The Fence
+          The wall
         </h2>
         <GlossaryHint term="fence" />
       </div>
@@ -38,7 +38,7 @@ export function Fence({
         <EmptyState
           // Someone who can nail the first card gets the invitation itself; a visitor who cannot, the quiet log.
           icon={composer ? <Art name="nail-postcard" size="free" className="h-auto w-44" /> : '🪵'}
-          title="Nothing nailed up yet"
+          title="No posts yet"
           description={emptyHint}
         />
       ) : (
@@ -51,7 +51,7 @@ export function Fence({
       )}
       {hasMore && (
         <Button variant="secondary" onClick={onLoadMore} loading={loadingMore} className="self-center">
-          Older cards
+          Older posts
         </Button>
       )}
     </section>

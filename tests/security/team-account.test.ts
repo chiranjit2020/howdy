@@ -19,20 +19,20 @@ const as = (p: { cookie: string }) => ({ cookie: p.cookie });
 const makeTeam = (handle: string) => q(`update users set role = 'admin' where handle = $1`, [handle]);
 
 describe('The Howdy team account (role admin)', () => {
-  it('its Porch and Signal are open to everyone, even signed out, whatever its own settings say', async () => {
+  it('its profile and Signal are open to everyone, even signed out, whatever its own settings say', async () => {
     const team = await person('team');
     const stranger = await person('stranger');
     await patchRanch({ ranchVisibility: 'posse', signalVisibility: 'posse' }, as(team));
-    await setSignal('New: Porches and Pals!', as(team));
+    await setSignal('New: Profiles and friends!', as(team));
     expect((await viewRanch(team.handle, as(stranger))).status).toBe(404); // an ordinary private Porch first
     await makeTeam(team.handle);
 
     const seen = await viewRanch(team.handle, as(stranger));
     expect(seen.status).toBe(200);
-    expect(seen.data.ranch).toMatchObject({ verified: true, signal: { text: 'New: Porches and Pals!' } });
+    expect(seen.data.ranch).toMatchObject({ verified: true, signal: { text: 'New: Profiles and friends!' } });
     const anonymous = await viewRanch(team.handle);
     expect(anonymous.status).toBe(200);
-    expect(anonymous.data.ranch).toMatchObject({ signal: { text: 'New: Porches and Pals!' } });
+    expect(anonymous.data.ranch).toMatchObject({ signal: { text: 'New: Profiles and friends!' } });
   });
 
   it('nobody can block it, and nothing is stored when they try; muting still works', async () => {

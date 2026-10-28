@@ -25,17 +25,17 @@ export function MemoriesCard({ memories, handle }: { memories: MemoriesToday; ha
             <Avatar name={p.pal.displayName} tint={p.pal.portraitTint} src={p.pal.portraitUrl} size="sm" />
             <p className="min-w-0 text-body [overflow-wrap:anywhere] text-text-primary">
               You and{' '}
-              <Link href={`/porch/${p.pal.handle}`} className="font-semibold">
+              <Link href={`/profile/${p.pal.handle}`} className="font-semibold">
                 {p.pal.displayName}
               </Link>{' '}
-              became Pals {p.years === 1 ? 'a year' : `${p.years} years`} ago today.
+              became friends {p.years === 1 ? 'a year' : `${p.years} years`} ago today.
             </p>
           </li>
         ))}
         {tributes.map((t) => (
           <li key={`tribute-${t.id}`} className="flex flex-col gap-1">
             <p className="text-caption text-text-secondary">
-              {ago(t.yearsAgo)}, {t.author.displayName} wrote you a Tribute:
+              {ago(t.yearsAgo)}, {t.author.displayName} wrote you a testimonial:
             </p>
             <blockquote className="rounded-md bg-surface px-3 py-2 text-body [overflow-wrap:anywhere] whitespace-pre-wrap text-text-primary">
               {t.body}
@@ -45,8 +45,8 @@ export function MemoriesCard({ memories, handle }: { memories: MemoriesToday; ha
         {cards.map((c) => (
           <li key={`card-${c.id}`} className="flex flex-col gap-1">
             <p className="text-caption text-text-secondary">
-              {ago(c.yearsAgo)}, {c.author.handle === handle ? 'you' : c.author.displayName} nailed this to
-              your Fence:
+              {ago(c.yearsAgo)}, {c.author.handle === handle ? 'you' : c.author.displayName} posted this on
+              your wall:
             </p>
             <blockquote className="rounded-md bg-surface px-3 py-2 text-body [overflow-wrap:anywhere] whitespace-pre-wrap text-text-primary">
               {c.body}

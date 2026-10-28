@@ -228,7 +228,7 @@ describe('Close Posse is private', () => {
   });
 });
 
-describe('Scouting is one-way and grants nothing', () => {
+describe('Following is one-way and grants nothing', () => {
   it('needs the right to see the Ranch; nothing is stored otherwise', async () => {
     const a = await person('alice');
     const b = await person('bob');

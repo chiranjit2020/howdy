@@ -47,7 +47,7 @@ export function OpenGates({ initial }: { initial: GateRow[] }) {
     <section aria-labelledby="open-gates" className="clay flex flex-col gap-2 p-4 sm:p-5">
       <div>
         <h2 id="open-gates" className="text-body font-semibold text-text-primary">
-          Open Gates
+          Devices
         </h2>
         <p className="text-caption text-text-secondary">
           Where you are signed in · {rows.length} {rows.length === 1 ? 'device' : 'devices'}

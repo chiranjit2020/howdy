@@ -11,7 +11,7 @@ export const REPORT_REASON_LABEL: Record<ReportReason, string> = {
   spam: 'Spam',
   impersonation: 'Impersonation',
   inappropriate: 'Inappropriate content',
-  other: 'Breaking the Campfire Rules',
+  other: 'Breaking the Community Guidelines',
 };
 export const REPORT_DETAILS_MAX = 500;
 

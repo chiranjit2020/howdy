@@ -11,7 +11,7 @@ import { uploadPhoto } from '@/ui/media/upload-photo';
 import { Avatar, Button, Input, Modal, useToast } from '@/ui/primitives';
 import { StoryViewer } from './story-viewer';
 
-const AUDIENCE_LABEL: Record<StoryAudience, string> = { pals: 'All my Pals', close: 'Close Pals only' };
+const AUDIENCE_LABEL: Record<StoryAudience, string> = { pals: 'All my friends', close: 'Close friends only' };
 
 /**
  * Stories on Home (ADR-047): a row of rings — mine first, then Pals with Stories for me (a pink ring = not seen yet).
@@ -92,7 +92,7 @@ export function StoriesStrip({
       </ul>
       {initial.length === 0 && (
         <p className="text-caption text-text-secondary">
-          Share a photo with your Pals for 12 hours — tap your picture above.
+          Share a photo with your friends for 12 hours — tap your picture above.
         </p>
       )}
       {open && (

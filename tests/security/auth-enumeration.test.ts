@@ -64,7 +64,7 @@ describe('sign up does not reveal whether an email is registered', () => {
     expect(kit.mailer.sent[0]!.text).not.toMatch(/token=/); // nothing to take over an account with
   });
 
-  it('a duplicate sign-up cannot be used to claim a handle for someone else’s email', async () => {
+  it('a duplicate sign-up cannot be used to claim a username for someone else’s email', async () => {
     const existing = await verifiedUser(kit);
     const r = await signUpUser(kit, {
       email: existing.email,
@@ -169,7 +169,7 @@ describe('password reset and resend do not reveal whether an account exists', ()
     await call(authHandlers.forgotPassword, 'POST', '/api/auth/forgot-password', { email: u.email });
     await flushBackground();
     expect(kit.mailer.sent).toHaveLength(1);
-    expect(kit.mailer.sent[0]!.text).toContain('/lost-your-key/reset?token=');
+    expect(kit.mailer.sent[0]!.text).toContain('/forgot-password/reset?token=');
   });
 
   it('resend-verification: a verified account is not re-sent a link', async () => {

@@ -26,7 +26,7 @@ describe("Howdy's calendar (Asia/Kolkata)", () => {
     expect(anniversaryDays('2026-09-30')).toEqual(['09-30']);
   });
 
-  it('clock times are India time, lower-case, with a plain space (Porch Light)', () => {
+  it('clock times are India time, lower-case, with a plain space (Free to talk)', () => {
     expect(clockOf('2026-10-01T15:00:00Z')).toBe('8:30 pm');
     expect(clockOf(new Date('2026-10-01T03:35:00Z'))).toBe('9:05 am');
     expect(clockOf('2026-10-01T18:40:00Z')).toBe('12:10 am');

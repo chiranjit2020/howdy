@@ -31,8 +31,8 @@ export function YoButton({ count, active, onToggle, className, ...rest }: YoButt
       <span aria-hidden="true" className={cn('inline-flex', active && 'animate-yo-pop')}>
         <Glyph emoji="🤘" />
       </span>
-      <span>Yo</span>
-      <span className="font-mono text-metadata" aria-label={`${count} ${count === 1 ? 'Yo' : 'Yos'}`}>
+      <span>Wave</span>
+      <span className="font-mono text-metadata" aria-label={`${count} ${count === 1 ? 'wave' : 'waves'}`}>
         {count}
       </span>
     </button>

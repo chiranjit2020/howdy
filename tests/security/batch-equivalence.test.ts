@@ -75,7 +75,7 @@ describe('batched lookups give exactly the single-owner answers', () => {
     const seen = new Set<string>();
     for (const id of ids) {
       expect(standings.get(id), `standing for ${id}`).toEqual(await fenceStanding(id, meId));
-      expect(fences.get(id) ?? null, `fence for ${id}`).toEqual(await getFenceResource(id));
+      expect(fences.get(id) ?? null, `wall for ${id}`).toEqual(await getFenceResource(id));
       seen.add((await fenceStanding(id, meId)).relationship);
     }
     // Whose Portrait a list may show (viewableRanches) must be exactly who could open that Porch (mayViewRanch).

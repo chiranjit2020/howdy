@@ -15,7 +15,7 @@ import {
 } from './helpers';
 
 test.describe('authentication journey (production build, real CSP, real cookies)', () => {
-  test('sign up → confirm email → step inside → stay signed in → hit the trail', async ({ browser }) => {
+  test('sign up → confirm email → log in → stay signed in → hit the trail', async ({ browser }) => {
     const ctx = await newContext(browser);
     const page = await ctx.newPage();
     const problems = await watchProblems(page);
@@ -26,17 +26,17 @@ test.describe('authentication journey (production build, real CSP, real cookies)
     await expect(page).toHaveURL(/\/welcome$/);
     await page
       .locator('#main')
-      .getByRole('link', { name: /^Stake a Claim/ })
+      .getByRole('link', { name: /^Sign up/ })
       .first()
       .click();
-    await expect(page).toHaveURL(/\/stake-a-claim$/);
+    await expect(page).toHaveURL(/\/signup$/);
 
     await signUpVia(page, a);
 
     // Not confirmed yet: the door stays shut, with a clear (and non-leaky) reason.
     await stepInsideVia(page, a.email, a.password);
     await expect(page.locator('main [role="alert"]')).toContainText(/confirm your email/i);
-    await expect(page).toHaveURL(/\/step-inside$/);
+    await expect(page).toHaveURL(/\/login$/);
 
     await confirmEmailVia(page, a.email);
     await stepInsideVia(page, a.handle, a.password); // by call sign this time
@@ -46,7 +46,7 @@ test.describe('authentication journey (production build, real CSP, real cookies)
     await expect(page.locator('main').getByText(`@${a.handle}`, { exact: true })).toBeVisible();
     // "At a glance": four numbers, each a way into the page with the detail.
     const glance = page.getByRole('region', { name: 'At a glance' });
-    for (const href of ['/whispers', '/chimes', '/pals', '/tracks'])
+    for (const href of ['/messages', '/notifications', '/friends', '/visitors'])
       await expect(glance.locator(`a[href="${href}"]`)).toBeVisible();
 
     // The session cookie: HttpOnly, Secure, __Host- prefixed, SameSite=Lax, site-wide, and invisible to page scripts.
@@ -59,14 +59,14 @@ test.describe('authentication journey (production build, real CSP, real cookies)
     // Persistence: a reload, and visiting signed-out pages, keep you inside.
     await page.reload();
     await expect(page.getByRole('heading', { name: /^Howdy, / })).toBeVisible();
-    await page.goto('/step-inside');
+    await page.goto('/login');
     await expect(page).toHaveURL(/\/home$/);
 
     await page.getByRole('button', { name: 'Sign out', exact: true }).click();
     await expect(page).toHaveURL(/\/gate$/);
     expect((await ctx.cookies()).find((c) => c.name === '__Host-howdy_session')).toBeUndefined();
     await page.goto('/home');
-    await expect(page).toHaveURL(/\/step-inside$/);
+    await expect(page).toHaveURL(/\/login$/);
 
     expect(problems).toEqual([]);
     await ctx.close();
@@ -100,7 +100,7 @@ test.describe('authentication journey (production build, real CSP, real cookies)
   }) => {
     const ctx = await newContext(browser);
     const page = await ctx.newPage();
-    await page.goto('/stake-a-claim');
+    await page.goto('/signup');
     await page.getByRole('button', { name: 'Create account' }).click();
     // Email comes first on the form, so it is where you land.
     await expect(page.getByLabel('Email address')).toBeFocused();
@@ -133,7 +133,7 @@ test.describe('authentication journey (production build, real CSP, real cookies)
       'request',
       (r) => r.method() === 'POST' && r.url().includes('/api/auth/signup') && posts.push(r.url()),
     );
-    await page.goto('/stake-a-claim');
+    await page.goto('/signup');
     const email = page.getByLabel('Email address');
 
     // Leaving the box shows the problem straight away, marks the box, and keeps what was typed.
@@ -177,7 +177,7 @@ test.describe('authentication journey (production build, real CSP, real cookies)
     const ctx = await newContext(browser);
     const page = await ctx.newPage();
     await page.goto('/home');
-    await expect(page).toHaveURL(/\/step-inside$/);
+    await expect(page).toHaveURL(/\/login$/);
     expect((await ctx.request.get('/api/auth/me')).status()).toBe(401);
     expect((await ctx.request.get('/api/auth/sessions')).status()).toBe(401);
     // Cross-site state changes are refused even before authentication is considered.
@@ -203,7 +203,7 @@ test.describe('authentication journey (production build, real CSP, real cookies)
     const ctx = await newContext(browser);
     const page = await ctx.newPage();
     const problems = await watchProblems(page);
-    await page.goto('/lost-your-key');
+    await page.goto('/forgot-password');
     await page.getByLabel('Email').fill(a.email);
     await page.getByRole('button', { name: 'Send the link' }).click();
     await expect(page.getByRole('heading', { name: 'Check your email' })).toBeVisible();
@@ -228,7 +228,7 @@ test.describe('authentication journey (production build, real CSP, real cookies)
 
     // The session on the other device is gone; the old knock no longer works; the new one does.
     await otherPage.reload();
-    await expect(otherPage).toHaveURL(/\/step-inside$/);
+    await expect(otherPage).toHaveURL(/\/login$/);
     await stepInsideVia(page, a.email, a.password);
     await expect(page.locator('main [role="alert"]')).toBeVisible();
     await stepInsideVia(page, a.email, newPassword);
@@ -238,7 +238,7 @@ test.describe('authentication journey (production build, real CSP, real cookies)
     await other.close();
   });
 
-  test('Open Gates: close another device from this one', async ({ browser }) => {
+  test('Devices: close another device from this one', async ({ browser }) => {
     const a = uniqueAccount('gates');
     const first = await newContext(browser);
     const p1 = await first.newPage();
@@ -253,7 +253,7 @@ test.describe('authentication journey (production build, real CSP, real cookies)
     await expect(p2).toHaveURL(/\/home$/);
 
     await p1.reload();
-    const gates = p1.getByRole('region', { name: 'Open Gates' });
+    const gates = p1.getByRole('region', { name: 'Devices' });
     await expect(gates.getByRole('listitem')).toHaveCount(2);
     await expect(gates.getByText('This device')).toHaveCount(1);
     await gates.getByRole('button', { name: /Close gate on/ }).click();
@@ -261,7 +261,7 @@ test.describe('authentication journey (production build, real CSP, real cookies)
     await expect(gates.getByRole('listitem')).toHaveCount(1);
 
     await p2.reload();
-    await expect(p2).toHaveURL(/\/step-inside$/);
+    await expect(p2).toHaveURL(/\/login$/);
     await p1.reload();
     await expect(p1.getByRole('heading', { name: /^Howdy, / })).toBeVisible(); // this device stays inside
     await first.close();
@@ -290,14 +290,7 @@ test.describe('authentication journey (production build, real CSP, real cookies)
 });
 
 test.describe('signed-out pages: accessibility and layout in a real browser', () => {
-  const pages = [
-    '/gate',
-    '/stake-a-claim',
-    '/step-inside',
-    '/lost-your-key',
-    '/verify',
-    '/lost-your-key/reset',
-  ];
+  const pages = ['/gate', '/signup', '/login', '/forgot-password', '/verify', '/forgot-password/reset'];
 
   for (const scheme of ['light', 'dark'] as const) {
     test(`axe finds no violations, including real colour contrast (${scheme})`, async ({ browser }) => {
@@ -381,7 +374,7 @@ test.describe('signed-out pages: accessibility and layout in a real browser', ()
       await page.goto(path);
       await pageReady(page);
       // Log in and Create account have no top bar: the card leads with the logo instead.
-      const cardOnly = path === '/stake-a-claim' || path === '/step-inside';
+      const cardOnly = path === '/signup' || path === '/login';
       if (cardOnly) await expect(page.getByRole('banner')).toHaveCount(0);
       const scope = cardOnly ? page.getByRole('main') : page.getByRole('banner');
       if (!cardOnly) await expect(scope.getByRole('link')).toHaveCount(1);
@@ -408,12 +401,9 @@ test.describe('signed-out pages: accessibility and layout in a real browser', ()
         viewport: { width, height: 700 },
       });
       const page = await ctx.newPage();
-      await page.goto(`/porch/${a.handle}`);
+      await page.goto(`/profile/${a.handle}`);
       const bar = page.getByRole('banner');
-      const pills = [
-        bar.getByRole('link', { name: /Step Inside/ }),
-        bar.getByRole('link', { name: /Stake a Claim/ }),
-      ];
+      const pills = [bar.getByRole('link', { name: /Log in/ }), bar.getByRole('link', { name: /Sign up/ })];
       const boxes = await Promise.all(pills.map((p) => p.boundingBox()));
       expect(boxes[0]!.width).toBeCloseTo(boxes[1]!.width, 0);
       for (const box of boxes) expect(box!.x + box!.width).toBeLessThanOrEqual(width);
@@ -446,14 +436,14 @@ test.describe('signed-out pages: accessibility and layout in a real browser', ()
     const ctx = await newContext(browser);
     const page = await ctx.newPage();
     const problems = await watchProblems(page);
-    await page.goto('/step-inside');
+    await page.goto('/login');
     await expect(page.getByLabel('Email or username')).toBeVisible();
 
     await page.getByRole('link', { name: 'Create account', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Create your account' })).toBeVisible();
     await expect(page.getByLabel('Username')).toBeVisible();
     await expect(page.getByLabel('Email or username')).toHaveCount(0);
-    await expect(page).toHaveURL(/\/stake-a-claim$/);
+    await expect(page).toHaveURL(/\/signup$/);
     await expect(page).toHaveTitle(/^Create account/);
 
     // The password can be shown and hidden again; the button says which.
@@ -466,7 +456,7 @@ test.describe('signed-out pages: accessibility and layout in a real browser', ()
 
     await page.getByRole('link', { name: 'Log in', exact: true }).click();
     await expect(page.getByLabel('Email or username')).toBeVisible();
-    await expect(page).toHaveURL(/\/step-inside$/);
+    await expect(page).toHaveURL(/\/login$/);
 
     // A refresh opens the form the address names.
     await page.getByRole('link', { name: 'Create account', exact: true }).click();

@@ -25,7 +25,7 @@ export function TipHatButton({ tipped, onTip, className, ...rest }: TipHatButton
       {...rest}
     >
       <Glyph emoji="🤠" />
-      {tipped ? 'Hat tipped' : 'Tip hat'}
+      {tipped ? 'Poked' : 'Poke'}
     </button>
   );
 }

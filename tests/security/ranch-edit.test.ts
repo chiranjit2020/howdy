@@ -99,7 +99,7 @@ describe('Tend the Ranch: validation is enforced on the server', () => {
     ['a bidi override in the name (spoofing)', { displayName: `Admin${u(0x202e)}nimda` }, 'displayName'],
     ['a zero-width space in the name', { displayName: `Ad${u(0x200b)}min` }, 'displayName'],
     ['a control character in the name', { displayName: 'bad\u0007' }, 'displayName'],
-    ['an unknown portrait tint', { portraitTint: 'neon' }, 'portraitTint'],
+    ['an unknown profile photo tint', { portraitTint: 'neon' }, 'portraitTint'],
     ['an unknown visibility', { ranchVisibility: 'public' }, 'ranchVisibility'],
     ['a null visibility', { signalVisibility: null }, 'signalVisibility'],
   ])('%s → 422 on the right field, nothing changes', async (_n, body, field) => {
@@ -253,7 +253,7 @@ describe('edits are rate limited (and fail closed)', () => {
 });
 
 describe('the bio', () => {
-  it('is saved, shown on the Porch to whoever may open it, and cleared by an empty one', async () => {
+  it('is saved, shown on the profile to whoever may open it, and cleared by an empty one', async () => {
     const a = await signedInUser(kit, uniqueUser('alice'));
     const b = await signedInUser(kit, uniqueUser('bob'));
     const r = await patchRanch({ bio: '  Chai lover.   Weekend   cyclist 🚲 ' }, { cookie: a.cookie });

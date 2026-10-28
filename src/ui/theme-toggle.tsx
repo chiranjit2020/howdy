@@ -7,8 +7,8 @@ import { applyTheme, type Theme } from './theme';
 type Choice = Theme | 'system';
 const CHOICES: { id: Choice; label: string }[] = [
   { id: 'system', label: 'System' },
-  { id: 'daylight', label: 'Daylight' },
-  { id: 'dusk', label: 'Dusk' },
+  { id: 'daylight', label: 'Light' },
+  { id: 'dusk', label: 'Dark' },
 ];
 
 /** Daylight / Dusk / System. */

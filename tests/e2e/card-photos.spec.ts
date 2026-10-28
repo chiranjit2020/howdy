@@ -43,7 +43,7 @@ test('Add a photo → preview → Nail: the card shows it, fits the phone, and t
 }) => {
   const me = await person(browser, 'cardphoto');
   const problems = await watchProblems(me.page);
-  await me.page.goto(`/porch/${me.handle}?nail=1`);
+  await me.page.goto(`/profile/${me.handle}?nail=1`);
   await pageReady(me.page);
 
   const chooser = me.page.locator('#nail input[type=file]');
@@ -55,10 +55,10 @@ test('Add a photo → preview → Nail: the card shows it, fits the phone, and t
   await expect(me.page.getByText('Uploading…')).toHaveCount(0, { timeout: 15_000 });
   expect(await smallTargets(me.page)).toEqual([]);
 
-  await me.page.getByLabel('Nail a Post Card').fill('Sunset from the porch');
-  await me.page.getByRole('button', { name: 'Nail to Fence' }).click();
+  await me.page.getByLabel('Write a post').fill('Sunset from the porch');
+  await me.page.getByRole('button', { name: 'Post' }).click();
   const card = me.page
-    .getByRole('article', { name: /Post Card from/ })
+    .getByRole('article', { name: /Post from/ })
     .filter({ hasText: 'Sunset from the porch' });
   const img = card.getByRole('img', { name: /Photo on this card/ });
   await expect(img).toBeVisible();

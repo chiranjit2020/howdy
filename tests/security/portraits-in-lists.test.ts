@@ -43,8 +43,8 @@ async function pals(a: P, b: P) {
   await doAct(a.handle, 'accept', as(b));
 }
 
-describe('whose Portrait a list may show', () => {
-  it('only people whose Porch I may open, and the photo route agrees with every answer', async () => {
+describe('whose profile photo a list may show', () => {
+  it('only people whose profile I may open, and the photo route agrees with every answer', async () => {
     const me = await withPhoto(await person('viewer'));
     const pal = await withPhoto(await person('pal'));
     const open = await withPhoto(await person('open'));
@@ -84,7 +84,7 @@ describe('whose Portrait a list may show', () => {
     expect(people[0]!.portraitUrl).toBeUndefined();
   });
 
-  it('Chimes: a Pal’s photo shows; a stranger behind a Pals-only Porch stays initials', async () => {
+  it('Notifications: a friend’s photo shows; a stranger behind a Pals-only profile stays initials', async () => {
     const me = await person('viewer');
     const pal = await withPhoto(await person('pal'));
     const hidden = await withPhoto(await person('hidden'));

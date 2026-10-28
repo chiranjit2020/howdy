@@ -24,8 +24,8 @@ afterAll(async () => {
 const person = (tag: string) => signedInUser(kit, uniqueUser(tag));
 type P = Awaited<ReturnType<typeof person>>;
 const as = (p: { cookie: string }) => ({ cookie: p.cookie });
-const rows = async () => (await q('select * from tributes order by created_at')).rows;
-const count = async () => (await q('select count(*)::int n from tributes')).rows[0].n as number;
+const rows = async () => (await q('select * from testimonials order by created_at')).rows;
+const count = async () => (await q('select count(*)::int n from testimonials')).rows[0].n as number;
 
 async function posse(a: P, b: P) {
   await doAct(b.handle, 'request', as(a));
@@ -35,7 +35,7 @@ async function open(p: P) {
   await patchRanch({ ranchVisibility: 'everyone' }, as(p));
 }
 
-describe('who may leave a Tribute', () => {
+describe('who may leave a testimonial', () => {
   it('needs a mutual Posse — a stranger is refused, a Posse member succeeds', async () => {
     const owner = await person('owner');
     const stranger = await person('stranger');
@@ -48,13 +48,13 @@ describe('who may leave a Tribute', () => {
     expect(ok.data.tribute!.waiting).toBe(true);
   });
 
-  it('refuses a Tribute to yourself, even for a Posse member calling directly', async () => {
+  it('refuses a testimonial to yourself, even for a Posse member calling directly', async () => {
     const owner = await person('owner');
     await open(owner);
     expect((await leaveTribute(owner.handle, { body: 'Hi me.' }, as(owner))).status).toBe(403);
   });
 
-  it('a block either way makes the Ranch look not-found (a block hides the Ranch itself, not just the Tribute)', async () => {
+  it('a block either way makes the Ranch look not-found (a block hides the Ranch itself, not just the testimonial)', async () => {
     const owner = await person('owner');
     const friend = await person('friend');
     await open(owner);
@@ -146,7 +146,7 @@ describe('pinning', () => {
     expect((await rows()).some((r) => r.pinned)).toBe(false);
   });
 
-  it('a pending Tribute cannot be pinned', async () => {
+  it('a pending testimonial cannot be pinned', async () => {
     const owner = await person('owner');
     const friend = await person('friend');
     await open(owner);
@@ -183,7 +183,7 @@ describe('taking one down', () => {
 });
 
 describe('muted and blocked authors vanish from the owner’s view', () => {
-  it('a muted Posse member’s Tribute disappears from both the public list and the waiting queue', async () => {
+  it('a muted Posse member’s testimonial disappears from both the public list and the waiting queue', async () => {
     const owner = await person('owner');
     const friend = await person('friend');
     await open(owner);
@@ -220,39 +220,42 @@ describe('database invariants', () => {
     const owner = await person('owner');
     const o = await userId(owner.handle);
     await expect(
-      q("insert into tributes (owner_id, author_id, body, status) values ($1, $1, 'hi', 'pending')", [o]),
+      q("insert into testimonials (owner_id, author_id, body, status) values ($1, $1, 'hi', 'pending')", [o]),
     ).rejects.toThrow(/tributes_not_self/);
     const friend = await person('friend');
     const f = await userId(friend.handle);
     await expect(
-      q("insert into tributes (owner_id, author_id, body, status) values ($1, $2, 'hi', 'bogus')", [o, f]),
+      q("insert into testimonials (owner_id, author_id, body, status) values ($1, $2, 'hi', 'bogus')", [
+        o,
+        f,
+      ]),
     ).rejects.toThrow(/tributes_status_check/);
     await expect(
       q(
-        "insert into tributes (owner_id, author_id, body, status, pinned) values ($1, $2, 'hi', 'pending', true)",
+        "insert into testimonials (owner_id, author_id, body, status, pinned) values ($1, $2, 'hi', 'pending', true)",
         [o, f],
       ),
     ).rejects.toThrow(/tributes_pinned_published/);
   });
 
-  it('at most one pinned Tribute per owner, enforced by the database itself', async () => {
+  it('at most one pinned testimonial per owner, enforced by the database itself', async () => {
     const owner = await person('owner');
     const friend = await person('friend');
     const o = await userId(owner.handle);
     const f = await userId(friend.handle);
     await q(
-      "insert into tributes (owner_id, author_id, body, status, pinned) values ($1, $2, 'a', 'published', true)",
+      "insert into testimonials (owner_id, author_id, body, status, pinned) values ($1, $2, 'a', 'published', true)",
       [o, f],
     );
     await expect(
       q(
-        "insert into tributes (owner_id, author_id, body, status, pinned) values ($1, $2, 'b', 'published', true)",
+        "insert into testimonials (owner_id, author_id, body, status, pinned) values ($1, $2, 'b', 'published', true)",
         [o, f],
       ),
     ).rejects.toThrow(/tributes_one_pinned_per_owner_idx/);
   });
 
-  it('deleting either person removes their Tributes', async () => {
+  it('deleting either person removes their testimonials', async () => {
     const owner = await person('owner');
     const friend = await person('friend');
     await open(owner);
@@ -264,7 +267,7 @@ describe('database invariants', () => {
 });
 
 describe('rate limits', () => {
-  it('giving Tributes is capped per person, across owners (not masked by the tighter per-owner limit)', async () => {
+  it('giving testimonials is capped per person, across owners (not masked by the tighter per-owner limit)', async () => {
     const friend = await person('friend');
     const f = await userId(friend.handle);
     let status = 0;
@@ -282,21 +285,21 @@ describe('rate limits', () => {
 });
 
 describe('retention', () => {
-  it('purge drops waiting Tributes older than 30 days and keeps the rest', async () => {
+  it('purge drops waiting testimonials older than 30 days and keeps the rest', async () => {
     const owner = await person('owner');
     const friend = await person('friend');
     const o = await userId(owner.handle);
     const f = await userId(friend.handle);
     await q(
-      "insert into tributes (owner_id, author_id, body, status, created_at) values ($1, $2, 'old', 'pending', now() - interval '31 days')",
+      "insert into testimonials (owner_id, author_id, body, status, created_at) values ($1, $2, 'old', 'pending', now() - interval '31 days')",
       [o, f],
     );
     await q(
-      "insert into tributes (owner_id, author_id, body, status, created_at) values ($1, $2, 'recent', 'pending', now() - interval '2 days')",
+      "insert into testimonials (owner_id, author_id, body, status, created_at) values ($1, $2, 'recent', 'pending', now() - interval '2 days')",
       [o, f],
     );
     await q(
-      "insert into tributes (owner_id, author_id, body, status, created_at) values ($1, $2, 'old but published', 'published', now() - interval '31 days')",
+      "insert into testimonials (owner_id, author_id, body, status, created_at) values ($1, $2, 'old but published', 'published', now() - interval '31 days')",
       [o, f],
     );
     expect((await purgeStaleTributes()).tributes).toBe(1);

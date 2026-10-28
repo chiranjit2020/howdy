@@ -26,7 +26,7 @@ function oracle(actor: Actor, rel: RelationshipState): boolean {
   return rel === 'POSSE' || rel === 'CLOSE_POSSE';
 }
 
-describe('can(): whisper:exchange matches an independent oracle', () => {
+describe('can(): message:exchange matches an independent oracle', () => {
   it('over every actor × relationship × visibility setting', () => {
     let n = 0;
     for (const { name, actor } of actors)

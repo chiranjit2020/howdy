@@ -147,7 +147,7 @@ describe('what is recorded — and how little', () => {
     expect(await count()).toBe(0);
   });
 
-  it('Shadow Walk: my visits leave no Track — and the owner cannot tell a shadowed visit from no visit', async () => {
+  it('Private browsing: my visits leave no Track — and the owner cannot tell a shadowed visit from no visit', async () => {
     const owner = await person('owner');
     const shadow = await person('shadow');
     const normal = await person('normal');
@@ -303,7 +303,7 @@ describe('who is named — decided when the list is read', () => {
   });
 });
 
-describe('Shadow Walk freezes my own Tracks (reciprocal)', () => {
+describe('Private browsing freezes my own Tracks (reciprocal)', () => {
   it('while on: nothing is shown; visits still accumulate for the week; turning it off shows them', async () => {
     const owner = await person('owner');
     const friend = await person('friend');

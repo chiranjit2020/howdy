@@ -107,7 +107,7 @@ describe('what the check is shown', () => {
 });
 
 describe('refused outright', () => {
-  it('a Portrait is turned down, nothing is kept, and nobody is told', async () => {
+  it('a profile photo is turned down, nothing is kept, and nobody is told', async () => {
     const me = await person('me');
     answer = REFUSE;
     const r = await uploadPortrait(me.cookie, await jpeg(400, 400));
@@ -125,7 +125,7 @@ describe('refused outright', () => {
     expect((await cardPhoto(me)).done.status).toBe(422);
   });
 
-  it('an earlier Portrait stays when its replacement is refused', async () => {
+  it('an earlier profile photo stays when its replacement is refused', async () => {
     const [a, b] = [await person('alice'), await person('bob')];
     await pals(a, b);
     await uploadPortrait(a.cookie, await jpeg(400, 400));
@@ -136,7 +136,7 @@ describe('refused outright', () => {
 });
 
 describe('held for a moderator', () => {
-  it('a held Portrait: its owner sees it, nobody else does, and it cannot be reported by someone who cannot see it', async () => {
+  it('a held profile photo: its owner sees it, nobody else does, and it cannot be reported by someone who cannot see it', async () => {
     const [a, b] = [await person('alice'), await person('bob')];
     await pals(a, b);
     answer = HOLD;

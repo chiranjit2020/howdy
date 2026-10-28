@@ -42,20 +42,20 @@ const portraits = (page: Page) =>
     };
   });
 
-test('a Pal’s photo shows on their Post Card and in my Chimes', async ({ browser }) => {
+test('a friend’s photo shows on their post and in my notifications', async ({ browser }) => {
   const a = await person(browser, 'snapper');
   const b = await person(browser, 'looker');
   const problems = await watchProblems(b.page);
 
   // A adds a Portrait (the same way the Workshop does it).
-  await a.page.goto('/workshop');
+  await a.page.goto('/settings');
   const photo = await sharp({ create: { width: 800, height: 800, channels: 3, background: '#8fb8ff' } })
     .jpeg()
     .toBuffer();
   const chooser = a.page.locator('input[type=file]').first();
   await expect(async () => {
     await chooser.setInputFiles({ name: 'me.jpg', mimeType: 'image/jpeg', buffer: photo });
-    await expect(a.page.getByRole('status').filter({ hasText: 'Portrait updated.' })).toBeVisible({
+    await expect(a.page.getByRole('status').filter({ hasText: 'Profile photo updated.' })).toBeVisible({
       timeout: 5000,
     });
   }).toPass({ timeout: 45_000 });
@@ -87,7 +87,7 @@ test('a Pal’s photo shows on their Post Card and in my Chimes', async ({ brows
   ).toBe(201);
 
   // On A's Porch, the card carries A's photo for B.
-  await b.page.goto(`/porch/${a.handle}`);
+  await b.page.goto(`/profile/${a.handle}`);
   await pageReady(b.page);
   const card = b.page.locator('article, li').filter({ hasText: 'Hello from the porch' }).first();
   await card.scrollIntoViewIfNeeded();
@@ -96,7 +96,7 @@ test('a Pal’s photo shows on their Post Card and in my Chimes', async ({ brows
   expect(await horizontalOverflow(b.page)).toBe(0);
 
   // In B's Chimes, "said yes" shows A's photo with the Chime's icon in its corner.
-  await b.page.goto('/chimes');
+  await b.page.goto('/notifications');
   await pageReady(b.page);
   await expect(b.page.getByText(/said yes/)).toBeVisible();
   await expect.poll(async () => (await portraits(b.page)).count, { timeout: 15_000 }).toBeGreaterThan(0);

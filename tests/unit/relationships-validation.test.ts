@@ -35,7 +35,7 @@ describe('relationshipActionSchema', () => {
 
 describe('reportSchema', () => {
   const base = { handle: 'Some_User', reason: 'spam' };
-  it('normalises the handle and accepts every reason', () => {
+  it('normalises the username and accepts every reason', () => {
     expect(reportSchema.parse(base).handle).toBe('some_user');
     for (const reason of REPORT_REASONS) expect(ok(reportSchema, { ...base, reason })).toBe(true);
   });

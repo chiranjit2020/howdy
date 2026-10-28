@@ -44,7 +44,7 @@ const replyStatus = async (id: string) =>
   (await q('select status from card_replies where id = $1', [id])).rows[0].status as string;
 
 describe('new accounts have tighter daily budgets', () => {
-  it('Post Cards: a new account stops at its daily budget; an older one does not', async () => {
+  it('Posts: a new account stops at its daily budget; an older one does not', async () => {
     const fresh = await newcomer('fresh');
     const old = await regular('old');
     // on their own Fences, so no other limit gets in the way first
@@ -57,7 +57,7 @@ describe('new accounts have tighter daily budgets', () => {
     }
   });
 
-  it('the budget is spent before the Fence is looked up: a made-up call sign costs the same', async () => {
+  it('the budget is spent before the wall is looked up: a made-up username costs the same', async () => {
     const fresh = await newcomer('fresh');
     for (let i = 0; i < NEW_ACCOUNT_RATE.card.limit; i++) {
       expect((await nail('nobody_home_here', { body: 'hi' }, as(fresh))).status).toBe(404);
@@ -65,7 +65,7 @@ describe('new accounts have tighter daily budgets', () => {
     expect((await nail(fresh.handle, { body: 'hi' }, as(fresh))).status).toBe(429);
   });
 
-  it('Pal requests', async () => {
+  it('Friend requests', async () => {
     const fresh = await newcomer('fresh');
     for (let i = 0; i < NEW_ACCOUNT_RATE.palRequest.limit; i++) {
       const other = await regular(`target${i}`);
@@ -83,7 +83,7 @@ describe('new accounts have tighter daily budgets', () => {
     expect((await yo(card, true, as(fresh))).status).toBe(429);
   });
 
-  it('Town Halls: one a day while new', async () => {
+  it('Groups: one a day while new', async () => {
     const fresh = await newcomer('fresh');
     const hall = (n: number) => ({ name: `Hall ${n}`, description: 'A place', visibility: 'open' });
     expect((await createTownHall(hall(1), as(fresh))).status).toBe(201);
@@ -128,7 +128,7 @@ describe('what a held card looks like', () => {
     expect(seen).not.toContain(r.data.card!.id);
   });
 
-  it('a Fence with Review on still says "waiting" honestly (pending wins over held)', async () => {
+  it('a wall with Review on still says "waiting" honestly (pending wins over held)', async () => {
     const owner = await openFence();
     await q(
       'update profiles set fence_review = true where user_id = (select id from users where handle = $1)',
@@ -143,7 +143,7 @@ describe('what a held card looks like', () => {
   });
 });
 
-describe('many reports hold what someone writes on other Fences until a moderator looks', () => {
+describe('many reports hold what someone writes on other walls until a moderator looks', () => {
   async function reportedBy(n: number, target: P) {
     for (let i = 0; i < n; i++) {
       const reporter = await regular(`reporter${i}`);

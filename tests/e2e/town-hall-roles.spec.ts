@@ -47,20 +47,18 @@ async function askToJoin(p: Person, url: string) {
   await expect(p.page.getByRole('button', { name: 'Requested' })).toBeDisabled();
 }
 
-test.describe('Town Hall roles (production build, real CSP)', () => {
-  test('ask to join, a Deputy lets people in, and the owner hands the Town Hall over', async ({
-    browser,
-  }) => {
+test.describe('Group roles (production build, real CSP)', () => {
+  test('ask to join, a Deputy lets people in, and the owner hands the group over', async ({ browser }) => {
     const owner = await person(browser, 'thowner');
     const dep = await person(browser, 'thdep', PHONE);
     const eve = await person(browser, 'theve', PHONE);
     const problems = await watchProblems(dep.page);
-    const name = `Quiet Porch ${Date.now().toString(36)}`;
+    const name = `Quiet profile ${Date.now().toString(36)}`;
 
     // The owner starts a Town Hall that needs approval.
-    await owner.page.goto('/town-halls');
+    await owner.page.goto('/groups');
     await pageReady(owner.page);
-    await owner.page.getByRole('button', { name: 'Start a Town Hall' }).click();
+    await owner.page.getByRole('button', { name: 'Start a group' }).click();
     await owner.page.getByLabel('Name').fill(name);
     await owner.page.getByLabel('What is it about?').fill('Slow evenings, good company.');
     await owner.page.getByRole('switch', { name: /Ask to join/ }).click();
@@ -85,7 +83,7 @@ test.describe('Town Hall roles (production build, real CSP)', () => {
     // Someone else asks, from a phone: told it is with the people who look after it.
     await askToJoin(eve, url);
     await expect(
-      eve.page.getByText('Your request is with the people who look after this Town Hall.'),
+      eve.page.getByText('Your request is with the people who look after this group.'),
     ).toBeVisible();
     await checkPhone(eve.page);
 
@@ -112,7 +110,7 @@ test.describe('Town Hall roles (production build, real CSP)', () => {
     await memberRow(owner.page, dep.handle)
       .getByRole('button', { name: `Options for @${dep.handle}` })
       .click();
-    await owner.page.getByRole('menuitem', { name: 'Hand the Town Hall to them…' }).click();
+    await owner.page.getByRole('menuitem', { name: 'Hand the group to them…' }).click();
     await owner.page.getByRole('alertdialog').getByRole('button', { name: 'Hand it over' }).click();
     await expect(owner.page.getByRole('button', { name: 'Leave' })).toBeVisible();
     await expect(owner.page.getByRole('heading', { name: 'Danger zone' })).toBeHidden();

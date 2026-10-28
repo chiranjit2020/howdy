@@ -60,7 +60,7 @@ export function TrackItem({
               )}
             </p>
             <p className="text-caption [overflow-wrap:anywhere] text-text-secondary">
-              {visitor ? `@${visitor.handle}` : (hint ?? 'Someone stopped by your Porch.')}
+              {visitor ? `@${visitor.handle}` : (hint ?? 'Someone stopped by your profile.')}
             </p>
           </>
         );

@@ -165,7 +165,7 @@ describe('what a connection may send', () => {
     expect(await c.waitClosed()).toBe(1009);
   });
 
-  it('a Whisper that is too long, empty, or aimed at a malformed call sign gets field-level errors', async () => {
+  it('a message that is too long, empty, or aimed at a malformed username gets field-level errors', async () => {
     const { a, b } = await friends();
     const c = await connect(a);
     const long = await c.request('whisper.send', {
@@ -206,7 +206,7 @@ describe('what a connection may send', () => {
 });
 
 describe('sending and receiving live', () => {
-  it('a Whisper sent over the socket is stored, acknowledged, and pushed to the other person’s socket and the sender’s other device', async () => {
+  it('a message sent over the socket is stored, acknowledged, and pushed to the other person’s socket and the sender’s other device', async () => {
     const { a, b } = await friends();
     const cb = await connect(b);
     const ca1 = await connect(a);
@@ -288,7 +288,7 @@ describe('sending and receiving live', () => {
 });
 
 describe('every action is authorised — the same 404 for everything that is not a thread of mine', () => {
-  it('strangers, a made-up call sign and a block look identical over the socket', async () => {
+  it('strangers, a made-up username and a block look identical over the socket', async () => {
     const a = await person('alice');
     const stranger = await person('stranger');
     const villain = await person('villain');
@@ -387,7 +387,7 @@ describe('a live connection cannot outlive the reasons it was allowed', () => {
 });
 
 describe('hints carry no words', () => {
-  it('a hint that is not exactly a hint is ignored, and nothing about a Whisper travels through Redis', async () => {
+  it('a hint that is not exactly a hint is ignored, and nothing about a message travels through Redis', async () => {
     const { a, b } = await friends();
     const cb = await connect(b);
     const redis = (await import('@/platform/redis')).createRedisClient(process.env.REDIS_URL!);

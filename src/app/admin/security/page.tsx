@@ -28,7 +28,7 @@ export default async function SecurityCenterPage({
             The Security Center needs two-step sign-in. Turn it on under Sign-in security.
           </p>
           <Link
-            href="/workshop#sign-in-security"
+            href="/settings#sign-in-security"
             className="inline-flex min-h-11 items-center self-start text-on-island underline underline-offset-2"
           >
             Go to Sign-in security →

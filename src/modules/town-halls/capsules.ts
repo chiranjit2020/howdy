@@ -67,7 +67,7 @@ export async function sealHallCapsule(
     .where(eq(townHallCapsules.townHallId, townHallId));
   if (n >= MAX_HALL_CAPSULES) {
     throw new AppError('CONFLICT', {
-      message: `This Town Hall has ${MAX_HALL_CAPSULES} capsules waiting already.`,
+      message: `This group has ${MAX_HALL_CAPSULES} capsules waiting already.`,
     });
   }
   const [row] = await getDb()

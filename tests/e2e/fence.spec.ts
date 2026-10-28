@@ -37,13 +37,13 @@ async function makePosse(asker: Person, asked: Person) {
 const cardWith = (page: Page, text: string): Locator => page.getByRole('article').filter({ hasText: text });
 
 async function nailVia(page: Page, text: string) {
-  await page.getByLabel('Nail a Post Card').fill(text);
-  await page.getByRole('button', { name: 'Nail to Fence' }).click();
+  await page.getByLabel('Write a post').fill(text);
+  await page.getByRole('button', { name: 'Post' }).click();
   await expect(cardWith(page, text)).toBeVisible();
 }
 
-test.describe('The Fence in a real browser (production build, real CSP)', () => {
-  test('nail, Yo, scribble, hold for approval, Scrape clean, Flag trouble and Block — as several people', async ({
+test.describe('The wall in a real browser (production build, real CSP)', () => {
+  test('nail, Yo, reply, hold for approval, Scrape clean, Flag trouble and Block — as several people', async ({
     browser,
   }) => {
     const a = await person(browser, 'owner');
@@ -53,30 +53,30 @@ test.describe('The Fence in a real browser (production build, real CSP)', () => 
     const problems = await watchProblems(b.page);
 
     // The owner nails the first card.
-    await a.page.goto(`/porch/${a.handle}`);
-    await expect(a.page.getByRole('heading', { name: 'The Fence' })).toBeVisible();
-    await expect(a.page.getByText('Nothing nailed up yet')).toBeVisible();
+    await a.page.goto(`/profile/${a.handle}`);
+    await expect(a.page.getByRole('heading', { name: 'The wall' })).toBeVisible();
+    await expect(a.page.getByText('No posts yet')).toBeVisible();
     await nailVia(a.page, 'Howdy from the ranch');
-    await expect(a.page.getByLabel('Nail a Post Card')).toHaveValue(''); // cleared after posting
+    await expect(a.page.getByLabel('Write a post')).toHaveValue(''); // cleared after posting
 
     // A Posse friend sees it, writes on the Fence, gives a Yo and scribbles a reply.
-    await b.page.goto(`/porch/${a.handle}`);
+    await b.page.goto(`/profile/${a.handle}`);
     await expect(cardWith(b.page, 'Howdy from the ranch')).toBeVisible();
     await nailVia(b.page, 'Hi from Bob');
     const owners = cardWith(b.page, 'Howdy from the ranch');
-    const yo = owners.getByRole('button', { name: /^Yo/ });
+    const yo = owners.getByRole('button', { name: /^Wave/ });
     await expect(yo).toHaveAttribute('aria-pressed', 'false');
     await yo.click();
     await expect(yo).toHaveAttribute('aria-pressed', 'true');
-    await expect(owners.getByRole('img', { name: '1 reaction: 1 Yo' })).toBeVisible();
+    await expect(owners.getByRole('img', { name: '1 reaction: 1 Wave' })).toBeVisible();
     // The picker switches it to another reaction: still one per person.
     await owners.getByRole('button', { name: 'More reactions' }).click();
     await b.page.getByRole('dialog', { name: 'Reactions' }).getByRole('button', { name: 'Laugh' }).click();
     await expect(owners.getByRole('button', { name: 'Laugh', pressed: true })).toBeVisible();
     await expect(owners.getByRole('img', { name: '1 reaction: 1 Laugh' })).toBeVisible();
     await owners.getByRole('button', { name: /^Flip/ }).click();
-    await b.page.getByLabel('Scribble a reply').fill('Nice ranch!');
-    await b.page.getByRole('button', { name: 'Scribble' }).click();
+    await b.page.getByLabel('Write a reply').fill('Nice ranch!');
+    await b.page.getByRole('button', { name: 'Reply' }).click();
     await expect(b.page.getByText('Nice ranch!')).toBeVisible();
 
     // A refresh keeps everything (it really was saved), and the owner sees the reaction count.
@@ -85,14 +85,14 @@ test.describe('The Fence in a real browser (production build, real CSP)', () => 
     await expect(
       cardWith(a.page, 'Howdy from the ranch').getByRole('img', { name: '1 reaction: 1 Laugh' }),
     ).toBeVisible(); // own card: count, no button
-    await expect(cardWith(a.page, 'Howdy from the ranch').getByRole('button', { name: /^Yo/ })).toHaveCount(
+    await expect(cardWith(a.page, 'Howdy from the ranch').getByRole('button', { name: /^Wave/ })).toHaveCount(
       0,
     );
 
     // A stranger reads the wall (members can) but the composer is not offered: only the Posse may write.
-    await c.page.goto(`/porch/${a.handle}`);
+    await c.page.goto(`/profile/${a.handle}`);
     await expect(cardWith(c.page, 'Hi from Bob')).toBeVisible();
-    await expect(c.page.getByLabel('Nail a Post Card')).toHaveCount(0);
+    await expect(c.page.getByLabel('Write a post')).toHaveCount(0);
     expect((await api(c, `/api/porch/${a.handle}/fence`, { body: 'let me in' })).status()).toBe(403);
 
     // Restrict: Bob's next card looks posted to Bob, is invisible to others, and waits for Alice.
@@ -100,7 +100,7 @@ test.describe('The Fence in a real browser (production build, real CSP)', () => 
     await nailVia(b.page, 'Quiet words from Bob');
     // Bob is never told. (The Tributes notice says "wait for … to approve" to every visitor, restricted or not.)
     await expect(
-      b.page.getByText(/waiting|approve/i).filter({ hasNotText: /^Tributes always wait for/ }),
+      b.page.getByText(/waiting|approve/i).filter({ hasNotText: /^Testimonials always wait for/ }),
     ).toHaveCount(0);
     await c.page.reload();
     await expect(cardWith(c.page, 'Quiet words from Bob')).toHaveCount(0);
@@ -115,7 +115,7 @@ test.describe('The Fence in a real browser (production build, real CSP)', () => 
 
     // Flag trouble on a card, from the card's menu.
     await c.page
-      .getByRole('button', { name: 'More about this card from @' + b.handle })
+      .getByRole('button', { name: 'More about this post from @' + b.handle })
       .first()
       .click();
     await c.page.getByRole('menuitem', { name: 'Flag trouble…' }).click();
@@ -126,7 +126,7 @@ test.describe('The Fence in a real browser (production build, real CSP)', () => 
 
     // Scrape clean (owner) — with a confirmation, Cancel first.
     await a.page
-      .getByRole('button', { name: 'More about this card from @' + b.handle })
+      .getByRole('button', { name: 'More about this post from @' + b.handle })
       .first()
       .click();
     await a.page.getByRole('menuitem', { name: 'Scrape clean' }).click();
@@ -134,7 +134,7 @@ test.describe('The Fence in a real browser (production build, real CSP)', () => 
     await a.page.getByRole('button', { name: 'Cancel' }).click();
     await expect(cardWith(a.page, 'Quiet words from Bob')).toBeVisible();
     await a.page
-      .getByRole('button', { name: 'More about this card from @' + b.handle })
+      .getByRole('button', { name: 'More about this post from @' + b.handle })
       .first()
       .click();
     await a.page.getByRole('menuitem', { name: 'Scrape clean' }).click();
@@ -144,7 +144,7 @@ test.describe('The Fence in a real browser (production build, real CSP)', () => 
     // A writer can take their own card back.
     await b.page.reload();
     await b.page
-      .getByRole('button', { name: 'More about this card from @' + b.handle })
+      .getByRole('button', { name: 'More about this post from @' + b.handle })
       .first()
       .click();
     await b.page.getByRole('menuitem', { name: 'Take it back' }).click();
@@ -153,30 +153,30 @@ test.describe('The Fence in a real browser (production build, real CSP)', () => 
 
     // Block: the whole Fence vanishes for the blocked person, exactly like a missing Ranch.
     expect((await api(a, `/api/relationships/${c.handle}`, { action: 'block' })).ok()).toBe(true);
-    expect((await c.page.goto(`/porch/${a.handle}`))?.status()).toBe(404);
+    expect((await c.page.goto(`/profile/${a.handle}`))?.status()).toBe(404);
 
     expect(problems).toEqual([]);
     await Promise.all([a.ctx.close(), b.ctx.close(), c.ctx.close()]);
   });
 
-  test('Review mode: the writer is told, the owner approves; the Fence rules live in the Workshop', async ({
+  test('Review mode: the writer is told, the owner approves; the wall rules live in Settings', async ({
     browser,
   }) => {
     const a = await person(browser, 'reviewowner');
     const b = await person(browser, 'reviewfriend');
     await makePosse(b, a);
-    await a.page.goto('/workshop');
-    await a.page.getByLabel('Who can nail cards to it?').selectOption('members');
-    await a.page.getByRole('switch', { name: /Approve cards first/ }).click();
-    await a.page.getByRole('button', { name: 'Save Fence rules' }).click();
-    await expect(a.page.getByRole('status').filter({ hasText: 'Fence rules updated' })).toBeVisible();
+    await a.page.goto('/settings');
+    await a.page.getByLabel('Who can post on it?').selectOption('members');
+    await a.page.getByRole('switch', { name: /Approve posts first/ }).click();
+    await a.page.getByRole('button', { name: 'Save wall rules' }).click();
+    await expect(a.page.getByRole('status').filter({ hasText: 'Wall rules updated' })).toBeVisible();
 
-    await b.page.goto(`/porch/${a.handle}`);
-    await expect(b.page.getByText(/Cards on this Fence wait for .* to approve/)).toBeVisible();
+    await b.page.goto(`/profile/${a.handle}`);
+    await expect(b.page.getByText(/Posts on this wall wait for .* to approve/)).toBeVisible();
     await nailVia(b.page, 'Please approve me');
     await expect(cardWith(b.page, 'Please approve me').getByText(/Waiting for .* to approve/)).toBeVisible();
 
-    await a.page.goto(`/porch/${a.handle}`);
+    await a.page.goto(`/profile/${a.handle}`);
     await expect(cardWith(a.page, 'Please approve me')).toHaveCount(0); // in the queue, not on the wall
     await expect(a.page.getByText('Please approve me')).toBeVisible();
     await expect(a.page.getByRole('heading', { name: 'Waiting for you (1)' })).toBeVisible();
@@ -187,7 +187,7 @@ test.describe('The Fence in a real browser (production build, real CSP)', () => 
   });
 });
 
-test.describe('Fence: accessibility and layout in a real browser', () => {
+test.describe('Wall: accessibility and layout in a real browser', () => {
   async function seed(browser: Browser, opts: Parameters<typeof newContext>[1]) {
     const a = await person(browser, `fa${Date.now().toString(36).slice(-4)}`, opts);
     const b = await person(browser, `fb${Date.now().toString(36).slice(-4)}`, opts);
@@ -211,9 +211,9 @@ test.describe('Fence: accessibility and layout in a real browser', () => {
       const { a, b } = await seed(browser, { colorScheme: scheme, bypassCSP: true, reducedMotion: 'reduce' });
       const source = axeSource();
       for (const [who, path] of [
-        [a, `/porch/${a.handle}`], // owner: queue + menus
-        [b, `/porch/${a.handle}`], // Posse friend: composer
-        [a, '/workshop'], // Fence rules
+        [a, `/profile/${a.handle}`], // owner: queue + menus
+        [b, `/profile/${a.handle}`], // Posse friend: composer
+        [a, '/settings'], // Fence rules
       ] as const) {
         await who.page.goto(path);
         await pageReady(who.page);
@@ -254,9 +254,9 @@ test.describe('Fence: accessibility and layout in a real browser', () => {
     const opts = { hasTouch: true, isMobile: true, viewport: { width: 320, height: 700 } };
     const { a, b } = await seed(browser, opts);
     for (const [who, path] of [
-      [a, `/porch/${a.handle}`],
-      [b, `/porch/${a.handle}`],
-      [a, '/workshop'],
+      [a, `/profile/${a.handle}`],
+      [b, `/profile/${a.handle}`],
+      [a, '/settings'],
     ] as const) {
       await who.page.goto(path);
       await pageReady(who.page);
@@ -288,7 +288,7 @@ test.describe('Fence: accessibility and layout in a real browser', () => {
       expect(problems, `${path} layout`).toEqual([]);
     }
     // The back of a card too.
-    await b.page.goto(`/porch/${a.handle}`);
+    await b.page.goto(`/profile/${a.handle}`);
     await b.page.getByRole('button', { name: /^Flip/ }).first().click();
     expect(await horizontalOverflow(b.page), 'flipped overflow').toBeLessThanOrEqual(0);
     await Promise.all([a.ctx.close(), b.ctx.close()]);

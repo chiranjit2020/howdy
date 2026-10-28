@@ -104,7 +104,7 @@ describe('switching', () => {
 });
 
 describe('who sees it', () => {
-  it('all Pals: my Pals see it (with the note), a stranger and someone I only asked do not', async () => {
+  it('all friends: my friends see it (with the note), a stranger and someone I only asked do not', async () => {
     const [a, pal, stranger, asked] = await Promise.all([
       person('alice'),
       person('pal'),
@@ -124,7 +124,7 @@ describe('who sees it', () => {
     expect(await onPorch(asked, a)).toBe(false);
   });
 
-  it('Close Pals only: only Pals I marked Close — their marking me does not count', async () => {
+  it('Close friends only: only friends I marked Close — their marking me does not count', async () => {
     const [a, close, other] = await Promise.all([person('alice'), person('close'), person('other')]);
     await pals(a, close);
     await pals(a, other);
@@ -174,7 +174,7 @@ describe('who sees it', () => {
     expect(await onPorch(muted, a)).toBe(true);
   });
 
-  it('a block hides it by itself too, not only because blocking ends the Pal link', async () => {
+  it('a block hides it by itself too, not only because blocking ends the friend link', async () => {
     const [a, b, c] = await Promise.all([person('alice'), person('bob'), person('carol')]);
     await pals(a, b);
     await pals(a, c);
@@ -217,7 +217,7 @@ describe('who sees it', () => {
     expect((await lit(b)).handles).toEqual([a.handle]);
   });
 
-  it('my own light is not in my list of lit Pals, and lightFor never answers for oneself', async () => {
+  it('my own light is not in my list of lit friends, and lightFor never answers for oneself', async () => {
     const a = await person('alice');
     await on(a);
     expect((await lit(a)).handles).toEqual([]);

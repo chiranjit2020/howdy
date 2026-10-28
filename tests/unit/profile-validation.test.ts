@@ -113,7 +113,7 @@ describe('updateRanchSchema', () => {
 });
 
 describe('handleParamSchema', () => {
-  it('lower-cases and accepts only the handle shape', () => {
+  it('lower-cases and accepts only the username shape', () => {
     expect(handleParamSchema.parse('ChIrU_01')).toBe('chiru_01');
     for (const bad of ['', 'ab', 'a'.repeat(25), '../etc', 'a b c', "x'; drop table users;--", 'é', '%2e%2e'])
       expect(ok(handleParamSchema, bad), bad).toBe(false);

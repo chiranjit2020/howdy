@@ -32,7 +32,7 @@ test.describe('Download my data (production build, real CSP)', () => {
     await expect(page).toHaveURL(/\/home$/);
     const problems = await watchProblems(page);
 
-    await page.goto('/workshop');
+    await page.goto('/settings');
     await pageReady(page);
     const card = page
       .locator('.clay')

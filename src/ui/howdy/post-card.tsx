@@ -72,23 +72,23 @@ export function PostCardReply({
 const COMPOSER = {
   card: {
     max: LIMITS.POST_CARD_MAX,
-    label: 'Nail a Post Card',
+    label: 'Write a post',
     placeholder: 'Short and sweet…',
     rows: 3,
     art: 'nav-nail',
-    submit: 'Nail to Fence',
+    submit: 'Post',
   },
   reply: {
     max: LIMITS.REPLY_MAX,
-    label: 'Scribble a reply',
-    placeholder: 'One or two lines. Longer? Take it to a Whisper.',
+    label: 'Write a reply',
+    placeholder: 'One or two lines. Longer? Take it to a message.',
     rows: 2,
     art: 'nav-scribble',
-    submit: 'Scribble',
+    submit: 'Reply',
   },
   post: {
     max: LIMITS.TOWNHALL_POST_MAX,
-    label: 'Post to this Town Hall',
+    label: 'Post to this group',
     placeholder: 'Say howdy, ask something, share news…',
     rows: 3,
     art: 'nav-town-halls',
@@ -267,7 +267,7 @@ export function PostCard({
   replyComposer,
   actions,
   photo,
-  noun = 'Post Card',
+  noun = 'Post',
 }: PostCardProps) {
   const [flipped, setFlipped] = useState(false);
   const [hasFlipped, setHasFlipped] = useState(false); // no animation / focus move on first paint
@@ -291,15 +291,15 @@ export function PostCard({
       {flipped ? (
         <div className={cn(face, 'bg-parchment')}>
           <div className="flex items-center justify-between">
-            <h3 className="text-title text-text-primary">Scribbles</h3>
+            <h3 className="text-title text-text-primary">Replies</h3>
             <Button ref={backBtn} variant="ghost" size="sm" onClick={() => flip(false)}>
-              <FlipIcon /> Back to card
+              <FlipIcon /> Back to post
             </Button>
           </div>
           {replyCount > 0 ? (
             <ul className="flex flex-col gap-3">{replies}</ul>
           ) : (
-            <p className="text-caption text-text-secondary">No scribbles yet. Be the first.</p>
+            <p className="text-caption text-text-secondary">No replies yet. Be the first.</p>
           )}
           {replyComposer}
         </div>

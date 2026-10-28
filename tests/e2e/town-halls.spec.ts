@@ -42,9 +42,9 @@ const hallCard = (page: Page, name: string) =>
     .locator('xpath=ancestor::*[contains(concat(" ", @class, " "), " clay ")][1]');
 
 async function startViaUi(p: Person, name: string, visibility: 'open' | 'members' | 'invite') {
-  await p.page.goto('/town-halls');
+  await p.page.goto('/groups');
   await pageReady(p.page);
-  await p.page.getByRole('button', { name: 'Start a Town Hall' }).click();
+  await p.page.getByRole('button', { name: 'Start a group' }).click();
   await p.page.getByLabel('Name').fill(name);
   await p.page.getByLabel('What is it about?').fill(`All about ${name}.`);
   await p.page.getByLabel('Who can find and join it?').selectOption(visibility);
@@ -56,7 +56,7 @@ async function startViaUi(p: Person, name: string, visibility: 'open' | 'members
   return href!.split('/').pop()!;
 }
 
-test.describe('Town Halls (production build, real CSP)', () => {
+test.describe('Groups (production build, real CSP)', () => {
   test('start, discover and join, invite-only stays hidden until invited, remove a member, delete', async ({
     browser,
   }) => {
@@ -70,11 +70,11 @@ test.describe('Town Halls (production build, real CSP)', () => {
     const openId = await startViaUi(a, openName, 'open');
 
     // Bob finds it in the directory and joins with one tap; opening it shows both of them.
-    await b.page.goto('/town-halls');
+    await b.page.goto('/groups');
     await pageReady(b.page);
     await hallCard(b.page, openName).getByRole('button', { name: 'Join' }).click();
     await hallCard(b.page, openName).getByRole('link', { name: 'Open' }).click();
-    await expect(b.page).toHaveURL(new RegExp(`/town-halls/${openId}$`));
+    await expect(b.page).toHaveURL(new RegExp(`/groups/${openId}$`));
     await pageReady(b.page);
     await expect(b.page.getByRole('heading', { name: 'Members' })).toBeVisible();
     await expect(b.page.getByText(`@${a.handle}`)).toBeVisible();
@@ -85,28 +85,28 @@ test.describe('Town Halls (production build, real CSP)', () => {
     // Alice starts an invite-only one: Carol cannot find it or open it (a real 404, like a made-up one).
     const secretName = hallName('Quiet Room');
     const secretId = await startViaUi(a, secretName, 'invite');
-    await c.page.goto('/town-halls');
+    await c.page.goto('/groups');
     await pageReady(c.page);
     await expect(c.page.getByRole('heading', { name: secretName })).toHaveCount(0);
-    expect((await c.page.goto(`/town-halls/${secretId}`))?.status()).toBe(404);
+    expect((await c.page.goto(`/groups/${secretId}`))?.status()).toBe(404);
 
     // Alice invites Carol by call sign; Carol sees the invite, joins, and can open it.
-    await a.page.goto(`/town-halls/${secretId}`);
+    await a.page.goto(`/groups/${secretId}`);
     await pageReady(a.page);
-    await a.page.getByLabel('Their call sign').fill(`@${c.handle}`);
+    await a.page.getByLabel('Their username').fill(`@${c.handle}`);
     await a.page.getByRole('button', { name: 'Send invite' }).click();
     await expect(a.page.getByText(`Invited @${c.handle.toLowerCase()}.`)).toBeVisible();
-    await c.page.goto('/town-halls');
+    await c.page.goto('/groups');
     await pageReady(c.page);
     await c.page.getByRole('tab', { name: 'Invites (1)' }).click();
     await expect(c.page.getByText(`Invited by @${a.handle}`)).toBeVisible();
     await hallCard(c.page, secretName).getByRole('button', { name: 'Join' }).click();
     await expect(c.page.getByText('No invites waiting')).toBeVisible();
-    expect((await c.page.goto(`/town-halls/${secretId}`))?.status()).toBe(200);
+    expect((await c.page.goto(`/groups/${secretId}`))?.status()).toBe(200);
     await expect(c.page.getByText(`@${c.handle}`)).toBeVisible();
 
     // Alice removes Bob from the open one: he is back to a Join button and no member list.
-    await a.page.goto(`/town-halls/${openId}`);
+    await a.page.goto(`/groups/${openId}`);
     await pageReady(a.page);
     // Member actions live in each row's Options menu (ADR-041).
     await a.page.getByRole('button', { name: `Options for @${b.handle}` }).click();
@@ -122,15 +122,15 @@ test.describe('Town Halls (production build, real CSP)', () => {
     await expect(b.page.getByRole('heading', { name: 'Members' })).toHaveCount(0);
 
     // Alice deletes the invite-only one: it is gone for Carol too.
-    await a.page.goto(`/town-halls/${secretId}`);
+    await a.page.goto(`/groups/${secretId}`);
     await pageReady(a.page);
-    await a.page.getByRole('button', { name: 'Delete this Town Hall' }).click();
+    await a.page.getByRole('button', { name: 'Delete this group' }).click();
     await a.page
-      .getByRole('alertdialog', { name: 'Delete this Town Hall?' })
+      .getByRole('alertdialog', { name: 'Delete this group?' })
       .getByRole('button', { name: 'Delete it' })
       .click();
-    await expect(a.page).toHaveURL(/\/town-halls$/);
-    expect((await c.page.goto(`/town-halls/${secretId}`))?.status()).toBe(404);
+    await expect(a.page).toHaveURL(/\/groups$/);
+    expect((await c.page.goto(`/groups/${secretId}`))?.status()).toBe(404);
 
     expect(problems).toEqual([]);
     await Promise.all([a.ctx.close(), b.ctx.close(), c.ctx.close()]);
@@ -141,7 +141,7 @@ test.describe('Town Halls (production build, real CSP)', () => {
     const b = await person(browser, `tb${Date.now().toString(36).slice(-4)}`, opts);
     const made = await api(a, '/api/town-halls', {
       name: hallName('Layout Hall'),
-      description: 'For checking how Town Halls look.',
+      description: 'For checking how groups look.',
       visibility: 'open',
     });
     expect(made.status()).toBe(201);
@@ -151,13 +151,13 @@ test.describe('Town Halls (production build, real CSP)', () => {
   }
 
   for (const scheme of ['light', 'dark'] as const) {
-    test(`axe finds no violations on the directory and a Town Hall (${scheme})`, async ({ browser }) => {
+    test(`axe finds no violations on the directory and a group (${scheme})`, async ({ browser }) => {
       const { a, b, id } = await seed(browser, {
         colorScheme: scheme,
         bypassCSP: true,
         reducedMotion: 'reduce',
       });
-      for (const path of ['/town-halls', `/town-halls/${id}`]) {
+      for (const path of ['/groups', `/groups/${id}`]) {
         await a.page.goto(path);
         await pageReady(a.page);
         expect(await axeViolations(a.page), `${path} (${scheme})`).toEqual([]);
@@ -172,7 +172,7 @@ test.describe('Town Halls (production build, real CSP)', () => {
       isMobile: true,
       viewport: { width: 320, height: 700 },
     });
-    for (const path of ['/town-halls', `/town-halls/${id}`]) {
+    for (const path of ['/groups', `/groups/${id}`]) {
       await a.page.goto(path);
       await pageReady(a.page);
       expect(await horizontalOverflow(a.page), `${path} overflow`).toBeLessThanOrEqual(0);

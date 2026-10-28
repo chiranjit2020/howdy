@@ -7,13 +7,13 @@ A cookie is a small piece of text that a website asks your browser to keep, and 
 - **Name:** `__Host-howdy_session`
 - **What it does:** keeps you signed in. It holds a long random code that proves to Howdy that this browser is signed in to your account. The code is useless on its own, and we store only a scrambled version of it.
 - **How it is protected:** it can only be sent over an encrypted connection and only to Howdy, and the page's own code cannot read it. That makes it much harder to steal.
-- **How long it lasts:** until you sign out. A session also ends after 14 days without use, and after 60 days at most.
+- **How long it lasts:** until you sign out. If you tick "Remember this device" when you log in, it lasts up to 30 days (and ends after 14 days without use); if you do not, it ends when you close your browser, and after a day at most.
 - **Can you turn it off?** Not if you want to sign in. Without it, Howdy cannot know it is you.
 
 ### Your theme (preference)
 
 - **Name:** `howdy_theme`
-- **What it does:** remembers whether you chose the light (Daylight) or dark (Dusk) theme, so that the page opens in the right colours. It holds only the word `daylight` or `dusk`.
+- **What it does:** remembers whether you chose the light or dark theme, so that the page opens in the right colours. It holds only the word `daylight` or `dusk`.
 - **When it is set:** only if you pick a theme yourself. If you follow your device's setting, there is no theme cookie.
 - **How long it lasts:** one year, or until you choose "follow my device" again.
 

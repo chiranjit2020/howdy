@@ -171,7 +171,7 @@ export function ShellBottomNav({ items, me }: { items: ShellNavItem[]; me: Shell
       {
         href: it.href,
         // Your own picture stands for your Porch, like a profile tab; "My Porch" would not fit a fifth of 320 px.
-        label: key === 'ranch' ? 'Porch' : it.label,
+        label: key === 'ranch' ? 'Profile' : it.label,
         icon:
           key === 'ranch' ? (
             <Avatar
@@ -197,9 +197,9 @@ export function ShellBottomNav({ items, me }: { items: ShellNavItem[]; me: Shell
       items={tabs}
       label="Primary"
       action={{
-        href: `/porch/${me.handle}?nail=1`,
+        href: `/profile/${me.handle}?nail=1`,
         label: 'Nail',
-        description: 'Nail a card to your Fence',
+        description: 'Write a post on your wall',
         icon: navArt('nav-nail'),
       }}
     />

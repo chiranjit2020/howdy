@@ -95,7 +95,7 @@ describe('sign up → verify → sign in → me → sign out (happy path)', () =
     ]);
   });
 
-  it('logs in with the handle as well as the email, and is case-insensitive', async () => {
+  it('logs in with the username as well as the email, and is case-insensitive', async () => {
     const u = await verifiedUser(kit, {
       email: 'Mixed.Case@Example.com'.toLowerCase(),
       handle: 'mixed_case',
@@ -218,7 +218,7 @@ describe('sign-up validation is enforced on the server', () => {
     ],
     ['invalid email', { email: 'nope' }, 'email'],
     ['reserved handle', { handle: 'admin' }, 'handle'],
-    // Fixed words under /whispers/… (a call sign there would share its URL with the page): ADR-026.
+    // Fixed words under /messages/… (a call sign there would share its URL with the page): ADR-026.
     ['reserved handle: held', { handle: 'held' }, 'handle'],
     ['reserved handle: unread', { handle: 'unread' }, 'handle'],
     ['bad handle characters', { handle: 'a b!' }, 'handle'],
@@ -233,7 +233,7 @@ describe('sign-up validation is enforced on the server', () => {
     ).toBe(0);
   });
 
-  it('reports a taken handle (handles are public) and creates nothing', async () => {
+  it('reports a taken handle (usernames are public) and creates nothing', async () => {
     const first = await verifiedUser(kit);
     const r = await call(authHandlers.signup, 'POST', '/api/auth/signup', {
       ...uniqueUser(),

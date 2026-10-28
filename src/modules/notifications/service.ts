@@ -404,55 +404,58 @@ async function hallsIAmIn(userId: string, hallIds: string[]): Promise<Set<string
 
 function describe(userId: string, s: Shown, myHandle: string): { text: string; href: string } {
   const name = s.actor.displayName;
-  const fence = s.ownerHandle ? `/porch/${s.ownerHandle}` : `/porch/${myHandle}`;
+  const fence = s.ownerHandle ? `/profile/${s.ownerHandle}` : `/profile/${myHandle}`;
   switch (s.row.type as ChimeType) {
     case 'posse_requested':
-      return { text: `${name} wants to be your Pal.`, href: '/pals' };
+      return { text: `${name} wants to be your friend.`, href: '/friends' };
     case 'posse_accepted':
-      return { text: `${name} said yes. You are Pals now.`, href: `/porch/${s.actor.handle}` };
+      return { text: `${name} said yes. You are friends now.`, href: `/profile/${s.actor.handle}` };
     case 'card_created':
-      return { text: `${name} nailed a card to your Fence.`, href: fence };
+      return { text: `${name} posted on your wall.`, href: fence };
     case 'card_waiting':
-      return { text: `A card from ${name} is waiting for your approval.`, href: `/porch/${myHandle}` };
+      return { text: `A post from ${name} is waiting for your approval.`, href: `/profile/${myHandle}` };
     case 'card_approved':
-      return { text: `${name} approved your card. It is on the Fence now.`, href: fence };
+      return { text: `${name} approved your post. It is on the wall now.`, href: fence };
     case 'reply_created':
       return {
         text:
           s.row.cardAuthorId === userId
-            ? `${name} scribbled a reply on your card.`
-            : `${name} scribbled a reply on a card on your Fence.`,
+            ? `${name} replied to your post.`
+            : `${name} replied to a post on your wall.`,
         href: fence,
       };
     case 'reply_waiting':
-      return { text: `A reply from ${name} is waiting for your approval.`, href: `/porch/${myHandle}` };
+      return { text: `A reply from ${name} is waiting for your approval.`, href: `/profile/${myHandle}` };
     case 'yo_given':
-      return { text: `${name} reacted to your card.`, href: fence };
+      return { text: `${name} reacted to your post.`, href: fence };
     case 'whisper_received':
-      return { text: `${name} whispered to you.`, href: `/whispers/${s.actor.handle}` };
+      return { text: `${name} whispered to you.`, href: `/messages/${s.actor.handle}` };
     case 'tribute_waiting':
-      return { text: `A Tribute from ${name} is waiting for your approval.`, href: `/porch/${myHandle}` };
+      return {
+        text: `A testimonial from ${name} is waiting for your approval.`,
+        href: `/profile/${myHandle}`,
+      };
     case 'tribute_approved':
       // The actor here is the owner who approved it — always the right Ranch to link to.
       return {
-        text: `${name} approved your Tribute. It is on their Porch now.`,
-        href: `/porch/${s.actor.handle}`,
+        text: `${name} approved your testimonial. It is on their profile now.`,
+        href: `/profile/${s.actor.handle}`,
       };
     case 'mark_given':
-      return { text: `${name} gave you a Mark.`, href: `/porch/${myHandle}` };
+      return { text: `${name} gave you a badge.`, href: `/profile/${myHandle}` };
     case 'townhall_invited':
-      return { text: `${name} invited you to a Town Hall.`, href: '/town-halls' };
+      return { text: `${name} invited you to a group.`, href: '/groups' };
     case 'townhall_invite_accepted':
-      return { text: `${name} accepted your Town Hall invite.`, href: '/town-halls' };
+      return { text: `${name} accepted your group invite.`, href: '/groups' };
     // Person-shaped like invites (no Town Hall named in the Chime): the Town Halls page says which one.
     case 'townhall_join_requested':
-      return { text: `${name} asked to join a Town Hall you look after.`, href: '/town-halls' };
+      return { text: `${name} asked to join a group you look after.`, href: '/groups' };
     case 'townhall_request_approved':
-      return { text: `${name} let you into a Town Hall.`, href: '/town-halls' };
+      return { text: `${name} let you into a group.`, href: '/groups' };
     case 'townhall_made_deputy':
-      return { text: `${name} made you a Deputy of a Town Hall.`, href: '/town-halls' };
+      return { text: `${name} made you a Deputy of a group.`, href: '/groups' };
     case 'townhall_made_owner':
-      return { text: `${name} handed you a Town Hall. You are its owner now.`, href: '/town-halls' };
+      return { text: `${name} handed you a group. You are its owner now.`, href: '/groups' };
     case 'capsule_opened':
       return {
         text:
@@ -463,13 +466,13 @@ function describe(userId: string, s: Shown, myHandle: string): { text: string; h
       };
     case 'hall_reply_created':
       return {
-        text: `${name} replied to your post in a Town Hall.`,
-        href: `/town-halls/${s.row.townHallId}`,
+        text: `${name} replied to your post in a group.`,
+        href: `/groups/${s.row.townHallId}`,
       };
     case 'hall_reaction_given':
       return {
-        text: `${name} reacted to your post in a Town Hall.`,
-        href: `/town-halls/${s.row.townHallId}`,
+        text: `${name} reacted to your post in a group.`,
+        href: `/groups/${s.row.townHallId}`,
       };
     case 'story_reacted':
       return { text: `${name} reacted to your Story.`, href: '/home' };
