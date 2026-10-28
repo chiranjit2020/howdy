@@ -11,7 +11,8 @@ import {
   type LightMinutes,
 } from '@/shared/validation/lights';
 import type { PortraitTint } from '@/shared/validation/profile';
-import { Art, Glyph } from '@/ui/art/glyph';
+import { Glyph } from '@/ui/art/glyph';
+import { WhisperIcon } from '@/ui/icons';
 import { apiRequest } from '@/ui/auth/api';
 import { FormMessage } from '@/ui/auth/form-parts';
 import { Avatar, Button, Input, Radio } from '@/ui/primitives';
@@ -110,7 +111,7 @@ export function PorchLightCard({ lit, mine }: { lit: LitPalRow[]; mine: MyLightS
                 title="Message"
                 className={iconButton}
               >
-                <Art name="nav-whispers" size="free" className="size-7" />
+                <WhisperIcon className="size-5" />
               </Link>
             </li>
           ))}

@@ -1,6 +1,7 @@
+import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { attachPortraits, withCards } from '@/app/_lib/social';
-import { Art, type ArtName } from '@/ui/art/glyph';
+import { BellIcon, TracksIcon, UsersIcon, WhisperIcon } from '@/ui/icons';
 import { listMySessions, requireUser } from '@/modules/auth';
 import { litPals, myLight } from '@/modules/lights';
 import { getPortraitVersion } from '@/modules/media';
@@ -28,7 +29,7 @@ const SECTION_TITLE =
 
 interface Glance {
   href: string;
-  art: ArtName;
+  icon: ReactNode;
   /** null = nothing to count right now (the note says why). */
   value: number | null;
   label: string;
@@ -88,21 +89,21 @@ export default async function HomePage() {
   const glance: Glance[] = [
     {
       href: '/messages',
-      art: 'nav-whispers',
+      icon: <WhisperIcon />,
       value: whispers,
       label: whispers === 1 ? 'Unread message' : 'Unread messages',
       waiting: (whispers ?? 0) > 0,
     },
     {
       href: '/notifications',
-      art: 'nav-chimes',
+      icon: <BellIcon />,
       value: chimes,
       label: chimes === 1 ? 'New notification' : 'New notifications',
       waiting: (chimes ?? 0) > 0,
     },
     {
       href: '/friends',
-      art: 'nav-pals',
+      icon: <UsersIcon />,
       value: lists.posse.length,
       label: lists.posse.length === 1 ? 'Friend' : 'Friends',
       note: requests > 0 ? `${requests} ${requests === 1 ? 'request' : 'requests'} waiting` : undefined,
@@ -110,7 +111,7 @@ export default async function HomePage() {
     },
     {
       href: '/visitors',
-      art: 'nav-tracks',
+      icon: <TracksIcon />,
       // On Shadow Walk your own Tracks are frozen, so there is honestly nothing to count.
       value: tracks?.frozen ? null : visitsToday,
       label: 'Profile visits today',
@@ -168,7 +169,9 @@ export default async function HomePage() {
                       <span className="text-heading font-semibold text-text-primary tabular-nums">
                         {g.value === null ? '–' : g.value > 99 ? '99+' : g.value}
                       </span>
-                      <Art name={g.art} size="free" className="size-7 shrink-0" />
+                      <span aria-hidden="true" className="flex shrink-0 text-title text-text-secondary">
+                        {g.icon}
+                      </span>
                     </span>
                     <span className="text-caption leading-tight text-text-primary">{g.label}</span>
                     {g.note && (

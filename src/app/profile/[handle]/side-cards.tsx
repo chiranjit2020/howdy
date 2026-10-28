@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import type { PersonEntry } from '@/app/_lib/social';
-import { Art, Glyph } from '@/ui/art/glyph';
-import { BoltIcon } from '@/ui/icons';
+import { Glyph } from '@/ui/art/glyph';
+import { BoltIcon, TracksIcon, UsersIcon } from '@/ui/icons';
 import { GlossaryHint } from '@/ui/howdy';
 import { Avatar, buttonClasses, ClayCard } from '@/ui/primitives';
 
@@ -85,8 +85,8 @@ export function TracksCard() {
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center">
           <h2 className="flex items-center gap-3 font-display text-title text-brand-ink">
-            <Art name="nav-tracks" size="free" className="size-9" />
-            Tracks
+            <TracksIcon className="size-6" />
+            Profile visitors
           </h2>
           <GlossaryHint term="tracks" />
         </div>
@@ -108,7 +108,7 @@ export function PosseCard({ members }: { members: PersonEntry[] }) {
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center">
           <h2 className="flex items-center gap-3 font-display text-title text-brand-ink">
-            <Art name="nav-pals" size="free" className="size-9" />
+            <UsersIcon className="size-6" />
             Friends
           </h2>
           <GlossaryHint term="posse" />

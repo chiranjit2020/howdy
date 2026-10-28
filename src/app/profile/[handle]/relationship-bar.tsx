@@ -5,8 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { apiRequest } from '@/ui/auth/api';
 import { FormMessage } from '@/ui/auth/form-parts';
-import { Art } from '@/ui/art/glyph';
-import { MoreIcon } from '@/ui/icons';
+import { MoreIcon, WhisperIcon } from '@/ui/icons';
 import {
   Badge,
   Button,
@@ -142,7 +141,7 @@ export function RelationshipBar({
       )}
       {rel.posse === 'member' && (
         <Link href={`/messages/${handle}`} className={buttonClasses({ fullWidth: true })}>
-          <Art name="nav-whispers" size="free" className="size-6" /> Message
+          <WhisperIcon className="size-5" /> Message
         </Link>
       )}
 

@@ -3,10 +3,22 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import type { ReactNode } from 'react';
-import { Art, type ArtName } from '../art/glyph';
 import { postJson } from '../auth/api';
 import { cn } from '../cn';
-import { MoreIcon } from '../icons';
+import {
+  BellIcon,
+  CapsuleIcon,
+  GroupIcon,
+  HomeIcon,
+  MoreIcon,
+  PencilIcon,
+  SettingsIcon,
+  ShieldIcon,
+  TracksIcon,
+  UserIcon,
+  UsersIcon,
+  WhisperIcon,
+} from '../icons';
 import { Dropdown } from '../primitives/dropdown';
 import { Avatar } from '../primitives/avatar';
 import { BottomNavigation, type NavItem } from '../primitives/navigation';
@@ -33,26 +45,21 @@ export interface ShellNavItem {
   badge?: number;
 }
 
-const ART: Record<ShellNavKey, ArtName> = {
-  home: 'nav-home',
-  ranch: 'nav-porch',
-  posse: 'nav-pals',
-  tracks: 'nav-tracks',
-  whispers: 'nav-whispers',
-  chimes: 'nav-chimes',
-  workshop: 'nav-wordshop',
-  'town-halls': 'nav-town-halls',
-  capsules: 'nav-capsules',
-  moderation: 'nav-moderation',
-  // No icon of its own yet: the Control Room shares Moderation's.
-  security: 'nav-moderation',
+/** Flat line icons, drawn in the text colour (they follow the current / hover state like the label does). */
+const ICON: Record<ShellNavKey, ReactNode> = {
+  home: <HomeIcon />,
+  ranch: <UserIcon />,
+  posse: <UsersIcon />,
+  tracks: <TracksIcon />,
+  whispers: <WhisperIcon />,
+  chimes: <BellIcon />,
+  workshop: <SettingsIcon />,
+  'town-halls': <GroupIcon />,
+  capsules: <CapsuleIcon />,
+  moderation: <ShieldIcon />,
+  // No icon of its own yet: the Security Center shares Moderation's.
+  security: <ShieldIcon />,
 };
-// Loaded at once (not lazily): the navigation is on screen from the first paint.
-const navArt = (name: ArtName) => <Art name={name} size="free" className="size-7" loading="eager" />;
-const ICON = Object.fromEntries(Object.entries(ART).map(([key, name]) => [key, navArt(name)])) as Record<
-  ShellNavKey,
-  ReactNode
->;
 
 const isCurrent = (pathname: string, href: string) => pathname === href || pathname.startsWith(`${href}/`);
 const badgeText = (n: number) => (n > 99 ? '99+' : String(n));
@@ -74,13 +81,16 @@ export function ShellSidebarNav({ items }: { items: ShellNavItem[] }) {
                 href={it.href}
                 aria-current={current ? 'page' : undefined}
                 className={cn(
-                  'flex min-h-12 items-center gap-3 rounded-pill px-4 text-body font-medium no-underline transition-colors',
+                  'flex min-h-11 items-center gap-3 rounded-md px-3 text-body font-medium no-underline transition-colors',
                   current
-                    ? 'bg-success/60 font-semibold text-text-primary shadow-clay-sm'
+                    ? 'bg-success/60 font-semibold text-text-primary'
                     : 'text-text-primary hover:bg-surface-sunken',
                 )}
               >
-                <span aria-hidden="true" className="text-heading text-text-secondary">
+                <span
+                  aria-hidden="true"
+                  className={cn('flex text-title', current ? 'text-text-primary' : 'text-text-secondary')}
+                >
                   {ICON[it.key]}
                 </span>
                 {it.label}
@@ -146,7 +156,7 @@ export function ShellMoreMenu({ items }: { items: ShellNavItem[] }) {
             type="button"
             {...props}
             aria-label={waiting > 0 ? `More pages, ${waiting} new` : 'More pages'}
-            className="relative grid size-11 place-items-center rounded-pill bg-surface text-heading text-text-primary shadow-clay-sm"
+            className="relative grid size-11 place-items-center rounded-pill border border-border bg-surface text-heading text-text-primary shadow-clay-sm"
           >
             <MoreIcon className="size-6" />
             {waiting > 0 && (
@@ -200,7 +210,7 @@ export function ShellBottomNav({ items, me }: { items: ShellNavItem[]; me: Shell
         href: `/profile/${me.handle}?nail=1`,
         label: 'Nail',
         description: 'Write a post on your wall',
-        icon: navArt('nav-nail'),
+        icon: <PencilIcon className="size-7 text-on-accent" />,
       }}
     />
   );

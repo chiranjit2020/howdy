@@ -2,6 +2,7 @@ import Link from 'next/link';
 import type { ReactNode } from 'react';
 import type { PortraitTint } from '@/shared/validation/profile';
 import { Art } from '../art/glyph';
+import { BellIcon } from '../icons';
 import { cn } from '../cn';
 import { HowdyLogo } from '../logo';
 import { Avatar } from '../primitives/avatar';
@@ -103,9 +104,9 @@ export function AppShell({
                 <Link
                   href="/notifications"
                   aria-label={unread > 0 ? `Notifications, ${unread} unread` : 'Notifications'}
-                  className="relative grid size-11 place-items-center rounded-pill bg-surface text-heading text-text-primary no-underline shadow-clay-sm"
+                  className="relative grid size-11 place-items-center rounded-pill border border-border bg-surface text-heading text-text-primary no-underline shadow-clay-sm"
                 >
-                  <Art name="nav-chimes" size="free" className="size-8" loading="eager" />
+                  <BellIcon className="size-5" />
                   {unread > 0 && (
                     <span
                       aria-hidden="true"
@@ -148,7 +149,6 @@ export function AppShell({
           <aside className="sticky top-16 hidden max-h-[calc(100dvh-4rem)] w-56 shrink-0 flex-col justify-between gap-6 self-start py-6 md:flex">
             <ShellSidebarNav items={items} />
             <div aria-hidden="true" className="flex flex-col gap-3 px-2">
-              <Art name="cactus" size="free" className="w-24" />
               <p className="font-display text-body text-text-secondary italic">
                 “Good people make life better”
               </p>

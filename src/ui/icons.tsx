@@ -60,6 +60,29 @@ export const UsersIcon = (p: IconProps) => (
     {...p}
   />
 );
+export const UserIcon = (p: IconProps) => (
+  <Svg d="M20 21v-1a5 5 0 0 0-5-5H9a5 5 0 0 0-5 5v1M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" {...p} />
+);
+// Three heads, the middle one in front: a group, not just two friends.
+export const GroupIcon = (p: IconProps) => (
+  <Svg
+    d="M12 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM6.5 20v-1a4 4 0 0 1 4-4h3a4 4 0 0 1 4 4v1M5 11.5a2.3 2.3 0 1 1 0-4.6M2 18v-.5a3 3 0 0 1 2.5-3M19 11.5a2.3 2.3 0 1 0 0-4.6M22 18v-.5a3 3 0 0 0-2.5-3"
+    {...p}
+  />
+);
+export const SettingsIcon = (p: IconProps) => (
+  <Svg
+    d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"
+    {...p}
+  />
+);
+// An hourglass: words sealed until a day comes (Time Capsules).
+export const CapsuleIcon = (p: IconProps) => (
+  <Svg d="M6 3h12M6 21h12M7 3v3a5 5 0 0 0 5 5 5 5 0 0 0 5-5V3M7 21v-3a5 5 0 0 1 5-5 5 5 0 0 1 5 5v3" {...p} />
+);
+export const ShieldIcon = (p: IconProps) => (
+  <Svg d="M12 21s8-3.5 8-10V5l-8-3-8 3v6c0 6.5 8 10 8 10z" {...p} />
+);
 export const SpinnerIcon = (p: IconProps) => <Svg d="M12 3a9 9 0 1 0 9 9" {...p} />;
 export const BoltIcon = (p: IconProps) => <Svg d="M13 2 4 14h7l-1 8 9-12h-7z" {...p} />;
 export const ToolsIcon = (p: IconProps) => (
