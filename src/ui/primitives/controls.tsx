@@ -31,7 +31,7 @@ function ChoiceRow({
   );
 }
 
-/** Native checkbox (keeps browser semantics), clay-styled. The check mark is a CSS gradient, not an image. */
+/** Native checkbox (keeps browser semantics). The tick is the `checkbox-tick` utility (an SVG in tokens.css). */
 export function Checkbox({
   label,
   hint,
@@ -46,11 +46,7 @@ export function Checkbox({
       <input
         id={inputId}
         type="checkbox"
-        className={cn(
-          BOX,
-          'rounded-sm checked:bg-[linear-gradient(135deg,transparent_45%,var(--color-on-accent)_45%,var(--color-on-accent)_55%,transparent_55%)]',
-          className,
-        )}
+        className={cn(BOX, 'checkbox-tick rounded-sm', className)}
         {...rest}
       />
     </ChoiceRow>

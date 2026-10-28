@@ -400,6 +400,20 @@
 }
 
 /*
+ * A real tick for a checked checkbox (the box itself turns accent). The stroke is the on-accent ink (#2b2d42, the same
+ * in both themes), drawn as an SVG so it is a check mark at every size, not a slash.
+ */
+@utility checkbox-tick {
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+
+  &:checked {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M5 10.5l3.2 3.2L15 6.8' fill='none' stroke='%232b2d42' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  }
+}
+
+/*
  * The phone tab bar's main action (Nail) and the welcome page's join button: a flat accent fill with a hairline ring
  * that lifts it off the bar, and one subtle shadow. No gloss, no bulge.
  */
