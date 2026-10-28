@@ -152,8 +152,9 @@ describe('design-system discipline', () => {
       CREAM: 'background',
       INK: 'text-primary',
       SLATE: 'text-secondary',
-      PINK: 'accent',
-      PINK_SOFT: 'accent-soft',
+      ACCENT: 'accent',
+      ACCENT_SOFT: 'accent-soft',
+      ON_ACCENT: 'on-accent',
     };
     for (const [constant, token] of Object.entries(pinned)) {
       const value = new RegExp(`const ${constant} = '(#[0-9a-f]{6})'`, 'i').exec(image)?.[1];

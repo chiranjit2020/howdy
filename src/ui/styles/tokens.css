@@ -58,10 +58,14 @@
   --color-link: light-dark(#1b6a80, #9ad7e6);
   --color-focus: light-dark(#6a83a6, #9ad7e6);
 
-  --color-accent: #f4a2b3;
-  --color-accent-hover: light-dark(#f291a5, #f6b3c1);
-  --color-accent-soft: light-dark(#fbd9e0, #4a3040);
-  --color-on-accent: #2b2d42;
+  /*
+   * Theme colour: green (2026-10-29, replacing Sherbet Pink until the new palette). The same in both schemes, deep
+   * enough that white text on it passes WCAG AA (5:1; 7:1 on hover).
+   */
+  --color-accent: #15803d;
+  --color-accent-hover: #166534;
+  --color-accent-soft: light-dark(#dcfce7, #173523);
+  --color-on-accent: #ffffff;
 
   --color-success: #b7e4c7;
   --color-on-success: #2b2d42;
@@ -400,8 +404,8 @@
 }
 
 /*
- * A real tick for a checked checkbox (the box itself turns accent). The stroke is the on-accent ink (#2b2d42, the same
- * in both themes), drawn as an SVG so it is a check mark at every size, not a slash.
+ * A real tick for a checked checkbox (the box itself turns accent). The stroke is the on-accent colour (#ffffff, the
+ * same in both themes), drawn as an SVG so it is a check mark at every size, not a slash.
  */
 @utility checkbox-tick {
   background-position: center;
@@ -409,7 +413,7 @@
   background-size: 100% 100%;
 
   &:checked {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M5 10.5l3.2 3.2L15 6.8' fill='none' stroke='%232b2d42' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M5 10.5l3.2 3.2L15 6.8' fill='none' stroke='%23ffffff' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   }
 }
 

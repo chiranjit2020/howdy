@@ -13,8 +13,9 @@ export const SHARE_CARD_SIZE = { width: 1200, height: 630 };
 const CREAM = '#f8f5ee';
 const INK = '#2b2d42';
 const SLATE = '#475169';
-const PINK = '#f4a2b3';
-const PINK_SOFT = '#fbd9e0';
+const ACCENT = '#15803d';
+const ACCENT_SOFT = '#dcfce7';
+const ON_ACCENT = '#ffffff';
 
 const font = (file: string) => readFile(path.join(process.cwd(), 'assets', 'fonts', file));
 
@@ -97,7 +98,7 @@ export async function shareCard(kicker: string = 'A small-circle social world'):
           style={{
             display: 'flex',
             alignSelf: 'flex-start',
-            background: PINK_SOFT,
+            background: ACCENT_SOFT,
             borderRadius: 24,
             padding: '0 18px',
             marginLeft: -18,
@@ -111,8 +112,8 @@ export async function shareCard(kicker: string = 'A small-circle social world'):
           display: 'flex',
           marginTop: 36,
           alignSelf: 'flex-start',
-          background: PINK,
-          color: INK,
+          background: ACCENT,
+          color: ON_ACCENT,
           fontSize: 30,
           fontWeight: 500,
           padding: '16px 34px',
