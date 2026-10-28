@@ -6,6 +6,7 @@ import { getDb } from '@/platform/db';
 import { AppError } from '@/platform/errors';
 import { getMailer } from '@/platform/mailer';
 import { enforceRateLimit } from '@/platform/rate-limit';
+import { assertHasPassword } from './no-password';
 import { audit } from './audit';
 import { RATE, TOTP_SETUP_TTL_MS } from './config';
 import { verifyPassword } from './crypto';
@@ -153,6 +154,7 @@ const WRONG_PASSWORD = 'That password is not right.';
  */
 export async function confirmPassword(userId: string, password: string): Promise<void> {
   await enforceRateLimit(`auth:security:${userId}`, RATE.securityChange);
+  await assertHasPassword(userId);
   const [row] = await getDb()
     .select({ passwordHash: credentials.passwordHash })
     .from(credentials)

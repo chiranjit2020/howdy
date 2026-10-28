@@ -41,10 +41,13 @@ const FOOTER_LINKS = [
 export function AuthCard({
   initial,
   invite,
+  google = false,
 }: {
   initial: AuthMode;
   /** Arrived through someone's invite link (ADR-045): sign-up sends the code along. */
   invite?: { code: string; invitedBy: string };
+  /** "Continue with Google" is set up on this server (ADR-048). */
+  google?: boolean;
 }) {
   const [active, setActive] = useState<AuthMode>(initial);
   const mode = MODES[active];
@@ -65,21 +68,12 @@ export function AuthCard({
   return (
     <>
       <Card className="flex flex-col gap-5 p-5 shadow-clay sm:p-7">
-        {/* The brand mark leads the card (these pages have no top bar). min-h-11 keeps the link tappable. */}
-        <Link
-          href="/gate"
-          className="inline-flex min-h-11 items-center self-center no-underline hover:no-underline"
-        >
-          <Img
-            src="/brand/howdy-wordmark.png"
-            width={766}
-            height={243}
-            alt="Howdy"
-            loading="eager"
-            className="h-auto w-28 sm:w-32"
-          />
-        </Link>
-        {active === 'login' ? <LoginForm /> : <ClaimForm {...(invite ? { invite } : {})} />}
+        <EntryLogo />
+        {active === 'login' ? (
+          <LoginForm google={google} />
+        ) : (
+          <ClaimForm google={google} {...(invite ? { invite } : {})} />
+        )}
         <p className="border-t border-border pt-4 text-center text-caption text-text-secondary">
           {mode.prompt}{' '}
           <a
@@ -91,21 +85,46 @@ export function AuthCard({
           </a>
         </p>
       </Card>
-      {/* These pages have no site footer, so the essentials sit right under the card. */}
-      <nav aria-label="Legal" className="mt-2">
-        <ul className="flex items-center justify-center gap-5 text-metadata">
-          {FOOTER_LINKS.map(({ href, label }) => (
-            <li key={label}>
-              <a
-                href={href}
-                className="inline-flex min-h-11 items-center text-text-secondary no-underline hover:text-text-primary hover:underline"
-              >
-                {label}
-              </a>
-            </li>
-          ))}
-        </ul>
-      </nav>
+      <EntryFooter />
     </>
+  );
+}
+
+/** The brand mark that leads every entry card (these pages have no top bar). min-h-11 keeps the link tappable. */
+export function EntryLogo() {
+  return (
+    <Link
+      href="/gate"
+      className="inline-flex min-h-11 items-center self-center no-underline hover:no-underline"
+    >
+      <Img
+        src="/brand/howdy-wordmark.png"
+        width={766}
+        height={243}
+        alt="Howdy"
+        loading="eager"
+        className="h-auto w-28 sm:w-32"
+      />
+    </Link>
+  );
+}
+
+/** Entry pages have no site footer, so the essentials sit right under the card. */
+export function EntryFooter() {
+  return (
+    <nav aria-label="Legal" className="mt-2">
+      <ul className="flex items-center justify-center gap-5 text-metadata">
+        {FOOTER_LINKS.map(({ href, label }) => (
+          <li key={label}>
+            <a
+              href={href}
+              className="inline-flex min-h-11 items-center text-text-secondary no-underline hover:text-text-primary hover:underline"
+            >
+              {label}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
   );
 }

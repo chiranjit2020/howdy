@@ -14,7 +14,7 @@ Howdy is run by {{operator}}, an individual based in {{country}} ("Howdy", "we",
 
 ## Information we collect
 
-**Account information.** Your email address, your username (handle), your display name and your password. We never store your password itself, only a one-way scrambled form of it (a hash) that cannot be turned back into the password. We also record when you confirmed your email.
+**Account information.** Your email address, your username (handle), your display name and your password. We never store your password itself, only a one-way scrambled form of it (a hash) that cannot be turned back into the password. We also record when you confirmed your email. If you use **Continue with Google**, you have no Howdy password until you set one, and Google confirms your email for you (see Google under [Service providers](#service-providers)).
 
 **Your profile.** Your display name, your bio if you write one (a short line shown under your name), the colour of your profile photo, your profile photo if you add one, your status (a short line that fades), whether you are free to talk while that is on, and your settings: who can see your profile and status, who can write on your wall, and which notifications you want.
 
@@ -137,6 +137,7 @@ We use a few companies to run Howdy. They process data only to provide their ser
 - **Resend:** sends account emails.
 - A managed **Redis** provider: holds short-lived rate-limit counters.
 - **OpenAI:** checks new photos (above). It is sent only a small copy of the picture we made, never your name, username or anything else about you. OpenAI does not keep what its moderation service is sent and does not use it to train its models.
+- **Google:** only if you choose "Continue with Google". Google tells us your email address, that Google has verified it, and the name on your Google account (offered as your display name, which you can change). We never see your Google password, and we do not ask for your contacts, photos or anything else. An account with the same email is signed in to; otherwise a new one is made once you pick a username and agree to the Terms. Google knows you used it to sign in to Howdy, under Google's own privacy policy.
 - **Ably:** makes new messages appear at once. When a message arrives, Howdy sends your browser a signal that simply says "something new" — never the words, never who sent it, and never your name. Ably sees your browser's connection (such as its IP address) while a messages page is open, but not who you are.
 
 These providers may store and process data outside {{country}}, including in the United States and Singapore.

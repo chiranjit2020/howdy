@@ -30,6 +30,8 @@ export const RATE = {
    * this reveals nothing new; the limit only stops it being used to crawl the whole namespace quickly.
    */
   handleCheckIp: rule(120, 900),
+  /** Answers from Google per source (ADR-048). Each one costs a call to Google, so a loop is cut short. */
+  googleIp: rule(30, 900),
   loginIp: rule(30, 900),
   loginIdentifier: rule(10, 900),
   forgotIp: rule(10, 3600),

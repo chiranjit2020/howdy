@@ -1,11 +1,17 @@
+import { z } from 'zod';
+import { getEnv } from '@/platform/config/env';
 import { readJson } from '@/platform/http/body';
+import { parseCookies } from '@/platform/http/cookies';
 import { json, route } from '@/platform/http/route';
 import { AppError } from '@/platform/errors';
+import { INVITE_CODE_PATTERN } from '@/shared/validation/invites';
 import {
   appealProofSchema,
   confirmAppSchema,
   deleteAccountSchema,
   emailOnlySchema,
+  googleSignInSchema,
+  googleSignUpSchema,
   handleCheckSchema,
   passkeyRegistrationSchema,
   passkeySignInSchema,
@@ -28,8 +34,18 @@ import {
   resendVerification,
   resetPassword,
   signUp,
+  signUpWithGoogle,
   verifyEmail,
 } from './accounts';
+import {
+  clearedGoogleCookie,
+  finishGoogle,
+  googleEnabled,
+  googleSignupCookieName,
+  pendingGoogleSignup,
+  provenByGoogle,
+  startGoogle,
+} from './google';
 import {
   clearedSessionCookie,
   requestContext,
@@ -38,10 +54,27 @@ import {
   sessionTokenFrom,
 } from './request';
 import { addPasskey, passkeyRegistrationOptions, passkeySignInOptions, removePasskey } from './passkeys';
-import { listSessions, revokeAllSessions, revokeOwnedSession, revokeSessionByToken } from './sessions';
+import {
+  createSession,
+  listSessions,
+  revokeAllSessions,
+  revokeOwnedSession,
+  revokeSessionByToken,
+} from './sessions';
 import { confirmApp, removeApp, renewRecoveryCodes, startApp } from './two-step';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** A browser redirect (the Google round trip is page loads, not fetches). Relative targets stay on our own site. */
+function redirectTo(to: string, cookies: string[] = []): Response {
+  const location = to.startsWith('https://') ? to : new URL(to, getEnv().APP_URL).toString();
+  const res = new Response(null, {
+    status: 303,
+    headers: { Location: location, 'Cache-Control': 'no-store' },
+  });
+  for (const c of cookies) res.headers.append('Set-Cookie', c);
+  return res;
+}
 
 /** Uniform "we did it (if it applies)" body for endpoints that must not reveal whether an account exists. */
 const ACCEPTED = { ok: true } as const;
@@ -68,14 +101,87 @@ export const authHandlers = {
   }),
 
   login: route(async ({ req, requestId }) => {
-    const { remember, ...proof } = await readJson(req, signInProofSchema);
-    const result = await login(proof, {
+    const body = await readJson(req, z.union([googleSignInSchema, signInProofSchema]));
+    const base = {
       ...requestContext(req, requestId),
       userAgent: req.headers.get('user-agent'),
       previousToken: sessionTokenFrom(req.headers),
-      remember,
-    });
+    };
+    if ('google' in body) {
+      // ADR-048: Google already proved the account; the proof is the cookie the callback set, never the body.
+      const proven = provenByGoogle(req.headers.get('cookie'));
+      if (!proven)
+        throw new AppError('UNAUTHENTICATED', { message: 'That took too long. Try Google again.' });
+      const result = await login(
+        { googleUserId: proven.userId, code: body.code },
+        { ...base, remember: proven.remember },
+      );
+      const res = withCookie(json({ user: result.user }), sessionCookie(result.token, result.maxAgeSec));
+      return withCookie(res, clearedGoogleCookie('proven'));
+    }
+    const { remember, ...proof } = body;
+    const result = await login(proof, { ...base, remember });
     return withCookie(json({ user: result.user }), sessionCookie(result.token, result.maxAgeSec));
+  }),
+
+  /** "Continue with Google" (ADR-048): off to Google, remembering what we asked in a short signed cookie. */
+  googleStart: route(async ({ req }) => {
+    if (!googleEnabled()) return redirectTo('/login');
+    const params = new URL(req.url).searchParams;
+    const invite = params.get('invite');
+    const { location, setCookie } = startGoogle({
+      remember: params.get('remember') !== '0',
+      invite: invite && INVITE_CODE_PATTERN.test(invite) ? invite : null,
+    });
+    return redirectTo(location, [setCookie]);
+  }),
+
+  /**
+   * Google's answer. Anything off sends the person back to Log in with a short message (this is a page load, not a
+   * fetch: an error must never be a page of JSON). An existing account finishes on Log in (two-step, suspension …);
+   * a new person picks a username first.
+   */
+  googleCallback: route(async ({ req, requestId }) => {
+    const done = [clearedGoogleCookie('flow')];
+    if (new URL(req.url).searchParams.get('error') === 'access_denied') {
+      return redirectTo('/login?google=cancelled', done);
+    }
+    try {
+      const outcome = await finishGoogle(req, requestContext(req, requestId));
+      return outcome.kind === 'existing'
+        ? redirectTo('/login?google=continue', [...done, outcome.setCookie])
+        : redirectTo('/signup/google', [...done, outcome.setCookie]);
+    } catch (err) {
+      const code = err instanceof AppError ? err.code : 'INTERNAL';
+      return redirectTo(`/login?google=${code === 'RATE_LIMITED' ? 'busy' : 'failed'}`, done);
+    }
+  }),
+
+  /** The last step for someone new from Google: username + the required box, then they are in. */
+  googleComplete: route(async ({ req, requestId }) => {
+    const body = await readJson(req, googleSignUpSchema);
+    const pending = pendingGoogleSignup(
+      parseCookies(req.headers.get('cookie')).get(googleSignupCookieName()),
+    );
+    if (!pending) {
+      throw new AppError('UNAUTHENTICATED', { message: 'That took too long. Start again with Google.' });
+    }
+    const ctx = requestContext(req, requestId);
+    const { userId } = await signUpWithGoogle(
+      {
+        email: pending.email,
+        handle: body.handle,
+        displayName: body.displayName,
+        invite: pending.invite ?? undefined,
+      },
+      ctx,
+    );
+    const previous = sessionTokenFrom(req.headers);
+    if (previous) await revokeSessionByToken(previous);
+    const session = await createSession(userId, req.headers.get('user-agent'));
+    await audit('login_success', { userId, requestId, meta: { method: 'google' } });
+    const res = withCookie(json({ ok: true }), sessionCookie(session.token, session.maxAgeSec));
+    return withCookie(res, clearedGoogleCookie('signup'));
   }),
 
   /** A passkey challenge for signing in (ADR-040). No handle is asked for, so nothing here says who has an account. */

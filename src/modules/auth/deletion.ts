@@ -8,6 +8,7 @@ import { AppError } from '@/platform/errors';
 import { logger } from '@/platform/logger';
 import { getMailer } from '@/platform/mailer';
 import { enforceRateLimit } from '@/platform/rate-limit';
+import { assertHasPassword } from './no-password';
 import { audit } from './audit';
 import { RATE } from './config';
 import { handleDigest, verifyPassword } from './crypto';
@@ -44,6 +45,7 @@ export async function requestDeletion(
   ctx: { requestId: string },
 ): Promise<{ deleteOn: Date }> {
   await enforceRateLimit(`auth:delete:${userId}`, RATE.deleteAccount);
+  await assertHasPassword(userId);
   const [row] = await getDb()
     .select({ email: users.email, status: users.status, passwordHash: credentials.passwordHash })
     .from(users)

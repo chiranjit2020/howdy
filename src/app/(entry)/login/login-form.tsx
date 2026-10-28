@@ -1,11 +1,12 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useState, type FormEvent } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { loginSchema } from '@/shared/validation/auth';
 import { postJson, type ApiResult } from '@/ui/auth/api';
 import { FormMessage } from '@/ui/auth/form-parts';
+import { GoogleButton } from '@/ui/auth/google-button';
 import {
   usePasskeysSupported,
   signWithPasskey,
@@ -44,25 +45,41 @@ function OrDivider() {
 }
 
 type Creds = { identifier: string; password: string };
-/** What proves the person to the server: password (+ code), or the ticket a complete sign-in handed back (ADR-040). */
-type Proof = (Creds & { code?: string }) | { ticket: string };
+/**
+ * What proves the person to the server: password (+ code), the ticket a complete sign-in handed back (ADR-040), or
+ * "Google already proved me" (ADR-048: the proof itself is a cookie the server set; only a code may be added).
+ */
+type Proof = (Creds & { code?: string }) | { ticket: string } | { google: true; code?: string };
 
-export function LoginForm() {
+/** Why Google sent the person back here without signing them in (`?google=…`, set by the callback). */
+const GOOGLE_MESSAGE: Record<string, string> = {
+  failed: 'Google sign-in did not finish. Please try again.',
+  cancelled: 'Google sign-in was cancelled.',
+  busy: 'Too many tries just now. Wait a few minutes and try again.',
+};
+
+export function LoginForm({ google = false }: { google?: boolean } = {}) {
   const router = useRouter();
+  const googleParam = useSearchParams().get('google');
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | undefined>();
+  const [error, setError] = useState<string | undefined>(
+    googleParam ? GOOGLE_MESSAGE[googleParam] : undefined,
+  );
   const [needsVerify, setNeedsVerify] = useState(false);
   const [verifyEmail, setVerifyEmail] = useState('');
   const [resent, setResent] = useState(false);
   const [attempt, setAttempt] = useState(0);
-  const [busy, setBusy] = useState(false);
+  // Back from Google with an account proven: finishing (two-step, suspension …) starts at once.
+  const [busy, setBusy] = useState(googleParam === 'continue');
   // Ticked by default: most people sign in on their own phone. Unticked, the session ends with the browser.
   const [remember, setRemember] = useState(true);
   const [passkeyBusy, setPasskeyBusy] = useState(false);
   const canPasskey = usePasskeysSupported();
   // ADR-040: the password was right and two-step is on — ask for the second step.
-  const [secondStep, setSecondStep] = useState<(Creds & { passkey: boolean }) | null>(null);
+  const [secondStep, setSecondStep] = useState<((Creds | { google: true }) & { passkey: boolean }) | null>(
+    null,
+  );
   const [code, setCode] = useState('');
   const [suspended, setSuspended] = useState<(Suspension & { ticket: string }) | null>(null);
   // ADR-027: the owner asked to delete this account; it can still be kept until `deleteOn`.
@@ -98,25 +115,45 @@ export function LoginForm() {
       return;
     }
     setError(undefined);
-    await signIn({ identifier: secondStep.identifier, password: secondStep.password, code: code.trim() });
+    await signIn(
+      'google' in secondStep
+        ? { google: true, code: code.trim() }
+        : { identifier: secondStep.identifier, password: secondStep.password, code: code.trim() },
+    );
   }
 
   async function signIn(proof: Proof) {
     setBusy(true);
-    const res = await postJson('/api/auth/login', { ...proof, remember });
+    await submitProof(proof);
+  }
+
+  /** Send a proof and act on the answer. Google's "remember" was chosen before leaving for Google (it is in the cookie). */
+  async function submitProof(proof: Proof) {
+    const res = await postJson('/api/auth/login', 'google' in proof ? proof : { ...proof, remember });
     if (res.ok) return done();
     setBusy(false);
-    if (res.error?.code === 'SECOND_STEP_REQUIRED' && 'password' in proof) {
-      setSecondStep({
-        identifier: proof.identifier,
-        password: proof.password,
-        passkey: res.error.data?.passkey === 'yes',
-      });
+    if (res.error?.code === 'SECOND_STEP_REQUIRED' && ('password' in proof || 'google' in proof)) {
+      const passkey = res.error.data?.passkey === 'yes';
+      setSecondStep(
+        'google' in proof
+          ? { google: true, passkey }
+          : { identifier: proof.identifier, password: proof.password, passkey },
+      );
       setCode('');
       return;
     }
     onFailure(res);
   }
+
+  // Back from Google: finish once (a development re-run must not spend the proof twice), and tidy the address.
+  const googleStarted = useRef(false);
+  useEffect(() => {
+    if (!googleParam || googleStarted.current) return;
+    googleStarted.current = true;
+    window.history.replaceState(null, '', '/login');
+    if (googleParam === 'continue') void submitProof({ google: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- runs once, for the address it arrived with
+  }, []);
 
   async function signInWithPasskey() {
     reset();
@@ -353,14 +390,13 @@ export function LoginForm() {
       <Button type="submit" fullWidth loading={busy}>
         {busy ? 'Logging in…' : 'Log in'}
       </Button>
+      {(google || canPasskey) && <OrDivider />}
+      {google && <GoogleButton remember={remember} />}
       {canPasskey && (
-        <>
-          <OrDivider />
-          <Button variant="secondary" fullWidth loading={passkeyBusy} onClick={signInWithPasskey}>
-            {!passkeyBusy && <KeyIcon className="text-text-secondary" />}
-            Log in with a passkey
-          </Button>
-        </>
+        <Button variant="secondary" fullWidth loading={passkeyBusy} onClick={signInWithPasskey}>
+          {!passkeyBusy && <KeyIcon className="text-text-secondary" />}
+          Log in with a passkey
+        </Button>
       )}
     </form>
   );

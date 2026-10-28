@@ -144,6 +144,88 @@ export async function signUp(
   }
 }
 
+/**
+ * Create an account for someone who came from Google (ADR-048). The email is already verified by Google, so there is no
+ * confirmation mail and no password (they can set one later with "Forgot password?"). Same profile, same Terms record
+ * and the same events as a confirmed email sign-up, so invites and everything else behave identically.
+ */
+export async function signUpWithGoogle(
+  input: { email: string; handle: string; displayName?: string | undefined; invite?: string | undefined },
+  ctx: RequestContext,
+): Promise<{ userId: string }> {
+  await enforceRateLimit(`auth:signup:ip:${ctx.ip}`, RATE.signupIp);
+  const db = getDb();
+  const handleTaken = () =>
+    new AppError('CONFLICT', {
+      message: 'Some fields need another look.',
+      fields: { handle: 'That username is taken.' },
+    });
+  const [taken] = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(eq(users.handle, input.handle))
+    .limit(1);
+  if (taken || (await isHandleHeld(input.handle))) throw handleTaken();
+
+  const now = new Date();
+  let userId: string;
+  try {
+    userId = await db.transaction(async (tx) => {
+      const [u] = await tx
+        .insert(users)
+        .values({ email: input.email, handle: input.handle, emailVerifiedAt: now })
+        .returning({ id: users.id });
+      await createProfile(tx, u!.id, input.displayName ?? input.handle);
+      await recordAcceptance(tx, u!.id);
+      return u!.id;
+    });
+  } catch (err) {
+    const constraint = uniqueViolation(err);
+    if (constraint?.includes('handle')) throw handleTaken();
+    // Someone made an account with this email in the minutes since Google answered: send them to log in instead.
+    if (constraint?.includes('email')) {
+      throw new AppError('CONFLICT', {
+        message: 'There is already a Howdy account with this email. Log in with Google to use it.',
+      });
+    }
+    throw err;
+  }
+  await audit('signup', { userId, requestId: ctx.requestId, meta: { method: 'google' } });
+  emit({ type: 'account.created', userId, invite: input.invite ?? null });
+  emit({ type: 'account.verified', userId });
+  return { userId };
+}
+
+/**
+ * The account a Google-verified email belongs to, ready to sign in (ADR-048: linked automatically). If that account
+ * never confirmed its email, whoever made it did not prove they own the address; Google just did. So its password is
+ * removed and its sessions ended before it is handed over: nobody who registered someone else's email first can keep
+ * a way in (a "pre-hijack"). Returns null when no account has this email.
+ */
+export async function claimAccountForGoogle(email: string, ctx: RequestContext): Promise<string | null> {
+  const db = getDb();
+  const [row] = await db
+    .select({ id: users.id, verified: users.emailVerifiedAt })
+    .from(users)
+    .where(eq(users.email, email))
+    .limit(1);
+  if (!row) return null;
+  if (!row.verified) {
+    const now = new Date();
+    await db.transaction(async (tx) => {
+      await tx.update(users).set({ emailVerifiedAt: now, updatedAt: now }).where(eq(users.id, row.id));
+      await tx.delete(credentials).where(eq(credentials.userId, row.id));
+      await tx
+        .update(sessions)
+        .set({ revokedAt: now })
+        .where(and(eq(sessions.userId, row.id), isNull(sessions.revokedAt)));
+    });
+    await audit('email_verified', { userId: row.id, requestId: ctx.requestId, meta: { method: 'google' } });
+    emit({ type: 'account.verified', userId: row.id });
+  }
+  return row.id;
+}
+
 async function handleExistingEmail(email: string): Promise<void> {
   const db = getDb();
   const [user] = await db
@@ -318,7 +400,12 @@ export interface LoginResult {
 export type SignInProof =
   | { identifier: string; password: string; code?: string | undefined }
   /** A ticket from a sign-in that was complete but could not open a session (suspended / closing). */
-  | { ticket: string };
+  | { ticket: string }
+  /**
+   * Google proved this account (ADR-048): the id comes from a signed cookie the server set itself after checking
+   * Google's answer, never from the request body. Two-step still applies, exactly as after a password.
+   */
+  | { googleUserId: string; code?: string | undefined };
 
 type SessionCtx = RequestContext & {
   userAgent?: string | null;
@@ -452,6 +539,21 @@ async function proveAccount(
       : [];
     if (!row) throw new AppError('UNAUTHENTICATED', { message: INVALID_TICKET_MESSAGE });
     return { row, method: 'ticket' };
+  }
+  if ('googleUserId' in input) {
+    const [row] = await getDb()
+      .select({
+        id: users.id,
+        handle: users.handle,
+        status: users.status,
+        emailVerifiedAt: users.emailVerifiedAt,
+      })
+      .from(users)
+      .where(eq(users.id, input.googleUserId))
+      .limit(1);
+    if (!row) throw new AppError('UNAUTHENTICATED', { message: INVALID_TICKET_MESSAGE });
+    const step = await requireSecondStep(row.id, input.code, ctx);
+    return { row, method: step === 'password' ? 'google' : `google+${step}` };
   }
   const row = await verifyCredentials(input, ctx);
   const method = await requireSecondStep(row.id, input.code, ctx);

@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { getCurrentUser } from '@/modules/auth';
+import { getCurrentUser, googleEnabled } from '@/modules/auth';
 import { inviterName } from '@/modules/invites';
 import { INVITE_CODE_PATTERN } from '@/shared/validation/invites';
 import { AuthCard } from '../auth-card';
@@ -7,7 +7,7 @@ import { AuthCard } from '../auth-card';
 export const metadata = { title: 'Create account' };
 
 /** `?invite=<code>`: arrived through someone's invite link (ADR-045). A link that does not work is simply ignored. */
-export default async function StakeAClaimPage({
+export default async function SignupPage({
   searchParams,
 }: {
   searchParams: Promise<{ invite?: string | string[] }>;
@@ -23,7 +23,11 @@ export default async function StakeAClaimPage({
       // already gives the gutter, and doubling it squeezes the card on a 320px phone.
       className="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center py-4"
     >
-      <AuthCard initial="signup" {...(code && invitedBy ? { invite: { code, invitedBy } } : {})} />
+      <AuthCard
+        initial="signup"
+        google={googleEnabled()}
+        {...(code && invitedBy ? { invite: { code, invitedBy } } : {})}
+      />
     </main>
   );
 }

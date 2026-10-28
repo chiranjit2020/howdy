@@ -5,6 +5,7 @@ import { emailSchema, signUpSchema } from '@/shared/validation/auth';
 import { LIMITS } from '@/shared/limits';
 import { postJson } from '@/ui/auth/api';
 import { FormMessage, focusFirstInvalid } from '@/ui/auth/form-parts';
+import { GoogleButton } from '@/ui/auth/google-button';
 import { TermsCheckbox } from '@/ui/auth/terms-checkbox';
 import { Button, Input, PasswordInput } from '@/ui/primitives';
 import { PasswordChecklist, suggestHandle, useHandleStatus } from './signup-aids';
@@ -12,7 +13,10 @@ import { PasswordChecklist, suggestHandle, useHandleStatus } from './signup-aids
 type Fields = { handle: string; displayName: string; email: string; password: string };
 type Errors = Partial<Fields & { acceptTerms: string }>;
 
-export function ClaimForm({ invite }: { invite?: { code: string; invitedBy: string } } = {}) {
+export function ClaimForm({
+  invite,
+  google = false,
+}: { invite?: { code: string; invitedBy: string }; google?: boolean } = {}) {
   const formRef = useRef<HTMLFormElement>(null);
   const [values, setValues] = useState<Fields>({ handle: '', displayName: '', email: '', password: '' });
   const [acceptTerms, setAcceptTerms] = useState(false);
@@ -143,6 +147,17 @@ export function ClaimForm({ invite }: { invite?: { code: string; invitedBy: stri
           <strong className="font-semibold">{invite.invitedBy}</strong> invited you. Once you confirm your
           email, they get a friend request from you.
         </p>
+      )}
+      {google && (
+        // The quickest way in: one tap, then just a username (ADR-048).
+        <>
+          <GoogleButton invite={invite?.code} />
+          <div className="flex items-center gap-3 text-metadata text-text-secondary" aria-hidden="true">
+            <span className="h-px flex-1 bg-border" />
+            or sign up with email
+            <span className="h-px flex-1 bg-border" />
+          </div>
+        </>
       )}
       {formError && (
         <FormMessage tone="error" focusKey={attempt}>

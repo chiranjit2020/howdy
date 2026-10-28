@@ -96,3 +96,39 @@ export function readTicket(ticket: string, nowMs: number = Date.now()): string |
   if (Number(expires) <= nowMs) return null;
   return userId!;
 }
+
+// ─── short-lived signed payloads (Google sign-in, ADR-048) ───────────────────────────────────────────────────────────
+
+/**
+ * A small JSON payload carried in a cookie between redirects, signed (not encrypted: it never holds a secret the
+ * browser should not see) under its own label so one kind can never be replayed as another, and with an expiry.
+ * `<base64url json>.<base64url mac>`; the JSON includes `exp` (ms).
+ */
+export function sealPayload(label: string, data: object, ttlMs: number, nowMs: number = Date.now()): string {
+  const body = Buffer.from(JSON.stringify({ ...data, exp: nowMs + ttlMs })).toString('base64url');
+  return `${body}.${createHmac('sha256', subkey(`payload:${label}`))
+    .update(body)
+    .digest('base64url')}`;
+}
+
+/** The payload, or null when it is forged, altered, expired, for another label, or malformed. */
+export function openPayload<T extends object>(
+  label: string,
+  sealed: string | undefined,
+  nowMs: number = Date.now(),
+): T | null {
+  const m = /^([A-Za-z0-9_-]{1,4096})\.([A-Za-z0-9_-]{43})$/.exec(sealed ?? '');
+  if (!m) return null;
+  const want = createHmac('sha256', subkey(`payload:${label}`))
+    .update(m[1]!)
+    .digest();
+  const got = Buffer.from(m[2]!, 'base64url');
+  if (got.length !== want.length || !timingSafeEqual(got, want)) return null;
+  try {
+    const data = JSON.parse(Buffer.from(m[1]!, 'base64url').toString('utf8')) as T & { exp?: unknown };
+    if (typeof data.exp !== 'number' || data.exp <= nowMs) return null;
+    return data;
+  } catch {
+    return null;
+  }
+}

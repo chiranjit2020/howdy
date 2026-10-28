@@ -3,6 +3,7 @@ import { and, asc, desc, eq, gt, isNull } from 'drizzle-orm';
 import { getDb } from '@/platform/db';
 import { AppError } from '@/platform/errors';
 import { enforceRateLimit } from '@/platform/rate-limit';
+import { assertHasPassword } from './no-password';
 import { audit } from './audit';
 import { RATE } from './config';
 import { verifyPassword } from './crypto';
@@ -19,6 +20,7 @@ export async function verifyForExport(
   ctx: { requestId: string },
 ): Promise<void> {
   await enforceRateLimit(`auth:export-try:${userId}`, RATE.exportAttempt);
+  await assertHasPassword(userId);
   const [row] = await getDb()
     .select({ passwordHash: credentials.passwordHash })
     .from(credentials)

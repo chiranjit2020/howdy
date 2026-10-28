@@ -1,10 +1,10 @@
 import { redirect } from 'next/navigation';
-import { getCurrentUser } from '@/modules/auth';
+import { getCurrentUser, googleEnabled } from '@/modules/auth';
 import { AuthCard } from '../auth-card';
 
 export const metadata = { title: 'Log in' };
 
-export default async function StepInsidePage() {
+export default async function LoginPage() {
   if (await getCurrentUser()) redirect('/home');
   return (
     <main
@@ -13,7 +13,7 @@ export default async function StepInsidePage() {
       // already gives the gutter, and doubling it squeezes the card on a 320px phone.
       className="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center py-4"
     >
-      <AuthCard initial="login" />
+      <AuthCard initial="login" google={googleEnabled()} />
     </main>
   );
 }

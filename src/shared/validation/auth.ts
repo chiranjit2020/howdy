@@ -189,6 +189,16 @@ export const signUpSchema = z
     }
   });
 
+/**
+ * Finishing a sign-up that started with Google (ADR-048): Google already gave a verified email and there is no
+ * password, so only the username, an optional display name and the same required box are asked for.
+ */
+export const googleSignUpSchema = z.object({
+  handle: handleSchema,
+  displayName: displayNameSchema.optional(),
+  acceptTerms: z.literal(true, { error: ACCEPT_TERMS_MESSAGE }),
+});
+
 /** "Is this username free?" on Create account: the same rules as signing up, so a bad one never reaches the database. */
 export const handleCheckSchema = z.object({ handle: handleSchema });
 
@@ -249,6 +259,12 @@ export const signInProofSchema = z.union([
   z.strictObject({ ticket: ticketSchema, remember: rememberSchema }),
   loginSchema.extend({ code: secondStepCodeSchema.optional(), remember: rememberSchema }),
 ]);
+
+/** Signing in after Google proved who it is: the proof itself travels in a cookie; only a second-step code may come. */
+export const googleSignInSchema = z.strictObject({
+  google: z.literal(true),
+  code: secondStepCodeSchema.optional(),
+});
 
 export const appealProofSchema = z.union([
   z.strictObject({ ticket: ticketSchema, text: appealTextSchema }),

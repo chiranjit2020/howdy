@@ -16,8 +16,14 @@ import { cn } from '@/ui/cn';
  * of one. Only a suggestion: it fills the box until the person types their own. Empty when nothing usable is left.
  */
 export function suggestHandle(email: string): string {
-  const local = (email.split('@')[0] ?? '').split('+')[0] ?? '';
-  let h = local
+  return handleFromText((email.split('@')[0] ?? '').split('+')[0] ?? '');
+}
+
+/** A username made from any words ("Rick Sen" → "rick_sen"): letters and digits kept, everything else one underscore. */
+export function handleFromText(text: string): string {
+  let h = text
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '') // accents off: "José" → "jose"
     .toLowerCase()
     .replace(/[^a-z0-9_]+/g, '_')
     .replace(/_+/g, '_')

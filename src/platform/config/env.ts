@@ -82,6 +82,18 @@ const schema = z.object({
     .string()
     .regex(/^[A-Za-z0-9_-]{43}$/, 'VAPID_PRIVATE_KEY must be a base64url P-256 private key')
     .optional(),
+  /**
+   * "Continue with Google" (ADR-048): an OAuth client of type "Web application" from Google Cloud Console, with
+   * `<APP_URL>/api/auth/google/callback` as an authorised redirect URI. Both or neither; unset = no Google button.
+   */
+  GOOGLE_CLIENT_ID: z
+    .string()
+    .regex(
+      /^[\w-]+\.apps\.googleusercontent\.com$/,
+      'GOOGLE_CLIENT_ID must end in .apps.googleusercontent.com',
+    )
+    .optional(),
+  GOOGLE_CLIENT_SECRET: z.string().min(10).optional(),
   /** Who push services contact about our pushes (mailto: or https:). */
   VAPID_SUBJECT: z
     .string()
@@ -117,6 +129,9 @@ export function parseEnv(source: Record<string, string | undefined>): Env {
   }
   if (!env.VAPID_PUBLIC_KEY !== !env.VAPID_PRIVATE_KEY) {
     throw new Error('Web Push needs both VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY (or neither)');
+  }
+  if (!env.GOOGLE_CLIENT_ID !== !env.GOOGLE_CLIENT_SECRET) {
+    throw new Error('Google sign-in needs both GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET (or neither)');
   }
   if (env.MAIL_TRANSPORT === 'resend' && !env.RESEND_API_KEY) {
     throw new Error('MAIL_TRANSPORT=resend needs: RESEND_API_KEY');
