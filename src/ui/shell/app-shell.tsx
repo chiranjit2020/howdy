@@ -12,9 +12,9 @@ import { SiteFooter } from './site-footer';
 // The signed-out top bar's two ways in: equal widths, never wrapping, sized to fit beside the logo on a 320 px phone.
 // Width comes from the text (both grid columns match the wider pill), so nothing is squeezed on a 320 px phone.
 const AUTH_PILL =
-  'flex w-full min-h-12 flex-col items-center justify-center rounded-pill px-2 py-1 leading-tight whitespace-nowrap ' +
-  'no-underline select-none transition duration-150 ease-out active:translate-y-0.5 active:shadow-clay-pressed ' +
-  'motion-reduce:active:translate-y-0 hover:no-underline sm:min-w-36';
+  'flex w-full min-h-12 flex-col items-center justify-center rounded-md px-2 py-1 leading-tight whitespace-nowrap ' +
+  'no-underline select-none transition-colors duration-150 ease-out active:shadow-clay-pressed ' +
+  'hover:no-underline sm:min-w-36';
 // The main label drops one size step on the narrowest phones (under 360 px) so both pills fit beside the logo.
 const AUTH_PILL_LABEL = 'text-metadata font-semibold min-[360px]:text-caption';
 const AUTH_PILL_SECONDARY =

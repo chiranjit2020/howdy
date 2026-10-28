@@ -101,14 +101,14 @@ test.describe('authentication journey (production build, real CSP, real cookies)
     const ctx = await newContext(browser);
     const page = await ctx.newPage();
     await page.goto('/stake-a-claim');
-    await page.getByRole('button', { name: 'Create My Account' }).click();
-    await expect(page.getByLabel('Choose a handle')).toBeFocused();
-    await expect(page.getByLabel('Choose a handle')).toHaveAttribute('aria-invalid', 'true');
-    await page.getByLabel('Choose a handle').fill('admin');
+    await page.getByRole('button', { name: 'Create account' }).click();
+    await expect(page.getByLabel('Username')).toBeFocused();
+    await expect(page.getByLabel('Username')).toHaveAttribute('aria-invalid', 'true');
+    await page.getByLabel('Username').fill('admin');
     await page.getByLabel('Email address').fill('x@example.com');
     await page.getByLabel('Password', { exact: true }).fill('short');
-    await page.getByRole('button', { name: 'Create My Account' }).click();
-    await expect(page.getByText('That call sign is reserved.')).toBeVisible();
+    await page.getByRole('button', { name: 'Create account' }).click();
+    await expect(page.getByText('That username is reserved.')).toBeVisible();
     await expect(page.getByText(/at least 10 characters/i).first()).toBeVisible();
 
     // Bypass the browser entirely: the API rejects the same input with the same reasons.
@@ -141,10 +141,10 @@ test.describe('authentication journey (production build, real CSP, real cookies)
     await expect(email).toHaveValue('test@gmail');
 
     // Submitting with it still wrong sends nothing and puts you back in the email box.
-    await page.getByLabel('Choose a handle').fill('mail_check');
+    await page.getByLabel('Username').fill('mail_check');
     await page.getByLabel('Password', { exact: true }).fill('correct horse battery staple');
     await page.getByRole('checkbox').check();
-    await page.getByRole('button', { name: 'Create My Account' }).click();
+    await page.getByRole('button', { name: 'Create account' }).click();
     await expect(email).toBeFocused();
     expect(posts).toEqual([]);
 
@@ -432,38 +432,38 @@ test.describe('signed-out pages: accessibility and layout in a real browser', ()
     });
   }
 
-  test('one card, two tabs: switching forms in place, by click and by keyboard, and the address follows', async ({
+  test('one card: the footer link swaps forms in place, and the address and title follow', async ({
     browser,
   }) => {
     const ctx = await newContext(browser);
     const page = await ctx.newPage();
     const problems = await watchProblems(page);
     await page.goto('/step-inside');
-    const signIn = page.getByRole('tab', { name: /Step Inside/ });
-    const signUp = page.getByRole('tab', { name: /Stake a Claim/ });
-    await expect(signIn).toHaveAttribute('aria-selected', 'true');
     await expect(page.getByLabel('Handle or email')).toBeVisible();
 
-    await signUp.click();
-    await expect(signUp).toHaveAttribute('aria-selected', 'true');
-    await expect(page.getByLabel('Choose a handle')).toBeVisible();
+    await page.getByRole('link', { name: 'Create account', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Create your account' })).toBeVisible();
+    await expect(page.getByLabel('Username')).toBeVisible();
     await expect(page.getByLabel('Handle or email')).toHaveCount(0);
     await expect(page).toHaveURL(/\/stake-a-claim$/);
-    await expect(page).toHaveTitle(/^Stake a Claim/);
+    await expect(page).toHaveTitle(/^Create account/);
 
-    // Arrow keys move between tabs (only the selected tab is in the Tab order).
-    await signUp.focus();
-    await page.keyboard.press('ArrowLeft');
-    await expect(signIn).toBeFocused();
-    await expect(signIn).toHaveAttribute('aria-selected', 'true');
+    // The password can be shown and hidden again; the button says which.
+    const password = page.getByLabel('Password', { exact: true });
+    await expect(password).toHaveAttribute('type', 'password');
+    await page.getByRole('button', { name: 'Show password' }).click();
+    await expect(password).toHaveAttribute('type', 'text');
+    await page.getByRole('button', { name: 'Hide password' }).click();
+    await expect(password).toHaveAttribute('type', 'password');
+
+    await page.getByRole('link', { name: 'Log in', exact: true }).click();
+    await expect(page.getByLabel('Handle or email')).toBeVisible();
     await expect(page).toHaveURL(/\/step-inside$/);
-    await expect(signUp).toHaveAttribute('tabindex', '-1');
 
-    // A refresh opens the tab the address names.
-    await signUp.click();
+    // A refresh opens the form the address names.
+    await page.getByRole('link', { name: 'Create account', exact: true }).click();
     await page.reload();
-    await expect(page.getByRole('tab', { name: /Stake a Claim/ })).toHaveAttribute('aria-selected', 'true');
-    await expect(page.getByLabel('Choose a handle')).toBeVisible();
+    await expect(page.getByLabel('Username')).toBeVisible();
     expect(problems).toEqual([]);
     await ctx.close();
   });

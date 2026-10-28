@@ -129,24 +129,22 @@
   --text-code--line-height: 1.5;
 
   /* -- Shape -- */
-  --radius-sm: 0.5rem;
-  --radius-md: 0.875rem;
-  --radius-lg: 1.25rem;
-  --radius-xl: 1.75rem;
+  /* Flat and restrained: small corners, no inflated shapes. */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
   --radius-pill: 9999px;
 
-  /* Clay: soft outer drop + top-left inner light + bottom-right inner shade. */
+  /*
+   * Flat elevation. The names are kept from the old clay recipe so every surface follows without per-component edits,
+   * but there is no inner light or shade any more: one subtle outer shadow, and pressed means "no lift".
+   */
   --shadow-clay:
-    8px 12px 24px light-dark(rgb(43 45 66 / 0.08), rgb(0 0 0 / 0.4)),
-    inset 3px 3px 6px light-dark(rgb(255 255 255 / 0.9), rgb(255 255 255 / 0.06)),
-    inset -3px -3px 6px light-dark(rgb(200 195 185 / 0.35), rgb(0 0 0 / 0.35));
-  --shadow-clay-sm:
-    4px 6px 12px light-dark(rgb(43 45 66 / 0.08), rgb(0 0 0 / 0.4)),
-    inset 2px 2px 4px light-dark(rgb(255 255 255 / 0.9), rgb(255 255 255 / 0.06)),
-    inset -2px -2px 4px light-dark(rgb(200 195 185 / 0.35), rgb(0 0 0 / 0.3));
-  --shadow-clay-pressed:
-    inset 3px 3px 8px light-dark(rgb(43 45 66 / 0.14), rgb(0 0 0 / 0.5)),
-    inset -2px -2px 5px light-dark(rgb(255 255 255 / 0.7), rgb(255 255 255 / 0.05));
+    0 1px 2px light-dark(rgb(43 45 66 / 0.05), rgb(0 0 0 / 0.3)),
+    0 2px 6px light-dark(rgb(43 45 66 / 0.05), rgb(0 0 0 / 0.25));
+  --shadow-clay-sm: 0 1px 2px light-dark(rgb(43 45 66 / 0.06), rgb(0 0 0 / 0.3));
+  --shadow-clay-pressed: none;
   --shadow-float: 0 12px 32px light-dark(rgb(43 45 66 / 0.18), rgb(0 0 0 / 0.55));
 
   /* -- Motion -- */
@@ -393,55 +391,25 @@
   }
 }
 
-/* Clay surface recipe (tactile card). */
+/* Raised surface (card): a hairline border and a subtle shadow. */
 @utility clay {
   background: var(--color-surface);
   border-radius: var(--radius-lg);
-  border: 1.5px solid light-dark(rgb(255 255 255 / 0.8), rgb(255 255 255 / 0.06));
+  border: 1px solid var(--color-border);
   box-shadow: var(--shadow-clay);
 }
 
 /*
- * The phone tab bar's raised action (Nail): soft neumorphism with a gloss. The icon fills an accent dome; over it, a
- * glass layer (::after) carries a sheen on the top-left and an inner light and shade that make it bulge. An outer pair
- * of shadows (light up-left, accent-tinted down-right) lifts it off the bar. Pressing sinks it and dims the sheen.
+ * The phone tab bar's main action (Nail) and the welcome page's join button: a flat accent fill with a hairline ring
+ * that lifts it off the bar, and one subtle shadow. No gloss, no bulge.
  */
 @utility nav-action-gloss {
-  background: linear-gradient(
-    155deg,
-    color-mix(in oklab, var(--color-accent), white 35%),
-    var(--color-accent) 55%,
-    color-mix(in oklab, var(--color-accent), black 8%)
-  );
-  border: 2px solid light-dark(rgb(255 255 255 / 0.85), rgb(255 255 255 / 0.2));
-  box-shadow:
-    -4px -4px 10px light-dark(rgb(255 255 255 / 0.9), rgb(255 255 255 / 0.05)),
-    6px 10px 22px color-mix(in oklab, color-mix(in oklab, var(--color-accent), black 45%) 60%, transparent);
+  background: var(--color-accent);
+  border: 2px solid var(--color-surface);
+  box-shadow: var(--shadow-clay);
 
-  &::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    pointer-events: none;
-    background:
-      radial-gradient(ellipse 62% 36% at 38% 17%, rgb(255 255 255 / 0.75), rgb(255 255 255 / 0) 72%),
-      linear-gradient(to bottom, rgb(255 255 255 / 0.16), rgb(255 255 255 / 0) 50%);
-    box-shadow:
-      inset 3px 4px 6px rgb(255 255 255 / 0.5),
-      inset -3px -5px 9px
-        color-mix(in oklab, color-mix(in oklab, var(--color-accent), black 40%) 55%, transparent);
-    transition: opacity 150ms;
-  }
-
-  &:active {
-    box-shadow:
-      -2px -2px 5px light-dark(rgb(255 255 255 / 0.8), rgb(255 255 255 / 0.04)),
-      2px 4px 10px color-mix(in oklab, color-mix(in oklab, var(--color-accent), black 45%) 50%, transparent);
-  }
-
-  &:active::after {
-    opacity: 0.6;
+  &:hover {
+    background: var(--color-accent-hover);
   }
 }
 

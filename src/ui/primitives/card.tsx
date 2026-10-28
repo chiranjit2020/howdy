@@ -17,7 +17,7 @@ export function ClayCard({
       className={cn(
         'clay p-5',
         interactive &&
-          'cursor-pointer transition duration-150 active:translate-y-0.5 active:shadow-clay-pressed motion-reduce:active:translate-y-0',
+          'cursor-pointer transition-colors duration-150 hover:border-border-strong active:shadow-clay-pressed',
         className,
       )}
       {...rest}

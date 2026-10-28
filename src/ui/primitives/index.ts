@@ -1,6 +1,6 @@
 export { Button, buttonClasses, type ButtonProps, type ButtonVariant, type ButtonSize } from './button';
 export { IconButton, type IconButtonProps } from './icon-button';
-export { Input, Textarea, Select, FieldShell, type TextareaProps } from './field';
+export { Input, PasswordInput, Textarea, Select, FieldShell, type TextareaProps } from './field';
 export { Checkbox, Radio, Switch, type SwitchProps } from './controls';
 export { Avatar, type AvatarProps } from './avatar';
 export { Badge, Chip, TONE, type Tone, type ChipProps } from './badge';

@@ -131,7 +131,7 @@ export const handleSchema = z
   .regex(/^[a-z0-9_]+$/, 'Use only letters, numbers and underscores.')
   .min(LIMITS.HANDLE_MIN, `At least ${LIMITS.HANDLE_MIN} characters.`)
   .max(LIMITS.HANDLE_MAX, `At most ${LIMITS.HANDLE_MAX} characters.`)
-  .refine((h) => !RESERVED_HANDLES.has(h), 'That call sign is reserved.');
+  .refine((h) => !RESERVED_HANDLES.has(h), 'That username is reserved.');
 
 /** Password rules independent of who is signing up. */
 export const passwordSchema = z

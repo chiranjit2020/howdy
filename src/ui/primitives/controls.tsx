@@ -6,7 +6,7 @@ import { cn } from '../cn';
 type NativeProps = Omit<ComponentProps<'input'>, 'type'>;
 
 const BOX =
-  'size-6 shrink-0 appearance-none border-2 border-border-strong bg-surface-sunken shadow-clay-pressed ' +
+  'size-5 mt-0.5 shrink-0 appearance-none border-[1.5px] border-border-strong bg-surface ' +
   'transition-colors checked:border-accent checked:bg-accent disabled:opacity-60';
 
 function ChoiceRow({

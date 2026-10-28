@@ -240,7 +240,7 @@ describe('sign-up validation is enforced on the server', () => {
       handle: first.handle.toUpperCase(),
     });
     expect(r.status).toBe(409);
-    expect(r.data.error?.fields).toEqual({ handle: 'That call sign is taken.' });
+    expect(r.data.error?.fields).toEqual({ handle: 'That username is taken.' });
   });
 
   it('DB constraints back the app rules (a bad row cannot be inserted even by buggy code)', async () => {

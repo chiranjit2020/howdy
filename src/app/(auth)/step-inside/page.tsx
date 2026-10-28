@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/modules/auth';
 import { AuthCard } from '../auth-card';
 
-export const metadata = { title: 'Step Inside' };
+export const metadata = { title: 'Log in' };
 
 export default async function StepInsidePage() {
   if (await getCurrentUser()) redirect('/home');

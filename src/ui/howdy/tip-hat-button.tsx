@@ -18,8 +18,8 @@ export function TipHatButton({ tipped, onTip, className, ...rest }: TipHatButton
       onClick={onTip}
       disabled={tipped}
       className={cn(
-        'inline-flex min-h-11 items-center gap-2 rounded-pill border border-border bg-surface px-4 text-caption font-semibold text-text-primary',
-        'shadow-clay-sm transition duration-150 active:translate-y-0.5 disabled:bg-success disabled:text-on-success disabled:shadow-clay-pressed motion-reduce:active:translate-y-0',
+        'inline-flex min-h-11 items-center gap-2 rounded-md border border-border bg-surface px-4 text-caption font-semibold text-text-primary',
+        'shadow-clay-sm transition-colors duration-150 hover:bg-surface-sunken disabled:bg-success disabled:text-on-success disabled:shadow-clay-pressed',
         className,
       )}
       {...rest}

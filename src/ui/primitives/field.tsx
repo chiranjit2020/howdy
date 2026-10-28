@@ -2,6 +2,7 @@
 
 import { useId, useState, type ChangeEvent, type ComponentProps, type ReactNode } from 'react';
 import { cn } from '../cn';
+import { EyeIcon, EyeOffIcon } from '../icons';
 
 interface ControlProps {
   id: string;
@@ -62,11 +63,12 @@ export function FieldShell({
 }
 
 const CONTROL =
-  'w-full rounded-md border border-border bg-surface-sunken px-4 py-2.5 text-body text-text-primary ' +
-  'placeholder:text-text-muted shadow-clay-pressed transition disabled:cursor-not-allowed disabled:opacity-60 ' +
-  // A soft glow while typing, on top of the focus outline (which keyboard users still get).
-  'focus:border-focus focus:ring-4 focus:ring-focus/25 ' +
-  'aria-invalid:border-danger aria-invalid:border-2';
+  'w-full rounded-md border border-border-strong/50 bg-surface px-3.5 py-2.5 text-body text-text-primary ' +
+  'placeholder:text-text-muted transition-colors hover:border-border-strong disabled:cursor-not-allowed ' +
+  'disabled:bg-surface-sunken disabled:opacity-60 ' +
+  // A thin ring while typing, on top of the focus outline (which keyboard users still get).
+  'focus:border-focus focus:ring-2 focus:ring-focus/20 ' +
+  'aria-invalid:border-danger aria-invalid:focus:ring-danger/20';
 
 interface FieldProps {
   label: ReactNode;
@@ -104,6 +106,47 @@ export function Input({
           <input className={cn(CONTROL, 'min-h-11')} {...c} {...rest} />
         )
       }
+    </FieldShell>
+  );
+}
+
+/**
+ * Password box with a show/hide toggle. The toggle is a real button (aria-pressed, type=button so it never submits);
+ * it comes right after the input, so Tab from the password reaches it.
+ */
+export function PasswordInput({
+  label,
+  hint,
+  error,
+  className,
+  id,
+  ...rest
+}: FieldProps & Omit<ComponentProps<'input'>, 'type'>) {
+  const [visible, setVisible] = useState(false);
+  return (
+    <FieldShell id={id} label={label} hint={hint} error={error} className={className}>
+      {(c) => (
+        <div className="relative">
+          <input
+            className={cn(CONTROL, 'min-h-11 pr-12')}
+            type={visible ? 'text' : 'password'}
+            autoCapitalize="none"
+            spellCheck={false}
+            {...c}
+            {...rest}
+          />
+          <button
+            type="button"
+            onClick={() => setVisible((v) => !v)}
+            aria-label={visible ? 'Hide password' : 'Show password'}
+            aria-pressed={visible}
+            aria-controls={c.id}
+            className="absolute inset-y-0 right-0 flex w-11 items-center justify-center rounded-r-md text-text-secondary transition-colors hover:text-text-primary"
+          >
+            {visible ? <EyeOffIcon /> : <EyeIcon />}
+          </button>
+        </div>
+      )}
     </FieldShell>
   );
 }

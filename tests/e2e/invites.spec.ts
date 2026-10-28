@@ -68,11 +68,11 @@ test.describe('Invite links (production build, real CSP)', () => {
       .click();
     await expect(page).toHaveURL(/\/stake-a-claim\?invite=/);
     await expect(page.getByText(/invited you\. Once you confirm your email/)).toBeVisible();
-    await page.getByLabel('Choose a handle').fill(friend.handle);
+    await page.getByLabel('Username').fill(friend.handle);
     await page.getByLabel('Email address').fill(friend.email);
     await page.getByLabel('Password', { exact: true }).fill(friend.password);
     await page.getByRole('checkbox', { name: /I am 18 or older/ }).check();
-    await page.getByRole('button', { name: 'Create My Account' }).click();
+    await page.getByRole('button', { name: 'Create account' }).click();
     await page.getByRole('heading', { name: 'Check your email' }).waitFor();
     await confirmEmailVia(page, friend.email);
 

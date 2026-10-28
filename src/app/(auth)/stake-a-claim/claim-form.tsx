@@ -1,13 +1,12 @@
 'use client';
 
-import Link from 'next/link';
 import { useRef, useState, type FormEvent } from 'react';
 import { PASSWORD_MIN, emailSchema, signUpSchema } from '@/shared/validation/auth';
 import { LIMITS } from '@/shared/limits';
 import { postJson } from '@/ui/auth/api';
 import { FormMessage, focusFirstInvalid } from '@/ui/auth/form-parts';
 import { TermsCheckbox } from '@/ui/auth/terms-checkbox';
-import { Button, Input } from '@/ui/primitives';
+import { Button, Input, PasswordInput } from '@/ui/primitives';
 
 type Fields = { handle: string; displayName: string; email: string; password: string };
 type Errors = Partial<Fields & { acceptTerms: string }>;
@@ -89,35 +88,34 @@ export function ClaimForm({ invite }: { invite?: { code: string; invitedBy: stri
   if (sentTo) {
     return (
       <div className="flex flex-col gap-4">
-        <h1 className="text-title text-text-primary">Check your email</h1>
-        <p className="text-body text-text-secondary">
-          If <strong className="text-text-primary">{sentTo}</strong> can be used for a new Howdy account, a
-          confirmation link is on its way. It works once and expires in 24 hours.
-        </p>
-        {resent && <FormMessage tone="success">Sent again, if there is anything to send.</FormMessage>}
-        <div className="flex flex-wrap gap-3">
-          <Button variant="secondary" onClick={resend}>
-            Send it again
-          </Button>
-          <Link href="/step-inside" className="inline-flex min-h-11 items-center text-body">
-            Step Inside
-          </Link>
+        <div className="flex flex-col gap-1">
+          <h1 className="text-body font-semibold text-text-primary">Check your email</h1>
+          <p className="text-caption font-normal text-text-secondary">
+            If <strong className="font-semibold text-text-primary">{sentTo}</strong> can be used for a new
+            Howdy account, a confirmation link is on its way. It works once and expires in 24 hours.
+          </p>
         </div>
+        {resent && <FormMessage tone="success">Sent again, if there is anything to send.</FormMessage>}
+        <Button variant="secondary" fullWidth onClick={resend}>
+          Send it again
+        </Button>
       </div>
     );
   }
 
   return (
-    <form ref={formRef} onSubmit={onSubmit} noValidate className="flex flex-col gap-3">
-      <div>
-        <h1 className="text-title text-text-primary">Join Howdy</h1>
-        <p className="text-body text-text-secondary">It only takes a minute.</p>
+    <form ref={formRef} onSubmit={onSubmit} noValidate className="flex flex-col gap-4">
+      <div className="flex flex-col gap-1">
+        <h1 className="text-body font-semibold text-text-primary">Create your account</h1>
+        <p className="text-caption font-normal text-text-secondary">
+          Join Howdy and connect with your people.
+        </p>
       </div>
       {invite && (
         // Says exactly what will happen, and nothing more is granted (ADR-045).
-        <p className="rounded-md bg-accent-soft px-3 py-2 text-caption text-text-primary">
-          <strong>{invite.invitedBy}</strong> invited you. Once you confirm your email, they get a Pal request
-          from you.
+        <p className="rounded-md border border-border bg-accent-soft px-3 py-2 text-caption font-normal text-text-primary">
+          <strong className="font-semibold">{invite.invitedBy}</strong> invited you. Once you confirm your
+          email, they get a Pal request from you.
         </p>
       )}
       {formError && (
@@ -126,7 +124,7 @@ export function ClaimForm({ invite }: { invite?: { code: string; invitedBy: stri
         </FormMessage>
       )}
       <Input
-        label="Choose a handle"
+        label="Username"
         name="handle"
         prefix="@"
         autoComplete="username"
@@ -136,7 +134,7 @@ export function ClaimForm({ invite }: { invite?: { code: string; invitedBy: stri
         value={values.handle}
         onChange={set('handle')}
         error={errors.handle}
-        hint={`${LIMITS.HANDLE_MIN}–${LIMITS.HANDLE_MAX} letters, numbers or underscores.`}
+        hint={`${LIMITS.HANDLE_MIN}–${LIMITS.HANDLE_MAX} characters: letters, numbers and underscores.`}
       />
       <Input
         label="Display name (optional)"
@@ -145,7 +143,7 @@ export function ClaimForm({ invite }: { invite?: { code: string; invitedBy: stri
         value={values.displayName}
         onChange={set('displayName')}
         error={errors.displayName}
-        hint="Leave blank to use your handle."
+        hint="Shown on your profile. Leave blank to use your username."
       />
       <Input
         label="Email address"
@@ -158,15 +156,14 @@ export function ClaimForm({ invite }: { invite?: { code: string; invitedBy: stri
         onBlur={checkEmail}
         error={errors.email}
       />
-      <Input
+      <PasswordInput
         label="Password"
         name="password"
-        type="password"
         autoComplete="new-password"
         value={values.password}
         onChange={set('password')}
         error={errors.password}
-        hint={`Your secret knock: at least ${PASSWORD_MIN} characters.`}
+        hint={`At least ${PASSWORD_MIN} characters. Avoid common passwords and your email or username.`}
       />
       <TermsCheckbox
         checked={acceptTerms}
@@ -177,8 +174,8 @@ export function ClaimForm({ invite }: { invite?: { code: string; invitedBy: stri
         invalid={!!errors.acceptTerms}
       />
       {errors.acceptTerms && <FormMessage tone="error">{errors.acceptTerms}</FormMessage>}
-      <Button type="submit" size="lg" fullWidth loading={busy}>
-        Create My Account
+      <Button type="submit" fullWidth loading={busy}>
+        Create account
       </Button>
     </form>
   );

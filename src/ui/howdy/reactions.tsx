@@ -80,7 +80,7 @@ export function ReactionBar({
         onClick={() => onReact(mine ? null : 'yo')}
         className={cn(
           'inline-flex min-h-11 items-center gap-1.5 rounded-pill border pr-3.5 pl-2.5 text-caption font-semibold transition duration-150',
-          'active:translate-y-0.5 motion-reduce:active:translate-y-0',
+
           mine
             ? 'border-accent bg-warning text-on-warning shadow-clay-pressed'
             : 'border-border bg-surface text-text-primary shadow-clay-sm',

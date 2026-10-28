@@ -4,7 +4,7 @@ import { inviterName } from '@/modules/invites';
 import { INVITE_CODE_PATTERN } from '@/shared/validation/invites';
 import { AuthCard } from '../auth-card';
 
-export const metadata = { title: 'Stake a Claim' };
+export const metadata = { title: 'Create account' };
 
 /** `?invite=<code>`: arrived through someone's invite link (ADR-045). A link that does not work is simply ignored. */
 export default async function StakeAClaimPage({

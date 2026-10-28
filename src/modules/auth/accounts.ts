@@ -92,7 +92,7 @@ export async function signUp(
   const handleTaken = () =>
     new AppError('CONFLICT', {
       message: 'Some fields need another look.',
-      fields: { handle: 'That call sign is taken.' },
+      fields: { handle: 'That username is taken.' },
     });
   const [taken] = await db
     .select({ id: users.id })

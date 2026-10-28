@@ -33,8 +33,8 @@ export function buttonClasses(
 ): string {
   const { variant = 'primary', size = 'md', fullWidth, compact } = opts;
   return cn(
-    'inline-flex items-center justify-center gap-2 rounded-pill font-semibold select-none no-underline',
-    'transition duration-150 ease-out active:translate-y-0.5 active:shadow-clay-pressed motion-reduce:active:translate-y-0',
+    'inline-flex items-center justify-center gap-2 rounded-md font-semibold select-none no-underline',
+    'transition-colors duration-150 ease-out active:shadow-clay-pressed',
     'disabled:cursor-not-allowed disabled:opacity-60 aria-disabled:cursor-not-allowed aria-disabled:opacity-60',
     VARIANT[variant],
     SIZE[size],

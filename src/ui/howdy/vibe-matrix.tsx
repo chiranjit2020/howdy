@@ -151,7 +151,6 @@ export function VibeMatrix({
                 className={cn(
                   'inline-flex min-h-11 items-center gap-1.5 rounded-pill border border-border bg-surface pr-3.5 pl-2 text-caption font-semibold text-text-primary shadow-clay-sm transition',
                   'disabled:cursor-not-allowed disabled:opacity-50',
-                  'enabled:active:translate-y-0.5 motion-reduce:enabled:active:translate-y-0',
                 )}
               >
                 <Art name={MARK_ART[kind]} size="free" className="size-6" />
