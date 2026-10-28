@@ -1,6 +1,8 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useState, type MouseEvent } from 'react';
+import { Img } from '@/ui/art/img';
 import { Card } from '@/ui/primitives';
 import { ClaimForm } from './stake-a-claim/claim-form';
 import { LoginForm } from './step-inside/login-form';
@@ -54,6 +56,20 @@ export function AuthCard({
 
   return (
     <Card className="flex flex-col gap-5 p-5 shadow-clay sm:p-7">
+      {/* The brand mark leads the card (these pages have no top bar). min-h-11 keeps the link tappable. */}
+      <Link
+        href="/gate"
+        className="inline-flex min-h-11 items-center self-center no-underline hover:no-underline"
+      >
+        <Img
+          src="/brand/howdy-wordmark.png"
+          width={766}
+          height={243}
+          alt="Howdy"
+          loading="eager"
+          className="h-auto w-28 sm:w-32"
+        />
+      </Link>
       {active === 'step-inside' ? <LoginForm /> : <ClaimForm {...(invite ? { invite } : {})} />}
       <p className="border-t border-border pt-4 text-center text-caption text-text-secondary">
         {mode.prompt}{' '}

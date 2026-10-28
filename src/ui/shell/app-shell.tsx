@@ -42,6 +42,7 @@ export function AppShell({
   moderator = false,
   admin = false,
   waysIn = true,
+  header = true,
   children,
 }: {
   me?: ShellMe | undefined;
@@ -54,6 +55,8 @@ export function AppShell({
   admin?: boolean;
   /** Signed out: offer Step Inside / Stake a Claim in the top bar. Off on the sign-in pages: just the logo, centred. */
   waysIn?: boolean;
+  /** Signed out only: false drops the top bar (the page shows its own logo). Signed in, the bar always shows. */
+  header?: boolean;
   children: ReactNode;
 }) {
   const logoOnly = !me && !waysIn;
@@ -76,7 +79,12 @@ export function AppShell({
 
   return (
     <div className="daylight-only min-h-dvh">
-      <header className="sticky top-0 z-30 border-b border-border/60 bg-background/90 backdrop-blur">
+      <header
+        className={cn(
+          'sticky top-0 z-30 border-b border-border/60 bg-background/90 backdrop-blur',
+          !me && !header && 'hidden',
+        )}
+      >
         <div
           className={cn(
             'mx-auto flex h-16 w-full max-w-7xl items-center gap-2 px-4 min-[360px]:gap-4 md:px-6',

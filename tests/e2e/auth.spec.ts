@@ -365,7 +365,9 @@ test.describe('signed-out pages: accessibility and layout in a real browser', ()
     await ctx.close();
   });
 
-  test('the sign-in pages’ top bar is just the logo, centred', async ({ browser }) => {
+  test('the sign-in pages’ logo is centred: in the top bar, or in the card on Log in / Create account', async ({
+    browser,
+  }) => {
     const ctx = await newContext(browser, {
       hasTouch: true,
       isMobile: true,
@@ -375,9 +377,12 @@ test.describe('signed-out pages: accessibility and layout in a real browser', ()
     for (const path of pages) {
       await page.goto(path);
       await pageReady(page);
-      const bar = page.getByRole('banner');
-      await expect(bar.getByRole('link')).toHaveCount(1);
-      const logo = (await bar.getByRole('link', { name: 'Howdy' }).boundingBox())!;
+      // Log in and Create account have no top bar: the card leads with the logo instead.
+      const cardOnly = path === '/stake-a-claim' || path === '/step-inside';
+      if (cardOnly) await expect(page.getByRole('banner')).toHaveCount(0);
+      const scope = cardOnly ? page.getByRole('main') : page.getByRole('banner');
+      if (!cardOnly) await expect(scope.getByRole('link')).toHaveCount(1);
+      const logo = (await scope.getByRole('link', { name: 'Howdy', exact: true }).boundingBox())!;
       expect(Math.abs(logo.x + logo.width / 2 - 180), `${path} logo centred`).toBeLessThanOrEqual(2);
     }
     await ctx.close();
