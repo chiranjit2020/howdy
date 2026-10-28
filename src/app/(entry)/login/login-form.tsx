@@ -378,9 +378,11 @@ export function LoginForm({ google = false }: { google?: boolean } = {}) {
         value={password}
         onChange={(e) => setPassword(e.target.value)}
         labelAction={
+          // -my-3: still a 44px tap target, but it overhangs the label row instead of making it (and so the gap to
+          // the box) taller than the other fields'.
           <Link
             href="/forgot-password"
-            className="inline-flex min-h-11 items-center text-metadata font-semibold text-auth-link no-underline hover:underline"
+            className="-my-3 inline-flex min-h-11 items-center text-metadata font-semibold text-auth-link no-underline hover:underline"
           >
             Forgot password?
           </Link>

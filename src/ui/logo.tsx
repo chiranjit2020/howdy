@@ -22,9 +22,9 @@ export function HowdyLogo({
       className={cn('inline-flex min-h-11 items-center no-underline hover:no-underline', className)}
     >
       <Img
-        src="/brand/howdy-logo.png"
-        width={640}
-        height={239}
+        src="/brand/howdy-wordmark.png"
+        width={766}
+        height={243}
         alt="Howdy"
         loading="eager"
         className={cn('h-auto', LOGO_WIDTH[size])}
