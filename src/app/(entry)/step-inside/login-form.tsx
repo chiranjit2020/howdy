@@ -11,8 +11,37 @@ import {
   signWithPasskey,
   type PublicKeyCredentialRequestOptionsJSON,
 } from '@/ui/auth/passkey';
-import { Button, Input } from '@/ui/primitives';
+import { KeyIcon } from '@/ui/icons';
+import { Button, Checkbox, Input, PasswordInput } from '@/ui/primitives';
 import { readSuspension, SuspendedNotice, type Suspension } from './suspended-notice';
+
+/** "Remember this device": a 30-day session when ticked, one that ends with the browser when not. */
+function RememberDevice({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <div className="flex items-start justify-between gap-3">
+      <Checkbox
+        name="remember"
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+        label={<span className="text-caption font-normal">Remember this device</span>}
+      />
+      <span aria-hidden="true" className="pt-2 text-metadata text-text-secondary">
+        30 days
+      </span>
+    </div>
+  );
+}
+
+/** A hairline with "or" on it, between the password form and the other way in. */
+function OrDivider() {
+  return (
+    <div className="flex items-center gap-3 text-metadata text-text-secondary" aria-hidden="true">
+      <span className="h-px flex-1 bg-border" />
+      or
+      <span className="h-px flex-1 bg-border" />
+    </div>
+  );
+}
 
 type Creds = { identifier: string; password: string };
 /** What proves the person to the server: password (+ code), or the ticket a complete sign-in handed back (ADR-040). */
@@ -28,6 +57,8 @@ export function LoginForm() {
   const [resent, setResent] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const [busy, setBusy] = useState(false);
+  // Ticked by default: most people sign in on their own phone. Unticked, the session ends with the browser.
+  const [remember, setRemember] = useState(true);
   const [passkeyBusy, setPasskeyBusy] = useState(false);
   const canPasskey = usePasskeysSupported();
   // ADR-040: the password was right and two-step is on — ask for the second step.
@@ -51,7 +82,7 @@ export function LoginForm() {
     reset();
     const parsed = loginSchema.safeParse({ identifier, password });
     if (!parsed.success) {
-      setError('Enter your handle or email and your password.');
+      setError('Enter your email or username and your password.');
       setAttempt((n) => n + 1);
       return;
     }
@@ -72,7 +103,7 @@ export function LoginForm() {
 
   async function signIn(proof: Proof) {
     setBusy(true);
-    const res = await postJson('/api/auth/login', proof);
+    const res = await postJson('/api/auth/login', { ...proof, remember });
     if (res.ok) return done();
     setBusy(false);
     if (res.error?.code === 'SECOND_STEP_REQUIRED' && 'password' in proof) {
@@ -108,6 +139,7 @@ export function LoginForm() {
     const res = await postJson('/api/auth/passkey/login', {
       challengeId: start.data.challengeId,
       response: answer.response,
+      remember,
     });
     if (res.ok) return done();
     setPasskeyBusy(false);
@@ -236,8 +268,8 @@ export function LoginForm() {
           value={code}
           onChange={(e) => setCode(e.target.value)}
         />
-        <Button type="submit" size="lg" fullWidth loading={busy}>
-          Step Inside
+        <Button type="submit" fullWidth loading={busy}>
+          Log in
         </Button>
         {secondStep.passkey && canPasskey && (
           <Button variant="secondary" fullWidth loading={passkeyBusy} onClick={signInWithPasskey}>
@@ -263,10 +295,10 @@ export function LoginForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} noValidate className="flex flex-col gap-3">
-      <div>
-        <h1 className="text-title text-text-primary">Welcome back</h1>
-        <p className="text-body text-text-secondary">Sign in to your Howdy account.</p>
+    <form onSubmit={onSubmit} noValidate className="flex flex-col gap-4">
+      <div className="flex flex-col gap-1 text-center">
+        <h1 className="text-body font-semibold text-text-primary">Welcome back</h1>
+        <p className="text-caption font-normal text-text-secondary">Log in to your Howdy account.</p>
       </div>
       {error && (
         <FormMessage tone="error" focusKey={attempt}>
@@ -293,35 +325,43 @@ export function LoginForm() {
         </div>
       )}
       <Input
-        label="Handle or email"
+        label="Email or username"
         name="identifier"
         autoComplete="username"
         autoCapitalize="none"
         spellCheck={false}
+        placeholder="you@example.com or username"
         value={identifier}
         onChange={(e) => setIdentifier(e.target.value)}
       />
-      <Input
+      <PasswordInput
         label="Password"
         name="password"
-        type="password"
         autoComplete="current-password"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
+        labelAction={
+          <Link
+            href="/lost-your-key"
+            className="inline-flex min-h-11 items-center text-metadata font-semibold text-auth-link no-underline hover:underline"
+          >
+            Forgot password?
+          </Link>
+        }
       />
-      <Button type="submit" size="lg" fullWidth loading={busy}>
-        Step Inside
+      <RememberDevice checked={remember} onChange={setRemember} />
+      <Button type="submit" fullWidth loading={busy}>
+        {busy ? 'Logging in…' : 'Log in'}
       </Button>
       {canPasskey && (
-        <Button variant="secondary" size="lg" fullWidth loading={passkeyBusy} onClick={signInWithPasskey}>
-          Sign in with a passkey
-        </Button>
+        <>
+          <OrDivider />
+          <Button variant="secondary" fullWidth loading={passkeyBusy} onClick={signInWithPasskey}>
+            {!passkeyBusy && <KeyIcon className="text-text-secondary" />}
+            Log in with a passkey
+          </Button>
+        </>
       )}
-      <div className="flex justify-center text-caption">
-        <Link href="/lost-your-key" className="inline-flex min-h-11 items-center">
-          Lost your key? Reset your password
-        </Link>
-      </div>
     </form>
   );
 }

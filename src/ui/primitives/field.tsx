@@ -19,6 +19,8 @@ interface FieldShellProps {
   extraDescribedBy?: string | undefined;
   /** Keep the label for assistive tech but do not paint it (the control's placeholder or icon says the same thing). */
   hideLabel?: boolean | undefined;
+  /** A small link or button at the end of the label row (e.g. "Forgot password?"). Outside the <label> itself. */
+  labelAction?: ReactNode;
   children: (control: ControlProps) => ReactNode;
   className?: string | undefined;
 }
@@ -31,6 +33,7 @@ export function FieldShell({
   error,
   extraDescribedBy,
   hideLabel,
+  labelAction,
   children,
   className,
 }: FieldShellProps) {
@@ -39,19 +42,30 @@ export function FieldShell({
   const hintId = hint ? `${fieldId}-hint` : undefined;
   const errorId = error ? `${fieldId}-error` : undefined;
   const describedBy = [hintId, errorId, extraDescribedBy].filter(Boolean).join(' ') || undefined;
+  const labelEl = (
+    <label
+      htmlFor={fieldId}
+      className={hideLabel ? 'sr-only' : 'text-caption font-semibold text-text-primary'}
+    >
+      {label}
+    </label>
+  );
   return (
     <div className={cn('flex flex-col gap-1.5', className)}>
-      <label
-        htmlFor={fieldId}
-        className={hideLabel ? 'sr-only' : 'text-caption font-semibold text-text-primary'}
-      >
-        {label}
-      </label>
+      {labelAction ? (
+        <div className="flex items-center justify-between gap-3">
+          {labelEl}
+          {labelAction}
+        </div>
+      ) : (
+        labelEl
+      )}
       {children({ id: fieldId, 'aria-describedby': describedBy, 'aria-invalid': error ? true : undefined })}
       {hint && (
-        <p id={hintId} className="text-metadata text-text-secondary">
+        // A div, not a p: a hint may hold a list (the password checklist).
+        <div id={hintId} className="text-metadata text-text-secondary">
           {hint}
-        </p>
+        </div>
       )}
       {error && (
         <p id={errorId} className="text-caption font-medium text-danger">
@@ -111,20 +125,28 @@ export function Input({
 }
 
 /**
- * Password box with a show/hide toggle. The toggle is a real button (aria-pressed, type=button so it never submits);
- * it comes right after the input, so Tab from the password reaches it.
+ * Password box with a show/hide toggle. The toggle is a real button (type=button so it never submits) whose name says
+ * what it will do; it comes right after the input, so Tab from the password reaches it.
  */
 export function PasswordInput({
   label,
   hint,
   error,
+  labelAction,
   className,
   id,
   ...rest
-}: FieldProps & Omit<ComponentProps<'input'>, 'type'>) {
+}: FieldProps & Omit<ComponentProps<'input'>, 'type'> & { labelAction?: ReactNode }) {
   const [visible, setVisible] = useState(false);
   return (
-    <FieldShell id={id} label={label} hint={hint} error={error} className={className}>
+    <FieldShell
+      id={id}
+      label={label}
+      hint={hint}
+      error={error}
+      labelAction={labelAction}
+      className={className}
+    >
       {(c) => (
         <div className="relative">
           <input
@@ -139,7 +161,6 @@ export function PasswordInput({
             type="button"
             onClick={() => setVisible((v) => !v)}
             aria-label={visible ? 'Hide password' : 'Show password'}
-            aria-pressed={visible}
             aria-controls={c.id}
             className="absolute inset-y-0 right-0 flex w-11 items-center justify-center rounded-r-md text-text-secondary transition-colors hover:text-text-primary"
           >

@@ -6,6 +6,7 @@ import {
   confirmAppSchema,
   deleteAccountSchema,
   emailOnlySchema,
+  handleCheckSchema,
   passkeyRegistrationSchema,
   passkeySignInSchema,
   passwordOnlySchema,
@@ -21,6 +22,7 @@ import {
   forgotPassword,
   keepClosingAccount,
   closeFromSignIn,
+  handleAvailable,
   login,
   passkeyLogin,
   resendVerification,
@@ -59,12 +61,19 @@ export const authHandlers = {
     return json(ACCEPTED, { status: 202 });
   }),
 
+  /** Live "is this username free?" for Create account. Only usernames, never emails (those stay unenumerable). */
+  handleAvailable: route(async ({ req, requestId }) => {
+    const { handle } = await readJson(req, handleCheckSchema);
+    return json({ available: await handleAvailable(handle, requestContext(req, requestId)) });
+  }),
+
   login: route(async ({ req, requestId }) => {
-    const body = await readJson(req, signInProofSchema);
-    const result = await login(body, {
+    const { remember, ...proof } = await readJson(req, signInProofSchema);
+    const result = await login(proof, {
       ...requestContext(req, requestId),
       userAgent: req.headers.get('user-agent'),
       previousToken: sessionTokenFrom(req.headers),
+      remember,
     });
     return withCookie(json({ user: result.user }), sessionCookie(result.token, result.maxAgeSec));
   }),
@@ -76,11 +85,12 @@ export const authHandlers = {
 
   /** Sign in with a passkey's answer: no password and no second step (the passkey is both). */
   passkeyLogin: route(async ({ req, requestId }) => {
-    const body = await readJson(req, passkeySignInSchema);
-    const result = await passkeyLogin(body, {
+    const { remember, ...answer } = await readJson(req, passkeySignInSchema);
+    const result = await passkeyLogin(answer, {
       ...requestContext(req, requestId),
       userAgent: req.headers.get('user-agent'),
       previousToken: sessionTokenFrom(req.headers),
+      remember,
     });
     return withCookie(json({ user: result.user }), sessionCookie(result.token, result.maxAgeSec));
   }),

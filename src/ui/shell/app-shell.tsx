@@ -42,7 +42,7 @@ export function AppShell({
   moderator = false,
   admin = false,
   waysIn = true,
-  header = true,
+  bare = false,
   children,
 }: {
   me?: ShellMe | undefined;
@@ -55,8 +55,8 @@ export function AppShell({
   admin?: boolean;
   /** Signed out: offer Step Inside / Stake a Claim in the top bar. Off on the sign-in pages: just the logo, centred. */
   waysIn?: boolean;
-  /** Signed out only: false drops the top bar (the page shows its own logo). Signed in, the bar always shows. */
-  header?: boolean;
+  /** Signed out only: no top bar and no site footer (the page carries its own logo and links). Ignored signed in. */
+  bare?: boolean;
   children: ReactNode;
 }) {
   const logoOnly = !me && !waysIn;
@@ -82,7 +82,7 @@ export function AppShell({
       <header
         className={cn(
           'sticky top-0 z-30 border-b border-border/60 bg-background/90 backdrop-blur',
-          !me && !header && 'hidden',
+          !me && bare && 'hidden',
         )}
       >
         <div
@@ -160,7 +160,7 @@ export function AppShell({
         {/* Room for the phone tab bar and its raised Nail button (and the safe-area inset under it); signed in only. */}
         <div className={cn('min-w-0 flex-1', me && 'pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-8')}>
           {children}
-          <SiteFooter />
+          {(me || !bare) && <SiteFooter />}
         </div>
       </div>
       {me && <ShellBottomNav items={items} me={me} />}

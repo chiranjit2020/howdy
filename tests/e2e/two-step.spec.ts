@@ -95,9 +95,9 @@ test.describe('Two-step sign-in (production build, real CSP)', () => {
     // Signed out: the password alone is no longer enough...
     await ctx.clearCookies();
     await page.goto('/step-inside');
-    await page.getByLabel('Handle or email').fill(me.email);
-    await page.getByLabel('Password').fill(me.password);
-    await page.getByRole('button', { name: 'Step Inside' }).click();
+    await page.getByLabel('Email or username').fill(me.email);
+    await page.getByLabel('Password', { exact: true }).fill(me.password);
+    await page.getByRole('button', { name: 'Log in', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'One more step' })).toBeVisible();
     expect(await axeViolations(page)).toEqual([]);
     expect(await smallTargets(page)).toEqual([]);
@@ -108,7 +108,7 @@ test.describe('Two-step sign-in (production build, real CSP)', () => {
     await ctx.clearCookies();
     await page.goto('/step-inside');
     await pageReady(page);
-    await page.getByRole('button', { name: 'Sign in with a passkey' }).click();
+    await page.getByRole('button', { name: 'Log in with a passkey' }).click();
     await expect(page).toHaveURL(/\/home$/);
     expect(problems).toEqual([]);
     await ctx.close();
@@ -144,25 +144,25 @@ test.describe('Two-step sign-in (production build, real CSP)', () => {
 
     await ctx.clearCookies();
     await page.goto('/step-inside');
-    await page.getByLabel('Handle or email').fill(me.email);
-    await page.getByLabel('Password').fill(me.password);
-    await page.getByRole('button', { name: 'Step Inside' }).click();
+    await page.getByLabel('Email or username').fill(me.email);
+    await page.getByLabel('Password', { exact: true }).fill(me.password);
+    await page.getByRole('button', { name: 'Log in', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'One more step' })).toBeVisible();
     // The code that linked the app is spent: the next one works.
     await page.getByLabel('Code').fill(totpCode(key));
-    await page.getByRole('button', { name: 'Step Inside' }).click();
+    await page.getByRole('button', { name: 'Log in', exact: true }).click();
     await expect(page.locator('main [role="alert"]')).toContainText('That code isn’t right');
     await page.getByLabel('Code').fill(totpCode(key, Date.now() + 30_000));
-    await page.getByRole('button', { name: 'Step Inside' }).click();
+    await page.getByRole('button', { name: 'Log in', exact: true }).click();
     await expect(page).toHaveURL(/\/home$/);
 
     await ctx.clearCookies();
     await page.goto('/step-inside');
-    await page.getByLabel('Handle or email').fill(me.handle);
-    await page.getByLabel('Password').fill(me.password);
-    await page.getByRole('button', { name: 'Step Inside' }).click();
+    await page.getByLabel('Email or username').fill(me.handle);
+    await page.getByLabel('Password', { exact: true }).fill(me.password);
+    await page.getByRole('button', { name: 'Log in', exact: true }).click();
     await page.getByLabel('Code').fill(codes[0]!.toUpperCase());
-    await page.getByRole('button', { name: 'Step Inside' }).click();
+    await page.getByRole('button', { name: 'Log in', exact: true }).click();
     await expect(page).toHaveURL(/\/home$/);
 
     await page.goto('/workshop');

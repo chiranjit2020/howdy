@@ -21,14 +21,14 @@ import { AppShell } from '@/ui/shell/app-shell';
 export async function AppFrame({
   children,
   waysIn = true,
-  header = true,
+  bare = false,
   askToAgree = true,
 }: {
   children: ReactNode;
   /** Signed out: show the Step Inside / Stake a Claim buttons in the top bar. The sign-in pages turn them off. */
   waysIn?: boolean;
-  /** Signed out: draw the top bar at all. Log in and Create account carry the logo in their card instead. */
-  header?: boolean;
+  /** Signed out: no top bar and no site footer. Log in and Create account carry their own logo and links. */
+  bare?: boolean;
   /**
    * Send a signed-in person who has not agreed to the current Terms / Privacy Policy to `/agree` first. Off for the
    * legal pages themselves (they must be readable before agreeing) and for `/agree`.
@@ -40,7 +40,7 @@ export async function AppFrame({
     return (
       <>
         <PwaBoot signedIn={false} />
-        <AppShell waysIn={waysIn} header={header}>
+        <AppShell waysIn={waysIn} bare={bare}>
           {children}
         </AppShell>
       </>

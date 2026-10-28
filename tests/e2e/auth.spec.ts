@@ -102,10 +102,13 @@ test.describe('authentication journey (production build, real CSP, real cookies)
     const page = await ctx.newPage();
     await page.goto('/stake-a-claim');
     await page.getByRole('button', { name: 'Create account' }).click();
-    await expect(page.getByLabel('Username')).toBeFocused();
+    // Email comes first on the form, so it is where you land.
+    await expect(page.getByLabel('Email address')).toBeFocused();
     await expect(page.getByLabel('Username')).toHaveAttribute('aria-invalid', 'true');
-    await page.getByLabel('Username').fill('admin');
     await page.getByLabel('Email address').fill('x@example.com');
+    // The username is suggested from the email until you type your own.
+    await expect(page.getByLabel('Username')).toHaveValue('x_howdy');
+    await page.getByLabel('Username').fill('admin');
     await page.getByLabel('Password', { exact: true }).fill('short');
     await page.getByRole('button', { name: 'Create account' }).click();
     await expect(page.getByText('That username is reserved.')).toBeVisible();
@@ -444,12 +447,12 @@ test.describe('signed-out pages: accessibility and layout in a real browser', ()
     const page = await ctx.newPage();
     const problems = await watchProblems(page);
     await page.goto('/step-inside');
-    await expect(page.getByLabel('Handle or email')).toBeVisible();
+    await expect(page.getByLabel('Email or username')).toBeVisible();
 
     await page.getByRole('link', { name: 'Create account', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Create your account' })).toBeVisible();
     await expect(page.getByLabel('Username')).toBeVisible();
-    await expect(page.getByLabel('Handle or email')).toHaveCount(0);
+    await expect(page.getByLabel('Email or username')).toHaveCount(0);
     await expect(page).toHaveURL(/\/stake-a-claim$/);
     await expect(page).toHaveTitle(/^Create account/);
 
@@ -462,7 +465,7 @@ test.describe('signed-out pages: accessibility and layout in a real browser', ()
     await expect(password).toHaveAttribute('type', 'password');
 
     await page.getByRole('link', { name: 'Log in', exact: true }).click();
-    await expect(page.getByLabel('Handle or email')).toBeVisible();
+    await expect(page.getByLabel('Email or username')).toBeVisible();
     await expect(page).toHaveURL(/\/step-inside$/);
 
     // A refresh opens the form the address names.

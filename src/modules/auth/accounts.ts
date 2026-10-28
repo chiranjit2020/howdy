@@ -68,6 +68,17 @@ async function issueEmailToken(
 // ─── Sign up ─────────────────────────────────────────────────────────────────
 
 /**
+ * Can this username be claimed right now? Asked while someone types on Create account, so they find out before they
+ * submit. Same answer as sign-up gives: taken, or held back after a deletion (ADR-027), both read as "taken". Handles
+ * are public, so this says nothing a profile page does not; emails are never checked here.
+ */
+export async function handleAvailable(handle: string, ctx: RequestContext): Promise<boolean> {
+  await enforceRateLimit(`auth:handle-check:ip:${ctx.ip}`, RATE.handleCheckIp);
+  const [taken] = await getDb().select({ id: users.id }).from(users).where(eq(users.handle, handle)).limit(1);
+  return !taken && !(await isHandleHeld(handle));
+}
+
+/**
  * Create an account. The response never reveals whether the EMAIL is already registered: the caller always sees
  * success, and a registered address instead receives an "already have an account" email. (Handles are public
  * identifiers, so "handle taken" is reported normally.) Password hashing always runs first so timing does not
@@ -298,7 +309,8 @@ export async function resetPassword(
 
 export interface LoginResult {
   token: string;
-  maxAgeSec: number;
+  /** Absent: a browser-session cookie ("Remember this device" was unticked). */
+  maxAgeSec: number | undefined;
   user: { id: string; handle: string };
 }
 
@@ -308,7 +320,12 @@ export type SignInProof =
   /** A ticket from a sign-in that was complete but could not open a session (suspended / closing). */
   | { ticket: string };
 
-type SessionCtx = RequestContext & { userAgent?: string | null; previousToken?: string | undefined };
+type SessionCtx = RequestContext & {
+  userAgent?: string | null;
+  previousToken?: string | undefined;
+  /** "Remember this device": a 30-day session (the default) or one that ends with the browser. */
+  remember?: boolean | undefined;
+};
 
 /**
  * Verify credentials and open a session. Unknown account and wrong password are indistinguishable (same error, same
@@ -359,7 +376,7 @@ async function finishSignIn(row: ProvenAccount, method: string, ctx: SessionCtx)
   if (!row.emailVerifiedAt) throw new AppError('EMAIL_NOT_VERIFIED');
 
   if (ctx.previousToken) await revokeSessionByToken(ctx.previousToken);
-  const session = await createSession(row.id, ctx.userAgent);
+  const session = await createSession(row.id, ctx.userAgent, undefined, { remember: ctx.remember });
   await audit('login_success', { userId: row.id, requestId: ctx.requestId, meta: { method } });
   return { token: session.token, maxAgeSec: session.maxAgeSec, user: { id: row.id, handle: row.handle } };
 }

@@ -172,9 +172,9 @@ export async function confirmEmailVia(page: Page, email: string) {
 
 export async function stepInsideVia(page: Page, identifier: string, password: string) {
   await page.goto('/step-inside');
-  await page.getByLabel('Handle or email').fill(identifier);
+  await page.getByLabel('Email or username').fill(identifier);
   await page.getByLabel('Password', { exact: true }).fill(password);
-  await page.getByRole('button', { name: 'Step Inside' }).click();
+  await page.getByRole('button', { name: 'Log in', exact: true }).click();
 }
 
 /**

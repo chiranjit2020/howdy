@@ -1,12 +1,13 @@
 'use client';
 
 import { useRef, useState, type FormEvent } from 'react';
-import { PASSWORD_MIN, emailSchema, signUpSchema } from '@/shared/validation/auth';
+import { emailSchema, signUpSchema } from '@/shared/validation/auth';
 import { LIMITS } from '@/shared/limits';
 import { postJson } from '@/ui/auth/api';
 import { FormMessage, focusFirstInvalid } from '@/ui/auth/form-parts';
 import { TermsCheckbox } from '@/ui/auth/terms-checkbox';
 import { Button, Input, PasswordInput } from '@/ui/primitives';
+import { PasswordChecklist, suggestHandle, useHandleStatus } from './signup-aids';
 
 type Fields = { handle: string; displayName: string; email: string; password: string };
 type Errors = Partial<Fields & { acceptTerms: string }>;
@@ -22,8 +23,18 @@ export function ClaimForm({ invite }: { invite?: { code: string; invitedBy: stri
   const [sentTo, setSentTo] = useState<string | undefined>();
   const [resent, setResent] = useState(false);
 
+  // The username follows the email (suggestHandle) until the person types one of their own.
+  const [handleEdited, setHandleEdited] = useState(false);
+  const handleStatus = useHandleStatus(values.handle);
+
   const set = (k: keyof Fields) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setValues((v) => ({ ...v, [k]: e.target.value }));
+  const onHandleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setHandleEdited(value !== '');
+    setValues((v) => ({ ...v, handle: value }));
+    if (errors.handle) setErrors(({ handle: _fixed, ...rest }) => rest);
+  };
 
   // The email is checked as soon as you leave the box (not only on submit), with the same rule the server uses; once
   // an error is showing, it clears the moment the address is fixed. Nothing typed is ever cleared.
@@ -36,9 +47,24 @@ export function ClaimForm({ invite }: { invite?: { code: string; invitedBy: stri
   };
   const onEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    setValues((v) => ({ ...v, email: value }));
+    setValues((v) => ({ ...v, email: value, ...(handleEdited ? {} : { handle: suggestHandle(value) }) }));
     if (errors.email && !emailError(value)) setErrors(({ email: _fixed, ...rest }) => rest);
   };
+
+  // What the username box says under itself: the live check, unless submitting already put an error there.
+  const handleError =
+    errors.handle ??
+    (handleStatus.state === 'taken'
+      ? 'That username is taken.'
+      : handleStatus.state === 'invalid' && handleEdited
+        ? handleStatus.message
+        : undefined);
+  const handleHint =
+    handleStatus.state === 'checking'
+      ? 'Checking…'
+      : handleStatus.state === 'available'
+        ? `@${values.handle.trim().toLowerCase()} is available.`
+        : `${LIMITS.HANDLE_MIN}–${LIMITS.HANDLE_MAX} characters: letters, numbers and underscores.`;
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -123,6 +149,19 @@ export function ClaimForm({ invite }: { invite?: { code: string; invitedBy: stri
           {formError}
         </FormMessage>
       )}
+      {/* Email first: the username is suggested from it, so most people only type an email and a password. */}
+      <Input
+        label="Email address"
+        name="email"
+        type="email"
+        autoComplete="email"
+        inputMode="email"
+        placeholder="you@example.com"
+        value={values.email}
+        onChange={onEmailChange}
+        onBlur={checkEmail}
+        error={errors.email}
+      />
       <Input
         label="Username"
         name="handle"
@@ -132,9 +171,18 @@ export function ClaimForm({ invite }: { invite?: { code: string; invitedBy: stri
         spellCheck={false}
         maxLength={LIMITS.HANDLE_MAX}
         value={values.handle}
-        onChange={set('handle')}
-        error={errors.handle}
-        hint={`${LIMITS.HANDLE_MIN}–${LIMITS.HANDLE_MAX} characters: letters, numbers and underscores.`}
+        onChange={onHandleChange}
+        error={handleError}
+        hint={handleError ? undefined : handleHint}
+      />
+      <PasswordInput
+        label="Password"
+        name="password"
+        autoComplete="new-password"
+        value={values.password}
+        onChange={set('password')}
+        error={errors.password}
+        hint={<PasswordChecklist password={values.password} email={values.email} handle={values.handle} />}
       />
       <Input
         label="Display name (optional)"
@@ -144,26 +192,6 @@ export function ClaimForm({ invite }: { invite?: { code: string; invitedBy: stri
         onChange={set('displayName')}
         error={errors.displayName}
         hint="Shown on your profile. Leave blank to use your username."
-      />
-      <Input
-        label="Email address"
-        name="email"
-        type="email"
-        autoComplete="email"
-        inputMode="email"
-        value={values.email}
-        onChange={onEmailChange}
-        onBlur={checkEmail}
-        error={errors.email}
-      />
-      <PasswordInput
-        label="Password"
-        name="password"
-        autoComplete="new-password"
-        value={values.password}
-        onChange={set('password')}
-        error={errors.password}
-        hint={`At least ${PASSWORD_MIN} characters. Avoid common passwords and your email or username.`}
       />
       <TermsCheckbox
         checked={acceptTerms}

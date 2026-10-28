@@ -133,15 +133,15 @@ export const handleSchema = z
   .max(LIMITS.HANDLE_MAX, `At most ${LIMITS.HANDLE_MAX} characters.`)
   .refine((h) => !RESERVED_HANDLES.has(h), 'That username is reserved.');
 
+/** On the small list of the most common passwords (the live checklist on Create account uses it too). */
+export const isCommonPassword = (p: string): boolean => COMMON_PASSWORDS.has(p.toLowerCase());
+
 /** Password rules independent of who is signing up. */
 export const passwordSchema = z
   .string()
   .min(PASSWORD_MIN, `Use at least ${PASSWORD_MIN} characters.`)
   .max(PASSWORD_MAX, `Use at most ${PASSWORD_MAX} characters.`)
-  .refine(
-    (p) => !COMMON_PASSWORDS.has(p.toLowerCase()),
-    'That password is too common. Pick something less guessable.',
-  );
+  .refine((p) => !isCommonPassword(p), 'That password is too common. Pick something less guessable.');
 
 /** Extra check that needs the account context: the password must not just be the email or handle. */
 export function passwordMatchesIdentity(password: string, email: string, handle?: string): boolean {
@@ -154,7 +154,7 @@ export function passwordMatchesIdentity(password: string, email: string, handle?
   );
 }
 
-export const IDENTITY_PASSWORD_MESSAGE = 'Your password should not contain your email or handle.';
+export const IDENTITY_PASSWORD_MESSAGE = 'Your password should not contain your email or username.';
 export const ACCEPT_TERMS_MESSAGE =
   'Please confirm you are 18 or older and agree to the Terms and Privacy Policy.';
 
@@ -179,16 +179,19 @@ export const signUpSchema = z
     }
   });
 
+/** "Is this username free?" on Create account: the same rules as signing up, so a bad one never reaches the database. */
+export const handleCheckSchema = z.object({ handle: handleSchema });
+
 /** Login accepts an email or a handle. Deliberately loose: never tell the client which part was wrong. */
 export const loginSchema = z.object({
   identifier: z
     .string()
     .trim()
     .toLowerCase()
-    .min(1, 'Enter your handle or email.')
+    .min(1, 'Enter your email or username.')
     .max(254)
     // Control characters (notably NUL, which Postgres refuses in text) can never be part of a real identifier.
-    .refine((s) => !/[\u0000-\u001f\u007f]/.test(s), 'Enter your handle or email.'),
+    .refine((s) => !/[\u0000-\u001f\u007f]/.test(s), 'Enter your email or username.'),
   password: z.string().min(1, 'Enter your password.').max(PASSWORD_MAX),
 });
 
@@ -228,10 +231,13 @@ export const secondStepCodeSchema = z
 /** `<user id>.<expires ms>.<mac>` — see factor-crypto.ts. */
 export const ticketSchema = z.string().regex(/^[0-9a-f-]{36}\.\d{13}\.[A-Za-z0-9_-]{43}$/);
 
+/** "Remember this device" on the sign-in page. Left out, the device is remembered (as before the box existed). */
+const rememberSchema = z.boolean().optional();
+
 /** Sign in, keep or close from the sign-in page: password (+ code when two-step is on), or a ticket. */
 export const signInProofSchema = z.union([
-  z.strictObject({ ticket: ticketSchema }),
-  loginSchema.extend({ code: secondStepCodeSchema.optional() }),
+  z.strictObject({ ticket: ticketSchema, remember: rememberSchema }),
+  loginSchema.extend({ code: secondStepCodeSchema.optional(), remember: rememberSchema }),
 ]);
 
 export const appealProofSchema = z.union([
@@ -284,6 +290,7 @@ export const passkeyRegistrationSchema = z.object({
 
 export const passkeySignInSchema = z.object({
   challengeId: z.uuid(),
+  remember: rememberSchema,
   response: z.object({
     ...credentialBase,
     response: z.object({

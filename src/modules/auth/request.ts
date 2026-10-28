@@ -10,10 +10,13 @@ export function sessionTokenFrom(headers: Headers): string | undefined {
   return parseCookies(headers.get('cookie')).get(sessionCookieName());
 }
 
-/** The session cookie: HttpOnly (no JS access), Secure + __Host- prefix on https, SameSite=Lax, site-wide path. */
-export function sessionCookie(token: string, maxAgeSec: number): string {
+/**
+ * The session cookie: HttpOnly (no JS access), Secure + __Host- prefix on https, SameSite=Lax, site-wide path. Without
+ * `maxAgeSec` it is a browser-session cookie (the device was not remembered).
+ */
+export function sessionCookie(token: string, maxAgeSec: number | undefined): string {
   return serializeCookie(sessionCookieName(), token, {
-    maxAgeSec,
+    ...(maxAgeSec === undefined ? {} : { maxAgeSec }),
     httpOnly: true,
     secure: isSecureDeployment(),
     sameSite: 'Lax',

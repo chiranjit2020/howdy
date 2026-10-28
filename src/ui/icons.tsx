@@ -78,6 +78,9 @@ export const EyeOffIcon = (p: IconProps) => (
     {...p}
   />
 );
+export const KeyIcon = (p: IconProps) => (
+  <Svg d="M15.5 7.5a3.5 3.5 0 1 1-3.4 4.3L4 20M7 17l2 2M9 15l2 2" {...p} />
+);
 export const PlusIcon = (p: IconProps) => <Svg d="M12 5v14M5 12h14" {...p} />;
 export const PauseIcon = (p: IconProps) => <Svg d="M9 5v14M15 5v14" strokeWidth="2.5" {...p} />;
 export const PlayIcon = (p: IconProps) => <Svg d="M8 5l11 7-11 7z" {...p} />;

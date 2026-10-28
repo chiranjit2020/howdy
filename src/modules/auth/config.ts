@@ -6,7 +6,10 @@ const HOUR = 60 * MIN;
 const DAY = 24 * HOUR;
 
 export const SESSION_IDLE_MS = 14 * DAY;
-export const SESSION_ABSOLUTE_MS = 60 * DAY;
+/** "Remember this device" (the default): a persistent cookie, and the session ends after this however busy it is. */
+export const SESSION_ABSOLUTE_MS = 30 * DAY;
+/** Not remembered: the cookie ends with the browser, and the server forgets the session after this regardless. */
+export const SESSION_BROWSER_MS = DAY;
 /** last_seen / idle expiry are refreshed at most this often, so a busy user does not cause a write per request. */
 export const SESSION_TOUCH_INTERVAL_MS = 5 * MIN;
 
@@ -22,6 +25,11 @@ const rule = (limit: number, windowSec: number): RateLimitRule => ({ limit, wind
 export const RATE = {
   signupIp: rule(10, 3600),
   signupEmail: rule(5, 3600),
+  /**
+   * "Is this username free?" while someone types on Create account. Usernames are public (every profile has one), so
+   * this reveals nothing new; the limit only stops it being used to crawl the whole namespace quickly.
+   */
+  handleCheckIp: rule(120, 900),
   loginIp: rule(30, 900),
   loginIdentifier: rule(10, 900),
   forgotIp: rule(10, 3600),

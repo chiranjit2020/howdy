@@ -2,7 +2,12 @@ import { sessions, users } from '@db/schema';
 import { and, desc, eq, gt, isNull, ne } from 'drizzle-orm';
 import { getDb } from '@/platform/db';
 import { hashToken, newToken } from './crypto';
-import { SESSION_ABSOLUTE_MS, SESSION_IDLE_MS, SESSION_TOUCH_INTERVAL_MS } from './config';
+import {
+  SESSION_ABSOLUTE_MS,
+  SESSION_BROWSER_MS,
+  SESSION_IDLE_MS,
+  SESSION_TOUCH_INTERVAL_MS,
+} from './config';
 
 export interface SessionUser {
   id: string;
@@ -53,14 +58,20 @@ export function deviceLabel(userAgent: string | null | undefined): string {
   return browser ?? os ?? 'Unknown device';
 }
 
-/** Create a session and return the secret token (to be set as a cookie once; it cannot be recovered later). */
+/**
+ * Create a session and return the secret token (to be set as a cookie once; it cannot be recovered later).
+ * `remember: false` ("Remember this device" unticked) gives a short session and no `maxAgeSec`, so the cookie is a
+ * browser-session cookie that ends when the browser closes.
+ */
 export async function createSession(
   userId: string,
   userAgent: string | null | undefined,
   now: Date = new Date(),
-): Promise<{ token: string; sessionId: string; maxAgeSec: number }> {
+  { remember = true }: { remember?: boolean | undefined } = {},
+): Promise<{ token: string; sessionId: string; maxAgeSec: number | undefined }> {
   const { token, hash } = newToken();
-  const absolute = new Date(now.getTime() + SESSION_ABSOLUTE_MS);
+  const lifetime = remember ? SESSION_ABSOLUTE_MS : SESSION_BROWSER_MS;
+  const absolute = new Date(now.getTime() + lifetime);
   const idle = new Date(Math.min(now.getTime() + SESSION_IDLE_MS, absolute.getTime()));
   const [row] = await getDb()
     .insert(sessions)
@@ -73,7 +84,7 @@ export async function createSession(
       absoluteExpiresAt: absolute,
     })
     .returning({ id: sessions.id });
-  return { token, sessionId: row!.id, maxAgeSec: Math.floor(SESSION_ABSOLUTE_MS / 1000) };
+  return { token, sessionId: row!.id, maxAgeSec: remember ? Math.floor(lifetime / 1000) : undefined };
 }
 
 /**

@@ -1,6 +1,6 @@
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { authHandlers } from '@/modules/auth';
-import { SESSION_ABSOLUTE_MS, SESSION_IDLE_MS } from '@/modules/auth/config';
+import { SESSION_ABSOLUTE_MS, SESSION_BROWSER_MS, SESSION_IDLE_MS } from '@/modules/auth/config';
 import { getPool } from '@/platform/db';
 import {
   call,
@@ -64,7 +64,7 @@ describe('session lifetime is enforced on the server', () => {
     expect(c!.idleExpiresAt.getTime()).toBeLessThanOrEqual(c!.absoluteExpiresAt.getTime());
   });
 
-  it('a fresh session gets the documented limits (14 day idle, 60 day absolute)', async () => {
+  it('a fresh session gets the documented limits (14 day idle, 30 day absolute)', async () => {
     const u = await signedInUser(kit);
     const [s] = await sessionRows((await userByEmail(u.email))!.id);
     expect(Math.abs(s!.idleExpiresAt.getTime() - s!.createdAt.getTime() - SESSION_IDLE_MS)).toBeLessThan(
@@ -73,6 +73,35 @@ describe('session lifetime is enforced on the server', () => {
     expect(
       Math.abs(s!.absoluteExpiresAt.getTime() - s!.createdAt.getTime() - SESSION_ABSOLUTE_MS),
     ).toBeLessThan(5_000);
+  });
+
+  it('"Remember this device" unticked: a browser-session cookie, and the server forgets it within a day', async () => {
+    const u = uniqueUser();
+    await verifiedUser(kit, u);
+    const r = await call(authHandlers.login, 'POST', '/api/auth/login', {
+      identifier: u.email,
+      password: u.password,
+      remember: false,
+    });
+    expect(r.res.status).toBe(200);
+    const raw = r.res.headers.getSetCookie().find((c) => c.startsWith(cookieFrom(r.res)!.split('=')[0]!))!;
+    expect(raw).not.toMatch(/Max-Age/i);
+    const [s] = await sessionRows((await userByEmail(u.email))!.id);
+    expect(
+      Math.abs(s!.absoluteExpiresAt.getTime() - s!.createdAt.getTime() - SESSION_BROWSER_MS),
+    ).toBeLessThan(5_000);
+  });
+
+  it('ticked (or left out), the cookie lasts as long as the session', async () => {
+    const u = uniqueUser();
+    await verifiedUser(kit, u);
+    const r = await call(authHandlers.login, 'POST', '/api/auth/login', {
+      identifier: u.email,
+      password: u.password,
+      remember: true,
+    });
+    const raw = r.res.headers.getSetCookie().find((c) => c.startsWith(cookieFrom(r.res)!.split('=')[0]!))!;
+    expect(raw).toContain(`Max-Age=${SESSION_ABSOLUTE_MS / 1000}`);
   });
 
   it('a revoked session is dead even though its cookie is otherwise valid', async () => {
