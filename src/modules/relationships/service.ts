@@ -1,5 +1,5 @@
 import { posseLinks, scouts, userControls } from '@db/schema';
-import { and, count, desc, eq, inArray, or } from 'drizzle-orm';
+import { and, count, desc, eq, inArray, ne, or } from 'drizzle-orm';
 import { can } from '@/modules/authz';
 import { enforceNewAccountLimit } from '@/modules/moderation';
 import { getDb } from '@/platform/db';
@@ -228,6 +228,44 @@ export async function limitedAmong(ownerId: string, actorIds: string[]): Promise
  * Of `otherIds`, who is `userId` currently in each other's Posse with AND not in a block with (either direction)? Those are the
  * people a Whisper thread is still open with. Two queries for the whole list.
  */
+/**
+ * Everyone `userId` is friends with (accepted both ways), at most `max`, newest friendships first. Only who the
+ * friends are: whether one may read another's wall is still decided wall by wall (Home's feed asks canFence for each).
+ */
+export async function friendIdsOf(userId: string, max = 500): Promise<string[]> {
+  const rows = await getDb()
+    .select({ low: posseLinks.userLow, high: posseLinks.userHigh })
+    .from(posseLinks)
+    .where(
+      and(
+        eq(posseLinks.status, 'accepted'),
+        or(eq(posseLinks.userLow, userId), eq(posseLinks.userHigh, userId)),
+      ),
+    )
+    .orderBy(desc(posseLinks.createdAt))
+    .limit(max);
+  return rows.map((r) => (r.low === userId ? r.high : r.low));
+}
+
+/**
+ * Who has asked to be `userId`'s friend and is still waiting for an answer (at most `max`): the same requests the Friends
+ * page lists under "Requests for you". The caller drops accounts that are no longer active, as that page does.
+ */
+export async function incomingRequesterIds(userId: string, max = 100): Promise<string[]> {
+  const rows = await getDb()
+    .select({ low: posseLinks.userLow, high: posseLinks.userHigh })
+    .from(posseLinks)
+    .where(
+      and(
+        eq(posseLinks.status, 'requested'),
+        ne(posseLinks.requestedBy, userId),
+        or(eq(posseLinks.userLow, userId), eq(posseLinks.userHigh, userId)),
+      ),
+    )
+    .limit(max);
+  return rows.map((r) => (r.low === userId ? r.high : r.low));
+}
+
 export async function posseMembersAmong(userId: string, otherIds: string[]): Promise<Set<string>> {
   const ids = [...new Set(otherIds)].filter((id) => id !== userId);
   if (ids.length === 0) return new Set();

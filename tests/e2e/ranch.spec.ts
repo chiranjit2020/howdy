@@ -38,7 +38,11 @@ test.describe('Ranch, Signal and Settings (production build, real CSP)', () => {
     const a = await person(browser, 'tender');
     const problems = await watchProblems(a.page);
 
-    await a.page.getByRole('link', { name: 'Visit your profile' }).click();
+    await a.page
+      .getByRole('navigation', { name: 'Primary' })
+      .first()
+      .getByRole('link', { name: 'My profile' })
+      .click();
     await expect(a.page).toHaveURL(new RegExp(`/profile/${a.handle}$`));
     await expect(a.page.getByRole('heading', { level: 1, name: a.handle })).toBeVisible(); // display name defaults to the handle
 

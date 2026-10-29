@@ -15,6 +15,7 @@ export function Fence({
   onLoadMore,
   loadingMore,
   emptyHint = 'The wall is quiet. Write the first post.',
+  title = 'The wall',
 }: {
   children?: ReactNode;
   composer?: ReactNode;
@@ -22,6 +23,8 @@ export function Fence({
   onLoadMore?: () => void;
   loadingMore?: boolean;
   emptyHint?: string;
+  /** The list's heading. A wall says "The wall" (with its glossary hint); Home's feed says what it is. */
+  title?: string;
 }) {
   const headingId = useId();
   const cards = Children.toArray(children);
@@ -29,9 +32,9 @@ export function Fence({
     <section aria-labelledby={headingId} className="flex flex-col gap-4">
       <div className="flex items-center">
         <h2 id={headingId} className="font-display text-heading text-text-primary">
-          The wall
+          {title}
         </h2>
-        <GlossaryHint term="fence" />
+        {title === 'The wall' && <GlossaryHint term="fence" />}
       </div>
       {composer}
       {cards.length === 0 ? (

@@ -2,7 +2,7 @@
 
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
-import type { CardView, FencePage, ReplyView } from '@/modules/fence';
+import type { AuthorRef, CardView, FencePage, ReplyView } from '@/modules/fence';
 import type { ReactionKind } from '@/shared/validation/fence';
 import { apiRequest, postJson } from '@/ui/auth/api';
 import { FormMessage } from '@/ui/auth/form-parts';
@@ -16,27 +16,29 @@ type WireReply = Omit<ReplyView, 'createdAt'> & { createdAt: Date | string };
 type WireCard = Omit<CardView, 'createdAt' | 'replies'> & {
   createdAt: Date | string;
   replies: WireReply[];
+  /** Home's feed only: whose wall the card is on. */
+  wall?: AuthorRef;
 };
 export type InitialFence = Omit<FencePage, 'cards'> & { cards: WireCard[] };
 
 type Removal = { kind: 'card' | 'reply'; id: string };
 
+/** One person's wall (their profile), or Home's feed of the walls of your friends. */
+type Source = { handle: string; ownerName: string } | { feed: true };
+
 /**
- * The Fence on a Ranch. Everything here is a request for the server to decide: the buttons that show are hints from the
- * server (`canPost`, `canYo`, `canReply`, `canRemove`), and every action is re-checked there. Cards a person may not see
- * are never sent, so nothing is hidden by CSS.
+ * The cards of a Fence on a Ranch, or of Home's feed. Everything here is a request for the server to decide: the buttons
+ * that show are hints from the server (`canPost`, `canYo`, `canReply`, `canRemove`), and every action is re-checked
+ * there. Cards a person may not see are never sent, so nothing is hidden by CSS.
  */
 export function FenceSection({
-  handle,
-  ownerName,
   initial,
   signedIn,
-}: {
-  handle: string;
-  ownerName: string;
-  initial: InitialFence;
-  signedIn: boolean;
-}) {
+  ...source
+}: Source & { initial: InitialFence; signedIn: boolean }) {
+  const feed = 'feed' in source;
+  const handle = feed ? '' : source.handle;
+  const ownerName = feed ? '' : source.ownerName;
   const toast = useToast();
   const composerRef = useRef<HTMLDivElement>(null);
   // The tab bar's "Nail" button opens your Porch with ?nail=1: bring the composer into view and put the cursor in it.
@@ -133,7 +135,10 @@ export function FenceSection({
   async function loadMore() {
     if (!next) return;
     setLoadingMore(true);
-    const res = await apiRequest<InitialFence>('GET', `/api/porch/${handle}/fence?cursor=${next}`);
+    const res = await apiRequest<InitialFence>(
+      'GET',
+      feed ? `/api/feed?cursor=${next}` : `/api/porch/${handle}/fence?cursor=${next}`,
+    );
     setLoadingMore(false);
     if (res.ok && res.data) {
       const more = res.data.cards;
@@ -148,7 +153,8 @@ export function FenceSection({
         ? [
             {
               id: 'remove',
-              label: initial.isOwner ? 'Scrape clean' : 'Take it back',
+              // Your own words: take them back. Someone else's on your wall: clear them off it.
+              label: c.mine ? 'Take it back' : 'Scrape clean',
               danger: true,
               onSelect: () => setRemoval({ kind: 'card', id: c.id }),
             },
@@ -192,12 +198,17 @@ export function FenceSection({
   return (
     <>
       <Fence
-        composer={composer}
+        composer={feed ? undefined : composer}
         hasMore={next !== null}
         onLoadMore={loadMore}
         loadingMore={loadingMore}
+        {...(feed ? { title: 'Friends’ posts' } : {})}
         emptyHint={
-          initial.canPost ? 'The wall is quiet. Write the first post.' : 'The wall is quiet for now.'
+          feed
+            ? 'Nothing from your friends yet. Write on a friend’s wall to get things going.'
+            : initial.canPost
+              ? 'The wall is quiet. Write the first post.'
+              : 'The wall is quiet for now.'
         }
       >
         {cards.map((c) => (
@@ -254,6 +265,10 @@ export function FenceSection({
               : {})}
             actions={cardMenu(c)}
             photo={c.photo}
+            // In the feed, say whose wall it is on, unless they wrote it on their own.
+            {...(c.wall && c.wall.handle !== c.author.handle
+              ? { wall: { name: c.wall.displayName, handle: c.wall.handle } }
+              : {})}
           />
         ))}
       </Fence>

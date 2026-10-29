@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent, type ReactNode } from 'react';
 import { LIMITS } from '@/shared/limits';
 import type { ReactionKind } from '@/shared/validation/fence';
@@ -244,6 +245,8 @@ export interface PostCardProps {
   photo?: { url: string; width: number; height: number } | null;
   /** What it is called to a screen reader ("Post Card from …"); a Town Hall post says "Post". */
   noun?: string;
+  /** Whose wall it is on, when that is not plain from the page (Home's feed): "on Priya's wall", linked. */
+  wall?: { name: string; handle: string };
 }
 
 /**
@@ -268,6 +271,7 @@ export function PostCard({
   actions,
   photo,
   noun = 'Post',
+  wall,
 }: PostCardProps) {
   const [flipped, setFlipped] = useState(false);
   const [hasFlipped, setHasFlipped] = useState(false); // no animation / focus move on first paint
@@ -318,6 +322,15 @@ export function PostCard({
               </p>
               <p className="text-metadata [overflow-wrap:anywhere] text-text-muted">
                 @{author.handle} · <RelativeTime date={createdAt} />
+                {wall && (
+                  <>
+                    {' · on '}
+                    <Link href={`/profile/${wall.handle}`} className="font-semibold text-text-secondary">
+                      {wall.name}
+                    </Link>
+                    ’s wall
+                  </>
+                )}
               </p>
             </div>
             {stamp && (

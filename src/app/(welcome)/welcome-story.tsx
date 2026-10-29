@@ -23,7 +23,7 @@ const FEATURES: { art: ArtName; name: string; text: string }[] = [
   {
     art: 'nav-nail',
     name: 'Posts',
-    text: 'Write a short post (and add a photo) on a friend’s wall. React with a Wave, Laugh, Fire, Popcorn or Love.',
+    text: 'Write a short post (and add a photo) on a friend’s wall, and see your friends’ posts on Home, newest first. React with a Wave, Laugh, Fire, Popcorn or Love.',
   },
   {
     art: 'camera',

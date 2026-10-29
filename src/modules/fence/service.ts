@@ -2,8 +2,14 @@ import { cardReplies, media, postCards, yos } from '@db/schema';
 import { and, asc, count, desc, eq, gt, inArray, isNull, lt, or, sql } from 'drizzle-orm';
 import { canFence, holdFor, type Actor, type FenceContext, type FenceResource } from '@/modules/authz';
 import { enforceNewAccountLimit, shouldHoldForOthers } from '@/modules/moderation';
-import { getCards, getFenceResource, resolveHandle, type PersonCard } from '@/modules/profiles';
-import { fenceStanding, hiddenAuthors } from '@/modules/relationships';
+import {
+  getCards,
+  getFenceResource,
+  getFenceResources,
+  resolveHandle,
+  type PersonCard,
+} from '@/modules/profiles';
+import { fenceStanding, fenceStandings, friendIdsOf, hiddenAuthors } from '@/modules/relationships';
 import { getDb } from '@/platform/db';
 import { AppError } from '@/platform/errors';
 import { emit } from '@/platform/events';
@@ -173,21 +179,27 @@ async function authorsFor(ids: string[]): Promise<Map<string, PersonCard>> {
   return getCards(ids);
 }
 
+/** A wall and the viewer's standing on it: everything the per-card permissions are worked out from. */
+interface Wall {
+  fence: FenceResource;
+  ctx: FenceContext;
+}
+
+/**
+ * Fill in everything a card shows (reactions, replies, photo) and what the viewer may do with it. `wallOf` gives each
+ * card's own wall: one wall for a Fence page, many for Home's feed. A card whose wall is not given is dropped.
+ */
 async function hydrate(
   viewer: Actor,
-  fence: FenceResource,
-  ctx: FenceContext,
+  wallOf: (ownerId: string) => Wall | undefined,
   rows: CardRow[],
   authors: Map<string, PersonCard>,
 ): Promise<CardView[]> {
   if (rows.length === 0) return [];
   const db = getDb();
   const viewerId = viewer.kind === 'user' ? viewer.id : null;
-  const isOwner = viewerId === fence.ownerId;
   const ids = rows.map((r) => r.id);
-
-  const canPostHere = canFence(viewer, 'fence:post', fence, ctx).allow;
-  const canReactHere = canFence(viewer, 'fence:react', fence, ctx).allow;
+  const ownerOfCard = new Map(rows.map((r) => [r.id, r.fenceOwnerId]));
 
   const [counts, mine, replyRows, photos] = await Promise.all([
     db
@@ -258,14 +270,18 @@ async function hydrate(
       author: toRef(author),
       mine: r.authorId === viewerId,
       waiting: r.authorId === viewerId && r.status === 'pending',
-      canRemove: isOwner || r.authorId === viewerId,
+      canRemove: viewerId === ownerOfCard.get(r.cardId) || r.authorId === viewerId,
     });
     repliesByCard.set(r.cardId, list);
   }
 
   return rows.flatMap((row) => {
     const author = authors.get(row.authorId);
-    if (!author) return [];
+    const wall = wallOf(row.fenceOwnerId);
+    if (!author || !wall) return [];
+    const isOwner = viewerId === row.fenceOwnerId;
+    const canPostHere = canFence(viewer, 'fence:post', wall.fence, wall.ctx).allow;
+    const canReactHere = canFence(viewer, 'fence:react', wall.fence, wall.ctx).allow;
     const published = row.status === 'published';
     return [
       {
@@ -377,7 +393,7 @@ export async function listFence(
   }
 
   return {
-    cards: await hydrate(viewer, fence, ctx, kept, keptAuthors),
+    cards: await hydrate(viewer, () => ({ fence, ctx }), kept, keptAuthors),
     nextCursor: next ? encodeCursor(next) : null,
     isOwner: viewerId === ownerId,
     canPost: canFence(viewer, 'fence:post', fence, ctx).allow,
@@ -385,6 +401,113 @@ export async function listFence(
       canFence(viewer, 'fence:post', fence, ctx).allow &&
       (viewerId === ownerId || ctx.relationship === 'POSSE' || ctx.relationship === 'CLOSE_POSSE'),
     review: fence.fenceReview && viewerId !== ownerId,
+  };
+}
+
+/** A card in Home's feed: a Fence card, plus whose wall it is on. */
+export interface FeedCardView extends CardView {
+  wall: AuthorRef;
+}
+
+export interface FeedPage {
+  cards: FeedCardView[];
+  nextCursor: string | null;
+}
+
+/**
+ * Home's feed: the newest published cards on the walls of the viewer's friends, and on the viewer's own wall. A wall is
+ * included only if the viewer may read it by exactly the rule its own page uses (canFence 'fence:read', asked for each
+ * wall; the wall settings and the viewer's standings come in two batched queries). Within those walls the same people
+ * are left out as on a Fence page: anyone the viewer muted or is in a block with, and accounts no longer active.
+ * Waiting cards never show here, not even your own (they are on the wall, marked waiting). Keyset paging like a Fence.
+ */
+export async function listFriendsFeed(
+  viewerId: string,
+  opts: { rateKey: string; cursor?: string | undefined; limit?: number | undefined },
+): Promise<FeedPage> {
+  let cursor: Cursor | null = null;
+  if (opts.cursor !== undefined) {
+    cursor = decodeCursor(opts.cursor);
+    if (!cursor) throw new AppError('BAD_REQUEST', { message: 'That page marker is not valid.' });
+  }
+  await enforceRateLimit(`fence:read:${opts.rateKey}`, RATE.readUser);
+  const limit = Math.min(Math.max(opts.limit ?? FENCE_PAGE_SIZE, 1), FENCE_MAX_PAGE_SIZE);
+  const viewer = actorOf(viewerId);
+
+  // Which walls the viewer may read: their friends' and their own, each checked like its own page checks it.
+  const owners = [viewerId, ...(await friendIdsOf(viewerId))];
+  const [fences, standings] = await Promise.all([
+    getFenceResources(owners),
+    fenceStandings(owners, viewerId),
+  ]);
+  const walls = new Map<string, Wall>();
+  for (const id of owners) {
+    const fence = fences.get(id);
+    const ctx = standings.get(id);
+    if (fence && ctx && canFence(viewer, 'fence:read', fence, ctx).allow) walls.set(id, { fence, ctx });
+  }
+  if (walls.size === 0) return { cards: [], nextCursor: null };
+  const readable = [...walls.keys()];
+
+  const kept: CardRow[] = [];
+  const keptAuthors = new Map<string, PersonCard>();
+  let next: Cursor | null = null;
+  let position = cursor;
+  for (let round = 0; round < MAX_ROUNDS && kept.length < limit; round++) {
+    const rows: CardRow[] = await getDb()
+      .select()
+      .from(postCards)
+      .where(
+        and(
+          inArray(postCards.fenceOwnerId, readable),
+          eq(postCards.status, 'published'),
+          position
+            ? sql`(${postCards.createdAt}, ${postCards.id}) < (${position.at}, ${position.id})`
+            : undefined,
+        ),
+      )
+      .orderBy(desc(postCards.createdAt), desc(postCards.id))
+      .limit(limit + 1);
+    const more = rows.length > limit;
+    const page = rows.slice(0, limit);
+    const pageAuthors = page.map((r) => r.authorId);
+    const [authors, hidden] = await Promise.all([
+      authorsFor(pageAuthors),
+      hiddenAuthors(viewerId, pageAuthors),
+    ]);
+
+    let last: CardRow | undefined;
+    let consumed = 0;
+    for (const row of page) {
+      last = row;
+      consumed++;
+      const author = authors.get(row.authorId);
+      if (author && !hidden.has(row.authorId)) {
+        kept.push(row);
+        keptAuthors.set(row.authorId, author);
+        if (kept.length === limit) break;
+      }
+    }
+    const rest = page.length - consumed > 0 || more;
+    position = last ? { at: last.createdAt, id: last.id } : position;
+    if (!rest) {
+      next = null;
+      break;
+    }
+    next = position;
+  }
+
+  const [cards, wallOwners] = await Promise.all([
+    hydrate(viewer, (ownerId) => walls.get(ownerId), kept, keptAuthors),
+    authorsFor([...new Set(kept.map((r) => r.fenceOwnerId))]),
+  ]);
+  const ownerOf = new Map(kept.map((r) => [r.id, r.fenceOwnerId]));
+  return {
+    cards: cards.flatMap((card) => {
+      const owner = wallOwners.get(ownerOf.get(card.id) ?? '');
+      return owner ? [{ ...card, wall: toRef(owner) }] : [];
+    }),
+    nextCursor: next ? encodeCursor(next) : null,
   };
 }
 
@@ -504,7 +627,7 @@ export async function postCard(
     authorId: userId,
   });
   const authors = await authorsFor([userId]);
-  const [view] = await hydrate(actor, fence, ctx, [row], authors);
+  const [view] = await hydrate(actor, () => ({ fence, ctx }), [row], authors);
   if (!view) throw new AppError('INTERNAL');
   return view;
 }

@@ -9,6 +9,7 @@ export {
   cardForReport,
   cardPhotoFor,
   listFence,
+  listFriendsFeed,
   listWaiting,
   postCard,
   postReply,
@@ -20,6 +21,8 @@ export {
 export type {
   AuthorRef,
   CardView,
+  FeedCardView,
+  FeedPage,
   FencePage,
   ReplyView,
   Waiting,
