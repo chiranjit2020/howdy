@@ -240,7 +240,7 @@ export function WelcomeStory({ invite }: { invite?: { code: string; invitedBy: s
             <h1 className="font-display text-[clamp(2.6rem,1.6rem+4.6vw,4.75rem)] leading-[1.02] font-semibold tracking-tight text-text-primary">
               Your people.
               <br />
-              <span className="box-decoration-clone bg-linear-to-t from-highlight from-35% to-transparent to-35% px-1 -mx-1">
+              <span className="box-decoration-clone bg-linear-to-t from-highlight from-35% to-transparent to-35% px-1 -mx-1 text-on-highlight">
                 Not the whole internet.
               </span>
             </h1>

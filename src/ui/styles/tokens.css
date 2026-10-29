@@ -81,15 +81,18 @@
   --color-accent-soft: light-dark(#ebe6f8, #2d2150);
   --color-on-accent: light-dark(#ffffff, #100b00);
 
-  /* Sunflower #f8cf35: the second brand colour, for highlights (text selection, "new" marks). Ink on it is 13:1. */
+  /*
+   * Sunflower #f8cf35: the second brand colour, for highlights (text selection, "new" marks). Whatever sits ON sunflower
+   * is Royal Violet (the user's rule, 2026-10-30): 11:1.
+   */
   --color-highlight: #f8cf35;
-  --color-on-highlight: #100b00;
+  --color-on-highlight: #260959;
 
   --color-success: #b7e4c7;
   --color-on-success: #100b00;
   --color-success-text: light-dark(#23694a, #8fdcb0);
   --color-warning: #f8cf35;
-  --color-on-warning: #100b00;
+  --color-on-warning: #260959;
   /* Crimson #ca054d for errors: 5.4:1 as text on the page, 5.8:1 under white. */
   --color-danger: light-dark(#ca054d, #ff8fb1);
   --color-on-danger: light-dark(#ffffff, #2b0013);
@@ -107,7 +110,7 @@
      Verified artwork. */
   --color-trusted: #f8cf35;
   --color-trusted-edge: #8a5a12;
-  --color-trusted-ink: #4a2f06;
+  --color-trusted-ink: #260959;
   /* The Dynamic Island: a near-black pill in both themes (it reads as hardware, like the phone's own). */
   --color-island: #17161f;
   --color-island-raised: #2a2836;
