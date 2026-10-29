@@ -1,10 +1,11 @@
 'use client';
 
-import { useCallback, useId, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { cn } from '../cn';
 import { FreeToTalkPanel, type LitPalRow, type MyLightState } from '../howdy/free-to-talk';
 import { Modal } from '../primitives';
 import { useDismiss } from '../primitives/use-dismiss';
+import { OPEN_FREE_TO_TALK } from './shell-events';
 
 export interface FreeToTalkState {
   lit: LitPalRow[];
@@ -52,6 +53,16 @@ export function FreeToTalkPill({ state }: { state: FreeToTalkState }) {
     button.current?.focus();
   }, []);
   useDismiss(open, [root], close);
+  // Pages can ask for the panel (Home's "Switch yours on").
+  useEffect(() => {
+    const show = () => {
+      setOpen(true);
+      // Put the keyboard on the switch, the thing the page asked for.
+      requestAnimationFrame(() => root.current?.querySelector<HTMLElement>('[role="switch"]')?.focus());
+    };
+    window.addEventListener(OPEN_FREE_TO_TALK, show);
+    return () => window.removeEventListener(OPEN_FREE_TO_TALK, show);
+  }, []);
   const { label, spoken } = freeToTalkSummary(state);
   const friends = state.lit.length;
 
@@ -77,7 +88,7 @@ export function FreeToTalkPill({ state }: { state: FreeToTalkState }) {
       {open && (
         <div
           id={panelId}
-          className="absolute top-full right-0 z-40 mt-2 w-80 rounded-lg border border-border border-t-4 border-t-highlight bg-surface p-3 shadow-float"
+          className="absolute top-full right-0 z-40 mt-2 w-80 rounded-lg border border-border border-t-4 border-t-accent bg-surface p-3 shadow-float"
         >
           <FreeToTalkPanel lit={state.lit} mine={state.mine} />
         </div>

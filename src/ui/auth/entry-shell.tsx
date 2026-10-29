@@ -56,7 +56,7 @@ export function EntryFooter() {
 }
 
 /**
- * Centred on the screen. No side padding of its own: the shell's px-4 already gives the gutter, and doubling it
+ * Centred on the screen. No side padding of its own: the shell's 15 px already gives the gutter, and doubling it
  * squeezes the card on a 320px phone.
  */
 export function EntryMain({ children }: { children: ReactNode }) {

@@ -8,6 +8,7 @@ import { cn } from '../cn';
 import { SearchIcon } from '../icons';
 import { Avatar } from '../primitives/avatar';
 import { useDismiss } from '../primitives/use-dismiss';
+import { FOCUS_PEOPLE_SEARCH } from './shell-events';
 
 interface Person {
   handle: string;
@@ -38,6 +39,13 @@ export function PeopleSearch({ page = false, autoFocus = false }: { page?: boole
   const [active, setActive] = useState(-1);
   const close = useCallback(() => setOpen(false), []);
   useDismiss(open && !page, [root], close);
+  // The top bar's box answers pages that ask for it (Home's "Search for friends").
+  useEffect(() => {
+    if (page) return;
+    const focus = () => root.current?.querySelector('input')?.focus();
+    window.addEventListener(FOCUS_PEOPLE_SEARCH, focus);
+    return () => window.removeEventListener(FOCUS_PEOPLE_SEARCH, focus);
+  }, [page]);
 
   const term = q.trim().replace(/^@/, '');
   useEffect(() => {

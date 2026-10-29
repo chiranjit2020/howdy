@@ -9,7 +9,7 @@ export default async function LoginPage() {
   return (
     <main
       id="main"
-      // Centred on the screen (these pages have no top bar). No side padding of its own: the shell's px-4
+      // Centred on the screen (these pages have no top bar). No side padding of its own: the shell's 15 px
       // already gives the gutter, and doubling it squeezes the card on a 320px phone.
       className="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center py-4"
     >

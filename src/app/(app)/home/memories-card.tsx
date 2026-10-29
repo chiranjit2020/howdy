@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { MemoriesToday } from '@/modules/memories';
+import { cn } from '@/ui/cn';
 import { Avatar } from '@/ui/primitives';
 
 const ago = (n: number) => (n === 1 ? 'A year ago today' : `${n} years ago today`);
@@ -8,15 +9,24 @@ const ago = (n: number) => (n === 1 ? 'A year ago today' : `${n} years ago today
  * "On this day" (ADR-028): only rendered when there is something. Only I see it — it is worked out from my own Fence,
  * my Pals and the Tributes on my Porch, and only what I can still see today comes back.
  */
-export function MemoriesCard({ memories, handle }: { memories: MemoriesToday; handle: string }) {
+export function MemoriesCard({
+  memories,
+  handle,
+  className = 'clay bg-warning/15 p-4 sm:p-5',
+  headingId = 'memories-heading',
+}: {
+  memories: MemoriesToday;
+  handle: string;
+  /** The card's look: its own above the feed, the right panel's there. */
+  className?: string;
+  /** Unique per page: the card shows above the feed on narrower screens and in the right panel on wide ones. */
+  headingId?: string;
+}) {
   const { cards, pals, tributes } = memories;
   if (cards.length + pals.length + tributes.length === 0) return null;
   return (
-    <section aria-labelledby="memories-heading" className="clay flex flex-col gap-3 bg-warning/15 p-4 sm:p-5">
-      <h2
-        id="memories-heading"
-        className="text-metadata font-semibold tracking-wider text-text-secondary uppercase"
-      >
+    <section aria-labelledby={headingId} className={cn('flex flex-col gap-3', className)}>
+      <h2 id={headingId} className="text-metadata font-semibold tracking-wider text-text-secondary uppercase">
         On this day
       </h2>
       <ul className="flex flex-col gap-3">

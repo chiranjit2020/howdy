@@ -95,19 +95,26 @@ export function AppShell({
         <header className="sticky top-0 z-30 border-b border-border/60 bg-background/90 backdrop-blur">
           <div
             className={cn(
-              'flex h-16 w-full items-center gap-2 px-4 min-[360px]:gap-4 md:px-[30px]',
+              'flex h-16 w-full items-center gap-2 px-[15px] min-[360px]:gap-4',
               logoOnly ? 'justify-center' : 'justify-between',
+              // Signed in, from md up: three columns, the two sides equal, so the search box sits in the middle of the
+              // screen rather than of the space the logo and the buttons leave.
+              me && 'md:grid md:grid-cols-[1fr_minmax(0,28rem)_1fr]',
             )}
           >
-            <HowdyLogo size={me || logoOnly ? 'xs' : 'bar'} href={me ? '/home' : '/gate'} />
+            <HowdyLogo
+              size={me || logoOnly ? 'xs' : 'bar'}
+              href={me ? '/home' : '/gate'}
+              className="justify-self-start"
+            />
             {/* Search people: the box in the middle of the bar from md up; phones get a button to the Search page. */}
             {me && (
-              <div className="hidden min-w-0 flex-1 justify-center px-6 md:flex">
+              <div className="hidden min-w-0 md:block">
                 <PeopleSearch />
               </div>
             )}
             {logoOnly ? null : me ? (
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 md:justify-self-end">
                 <Link
                   href="/search"
                   aria-label="Search people"
@@ -153,8 +160,8 @@ export function AppShell({
         </header>
       )}
 
-      {/* Full width: 30 px each side from md up (phones keep 16 px; 30 would cost them too much of the screen). */}
-      <div className="flex w-full gap-8 px-4 md:px-[30px]">
+      {/* Full width, with 15 px each side on every screen size. */}
+      <div className="flex w-full gap-8 px-[15px]">
         {me && (
           <aside className="sticky top-16 hidden max-h-[calc(100dvh-4rem)] w-56 shrink-0 flex-col justify-between gap-6 self-start py-6 md:flex">
             <ShellSidebarNav items={items} />

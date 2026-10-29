@@ -1,33 +1,33 @@
-import Link from 'next/link';
 import { attachPortraits, withCards } from '@/app/_lib/social';
 import { FenceSection } from '@/app/profile/[handle]/fence-section';
 import { requireUser } from '@/modules/auth';
 import { listFriendsFeed } from '@/modules/fence';
 import { getPortraitVersion } from '@/modules/media';
+import { litPals, myLight } from '@/modules/lights';
 import { memoriesToday } from '@/modules/memories';
 import { getOwnRanch, getTeamAnnouncement } from '@/modules/profiles';
 import { listMyRelationships } from '@/modules/relationships';
 import { storyRing } from '@/modules/stories';
+import { listThreads } from '@/modules/whispers';
+import { clockOf } from '@/shared/calendar';
 import { portraitUrl } from '@/shared/portrait';
-import { VerifiedBadge } from '@/ui/howdy';
+import { HomeRail, WhatsNew } from './home-rail';
 import { MemoriesCard } from './memories-card';
 import { StoriesStrip } from './stories-strip';
 
 export const metadata = { title: 'Home' };
 
-const SECTION_TITLE =
-  'flex items-center gap-1.5 text-metadata font-semibold tracking-wider text-text-secondary uppercase';
-
 /**
- * First protected page: Stories, "What's on your mind?" and your friends' posts, in one column. The counts (friend
- * requests, messages, visitors) are beside the menu and the bell, and Free to talk is in the top bar, on every page. The
- * session check happens on the server: an unauthenticated request never reaches the markup.
+ * First protected page: Stories, "What's on your mind?" and your friends' posts; on wide screens a right panel with
+ * your circle right now (friends free to talk, latest messages, friend requests, On this day, the team's note). The
+ * counts are beside the menu and the bell, and Free to talk is in the top bar, on every page. The session check happens
+ * on the server: an unauthenticated request never reaches the markup.
  */
 export default async function HomePage() {
   const user = await requireUser();
   // Independent lookups, asked for together rather than one after another. Everything but your own profile is
   // best-effort: Home never fails because one part could not be read.
-  const [ranch, photo, lists, news, memories, ring, feed] = await Promise.all([
+  const [ranch, photo, lists, news, memories, ring, feed, lit, mine, threads] = await Promise.all([
     getOwnRanch(user.id),
     getPortraitVersion(user.id, { userId: user.id }).catch(() => null),
     // For the announcement below: whether this person has muted the Howdy team.
@@ -37,20 +37,34 @@ export default async function HomePage() {
     // Stories (ADR-047).
     storyRing(user.id).catch(() => []),
     listFriendsFeed(user.id, { rateKey: user.id }).catch(() => null),
+    // The right panel: friends who switched Free to talk on, and the latest conversations.
+    litPals(user.id).catch(() => []),
+    myLight(user.id).catch(() => null),
+    listThreads(user.id)
+      .then((t) => t.slice(0, 5))
+      .catch(() => null),
   ]);
   // One look-up for every photo on the page, whoever it belongs to.
   await attachPortraits(user.id, [
     ...ring.map((r) => r.person),
     ...(memories?.pals.map((p) => p.pal) ?? []),
     ...(feed?.cards.flatMap((c) => [c.author, c.wall, ...c.replies.map((r) => r.author)]) ?? []),
+    ...lit.map((l) => l.pal),
+    ...(threads ?? []),
   ]);
   // The Howdy team's current Signal ("what's new"), unless this person has turned the team's noise down.
   const announcement = news && !lists.muted.some((m) => m.handle === news.author.handle) ? news : null;
 
+  // "On this day" only when there is something to show (an empty wrapper would still take a gap in the column).
+  const today =
+    memories && memories.cards.length + memories.pals.length + memories.tributes.length > 0 ? memories : null;
+  const free = lit.map((l) => ({ ...l.pal, note: l.note, untilLabel: clockOf(l.until) }));
+
   return (
-    // One column at a comfortable reading width (672 px), centred in the space beside the menu. No side padding of its
-    // own: the shell's px-4 is the gutter, so the cards use the full phone width.
-    <div className="flex w-full py-4 sm:py-8">
+    // The feed at a comfortable reading width (672 px), centred in the space beside the menu; from xl (1280 px) up the
+    // right panel beside it. No side padding of its own: the shell's 15 px is the gutter, so the cards use the full phone
+    // width.
+    <div className="flex w-full py-4 sm:py-8 xl:grid xl:grid-cols-[minmax(0,1fr)_20rem] xl:items-start xl:gap-8">
       <main id="main" className="mx-auto flex w-full max-w-2xl min-w-0 flex-col gap-4 sm:gap-6">
         {/* The page's name for screen readers and the outline; on screen the sidebar already says where you are. */}
         <h1 className="sr-only">Home</h1>
@@ -63,21 +77,17 @@ export default async function HomePage() {
             ...(photo ? { portraitUrl: portraitUrl(user.handle, photo) } : {}),
           }}
         />
+        {/* Below xl there is no right panel: the team's note and On this day come before the feed instead. */}
         {announcement && (
-          <section aria-labelledby="whats-new" className="clay flex flex-col gap-2 bg-info/25 p-4 sm:p-5">
-            <h2 id="whats-new" className={SECTION_TITLE}>
-              What’s new on Howdy
-            </h2>
-            <p className="text-body break-words text-text-primary">{announcement.text}</p>
-            <p className="text-caption text-text-secondary">
-              <Link href={`/profile/${announcement.author.handle}`} className="font-semibold">
-                {announcement.author.displayName}
-              </Link>
-              {announcement.author.verified && <VerifiedBadge className="ml-1" />}
-            </p>
-          </section>
+          <div className="xl:hidden">
+            <WhatsNew news={announcement} id="whats-new" />
+          </div>
         )}
-        {memories && <MemoriesCard memories={memories} handle={user.handle} />}
+        {today && (
+          <div className="xl:hidden">
+            <MemoriesCard memories={today} handle={user.handle} />
+          </div>
+        )}
         {feed ? (
           <FenceSection
             feed
@@ -97,6 +107,23 @@ export default async function HomePage() {
           <p className="text-caption text-text-secondary">Friends’ posts could not be loaded just now.</p>
         )}
       </main>
+
+      {/* top-24 clears the sticky top bar (4rem) with room to breathe. */}
+      <aside
+        aria-label="Your circle"
+        className="sticky top-24 hidden max-h-[calc(100dvh-7rem)] flex-col gap-4 overflow-y-auto [scrollbar-width:thin] xl:flex [&>*]:shrink-0"
+      >
+        <HomeRail
+          free={free}
+          threads={threads}
+          requests={lists.incoming}
+          friends={[...lists.posse].sort((a, b) => b.at.localeCompare(a.at))}
+          myLight={mine ? { untilLabel: clockOf(mine.until) } : null}
+          memories={today}
+          news={announcement}
+          handle={user.handle}
+        />
+      </aside>
     </div>
   );
 }
