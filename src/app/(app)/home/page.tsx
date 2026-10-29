@@ -179,7 +179,7 @@ export default async function HomePage() {
         className="flex min-w-0 flex-col gap-4 sm:gap-6 xl:sticky xl:top-24"
       >
         {/* A few numbers worth a glance, each a way into the page that has the detail: one line each, two by two. */}
-        <ClayCard className="p-3 sm:p-4">
+        <ClayCard className="border-t-4 border-t-highlight p-3 sm:p-4">
           <section aria-labelledby="glance" className="flex flex-col gap-1">
             <h2 id="glance" className={cn(SECTION_TITLE, 'px-2')}>
               At a glance

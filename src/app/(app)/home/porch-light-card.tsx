@@ -11,7 +11,6 @@ import {
   type LightMinutes,
 } from '@/shared/validation/lights';
 import type { PortraitTint } from '@/shared/validation/profile';
-import { Glyph } from '@/ui/art/glyph';
 import { WhisperIcon } from '@/ui/icons';
 import { apiRequest } from '@/ui/auth/api';
 import { FormMessage } from '@/ui/auth/form-parts';
@@ -125,13 +124,15 @@ export function PorchLightCard({ lit, mine }: { lit: LitPalRow[]; mine: MyLightS
   }
 
   return (
-    <section aria-labelledby={headingId} className="clay flex flex-col gap-1 p-3 sm:p-4">
+    <section
+      aria-labelledby={headingId}
+      className="clay flex flex-col gap-1 border-t-4 border-t-highlight p-3 sm:p-4"
+    >
       <div className="flex items-center gap-1 pl-2">
         <h2
           id={headingId}
           className="flex min-w-0 flex-1 items-center gap-1.5 text-metadata font-semibold tracking-wider text-text-secondary uppercase"
         >
-          <Glyph emoji="💡" size="free" className="size-5" />
           Free to talk
         </h2>
         <button
