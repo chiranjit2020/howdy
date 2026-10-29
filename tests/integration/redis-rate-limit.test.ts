@@ -39,7 +39,8 @@ describe('RedisRateLimiter (needs REDIS_URL)', () => {
     expect(results.filter((r) => r.allowed)).toHaveLength(5);
     const blocked = results.find((r) => !r.allowed);
     expect(blocked?.retryAfterSec).toBeGreaterThan(0);
-    expect(blocked?.retryAfterSec).toBeLessThanOrEqual(30);
+    // Sliding window: a full window has to fade out of the count, so up to two windows.
+    expect(blocked?.retryAfterSec).toBeLessThanOrEqual(60);
   });
 
   it('keeps keys independent and sets an expiry', async ({ skip }) => {
@@ -48,6 +49,20 @@ describe('RedisRateLimiter (needs REDIS_URL)', () => {
     const rl = new RedisRateLimiter(redis, prefix);
     await rl.consume('a', { limit: 1, windowSec: 30 });
     expect((await rl.consume('b', { limit: 1, windowSec: 30 })).allowed).toBe(true);
-    expect(await redis.ttl(`${prefix}a`)).toBeGreaterThan(0);
+    const [counter] = await redis.keys(`${prefix}a:*`); // one counter per window
+    expect(counter).toBeDefined();
+    expect(await redis.pttl(counter!)).toBeGreaterThan(0);
+  });
+
+  it('counts the previous window too, like the in-memory limiter (no burst at the boundary)', async ({
+    skip,
+  }) => {
+    if (!available || !redis) return skip('Redis not reachable');
+    let t = 59_000;
+    const rl = new RedisRateLimiter(redis, `test:${randomUUID()}:`, () => t);
+    const rule = { limit: 10, windowSec: 60 };
+    for (let i = 0; i < 10; i++) expect((await rl.consume('k', rule)).allowed).toBe(true);
+    t = 61_000;
+    expect((await rl.consume('k', rule)).allowed).toBe(false);
   });
 });

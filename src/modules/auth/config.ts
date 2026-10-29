@@ -14,6 +14,24 @@ export const SESSION_BROWSER_MS = DAY;
 export const SESSION_TOUCH_INTERVAL_MS = 5 * MIN;
 
 export const VERIFY_EMAIL_TTL_MS = 24 * HOUR;
+/**
+ * The database part of a sign-up always takes at least this long, whether it made an account or found the email
+ * already registered (which is quicker: no profile, no token, no audit row). Without it the response time could tell
+ * the two apart (security audit 2026-10-29, finding 6). It adapts: 1.2 × the slowest recent account-making sign-up on
+ * this server (fading by a tenth each time), never under 500 ms, so a slow database moves the floor up with it. None in
+ * tests, which sign up hundreds of people.
+ */
+let slowestSignupWorkMs = 0;
+
+export function recordSignupWork(ms: number): void {
+  slowestSignupWorkMs = Math.max(ms, slowestSignupWorkMs * 0.9);
+}
+
+export function signupFloorMs(): number {
+  if (getEnv().NODE_ENV === 'test') return 0;
+  return Math.max(500, Math.ceil(slowestSignupWorkMs * 1.2));
+}
+
 /** The 6-digit code in the same email: much shorter-lived than its link, because it is so much shorter. */
 export const VERIFY_CODE_TTL_MS = 15 * MIN;
 export const RESET_PASSWORD_TTL_MS = HOUR;

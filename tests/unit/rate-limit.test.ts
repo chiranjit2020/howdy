@@ -18,15 +18,43 @@ describe('MemoryRateLimiter', () => {
     expect(fourth.retryAfterSec).toBeGreaterThan(0);
   });
 
-  it('resets after the window and isolates keys', async () => {
+  it('frees up once the burst has slid out of the window, and isolates keys', async () => {
     let t = 0;
     const rl = new MemoryRateLimiter(() => t);
     const rule = { limit: 1, windowSec: 10 };
     await rl.consume('a', rule);
     expect((await rl.consume('a', rule)).allowed).toBe(false);
     expect((await rl.consume('b', rule)).allowed).toBe(true);
-    t += 10_001;
+    t += 20_001; // two windows on: nothing of the old burst still counts
     expect((await rl.consume('a', rule)).allowed).toBe(true);
+  });
+
+  it('a full allowance just before the window turns over is NOT followed by another just after (sliding window)', async () => {
+    let t = 59_000; // one second before a 60 s window ends
+    const rl = new MemoryRateLimiter(() => t);
+    const rule = { limit: 10, windowSec: 60 };
+    for (let i = 0; i < 10; i++) expect((await rl.consume('k', rule)).allowed).toBe(true);
+    t = 61_000; // one second into the next window: a fixed window would allow 10 more here
+    const next = await rl.consume('k', rule);
+    expect(next.allowed).toBe(false);
+    expect(next.retryAfterSec).toBeGreaterThan(0);
+    // Half-way through the next window, half of the old burst has faded: about half an allowance is back.
+    t = 90_000;
+    let allowed = 0;
+    for (let i = 0; i < 10; i++) if ((await rl.consume('k', rule)).allowed) allowed += 1;
+    expect(allowed).toBeGreaterThanOrEqual(4);
+    expect(allowed).toBeLessThanOrEqual(5);
+  });
+
+  it('says honestly how long to wait', async () => {
+    let t = 0;
+    const rl = new MemoryRateLimiter(() => t);
+    const rule = { limit: 2, windowSec: 10 };
+    await rl.consume('k', rule);
+    await rl.consume('k', rule);
+    const blocked = await rl.consume('k', rule);
+    t += blocked.retryAfterSec * 1000;
+    expect((await rl.consume('k', rule)).allowed).toBe(true);
   });
 });
 

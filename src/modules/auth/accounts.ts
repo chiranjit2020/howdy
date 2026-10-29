@@ -15,7 +15,14 @@ import { recordAcceptance } from './legal';
 import { closeAccount, deletionDate, isHandleHeld, keepAccount } from './deletion';
 import { fileAppeal, suspensionAtSignIn, type SuspensionNotice } from '@/modules/moderation';
 import { createProfile } from '@/modules/profiles';
-import { RATE, RESET_PASSWORD_TTL_MS, VERIFY_CODE_TTL_MS, VERIFY_EMAIL_TTL_MS } from './config';
+import {
+  RATE,
+  RESET_PASSWORD_TTL_MS,
+  VERIFY_CODE_TTL_MS,
+  VERIFY_EMAIL_TTL_MS,
+  recordSignupWork,
+  signupFloorMs,
+} from './config';
 import { dummyPasswordHash, hashPassword, hashToken, keyDigest, newToken, verifyPassword } from './crypto';
 import {
   alreadyRegisteredMessage,
@@ -116,6 +123,9 @@ export async function signUp(
   }
   const passwordHash = await hashPassword(input.password);
   const db = getDb();
+  // Both outcomes below (account made / email already registered) answer no sooner than this: see signupFloorMs.
+  const started = Date.now();
+  const floor = new Promise<void>((resolve) => setTimeout(resolve, signupFloorMs()));
 
   const handleTaken = () =>
     new AppError('CONFLICT', {
@@ -154,11 +164,14 @@ export async function signUp(
     );
     // Who listens (e.g. invite links, ADR-045) is not auth's business; it runs after the response either way.
     emit({ type: 'account.created', userId: created.userId, invite: input.invite ?? null });
+    recordSignupWork(Date.now() - started);
+    await floor;
   } catch (err) {
     const constraint = uniqueViolation(err);
     if (constraint?.includes('handle')) throw handleTaken(); // lost a race for the same handle
     if (constraint?.includes('email')) {
       runAfterResponse('signup.existing_email', () => handleExistingEmail(input.email));
+      await floor;
       return;
     }
     throw err;
@@ -655,6 +668,10 @@ async function verifyCredentials(input: { identifier: string; password: string }
     .where(byEmail ? eq(users.email, input.identifier) : eq(users.handle, input.identifier))
     .limit(1);
 
+  // The same allowance per ACCOUNT too, so typing its email and then its username does not double the guesses
+  // (security audit finding 8). It only ever bites someone who already used two identifiers of one account, i.e. who
+  // already knows it exists, so it says nothing new about who has an account.
+  if (row) await enforceRateLimit(`auth:login:account:${row.id}`, RATE.loginIdentifier);
   const ok = await verifyPassword(row?.passwordHash ?? (await dummyPasswordHash()), input.password);
   if (!row || !ok) {
     logger.warn({

@@ -110,6 +110,23 @@ describe('readJson', () => {
   ])('rejects %s as BAD_REQUEST', async (_n, r) => {
     await expect(readJson(r, schema)).rejects.toMatchObject({ code: 'BAD_REQUEST' });
   });
+  it('refuses an endless streamed body without reading it to the end (no Content-Length to trust)', async () => {
+    let pulled = 0;
+    const endless = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        pulled += 1;
+        controller.enqueue(new TextEncoder().encode('x'.repeat(1024)));
+      },
+    });
+    const r = new Request('http://localhost/x', {
+      method: 'POST',
+      body: endless,
+      headers: { 'content-type': 'application/json' },
+      duplex: 'half',
+    } as RequestInit);
+    await expect(readJson(r, schema)).rejects.toMatchObject({ code: 'BAD_REQUEST' });
+    expect(pulled).toBeLessThan(20); // stopped just past the 8 KB cap
+  });
   it('turns schema failures into field-level errors using our own messages', async () => {
     await expect(readJson(req('{"a":"x"}'), schema)).rejects.toMatchObject({
       code: 'VALIDATION_FAILED',

@@ -41,6 +41,17 @@ describe('brute-force protection', () => {
     expect(rightPassword.cookie).toBeUndefined();
   });
 
+  it('switching between the email and the username does not buy more guesses (one allowance per account)', async () => {
+    const u = await verifiedUser(kit);
+    const half = Math.ceil(RATE.loginIdentifier.limit / 2);
+    for (let i = 0; i < half; i++) await badLogin(u.email, { ip: `10.4.0.${i + 1}` });
+    for (let i = 0; i < RATE.loginIdentifier.limit - half; i++)
+      await badLogin(u.handle, { ip: `10.4.1.${i + 1}` });
+    // Neither identifier is used up on its own, but the account is.
+    expect((await badLogin(u.handle, { ip: '10.4.2.1' })).status).toBe(429);
+    expect((await badLogin(u.email, { ip: '10.4.2.2' })).status).toBe(429);
+  });
+
   it('one address hammering many different accounts is throttled too', async () => {
     for (let i = 0; i < RATE.loginIp.limit; i++)
       expect((await badLogin(`victim${i}@example.com`, { ip: '203.0.113.50' })).status).toBe(401);

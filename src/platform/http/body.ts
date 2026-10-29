@@ -35,10 +35,8 @@ export async function readJson<S extends z.ZodType>(req: Request, schema: S): Pr
   const type = req.headers.get('content-type') ?? '';
   if (!type.toLowerCase().startsWith('application/json')) throw new AppError('BAD_REQUEST');
 
-  const declared = Number(req.headers.get('content-length') ?? '0');
-  if (declared > MAX_BODY_BYTES) throw new AppError('BAD_REQUEST');
-  const text = await req.text();
-  if (text.length > MAX_BODY_BYTES) throw new AppError('BAD_REQUEST');
+  // Stops reading the moment the body goes over the cap (a lying or missing Content-Length cannot make us buffer more).
+  const text = (await readBytesCapped(req, MAX_BODY_BYTES)).toString('utf8');
 
   let raw: unknown;
   try {
