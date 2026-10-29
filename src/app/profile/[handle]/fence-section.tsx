@@ -6,6 +6,7 @@ import type { AuthorRef, CardView, FencePage, ReplyView } from '@/modules/fence'
 import type { ReactionKind } from '@/shared/validation/fence';
 import { apiRequest, postJson } from '@/ui/auth/api';
 import { FormMessage } from '@/ui/auth/form-parts';
+import { cn } from '@/ui/cn';
 import { Fence, PostCard, PostCardComposer, PostCardReply } from '@/ui/howdy';
 import { Button, ConfirmationDialog, Dropdown, IconButton, useToast } from '@/ui/primitives';
 import { ReportDialog } from '@/ui/howdy/report-dialog';
@@ -23,8 +24,11 @@ export type InitialFence = Omit<FencePage, 'cards'> & { cards: WireCard[] };
 
 type Removal = { kind: 'card' | 'reply'; id: string };
 
-/** One person's wall (their profile), or Home's feed of the walls of your friends. */
-type Source = { handle: string; ownerName: string } | { feed: true };
+/**
+ * One person's wall (their profile), or Home's feed of the walls of your friends. The feed's composer ("What's on your
+ * mind?") posts to your own wall, `myHandle`.
+ */
+type Source = { handle: string; ownerName: string } | { feed: true; myHandle: string };
 
 /**
  * The cards of a Fence on a Ranch, or of Home's feed. Everything here is a request for the server to decide: the buttons
@@ -37,7 +41,8 @@ export function FenceSection({
   ...source
 }: Source & { initial: InitialFence; signedIn: boolean }) {
   const feed = 'feed' in source;
-  const handle = feed ? '' : source.handle;
+  // The wall new posts go on: this one, or (in the feed) your own.
+  const handle = feed ? source.myHandle : source.handle;
   const ownerName = feed ? '' : source.ownerName;
   const toast = useToast();
   const composerRef = useRef<HTMLDivElement>(null);
@@ -181,14 +186,19 @@ export function FenceSection({
   }
 
   const composer = initial.canPost ? (
-    <div ref={composerRef} id="nail" className="flex scroll-mt-24 flex-col gap-2">
+    <div
+      ref={composerRef}
+      id="nail"
+      // In the feed it stands on the page on its own, so it gets a card of its own.
+      className={cn('flex scroll-mt-24 flex-col gap-2', feed && 'clay p-4 sm:p-5')}
+    >
       {initial.review && (
         <p className="text-caption text-text-secondary">
           Posts on this wall wait for {ownerName} to approve them before others see them.
         </p>
       )}
       <PostCardComposer
-        kind="card"
+        kind={feed ? 'home' : 'card'}
         onSubmit={nail}
         {...(initial.canAddPhoto ? { onPhoto: (file: File) => uploadPhoto('/api/me/card-photo', file) } : {})}
       />
@@ -198,7 +208,7 @@ export function FenceSection({
   return (
     <>
       <Fence
-        composer={feed ? undefined : composer}
+        composer={composer}
         hasMore={next !== null}
         onLoadMore={loadMore}
         loadingMore={loadingMore}

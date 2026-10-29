@@ -108,6 +108,7 @@ export const updateRanchSchema = z
     readReceipts: z.boolean().optional(),
     storyViews: z.boolean().optional(),
     discoverable: z.boolean().optional(),
+    searchable: z.boolean().optional(),
   })
   .refine((v) => Object.values(v).some((x) => x !== undefined), 'Nothing to change.');
 

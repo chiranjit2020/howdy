@@ -87,6 +87,8 @@ export interface OwnRanch extends RanchView {
   storyViews: boolean;
   /** May I be suggested to Pals of my Pals ("Pals you may know", Phase 13)? */
   discoverable: boolean;
+  /** Findable in search by anyone (off by default); friends can always find each other. */
+  searchable: boolean;
 }
 
 export interface RanchPatch {
@@ -103,6 +105,7 @@ export interface RanchPatch {
   readReceipts?: boolean | undefined;
   storyViews?: boolean | undefined;
   discoverable?: boolean | undefined;
+  searchable?: boolean | undefined;
 }
 
 /** Create the Ranch for a new account. Called inside the sign-up transaction so every user always has one. */
@@ -153,6 +156,7 @@ const SELECT = {
   readReceipts: profiles.readReceipts,
   storyViews: profiles.storyViews,
   discoverable: profiles.discoverable,
+  searchable: profiles.searchable,
   earnedTick,
 } as const;
 
@@ -231,6 +235,7 @@ export async function getOwnRanch(userId: string, now: Date = new Date()): Promi
     readReceipts: row.readReceipts,
     storyViews: row.storyViews,
     discoverable: row.discoverable,
+    searchable: row.searchable,
   };
 }
 
@@ -460,6 +465,7 @@ export async function updateRanch(userId: string, patch: RanchPatch): Promise<Ow
   if (patch.readReceipts !== undefined) set.readReceipts = patch.readReceipts;
   if (patch.storyViews !== undefined) set.storyViews = patch.storyViews;
   if (patch.discoverable !== undefined) set.discoverable = patch.discoverable;
+  if (patch.searchable !== undefined) set.searchable = patch.searchable;
   await getDb().update(profiles).set(set).where(eq(profiles.userId, userId));
   return getOwnRanch(userId);
 }

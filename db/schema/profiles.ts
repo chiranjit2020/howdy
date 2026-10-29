@@ -47,6 +47,11 @@ export const profiles = pgTable(
     storyViews: boolean('story_views').notNull().default(true),
     /** Suggest me to Pals of my Pals ("Pals you may know", Phase 13 / ADR-029). On by default; switch off in the Workshop. */
     discoverable: boolean('discoverable').notNull().default(true),
+    /**
+     * Findable in search by name or username (2026-10-30). OFF by default, for every account old and new: nobody becomes
+     * findable without choosing it. Your friends can always find you either way.
+     */
+    searchable: boolean('searchable').notNull().default(false),
     createdAt: tstz('created_at').notNull().defaultNow(),
     updatedAt: tstz('updated_at').notNull().defaultNow(),
   },

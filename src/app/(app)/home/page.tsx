@@ -64,7 +64,7 @@ export default async function HomePage() {
     // follows the main ones. No side padding of its own: the shell's px-4 is the gutter, so the cards use the full phone
     // width.
     <div className="flex w-full flex-col gap-4 py-4 sm:gap-6 sm:py-8 xl:grid xl:grid-cols-[minmax(0,1fr)_23rem] xl:items-start">
-      <main id="main" className="flex w-full max-w-2xl min-w-0 flex-col gap-4 sm:gap-6">
+      <main id="main" className="flex w-full min-w-0 flex-col gap-4 sm:gap-6">
         {/* The page's name for screen readers and the outline; on screen the sidebar already says where you are. */}
         <h1 className="sr-only">Home</h1>
         <StoriesStrip
@@ -94,13 +94,15 @@ export default async function HomePage() {
         {feed ? (
           <FenceSection
             feed
+            myHandle={user.handle}
             signedIn
             initial={{
               ...feed,
-              // A feed is not one wall: nothing to post to here, and no wall of yours to review.
+              // "What's on your mind?" posts to your own wall: its owner may always post there, with a photo, and
+              // nothing waits for approval. The feed itself is not one wall, so nobody is its owner.
               isOwner: false,
-              canPost: false,
-              canAddPhoto: false,
+              canPost: true,
+              canAddPhoto: true,
               review: false,
             }}
           />

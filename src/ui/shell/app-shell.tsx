@@ -1,10 +1,11 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import type { PortraitTint } from '@/shared/validation/profile';
-import { BellIcon } from '../icons';
+import { BellIcon, SearchIcon } from '../icons';
 import { cn } from '../cn';
 import { HowdyLogo } from '../logo';
 import { AccountMenu } from './account-menu';
+import { PeopleSearch } from './people-search';
 import { ShellBottomNav, ShellMoreMenu, ShellSidebarNav, type ShellNavItem } from './nav';
 import { SiteFooter } from './site-footer';
 
@@ -90,13 +91,26 @@ export function AppShell({
         <header className="sticky top-0 z-30 border-b border-border/60 bg-background/90 backdrop-blur">
           <div
             className={cn(
-              'mx-auto flex h-16 w-full max-w-7xl items-center gap-2 px-4 min-[360px]:gap-4 md:px-6',
+              'flex h-16 w-full items-center gap-2 px-4 min-[360px]:gap-4 md:px-[30px]',
               logoOnly ? 'justify-center' : 'justify-between',
             )}
           >
             <HowdyLogo size={me || logoOnly ? 'xs' : 'bar'} href={me ? '/home' : '/gate'} />
+            {/* Search people: the box in the middle of the bar from md up; phones get a button to the Search page. */}
+            {me && (
+              <div className="hidden min-w-0 flex-1 justify-center px-6 md:flex">
+                <PeopleSearch />
+              </div>
+            )}
             {logoOnly ? null : me ? (
               <div className="flex items-center gap-3">
+                <Link
+                  href="/search"
+                  aria-label="Search people"
+                  className="grid size-11 place-items-center rounded-pill border border-border bg-surface text-text-primary no-underline shadow-clay-sm md:hidden"
+                >
+                  <SearchIcon className="size-5" />
+                </Link>
                 <Link
                   href="/notifications"
                   aria-label={unread > 0 ? `Notifications, ${unread} unread` : 'Notifications'}
@@ -134,15 +148,11 @@ export function AppShell({
         </header>
       )}
 
-      <div className="mx-auto flex w-full max-w-7xl gap-8 px-4 md:px-6">
+      {/* Full width: 30 px each side from md up (phones keep 16 px; 30 would cost them too much of the screen). */}
+      <div className="flex w-full gap-8 px-4 md:px-[30px]">
         {me && (
           <aside className="sticky top-16 hidden max-h-[calc(100dvh-4rem)] w-56 shrink-0 flex-col justify-between gap-6 self-start py-6 md:flex">
             <ShellSidebarNav items={items} />
-            <div aria-hidden="true" className="flex flex-col gap-3 px-2">
-              <p className="font-display text-body text-text-secondary italic">
-                “Good people make life better”
-              </p>
-            </div>
           </aside>
         )}
         {/* Room for the phone tab bar and its raised Nail button (and the safe-area inset under it); signed in only. */}

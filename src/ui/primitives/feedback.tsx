@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
-import { Art, Glyph } from '../art/glyph';
+import { Glyph } from '../art/glyph';
+import { SpinnerIcon } from '../icons';
 import { cn } from '../cn';
 import { Button } from './button';
 
@@ -25,8 +26,8 @@ export function LoadingState({ label = 'Loading', className }: { label?: string;
       role="status"
       className={cn('flex flex-col items-center justify-center gap-3 p-8 text-text-secondary', className)}
     >
-      {/* The brand loader: a ring of pastel dots, turning. Decorative; the label below is what is announced. */}
-      <Art name="loader" size="free" className="w-14 animate-loader-spin" />
+      {/* A hairline arc, turning (the same 1 px line as every icon). Decorative; the label below is what is announced. */}
+      <SpinnerIcon className="size-10 animate-spin-slow text-accent" />
       <span className="text-caption">{label}…</span>
     </div>
   );

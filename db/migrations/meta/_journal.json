@@ -281,6 +281,13 @@
       "when": 1791317723273,
       "tag": "0039_stories",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1793309956171,
+      "tag": "0040_profile_searchable",
+      "breakpoints": true
     }
   ]
 }

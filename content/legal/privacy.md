@@ -94,6 +94,10 @@ Your visitor list tells you who has recently stopped by your profile. They are b
 
 On your friends page we may suggest people who are friends with at least two of your friends, and show which of your friends you share. In the same way, you may be suggested to people who share at least two friends with you. This is worked out from friend connections only, when the page is opened; nothing else about you is used, and no profile of you is built for it. Nobody is suggested to anyone they have blocked, muted or restricted (or who did so to them), or whom they have asked or been asked by before, and nobody whose profile is set to friends only. You can turn this off in Settings ("Suggest me to friends of my friends"), and "Not now" stops a suggestion for good.
 
+## Search
+
+Signed-in people can search for others by name or @username. You are found only if you turn on "Let people find me in search" in Settings; it is **off** unless you do. Your friends can always find you. Nobody you have blocked, muted or restricted (or who did so to you) can find you, and nobody who could not open your profile anyway. A search result shows only your name, @username and profile photo (the photo only to people allowed to see it). Searches are limited per person so they cannot be used to list who is on Howdy. Howdy keeps no record of what people search for; only our host's short-lived request logs may briefly contain it.
+
 ## Messages
 
 - **Private:** a message can be read only by the two people in the conversation. You can only message someone who is in your friends, and a block or leaving friends closes the conversation.

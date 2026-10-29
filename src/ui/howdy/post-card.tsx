@@ -5,10 +5,9 @@ import { useEffect, useRef, useState, type ChangeEvent, type FormEvent, type Rea
 import { LIMITS } from '@/shared/limits';
 import type { ReactionKind } from '@/shared/validation/fence';
 import type { PortraitTint } from '@/shared/validation/profile';
-import { Art } from '../art/glyph';
 import { Img } from '../art/img';
 import { cn } from '../cn';
-import { FlipIcon } from '../icons';
+import { CameraIcon, FlipIcon, SendIcon } from '../icons';
 import { Avatar } from '../primitives/avatar';
 import { Button } from '../primitives/button';
 import { Textarea } from '../primitives/field';
@@ -76,7 +75,6 @@ const COMPOSER = {
     label: 'Write a post',
     placeholder: 'Short and sweet…',
     rows: 3,
-    art: 'nav-nail',
     submit: 'Post',
   },
   reply: {
@@ -84,15 +82,21 @@ const COMPOSER = {
     label: 'Write a reply',
     placeholder: 'One or two lines. Longer? Take it to a message.',
     rows: 2,
-    art: 'nav-scribble',
     submit: 'Reply',
+  },
+  /** Home: a card on your own wall, which your friends see in their feed. */
+  home: {
+    max: LIMITS.POST_CARD_MAX,
+    label: 'What’s on your mind?',
+    placeholder: 'Share something with your friends…',
+    rows: 2,
+    submit: 'Post',
   },
   post: {
     max: LIMITS.TOWNHALL_POST_MAX,
     label: 'Post to this group',
     placeholder: 'Say howdy, ask something, share news…',
     rows: 3,
-    art: 'nav-town-halls',
     submit: 'Post',
   },
 } as const;
@@ -115,7 +119,7 @@ export function PostCardComposer({
   onPhoto?: (file: File) => Promise<PhotoUpload>;
   disabled?: boolean;
 }) {
-  const { max, label, placeholder, rows, art, submit: submitLabel } = COMPOSER[kind];
+  const { max, label, placeholder, rows, submit: submitLabel } = COMPOSER[kind];
   const [body, setBody] = useState('');
   const [busy, setBusy] = useState(false);
   const [photo, setPhoto] = useState<{ preview: string; id?: string } | undefined>();
@@ -199,7 +203,7 @@ export function PostCardComposer({
               className="sr-only"
               onChange={choose}
             />
-            <Art name="camera" size="free" className="size-6" /> Add a photo
+            <CameraIcon className="size-5" /> Add a photo
           </label>
         ) : (
           <span />
@@ -211,7 +215,7 @@ export function PostCardComposer({
           disabled={disabled || !trimmed || uploading}
           className="self-end"
         >
-          <Art name={art} />
+          <SendIcon className="size-4" />
           {submitLabel}
         </Button>
       </div>

@@ -1,0 +1,1 @@
+ALTER TABLE "profiles" ADD COLUMN "searchable" boolean DEFAULT false NOT NULL;

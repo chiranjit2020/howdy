@@ -2,8 +2,13 @@ import type { ComponentProps } from 'react';
 
 type IconProps = Omit<ComponentProps<'svg'>, 'children'>;
 
-function Svg(props: IconProps & { d: string }) {
-  const { d, ...rest } = props;
+/**
+ * Every line icon: a 1 px hairline at ANY size (`vector-effect: non-scaling-stroke`, so a 24-unit drawing shown at 20 px
+ * is still exactly 1 px, never a blurry 0.83), with sharp corners (miter joins) and clean square-cut ends. Dots are real
+ * filled dots (`dots`, in the 24-unit grid): a dot drawn as a 1 px line would all but vanish.
+ */
+function Svg(props: IconProps & { d: string; dots?: [number, number][] }) {
+  const { d, dots, ...rest } = props;
   return (
     <svg
       viewBox="0 0 24 24"
@@ -11,20 +16,35 @@ function Svg(props: IconProps & { d: string }) {
       height="1em"
       fill="none"
       stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
+      strokeWidth="1"
+      strokeLinecap="butt"
+      strokeLinejoin="miter"
+      strokeMiterlimit="8"
+      shapeRendering="geometricPrecision"
       aria-hidden="true"
       focusable="false"
       {...rest}
     >
-      <path d={d} />
+      {d && <path d={d} vectorEffect="non-scaling-stroke" />}
+      {dots?.map(([cx, cy]) => (
+        <circle key={`${cx},${cy}`} cx={cx} cy={cy} r="1.15" fill="currentColor" stroke="none" />
+      ))}
     </svg>
   );
 }
 
 export const CloseIcon = (p: IconProps) => <Svg d="M6 6l12 12M18 6L6 18" {...p} />;
-export const MoreIcon = (p: IconProps) => <Svg d="M5 12h.01M12 12h.01M19 12h.01" strokeWidth="3" {...p} />;
+export const MoreIcon = (p: IconProps) => (
+  <Svg
+    d=""
+    dots={[
+      [5, 12],
+      [12, 12],
+      [19, 12],
+    ]}
+    {...p}
+  />
+);
 export const StarIcon = (p: IconProps) => (
   <Svg d="M12 3l2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3l-5.6 2.9 1.1-6.2L3 9.6l6.2-.9z" {...p} />
 );
@@ -46,13 +66,23 @@ export const TracksIcon = (p: IconProps) => (
 );
 // A smiling face: "pick a reaction".
 export const ReactIcon = (p: IconProps) => (
-  <Svg d="M12 21a9 9 0 1 1 0-18 9 9 0 0 1 0 18zM8.5 14a4 4 0 0 0 7 0M9 9.5h.01M15 9.5h.01" {...p} />
+  <Svg
+    d="M12 21a9 9 0 1 1 0-18 9 9 0 0 1 0 18zM8.5 14a4 4 0 0 0 7 0"
+    dots={[
+      [9, 9.5],
+      [15, 9.5],
+    ]}
+    {...p}
+  />
 );
 export const WhisperIcon = (p: IconProps) => (
   <Svg d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z" {...p} />
 );
 export const BellIcon = (p: IconProps) => (
   <Svg d="M6 8a6 6 0 1 1 12 0c0 7 3 8 3 8H3s3-1 3-8M10 20a2 2 0 0 0 4 0" {...p} />
+);
+export const SearchIcon = (p: IconProps) => (
+  <Svg d="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM21 21l-5-5" {...p} />
 );
 export const UsersIcon = (p: IconProps) => (
   <Svg
@@ -62,7 +92,7 @@ export const UsersIcon = (p: IconProps) => (
 );
 // A circle with "!": next to an error message, so it is not told by colour alone.
 export const AlertIcon = (p: IconProps) => (
-  <Svg d="M12 21a9 9 0 1 1 0-18 9 9 0 0 1 0 18zM12 8v4.5M12 16h.01" {...p} />
+  <Svg d="M12 21a9 9 0 1 1 0-18 9 9 0 0 1 0 18zM12 7.5v5.5" dots={[[12, 16.2]]} {...p} />
 );
 export const CheckCircleIcon = (p: IconProps) => (
   <Svg d="M12 21a9 9 0 1 1 0-18 9 9 0 0 1 0 18zM8.5 12.2l2.3 2.3 4.7-4.8" {...p} />
@@ -116,5 +146,10 @@ export const KeyIcon = (p: IconProps) => (
   <Svg d="M15.5 7.5a3.5 3.5 0 1 1-3.4 4.3L4 20M7 17l2 2M9 15l2 2" {...p} />
 );
 export const PlusIcon = (p: IconProps) => <Svg d="M12 5v14M5 12h14" {...p} />;
-export const PauseIcon = (p: IconProps) => <Svg d="M9 5v14M15 5v14" strokeWidth="2.5" {...p} />;
+export const PauseIcon = (p: IconProps) => <Svg d="M9 5v14M15 5v14" {...p} />;
 export const PlayIcon = (p: IconProps) => <Svg d="M8 5l11 7-11 7z" {...p} />;
+export const CameraIcon = (p: IconProps) => (
+  <Svg d="M3 8h4l2-3h6l2 3h4v11H3zM12 16.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z" {...p} />
+);
+// A paper plane: Post, Reply, Send.
+export const SendIcon = (p: IconProps) => <Svg d="M21 3L3 10.5l7 2.5 2.5 7zM21 3L10 13" {...p} />;

@@ -15,12 +15,12 @@ import { LIMITS } from '@/shared/limits';
 import type { PortraitTint } from '@/shared/validation/profile';
 import type { WhisperMessage } from '@/shared/ws';
 import { useLiveRing } from '@/ui/live/use-live-ring';
-import { Art } from '@/ui/art/glyph';
+
 import { apiRequest, postJson } from '@/ui/auth/api';
 import { FormMessage } from '@/ui/auth/form-parts';
 import { WhisperBubble } from '@/ui/howdy';
 import { ReportDialog } from '@/ui/howdy/report-dialog';
-import { MoreIcon } from '@/ui/icons';
+import { MoreIcon, SendIcon } from '@/ui/icons';
 import { Avatar, Button, ConfirmationDialog, Dropdown, Textarea } from '@/ui/primitives';
 
 type Msg = WhisperMessage & { state?: 'sending' | 'failed'; error?: string };
@@ -448,7 +448,7 @@ export function ThreadView({
           placeholder="Just between the two of you…"
         />
         <Button type="submit" disabled={!text.trim()} className="self-end">
-          Send <Art name="plane" />
+          Send <SendIcon className="size-4" />
         </Button>
       </form>
 

@@ -152,12 +152,15 @@ export function BoundaryForm({
   ranchVisibility,
   signalVisibility,
   discoverable,
+  searchable,
   official = false,
 }: {
   ranchVisibility: Visibility;
   signalVisibility: Visibility;
   /** Suggest me to Pals of my Pals (ADR-029). */
   discoverable: boolean;
+  /** Findable in search by anyone (off by default). */
+  searchable: boolean;
   /** The Howdy team account: these settings are overridden to "everyone", so say so rather than pretend. */
   official?: boolean;
 }) {
@@ -166,6 +169,7 @@ export function BoundaryForm({
   const [ranch, setRanch] = useState(ranchVisibility);
   const [signal, setSignal] = useState(signalVisibility);
   const [suggestMe, setSuggestMe] = useState(discoverable);
+  const [findMe, setFindMe] = useState(searchable);
   const [formError, setFormError] = useState<string | undefined>();
   const [busy, setBusy] = useState(false);
 
@@ -177,6 +181,7 @@ export function BoundaryForm({
       ranchVisibility: ranch,
       signalVisibility: signal,
       discoverable: suggestMe,
+      searchable: findMe,
     });
     setBusy(false);
     if (res.ok) {
@@ -225,6 +230,12 @@ export function BoundaryForm({
           hint="People who share at least two friends with you may see you under “Friends you may know”. Never shown to anyone you have blocked, muted or restricted, or who did the same to you."
           checked={suggestMe}
           onCheckedChange={setSuggestMe}
+        />
+        <Switch
+          label="Let people find me in search"
+          hint="Anyone signed in can then find you by your name or @username. Off by default. Your friends can always find you, and anyone you have blocked or muted, or who blocked you, never can."
+          checked={findMe}
+          onCheckedChange={setFindMe}
         />
         <Button type="submit" loading={busy}>
           Save Privacy

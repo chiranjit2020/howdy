@@ -90,6 +90,79 @@ export async function palSuggestions(userId: string): Promise<PalSuggestion[]> {
   return out;
 }
 
+// ─── people search (2026-10-30) ─────────────────────────────────────────────────────────────────────────────────────
+
+const SEARCH: RateLimitRule = { limit: 30, windowSec: 60 };
+const SEARCH_RESULTS = 20;
+export const SEARCH_MIN_LENGTH = 2;
+
+export interface PersonResult {
+  handle: string;
+  displayName: string;
+  portraitTint: PortraitTint;
+  /** Filled in by the app layer only when the viewer may see it. */
+  portraitUrl?: string;
+  /** One of my friends (they are findable by me whatever their setting). */
+  friend: boolean;
+}
+
+/** `%`, `_` and `\` mean something to LIKE; in a search they are just characters. */
+const likeEscape = (s: string) => s.replace(/[\\%_]/g, (c) => `\\${c}`);
+
+/**
+ * Find people by name or username. Only people who switched "Let people find me in search" on (`profiles.searchable`,
+ * off by default) are found, plus my own friends. Never: me, anyone with a block, mute or restrict between us either
+ * way, inactive accounts, or anyone whose profile I could not open (the same `profile:view` policy as their Porch, so a
+ * result never leads to "not found"). A username matches from its start, a display name anywhere. Friends first, then
+ * exact username, then alphabetical. Rate limited per person, so it cannot be used to list who is on Howdy.
+ */
+export async function searchPeople(userId: string, rawQuery: string): Promise<PersonResult[]> {
+  await enforceRateLimit(`search:people:${userId}`, SEARCH);
+  const q = rawQuery.trim().replace(/^@/, '').toLowerCase();
+  if (q.length < SEARCH_MIN_LENGTH) return [];
+  const prefix = `${likeEscape(q)}%`;
+  const anywhere = `%${likeEscape(q)}%`;
+
+  const result = await getDb().execute(sql`
+    with mine as (
+      select case when user_low = ${userId} then user_high else user_low end as pal
+      from posse_links where status = 'accepted' and ${userId} in (user_low, user_high)
+    )
+    select u.id, (u.id in (select pal from mine)) as friend
+    from users u
+    join profiles p on p.user_id = u.id
+    where u.status = 'active'
+      and u.id <> ${userId}
+      and (p.searchable or u.id in (select pal from mine))
+      and (lower(u.handle) like ${prefix} escape '\\' or lower(p.display_name) like ${anywhere} escape '\\')
+      and not exists (select 1 from user_controls c
+        where (c.actor_id = ${userId} and c.target_id = u.id) or (c.actor_id = u.id and c.target_id = ${userId}))
+    order by friend desc, (lower(u.handle) = ${q}) desc, lower(p.display_name), u.handle
+    limit ${SEARCH_RESULTS * 2}`);
+  const rows = result.rows as { id: string; friend: boolean }[];
+  if (rows.length === 0) return [];
+
+  const ids = rows.map((r) => r.id);
+  const [ranches, cards] = await Promise.all([getFenceResources(ids), getCards(ids)]);
+  const me = { kind: 'user' as const, id: userId, status: 'active' as const };
+  const out: PersonResult[] = [];
+  for (const r of rows) {
+    const ranch = ranches.get(r.id);
+    const card = cards.get(r.id);
+    // No control between us (excluded above): a friend sees what a friend sees, anyone else what a passer-by does.
+    const relationship = r.friend ? ('POSSE' as const) : ('PASSERBY' as const);
+    if (!ranch || !card || !can(me, 'profile:view', ranch, { relationship }).allow) continue;
+    out.push({
+      handle: card.handle,
+      displayName: card.displayName,
+      portraitTint: card.portraitTint,
+      friend: r.friend,
+    });
+    if (out.length === SEARCH_RESULTS) break;
+  }
+  return out;
+}
+
 /**
  * "Not now": never suggest this person to me again. The same answer whatever the call sign (a real person, a made-up
  * name, someone hidden), so it cannot be used to find out who exists.

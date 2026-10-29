@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { Art } from '../art/glyph';
+import { BellIcon } from '../icons';
 import { Button } from '../primitives';
 import { dismissActivity, showActivity } from '../island/store';
 import { enablePush, isInstalled, platform, pushState } from './pwa';
@@ -46,7 +46,7 @@ export function ChimesIsland({ vapidKey }: { vapidKey: string | undefined }) {
       showActivity({
         id: ID,
         priority: 5,
-        icon: <Art name="nav-chimes" size="free" className="size-6" />,
+        icon: <BellIcon className="size-4" />,
         label: 'Get notifications on this phone',
         autoExpandMs: 1200,
         onDismiss: snooze,
