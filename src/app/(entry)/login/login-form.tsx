@@ -56,6 +56,9 @@ const GOOGLE_MESSAGE: Record<string, string> = {
   failed: 'Google sign-in did not finish. Please try again.',
   cancelled: 'Google sign-in was cancelled.',
   busy: 'Too many tries just now. Wait a few minutes and try again.',
+  // Not a Gmail or Google Workspace address: Google cannot vouch for it today (see googleIsAuthoritative).
+  'use-email':
+    'Google can only sign you in with a Gmail or Google Workspace address. Log in or sign up with your email and password instead.',
 };
 
 export function LoginForm({ google = false }: { google?: boolean } = {}) {

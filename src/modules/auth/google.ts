@@ -139,6 +139,10 @@ export async function finishGoogle(req: Request, ctx: RequestContext): Promise<G
   if (claims.email_verified !== true) throw fail('email_unverified');
   const email = emailSchema.safeParse(claims.email);
   if (!email.success) throw fail('email');
+  if (!googleIsAuthoritative(email.data, claims.hd)) {
+    logger.warn({ event: 'auth.google_failed', requestId: ctx.requestId, why: 'not_authoritative' });
+    throw new AppError('UNAUTHENTICATED', { data: { reason: NOT_AUTHORITATIVE } });
+  }
 
   const userId = await claimAccountForGoogle(email.data, ctx);
   if (userId) {
@@ -161,6 +165,23 @@ export async function finishGoogle(req: Request, ctx: RequestContext): Promise<G
       SIGNUP_TTL_MS,
     ),
   };
+}
+
+/** Why Google could not be used: the address is one Google does not control (see googleIsAuthoritative). */
+export const NOT_AUTHORITATIVE = 'not_authoritative';
+
+/**
+ * Does Google itself control this address, so that "verified" means "owns it NOW"? Only for Gmail, and for a Google
+ * Workspace domain (the `hd` claim, which must be the address's own domain). Any other address on a Google account
+ * was checked once, maybe years ago: a former employee or a domain's previous owner can still hold that Google
+ * account. Google's own guidance is to rely on the email only in these two cases (security audit 2026-10-29, finding
+ * 2). For anything else Howdy refuses Google outright, for new accounts too: otherwise a stale Google login could make
+ * an account under someone else's email and lock its real owner out. Those people sign up with email (and a code).
+ */
+export function googleIsAuthoritative(email: string, hd: unknown): boolean {
+  const domain = email.slice(email.lastIndexOf('@') + 1);
+  if (domain === 'gmail.com' || domain === 'googlemail.com') return true;
+  return typeof hd === 'string' && hd.toLowerCase() === domain;
 }
 
 function decodeClaims(jwt: string): Record<string, unknown> | null {

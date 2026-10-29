@@ -68,6 +68,9 @@ async function roundTrip(claims: Record<string, unknown>, opts: { state?: string
     exp: Math.floor(Date.now() / 1000) + 600,
     nonce: s.location.searchParams.get('nonce'),
     email_verified: true,
+    // The test addresses are @example.com: Google answers as if that were a Workspace domain it controls, unless a
+    // test says otherwise (`hd: undefined`).
+    hd: 'example.com',
     ...claims,
   });
   const state = opts.state ?? s.location.searchParams.get('state')!;
@@ -119,6 +122,33 @@ describe('Google’s answer is checked', () => {
     expect(to).toMatch(/\/login\?google=failed$/);
     expect(named(cb.res, 'session')).toBeUndefined();
     expect(named(cb.res, 'google-proven')).toBeUndefined();
+    expect(named(cb.res, 'google-signup')).toBeUndefined();
+    expect(await userByEmail(email)).toBeUndefined();
+  });
+
+  it.each([
+    ['no Workspace domain', { hd: undefined }],
+    ['a Workspace domain that is not the address’s own', { hd: 'other.example' }],
+  ])(
+    'refuses an address Google does not control (%s), and changes nothing about an existing account',
+    async (_n, claims) => {
+      // An account that never confirmed its email: a Google answer for it must not strip its password.
+      const u = uniqueUser('stale');
+      await signUpUser(kit, u);
+      const { cb, to } = await roundTrip({ email: u.email, ...claims });
+      expect(to).toMatch(/\/login\?google=use-email$/);
+      expect(named(cb.res, 'google-proven')).toBeUndefined();
+      expect(named(cb.res, 'google-signup')).toBeUndefined();
+      const row = await userByEmail(u.email);
+      expect(row?.emailVerifiedAt).toBeNull();
+      expect(await db().select().from(credentials).where(eq(credentials.userId, row!.id))).toHaveLength(1);
+    },
+  );
+
+  it('refuses someone new with such an address too (no account under an address they may no longer own)', async () => {
+    const email = `${uniqueUser('newstale').handle}@example.com`;
+    const { cb, to } = await roundTrip({ email, hd: undefined });
+    expect(to).toMatch(/\/login\?google=use-email$/);
     expect(named(cb.res, 'google-signup')).toBeUndefined();
     expect(await userByEmail(email)).toBeUndefined();
   });

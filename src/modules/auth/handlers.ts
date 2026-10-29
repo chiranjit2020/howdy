@@ -45,6 +45,7 @@ import {
   finishGoogle,
   googleEnabled,
   googleSignupCookieName,
+  NOT_AUTHORITATIVE,
   pendingGoogleSignup,
   provenByGoogle,
   startGoogle,
@@ -156,7 +157,9 @@ export const authHandlers = {
         : redirectTo('/signup/google', [...done, outcome.setCookie]);
     } catch (err) {
       const code = err instanceof AppError ? err.code : 'INTERNAL';
-      return redirectTo(`/login?google=${code === 'RATE_LIMITED' ? 'busy' : 'failed'}`, done);
+      const reason = err instanceof AppError ? err.data?.reason : undefined;
+      const why = code === 'RATE_LIMITED' ? 'busy' : reason === NOT_AUTHORITATIVE ? 'use-email' : 'failed';
+      return redirectTo(`/login?google=${why}`, done);
     }
   }),
 

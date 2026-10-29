@@ -10,6 +10,7 @@ import { getMailer } from '@/platform/mailer';
 import { enforceRateLimit } from '@/platform/rate-limit';
 import { passwordMatchesIdentity, IDENTITY_PASSWORD_MESSAGE } from '@/shared/validation/auth';
 import { audit } from './audit';
+import { BREACHED_PASSWORD_MESSAGE, isBreachedPassword } from './breached';
 import { recordAcceptance } from './legal';
 import { closeAccount, deletionDate, isHandleHeld, keepAccount } from './deletion';
 import { fileAppeal, suspensionAtSignIn, type SuspensionNotice } from '@/modules/moderation';
@@ -109,6 +110,10 @@ export async function signUp(
   await enforceRateLimit(`auth:signup:ip:${ctx.ip}`, RATE.signupIp);
   await enforceRateLimit(`auth:signup:email:${keyDigest(input.email)}`, RATE.signupEmail);
 
+  // Asked about the password alone (never the email), so its answer says nothing about who has an account.
+  if (await isBreachedPassword(input.password)) {
+    throw new AppError('VALIDATION_FAILED', { fields: { password: BREACHED_PASSWORD_MESSAGE } });
+  }
   const passwordHash = await hashPassword(input.password);
   const db = getDb();
 
@@ -407,6 +412,9 @@ export async function resetPassword(
     throw new AppError('VALIDATION_FAILED', { fields: { password: IDENTITY_PASSWORD_MESSAGE } });
   }
 
+  if (await isBreachedPassword(input.password)) {
+    throw new AppError('VALIDATION_FAILED', { fields: { password: BREACHED_PASSWORD_MESSAGE } });
+  }
   const newHash = await hashPassword(input.password);
   const done = await db.transaction(async (tx) => {
     const [claimed] = await tx
