@@ -82,14 +82,15 @@ export function ShellSidebarNav({ items }: { items: ShellNavItem[] }) {
                 aria-current={current ? 'page' : undefined}
                 className={cn(
                   'flex min-h-11 items-center gap-3 rounded-md px-3 text-body font-medium no-underline transition-colors',
+                  // The current page: the brand violet, with its icon in sunflower (the two palette colours together).
                   current
-                    ? 'bg-success/60 font-semibold text-text-primary'
+                    ? 'bg-accent font-semibold text-on-accent hover:no-underline'
                     : 'text-text-primary hover:bg-surface-sunken',
                 )}
               >
                 <span
                   aria-hidden="true"
-                  className={cn('flex text-title', current ? 'text-text-primary' : 'text-text-secondary')}
+                  className={cn('flex text-title', current ? 'text-highlight' : 'text-text-secondary')}
                 >
                   {ICON[it.key]}
                 </span>
@@ -140,7 +141,8 @@ export function ShellMoreMenu({ items }: { items: ShellNavItem[] }) {
             label: it.badge ? `${it.label} (${badgeText(it.badge)} new)` : it.label,
             onSelect: () => router.push(it.href),
           })),
-          // Where people look for it on a phone. "Sign out everywhere" stays with Open Gates on Home (it asks first).
+          // Where people look for them on a phone. Devices (and "Sign out everywhere", which asks first) are in Settings.
+          { id: 'devices', label: 'Devices', onSelect: () => router.push('/settings#devices') },
           {
             id: 'sign-out',
             label: 'Sign out',

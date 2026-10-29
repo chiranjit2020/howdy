@@ -62,7 +62,12 @@ test.describe('authentication journey (production build, real CSP, real cookies)
     await page.goto('/login');
     await expect(page).toHaveURL(/\/home$/);
 
-    await page.getByRole('button', { name: 'Sign out', exact: true }).click();
+    // Signing out lives in the account menu under your avatar.
+    await page.getByRole('button', { name: 'Your account' }).click();
+    await page
+      .getByRole('region', { name: 'Your account' })
+      .getByRole('button', { name: 'Sign out', exact: true })
+      .click();
     await expect(page).toHaveURL(/\/gate$/);
     expect((await ctx.cookies()).find((c) => c.name === '__Host-howdy_session')).toBeUndefined();
     await page.goto('/home');
@@ -253,17 +258,17 @@ test.describe('authentication journey (production build, real CSP, real cookies)
     await stepInsideVia(p2, a.email, a.password);
     await expect(p2).toHaveURL(/\/home$/);
 
-    await p1.reload();
+    await p1.goto('/settings');
     const gates = p1.getByRole('region', { name: 'Devices' });
     await expect(gates.getByRole('listitem')).toHaveCount(2);
     await expect(gates.getByText('This device')).toHaveCount(1);
-    await gates.getByRole('button', { name: /Close gate on/ }).click();
+    await gates.getByRole('button', { name: /Sign out on/ }).click();
     await expect(gates.getByText('Where you are signed in · 1 device')).toBeVisible();
     await expect(gates.getByRole('listitem')).toHaveCount(1);
 
     await p2.reload();
     await expect(p2).toHaveURL(/\/login$/);
-    await p1.reload();
+    await p1.goto('/home');
     await expect(p1.getByRole('heading', { name: /^Howdy, / })).toBeVisible(); // this device stays inside
     await first.close();
     await second.close();
@@ -276,14 +281,18 @@ test.describe('authentication journey (production build, real CSP, real cookies)
     await signUpVia(page, a);
     await confirmEmailVia(page, a.email);
     await stepInsideVia(page, a.email, a.password);
-    await page.getByRole('button', { name: 'Sign out everywhere…' }).click();
+    // From the account menu under the avatar.
+    await page.getByRole('button', { name: 'Your account' }).click();
+    const panel = page.getByRole('region', { name: 'Your account' });
+    await panel.getByRole('button', { name: 'Sign out everywhere…' }).click();
     const dialog = page.getByRole('alertdialog', { name: 'Sign out of every device?' });
     await expect(dialog).toBeVisible();
     await expect(dialog.getByRole('button', { name: 'Cancel' })).toBeFocused(); // the safe choice is the default
     await page.keyboard.press('Escape');
     await expect(dialog).toBeHidden();
+    await expect(panel).toBeVisible(); // Escape closed the question, not the menu
     await expect(page).toHaveURL(/\/home$/); // cancelling changed nothing
-    await page.getByRole('button', { name: 'Sign out everywhere…' }).click();
+    await panel.getByRole('button', { name: 'Sign out everywhere…' }).click();
     await dialog.getByRole('button', { name: 'Sign out everywhere' }).click();
     await expect(page).toHaveURL(/\/gate$/);
     await ctx.close();

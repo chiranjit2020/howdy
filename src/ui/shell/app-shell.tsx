@@ -5,7 +5,7 @@ import { Art } from '../art/glyph';
 import { BellIcon } from '../icons';
 import { cn } from '../cn';
 import { HowdyLogo } from '../logo';
-import { Avatar } from '../primitives/avatar';
+import { AccountMenu } from './account-menu';
 import { BirdVisitor } from './bird-visitor';
 import { ShellBottomNav, ShellMoreMenu, ShellSidebarNav, type ShellNavItem } from './nav';
 import { SiteFooter } from './site-footer';
@@ -116,15 +116,9 @@ export function AppShell({
                     </span>
                   )}
                 </Link>
-                {/* A real 44 px box (an inline link around an image is shorter than its picture, and too small to tap).
-                  Phones have your picture in the tab bar instead, so it shows here from md up only. */}
-                <Link
-                  href={`/profile/${me.handle}`}
-                  aria-label="Your profile"
-                  className="hidden size-11 rounded-pill md:inline-flex"
-                >
-                  <Avatar name={me.displayName} src={me.portraitUrl} tint={me.portraitTint} size="md" />
-                </Link>
+                {/* Your account (profile, Settings, devices, sign out). Phones have your picture in the tab bar
+                  instead, and devices in Settings, so this shows from md up only. */}
+                <AccountMenu me={me} />
                 <ShellMoreMenu items={items} />
               </div>
             ) : (

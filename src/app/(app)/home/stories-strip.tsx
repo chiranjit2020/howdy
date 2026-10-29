@@ -96,11 +96,6 @@ export function StoriesStrip({
           </li>
         ))}
       </ul>
-      {initial.length === 0 && (
-        <p className="text-caption text-text-secondary">
-          Share a photo with your friends for 12 hours — tap your picture above.
-        </p>
-      )}
       {open && (
         <StoryViewer
           ring={open}

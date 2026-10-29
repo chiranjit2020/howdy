@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { PORTRAIT_TINTS } from '@/shared/validation/profile';
 import { RanchHeader } from '@/ui/howdy';
@@ -97,7 +97,15 @@ describe('AppShell', () => {
       'href',
       '/notifications',
     );
-    expect(screen.getByRole('link', { name: 'Your profile' })).toHaveAttribute('href', '/profile/chiru');
+    // Your avatar opens the account menu: your profile, Settings, and your devices with the ways to sign out.
+    const account = screen.getByRole('button', { name: 'Your account' });
+    expect(account).toHaveAttribute('aria-expanded', 'false');
+    fireEvent.click(account);
+    expect(account).toHaveAttribute('aria-expanded', 'true');
+    const panel = within(screen.getByRole('region', { name: 'Your account' }));
+    expect(panel.getByRole('link', { name: 'My profile' })).toHaveAttribute('href', '/profile/chiru');
+    expect(panel.getByRole('heading', { name: 'Devices' })).toBeInTheDocument();
+    expect(panel.getByRole('button', { name: 'Sign out everywhere…' })).toBeInTheDocument();
     // Phones: the pages that are not tabs are behind "More" (CSS hides it from md up).
     expect(screen.getByRole('button', { name: 'More pages' })).toHaveAttribute('aria-haspopup', 'menu');
   });

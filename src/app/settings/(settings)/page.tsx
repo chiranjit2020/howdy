@@ -1,5 +1,6 @@
 import { withCards } from '@/app/_lib/social';
-import { requireUser, twoStepSummary } from '@/modules/auth';
+import { listMySessions, requireUser, twoStepSummary } from '@/modules/auth';
+import { Devices } from '@/ui/shell/devices';
 import { getPortraitVersion } from '@/modules/media';
 import { getPrefs } from '@/modules/notifications';
 import { getOwnRanch } from '@/modules/profiles';
@@ -17,12 +18,13 @@ export const metadata = { title: 'Settings' };
 /** The Workshop (settings). Protected: the session is checked on the server before any of this renders. */
 export default async function WorkshopPage() {
   const user = await requireUser();
-  const [ranch, prefs, lists, photo, security] = await Promise.all([
+  const [ranch, prefs, lists, photo, security, sessions] = await Promise.all([
     getOwnRanch(user.id),
     getPrefs(user.id),
     listMyRelationships(user.id).then((r) => withCards(r, user.id)),
     getPortraitVersion(user.id, { userId: user.id }).catch(() => null),
     twoStepSummary(user.id),
+    listMySessions(),
   ]);
   return (
     <main id="main" className="mx-auto flex max-w-xl flex-col gap-4 py-4 sm:gap-6 sm:py-8">
@@ -62,6 +64,17 @@ export default async function WorkshopPage() {
           })),
         }}
       />
+      {/* The phone's More menu links here (#devices); wide screens also have it under the avatar. */}
+      <div id="devices" className="scroll-mt-20">
+        <Devices
+          initial={sessions.map((s) => ({
+            id: s.id,
+            deviceLabel: s.deviceLabel,
+            lastSeenAt: s.lastSeenAt.toISOString(),
+            current: s.current,
+          }))}
+        />
+      </div>
       <ExportData />
       <DeleteAccount />
     </main>
