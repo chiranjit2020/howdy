@@ -107,12 +107,15 @@ export function SwitchButton({
   onCheckedChange,
   disabled,
   id,
+  tone = 'accent',
   ...aria
 }: {
   checked: boolean;
   onCheckedChange: (checked: boolean) => void;
   disabled?: boolean | undefined;
   id?: string | undefined;
+  /** The "on" colour: violet (settings), or sunflower for a status you show others (Free to talk). Off is always grey. */
+  tone?: 'accent' | 'highlight';
   'aria-labelledby'?: string;
   'aria-describedby'?: string;
   'aria-label'?: string;
@@ -132,7 +135,12 @@ export function SwitchButton({
         aria-hidden="true"
         className={cn(
           'relative h-8 w-14 rounded-pill border-2 transition-colors duration-200',
-          checked ? 'border-accent bg-accent' : 'border-border-strong bg-surface-sunken',
+          !checked
+            ? 'border-border-strong bg-surface-sunken'
+            : tone === 'highlight'
+              ? // A faint violet edge: sunflower alone is pale against a white panel.
+                'border-on-highlight/25 bg-highlight'
+              : 'border-accent bg-accent',
         )}
       >
         <span

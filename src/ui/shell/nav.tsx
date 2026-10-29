@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { postJson } from '../auth/api';
 import { cn } from '../cn';
 import {
@@ -23,6 +23,7 @@ import { Dropdown } from '../primitives/dropdown';
 import { Avatar } from '../primitives/avatar';
 import { BottomNavigation, type NavItem } from '../primitives/navigation';
 import type { ShellMe } from './app-shell';
+import { FreeToTalkDialog, freeToTalkSummary, type FreeToTalkState } from './free-to-talk-menu';
 
 export type ShellNavKey =
   | 'home'
@@ -127,17 +128,39 @@ const PHONE_TABS: ShellNavKey[] = ['home', 'posse', 'whispers', 'ranch'];
  * that is neither a tab nor the bell — Tracks, Workshop, Town Halls, Time Capsules, Moderation for staff. Without it
  * those pages had no way in on a phone. It ends with Sign out.
  */
-export function ShellMoreMenu({ items }: { items: ShellNavItem[] }) {
+export function ShellMoreMenu({
+  items,
+  freeToTalk,
+}: {
+  items: ShellNavItem[];
+  /** Phones reach Free to talk here (wide screens have the pill in the top bar). */
+  freeToTalk?: FreeToTalkState | undefined;
+}) {
   const router = useRouter();
+  const [talkOpen, setTalkOpen] = useState(false);
   const more = items.filter((it) => !PHONE_TABS.includes(it.key) && it.key !== 'chimes');
   if (more.length === 0) return null;
-  const waiting = more.reduce((n, it) => n + (it.badge ?? 0), 0);
+  const freeFriends = freeToTalk?.lit.length ?? 0;
+  const waiting = more.reduce((n, it) => n + (it.badge ?? 0), 0) + freeFriends;
+  const talk = freeToTalk ? freeToTalkSummary(freeToTalk) : null;
   return (
     <div className="md:hidden">
+      {freeToTalk && (
+        <FreeToTalkDialog state={freeToTalk} open={talkOpen} onClose={() => setTalkOpen(false)} />
+      )}
       <Dropdown
         label="More"
         align="end"
         items={[
+          ...(talk
+            ? [
+                {
+                  id: 'free-to-talk',
+                  label: freeFriends > 0 ? `${talk.label} (${badgeText(freeFriends)} free now)` : talk.label,
+                  onSelect: () => setTalkOpen(true),
+                },
+              ]
+            : []),
           ...more.map((it) => ({
             id: it.key,
             label: it.badge ? `${it.label} (${badgeText(it.badge)} new)` : it.label,

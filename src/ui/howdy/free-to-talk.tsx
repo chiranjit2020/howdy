@@ -65,12 +65,22 @@ function savePrefs(minutes: LightMinutes, audience: LightAudience) {
 }
 
 /**
- * Free to talk (Porch Light, ADR-032) on Home, compact: one row with the switch, one line saying how it stands, and the
- * friends who are free right now. One tap switches it on for as long, and for whom, as last time (1 hour, all friends
- * the first time); "Options" changes that before or after. Nobody is notified when a light comes on; it is only seen by
- * those who look, and it turns itself off.
+ * Free to talk (Porch Light, ADR-032): one row with the switch (sunflower when on, grey when off), one line saying how it
+ * stands, and the friends who are free right now. Shown inside the header's "Free to talk" panel (or the phone's dialog),
+ * which gives it its frame. One tap switches it on for as long, and for whom, as last time (1 hour, all friends the first
+ * time); "Options" changes that before or after. Nobody is notified when a light comes on; it is only seen by those who
+ * look, and it turns itself off.
  */
-export function PorchLightCard({ lit, mine }: { lit: LitPalRow[]; mine: MyLightState | null }) {
+export function FreeToTalkPanel({
+  lit,
+  mine,
+  label = 'Free to talk',
+}: {
+  lit: LitPalRow[];
+  mine: MyLightState | null;
+  /** The heading, which also names the switch. Inside a dialog already titled "Free to talk", say it another way. */
+  label?: string;
+}) {
   const router = useRouter();
   const headingId = useId();
   const statusId = useId();
@@ -124,16 +134,13 @@ export function PorchLightCard({ lit, mine }: { lit: LitPalRow[]; mine: MyLightS
   }
 
   return (
-    <section
-      aria-labelledby={headingId}
-      className="clay flex flex-col gap-1 border-t-4 border-t-highlight p-3 sm:p-4"
-    >
+    <section aria-labelledby={headingId} className="flex flex-col gap-1">
       <div className="flex items-center gap-1 pl-2">
         <h2
           id={headingId}
           className="flex min-w-0 flex-1 items-center gap-1.5 text-metadata font-semibold tracking-wider text-text-secondary uppercase"
         >
-          Free to talk
+          {label}
         </h2>
         <button
           type="button"
@@ -144,6 +151,7 @@ export function PorchLightCard({ lit, mine }: { lit: LitPalRow[]; mine: MyLightS
           Options
         </button>
         <SwitchButton
+          tone="highlight"
           checked={mine !== null}
           disabled={busy}
           onCheckedChange={(on) => void (on ? switchOn() : switchOff())}

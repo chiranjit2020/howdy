@@ -8,7 +8,6 @@ import { Img } from './img';
  * Sizes are the files' real pixel sizes; CSS scales them.
  */
 const FILES = {
-  bird: { w: 94, h: 91 },
   cactus: { w: 134, h: 156 },
   chat: { w: 117, h: 104 },
   cloud: { w: 128, h: 129 },

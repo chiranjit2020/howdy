@@ -270,7 +270,7 @@ export function Textarea({
       {(c) => (
         <>
           <textarea
-            className={cn(CONTROL, 'min-h-24 resize-y')}
+            className={cn(CONTROL, 'min-h-24 resize-none')}
             maxLength={maxLength}
             onChange={handleChange}
             {...(value !== undefined ? { value } : { defaultValue })}

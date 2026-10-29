@@ -58,9 +58,11 @@ export const PencilIcon = (p: IconProps) => (
 export const HomeIcon = (p: IconProps) => <Svg d="M3 11l9-8 9 8M5 10v10h14V10" {...p} />;
 export const FenceIcon = (p: IconProps) => <Svg d="M5 4v16M12 4v16M19 4v16M3 9h18M3 15h18" {...p} />;
 // Two footprints: an oval print with a heel line, walking up and to the right.
+// Visitors: an eye (who looked at my profile). Footprints were too busy to read as a 1 px line at menu size.
 export const TracksIcon = (p: IconProps) => (
   <Svg
-    d="M8.5 3.5c1.7 0 2.5 1.7 2.5 3.6S10 11 8.5 11 6 9.1 6 7.1 6.8 3.5 8.5 3.5zM7 14.5h3M15.5 11.5c1.7 0 2.5 1.7 2.5 3.6s-1 3.9-2.5 3.9-2.5-1.9-2.5-3.9.8-3.6 2.5-3.6zM14 21h3"
+    d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"
+    dots={[[12, 12]]}
     {...p}
   />
 );
@@ -75,8 +77,12 @@ export const ReactIcon = (p: IconProps) => (
     {...p}
   />
 );
+// Messages: a speech bubble with a tail and two lines of text, which is what makes it read as "messages" when small.
 export const WhisperIcon = (p: IconProps) => (
-  <Svg d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z" {...p} />
+  <Svg
+    d="M5 4.5h14a1.5 1.5 0 0 1 1.5 1.5v9a1.5 1.5 0 0 1-1.5 1.5h-8l-5 4v-4H5A1.5 1.5 0 0 1 3.5 15V6A1.5 1.5 0 0 1 5 4.5zM8 9h8M8 12h5"
+    {...p}
+  />
 );
 export const BellIcon = (p: IconProps) => (
   <Svg d="M6 8a6 6 0 1 1 12 0c0 7 3 8 3 8H3s3-1 3-8M10 20a2 2 0 0 0 4 0" {...p} />

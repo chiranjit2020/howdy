@@ -25,13 +25,12 @@ async function art(file: string): Promise<string> {
 }
 
 export async function shareCard(kicker: string = 'A small-circle social world'): Promise<ImageResponse> {
-  const [logo, hat, sun, cloud, bird, gem, yo] = await Promise.all(
+  const [logo, hat, sun, cloud, gem, yo] = await Promise.all(
     [
       'brand/howdy-wordmark.png',
       'art/hat.png',
       'art/sun.png',
       'art/cloud.png',
-      'art/bird.png',
       'art/mark-gem.png',
       'art/react-yo.png',
     ].map(art),
@@ -67,13 +66,6 @@ export async function shareCard(kicker: string = 'A small-circle social world'):
         alt=""
       />
       <img src={yo} width={96} height={96} style={{ position: 'absolute', top: 64, right: 300 }} alt="" />
-      <img
-        src={bird}
-        width={84}
-        height={81}
-        style={{ position: 'absolute', bottom: 60, right: 330 }}
-        alt=""
-      />
       <img src={logo} width={300} height={92} alt="" />
       <div
         style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 28, color: SLATE, fontSize: 30 }}

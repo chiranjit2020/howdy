@@ -134,11 +134,6 @@ function PhonePeek() {
         size="free"
         className="absolute top-24 -left-10 w-16 opacity-90 motion-safe:animate-drift sm:-left-16 sm:w-20"
       />
-      <Art
-        name="bird"
-        size="free"
-        className="absolute -bottom-6 -left-4 w-12 motion-safe:animate-bird-hop sm:-left-10"
-      />
       <Art name="sparkle" size="free" className="absolute right-2 -bottom-8 w-9 motion-safe:animate-drift" />
 
       <div

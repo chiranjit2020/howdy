@@ -1,4 +1,4 @@
-import { expect, test, type Browser } from '@playwright/test';
+import { expect, test, type Browser, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { parse } from 'dotenv';
 import { Pool } from 'pg';
@@ -16,12 +16,22 @@ import {
   watchProblems,
 } from './helpers';
 
-/** ADR-032: switch on a Porch Light on Home; a Pal sees it on Home and on the Porch; switching off clears it. 320 px phones. */
+/**
+ * ADR-032: switch on a Porch Light from the top bar (on a 320 px phone: More, then Free to talk); a Pal sees it there and
+ * on the Porch; switching off clears it.
+ */
 
 const db = new Pool({ connectionString: parse(readFileSync('.env.local')).E2E_DATABASE_URL, max: 1 });
 test.afterAll(async () => {
   await db.end();
 });
+
+/** Phones reach Free to talk from the top bar's More menu; it opens as a dialog. */
+async function openFreeToTalk(page: Page) {
+  await page.getByRole('button', { name: /^More pages/ }).tap();
+  await page.getByRole('menuitem', { name: /^Free/ }).tap();
+  return page.getByRole('dialog', { name: 'Free to talk' });
+}
 
 async function person(browser: Browser, tag: string) {
   const account = uniqueAccount(tag);
@@ -49,7 +59,7 @@ const makePals = (a: string, b: string) =>
   );
 
 test.describe('Free to talk (production build, real CSP)', () => {
-  test('switch it on with a note; a friend sees it on Home and on the profile; switching off clears it', async ({
+  test('switch it on with a note; a friend sees it in the top bar and on the profile; switching off clears it', async ({
     browser,
   }) => {
     const [owner, pal] = [await person(browser, 'lamp'), await person(browser, 'moth')];
@@ -58,11 +68,11 @@ test.describe('Free to talk (production build, real CSP)', () => {
     const palProblems = await watchProblems(pal.page);
     const note = `free for chai ${owner.handle.slice(-4)}`;
 
-    // The owner switches it on from Home.
+    // The owner switches it on from the top bar.
     await owner.page.goto('/home');
     await pageReady(owner.page);
-    const card = owner.page.getByRole('region', { name: 'Free to talk' });
-    const lightSwitch = card.getByRole('switch', { name: 'Free to talk' });
+    const card = await openFreeToTalk(owner.page);
+    const lightSwitch = card.getByRole('switch', { name: 'Let friends know' });
     await expect(lightSwitch).toHaveAttribute('aria-checked', 'false');
     // Options first (a note), then switch it on from there.
     await card.getByRole('button', { name: 'Options' }).tap();
@@ -77,10 +87,11 @@ test.describe('Free to talk (production build, real CSP)', () => {
     await expect(card.getByText(/On until \d{1,2}:\d{2} [ap]m · all friends/)).toBeVisible();
     await expect(card.getByText(note)).toBeVisible();
 
-    // The Pal sees it on Home, with a Whisper button.
+    // The Pal sees it in the top bar, with a Message button.
     await pal.page.goto('/home');
     await pageReady(pal.page);
-    const lit = pal.page.getByRole('list', { name: 'Friends free to talk' });
+    await expect(pal.page.getByRole('button', { name: 'More pages, 1 new' })).toBeVisible();
+    const lit = (await openFreeToTalk(pal.page)).getByRole('list', { name: 'Friends free to talk' });
     await expect(lit.getByRole('link', { name: owner.handle, exact: true })).toBeVisible();
     await expect(lit.getByText(/until \d{1,2}:\d{2} [ap]m/)).toBeVisible();
     await expect(lit.getByText(note)).toBeVisible();
@@ -102,9 +113,7 @@ test.describe('Free to talk (production build, real CSP)', () => {
     await expect(lightSwitch).toHaveAttribute('aria-checked', 'false');
     await pal.page.goto('/home');
     await pageReady(pal.page);
-    await expect(
-      pal.page.getByRole('region', { name: 'Free to talk' }).getByText(/no friend is free right now/),
-    ).toBeVisible();
+    await expect((await openFreeToTalk(pal.page)).getByText(/no friend is free right now/)).toBeVisible();
     expect(
       (
         await db.query(

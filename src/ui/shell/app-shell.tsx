@@ -5,6 +5,7 @@ import { BellIcon, SearchIcon } from '../icons';
 import { cn } from '../cn';
 import { HowdyLogo } from '../logo';
 import { AccountMenu } from './account-menu';
+import { FreeToTalkPill, type FreeToTalkState } from './free-to-talk-menu';
 import { PeopleSearch } from './people-search';
 import { ShellBottomNav, ShellMoreMenu, ShellSidebarNav, type ShellNavItem } from './nav';
 import { SiteFooter } from './site-footer';
@@ -41,6 +42,7 @@ export function AppShell({
   friendRequests = 0,
   visitsToday = 0,
   townHallInvites = 0,
+  freeToTalk,
   moderator = false,
   admin = false,
   waysIn = true,
@@ -48,6 +50,8 @@ export function AppShell({
   children,
 }: {
   me?: ShellMe | undefined;
+  /** My light and my friends who are free right now: the "Free to talk" pill (wide) or More menu item (phones). */
+  freeToTalk?: FreeToTalkState | undefined;
   /** Unread notifications: on the bell in the top bar (they have no menu item of their own). */
   unread?: number;
   unreadWhispers?: number;
@@ -111,6 +115,7 @@ export function AppShell({
                 >
                   <SearchIcon className="size-5" />
                 </Link>
+                {freeToTalk && <FreeToTalkPill state={freeToTalk} />}
                 <Link
                   href="/notifications"
                   aria-label={unread > 0 ? `Notifications, ${unread} unread` : 'Notifications'}
@@ -129,7 +134,7 @@ export function AppShell({
                 {/* Your account (profile, Settings, devices, sign out). Phones have your picture in the tab bar
                   instead, and devices in Settings, so this shows from md up only. */}
                 <AccountMenu me={me} />
-                <ShellMoreMenu items={items} />
+                <ShellMoreMenu items={items} freeToTalk={freeToTalk} />
               </div>
             ) : (
               // Two equal pills: the Howdy name, and underneath what it plainly means.

@@ -207,8 +207,11 @@ export function FenceSection({
 
   return (
     <>
+      {/* In the feed, "What's on your mind?" comes first and the "Friends' posts" heading sits over the posts it names;
+        on a wall, the composer belongs under "The wall". */}
+      {feed && composer}
       <Fence
-        composer={composer}
+        composer={feed ? undefined : composer}
         hasMore={next !== null}
         onLoadMore={loadMore}
         loadingMore={loadingMore}
