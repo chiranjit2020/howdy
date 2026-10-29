@@ -184,6 +184,8 @@ export const signUpSchema = z
      * anyone signing up, and the response must not say whether it worked.
      */
     invite: z.string().max(40).optional(),
+    /** The one-time token from the Turnstile bot check (absent when Turnstile is off). Checked with Cloudflare. */
+    turnstileToken: z.string().max(4096).optional(),
   })
   .superRefine((v, ctx) => {
     if (passwordMatchesIdentity(v.password, v.email, v.handle)) {

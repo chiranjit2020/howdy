@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 import { resetEnvCache } from '@/platform/config/env';
 import { readJson } from '@/platform/http/body';
-import { clientIp } from '@/platform/http/client-ip';
+import { clientIp, ipv6Network } from '@/platform/http/client-ip';
 import { parseCookies, serializeCookie } from '@/platform/http/cookies';
 import { isSecureDeployment, sessionCookieName } from '@/modules/auth/config';
 import { clearedSessionCookie, sessionCookie } from '@/modules/auth/request';
@@ -86,6 +86,30 @@ describe('clientIp', () => {
     expect(clientIp(new Headers(), 1)).toBe('direct');
     expect(clientIp(h('1.2.3.4'), 3)).toBe('direct');
   });
+  it('counts IPv6 by its /64 network, so one connection cannot rotate through its 2^64 addresses', () => {
+    const a = clientIp(h('2001:db8:abcd:12:1111:2222:3333:4444'), 1);
+    const b = clientIp(h('2001:db8:abcd:12:9999:8888:7777:6666'), 1);
+    expect(a).toBe('2001:db8:abcd:12::/64');
+    expect(b).toBe(a);
+    // A different /64 is a different key.
+    expect(clientIp(h('2001:db8:abcd:13::1'), 1)).toBe('2001:db8:abcd:13::/64');
+  });
+  it.each([
+    ['2001:db8::1', '2001:db8:0:0::/64'], // shortened
+    ['2001:DB8:0:0:1::1', '2001:db8:0:0::/64'], // upper case, shortening in the second half
+    ['::1', '0:0:0:0::/64'],
+    ['fe80::1%eth0', 'fe80:0:0:0::/64'], // zone id dropped
+    ['2001:db8:1:2:3:4:192.0.2.1', '2001:db8:1:2::/64'], // IPv4 tail
+    ['::ffff:203.0.113.9', '203.0.113.9'], // IPv4-mapped: really an IPv4 client
+  ])('normalises %s to %s', (raw, want) => {
+    expect(ipv6Network(raw)).toBe(want);
+  });
+  it.each(['1::2::3', '12345::1', '1:2:3:4:5:6:7:8:9', '::ffff:999.1.1.1', 'g::1'])(
+    'refuses a malformed address (%s) rather than guessing',
+    (raw) => {
+      expect(ipv6Network(raw)).toBeNull();
+    },
+  );
 });
 
 describe('readJson', () => {

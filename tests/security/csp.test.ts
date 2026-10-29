@@ -40,6 +40,15 @@ describe('Content-Security-Policy', () => {
     expect(buildCsp('n', false, undefined, bucket)).toContain("img-src 'self' blob: data:;");
   });
 
+  it('frames only Cloudflare Turnstile, and only when it is set up', () => {
+    expect(buildCsp('n', false)).not.toContain('frame-src');
+    expect(buildCsp('n', false)).not.toContain('challenges.cloudflare.com');
+    const csp = buildCsp('n', false, undefined, undefined, false, true);
+    expect(csp).toContain('frame-src https://challenges.cloudflare.com;');
+    expect(csp).toMatch(/script-src [^;]*'strict-dynamic' https:\/\/challenges\.cloudflare\.com/);
+    expect(csp).not.toMatch(/connect-src[^;]*cloudflare/); // nothing else opens up
+  });
+
   it('proxy issues a fresh nonce per request and ignores client-supplied request ids', () => {
     const mk = () => new NextRequest('http://localhost:3000/', { headers: { 'x-request-id': 'attacker' } });
     const a = proxy(mk());

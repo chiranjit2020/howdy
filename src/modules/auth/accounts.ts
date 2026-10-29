@@ -11,6 +11,7 @@ import { enforceRateLimit } from '@/platform/rate-limit';
 import { passwordMatchesIdentity, IDENTITY_PASSWORD_MESSAGE } from '@/shared/validation/auth';
 import { audit } from './audit';
 import { BREACHED_PASSWORD_MESSAGE, isBreachedPassword } from './breached';
+import { assertHuman } from './turnstile';
 import { recordAcceptance } from './legal';
 import { closeAccount, deletionDate, isHandleHeld, keepAccount } from './deletion';
 import { fileAppeal, suspensionAtSignIn, type SuspensionNotice } from '@/modules/moderation';
@@ -46,7 +47,8 @@ export interface RequestContext {
 
 export const INVALID_CREDENTIALS_MESSAGE = 'That handle, email or password isn’t right.';
 const INVALID_LINK_MESSAGE = 'That link is invalid or has expired. Ask for a fresh one.';
-export const WRONG_EMAIL_CODE_MESSAGE = 'That code isn’t right, or it has expired. Check the email or send a new one.';
+export const WRONG_EMAIL_CODE_MESSAGE =
+  'That code isn’t right, or it has expired. Check the email or send a new one.';
 
 /** The confirmation email: one secret, sent as a button link and as the 6-digit code derived from it. */
 const verifyMail = (email: string, handle: string, token: string) =>
@@ -111,11 +113,14 @@ export async function signUp(
     password: string;
     displayName?: string | undefined;
     invite?: string | undefined;
+    turnstileToken?: string | undefined;
   },
   ctx: RequestContext,
 ): Promise<void> {
   await enforceRateLimit(`auth:signup:ip:${ctx.ip}`, RATE.signupIp);
   await enforceRateLimit(`auth:signup:email:${keyDigest(input.email)}`, RATE.signupEmail);
+  // The bot check, after the limits (a flood never reaches Cloudflare) and before any work on the account.
+  await assertHuman(input.turnstileToken, ctx);
 
   // Asked about the password alone (never the email), so its answer says nothing about who has an account.
   if (await isBreachedPassword(input.password)) {
@@ -133,7 +138,11 @@ export async function signUp(
       fields: { handle: 'That username is taken.' },
     });
   // The never-confirmed account of this same email is about to be replaced, so its username does not count as taken.
-  const replaceable = and(eq(users.email, input.email), isNull(users.emailVerifiedAt), eq(users.status, 'active'));
+  const replaceable = and(
+    eq(users.email, input.email),
+    isNull(users.emailVerifiedAt),
+    eq(users.status, 'active'),
+  );
   const [taken] = await db
     .select({ id: users.id })
     .from(users)
@@ -322,7 +331,10 @@ export async function verifyEmailCode(
   await enforceRateLimit(`auth:email-code:email-day:${keyDigest(input.email)}`, RATE.emailCodeEmailDay);
   const now = new Date();
   const wrong = () =>
-    new AppError('BAD_REQUEST', { message: WRONG_EMAIL_CODE_MESSAGE, fields: { code: WRONG_EMAIL_CODE_MESSAGE } });
+    new AppError('BAD_REQUEST', {
+      message: WRONG_EMAIL_CODE_MESSAGE,
+      fields: { code: WRONG_EMAIL_CODE_MESSAGE },
+    });
 
   // The newest live confirmation of this email, still inside the code's 15 minutes.
   const [row] = await getDb()

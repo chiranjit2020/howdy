@@ -13,6 +13,7 @@ export { dueDeletions, eraseAccount, purgeFreedHandles } from './deletion';
 export { acceptCurrentTerms, pendingAcceptances } from './legal';
 export { accountExport, verifyForExport } from './export';
 export { hasTwoStep, twoStepSummary } from './two-step';
+export { turnstileSiteKey } from './turnstile';
 export type { TwoStepSummary } from './two-step';
 export type { AccountExport } from './export';
 export type { SessionContext, SessionUser, SessionSummary } from './sessions';

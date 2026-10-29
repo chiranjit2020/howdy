@@ -94,6 +94,13 @@ const schema = z.object({
     )
     .optional(),
   GOOGLE_CLIENT_SECRET: z.string().min(10).optional(),
+  /**
+   * Cloudflare Turnstile, the bot check on sign-up (security audit finding 3). The site key is public (the page shows
+   * it); the secret stays on the server. Both or the check is off (dev, tests). Loosely checked on purpose: a value that
+   * looks unusual must never stop the whole site from starting.
+   */
+  TURNSTILE_SITE_KEY: z.string().trim().min(1).optional(),
+  TURNSTILE_SECRET_KEY: z.string().trim().min(1).optional(),
   /** Who push services contact about our pushes (mailto: or https:). */
   VAPID_SUBJECT: z
     .string()

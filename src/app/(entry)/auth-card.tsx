@@ -33,12 +33,15 @@ export function AuthCard({
   initial,
   invite,
   google = false,
+  turnstileSiteKey = null,
 }: {
   initial: AuthMode;
   /** Arrived through someone's invite link (ADR-045): sign-up sends the code along. */
   invite?: { code: string; invitedBy: string };
   /** "Continue with Google" is set up on this server (ADR-048). */
   google?: boolean;
+  /** The bot check's public key for sign-up (null = off). Both pages pass it: either can switch to sign-up. */
+  turnstileSiteKey?: string | null;
 }) {
   const [active, setActive] = useState<AuthMode>(initial);
   const mode = MODES[active];
@@ -63,7 +66,7 @@ export function AuthCard({
         {active === 'login' ? (
           <LoginForm google={google} />
         ) : (
-          <ClaimForm google={google} {...(invite ? { invite } : {})} />
+          <ClaimForm google={google} turnstileSiteKey={turnstileSiteKey} {...(invite ? { invite } : {})} />
         )}
         <p className="border-t border-border pt-4 text-center text-caption text-text-secondary">
           {mode.prompt}{' '}

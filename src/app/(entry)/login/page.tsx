@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { getCurrentUser, googleEnabled } from '@/modules/auth';
+import { getCurrentUser, googleEnabled, turnstileSiteKey } from '@/modules/auth';
 import { AuthCard } from '../auth-card';
 
 export const metadata = { title: 'Log in' };
@@ -13,7 +13,7 @@ export default async function LoginPage() {
       // already gives the gutter, and doubling it squeezes the card on a 320px phone.
       className="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center py-4"
     >
-      <AuthCard initial="login" google={googleEnabled()} />
+      <AuthCard initial="login" google={googleEnabled()} turnstileSiteKey={turnstileSiteKey()} />
     </main>
   );
 }

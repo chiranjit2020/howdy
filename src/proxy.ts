@@ -9,18 +9,23 @@ import { uploadOrigin } from './platform/storage/origin';
 export const ABLY_ORIGINS =
   'https://*.ably.net wss://*.ably.net https://*.ably-realtime.com wss://*.ably-realtime.com';
 
+/** Cloudflare Turnstile, the sign-up bot check: its script and the frame it draws the challenge in. */
+export const TURNSTILE_ORIGIN = 'https://challenges.cloudflare.com';
+
 export function buildCsp(
   nonce: string,
   isDev: boolean,
   wsOrigin?: string,
   storageOrigin?: string,
   live = false,
+  turnstile = false,
 ): string {
   const extra = [wsOrigin, storageOrigin, live ? ABLY_ORIGINS : undefined].filter(Boolean).join(' ');
   const directives = [
     "default-src 'self'",
-    // 'strict-dynamic' lets nonce'd scripts load their own chunks; dev needs eval for React refresh.
-    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ''}`,
+    // 'strict-dynamic' lets nonce'd scripts load their own chunks; dev needs eval for React refresh. Turnstile's host is
+    // named for older browsers only: ones that understand 'strict-dynamic' ignore host names (our own code loads it).
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${turnstile ? ` ${TURNSTILE_ORIGIN}` : ''}${isDev ? " 'unsafe-eval'" : ''}`,
     // Dev injects inline <style> for HMR.
     `style-src 'self' ${isDev ? "'unsafe-inline'" : `'nonce-${nonce}'`}`,
     "img-src 'self' blob: data:",
@@ -32,6 +37,8 @@ export function buildCsp(
       ? `connect-src 'self' ws: wss:${storageOrigin ? ` ${storageOrigin}` : ''}${live ? ` ${ABLY_ORIGINS}` : ''}`
       : `connect-src 'self'${extra ? ` ${extra}` : ''}`,
     "object-src 'none'",
+    // The only page that may be framed IN Howdy is Turnstile's challenge (and only when it is set up).
+    ...(turnstile ? [`frame-src ${TURNSTILE_ORIGIN}`] : []),
     "base-uri 'self'",
     "form-action 'self'",
     "frame-ancestors 'none'",
@@ -48,6 +55,7 @@ export function proxy(request: NextRequest): NextResponse {
     process.env.WS_PUBLIC_URL,
     uploadOrigin(process.env.STORAGE_DRIVER, process.env.R2_ACCOUNT_ID),
     Boolean(process.env.ABLY_API_KEY),
+    Boolean(process.env.TURNSTILE_SITE_KEY && process.env.TURNSTILE_SECRET_KEY),
   );
 
   const requestHeaders = new Headers(request.headers);

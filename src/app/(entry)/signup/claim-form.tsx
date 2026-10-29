@@ -8,6 +8,7 @@ import { LIMITS } from '@/shared/limits';
 import { postJson } from '@/ui/auth/api';
 import { FormMessage, focusFirstInvalid } from '@/ui/auth/form-parts';
 import { GoogleButton } from '@/ui/auth/google-button';
+import { Turnstile } from '@/ui/auth/turnstile';
 import { ArrowRightIcon, CheckCircleIcon, XCircleIcon } from '@/ui/icons';
 import { Button, Input, PasswordInput } from '@/ui/primitives';
 import { ConsentBoxes } from './consent-boxes';
@@ -22,8 +23,16 @@ const TERMS_MESSAGE = 'Please agree to the Terms of Service and Privacy Policy.'
 export function ClaimForm({
   invite,
   google = false,
-}: { invite?: { code: string; invitedBy: string }; google?: boolean } = {}) {
+  turnstileSiteKey = null,
+}: {
+  invite?: { code: string; invitedBy: string };
+  google?: boolean;
+  /** Cloudflare Turnstile's public key, or null when the bot check is off. */
+  turnstileSiteKey?: string | null;
+} = {}) {
   const formRef = useRef<HTMLFormElement>(null);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [turnstileReset, setTurnstileReset] = useState(0);
   const [values, setValues] = useState<Fields>({ handle: '', email: '', password: '' });
   // Two boxes on the page, one agreement on the server (`acceptTerms` needs both).
   const [ageOk, setAgeOk] = useState(false);
@@ -116,15 +125,28 @@ export function ClaimForm({
       requestAnimationFrame(() => focusFirstInvalid(formRef.current));
       return;
     }
+    // The bot check usually finishes on its own while the form is filled in; if it has not yet, say so instead of sending.
+    if (turnstileSiteKey && !turnstileToken) {
+      setFormError('One moment: we are checking that you are a person. Try again in a second.');
+      setAttempt((n) => n + 1);
+      return;
+    }
     setErrors({});
     setBusy(true);
-    const res = await postJson('/api/auth/signup', parsed.data);
+    const res = await postJson('/api/auth/signup', {
+      ...parsed.data,
+      ...(turnstileToken ? { turnstileToken } : {}),
+    });
     setBusy(false);
+    // A Turnstile token works once: get a fresh one for any next attempt.
+    setTurnstileReset((n) => n + 1);
     if (res.ok) {
       setSentTo(parsed.data.email);
       return;
     }
-    if (res.error?.fields) {
+    if (res.error?.fields?.turnstile) {
+      setFormError(res.error.fields.turnstile);
+    } else if (res.error?.fields) {
       setErrors(res.error.fields as Errors);
       requestAnimationFrame(() => focusFirstInvalid(formRef.current));
     } else {
@@ -176,9 +198,9 @@ export function ClaimForm({
       >
         <h1 className="text-title text-text-primary">Check your email</h1>
         <p className="text-caption font-normal text-text-secondary">
-          If <strong className="font-semibold [overflow-wrap:anywhere] text-text-primary">{sentTo}</strong> can be
-          used for a new Howdy account, we sent it a 6-digit code. Enter it here, or tap “Verify account” in the
-          email.
+          If <strong className="font-semibold [overflow-wrap:anywhere] text-text-primary">{sentTo}</strong>{' '}
+          can be used for a new Howdy account, we sent it a 6-digit code. Enter it here, or tap “Verify
+          account” in the email.
         </p>
         <Input
           look="entry"
@@ -203,7 +225,9 @@ export function ClaimForm({
         <Button type="submit" fullWidth loading={busy}>
           {busy ? 'Checking…' : 'Verify and continue'}
         </Button>
-        {resent && <FormMessage tone="success">A new code is on its way, if there is anything to send.</FormMessage>}
+        {resent && (
+          <FormMessage tone="success">A new code is on its way, if there is anything to send.</FormMessage>
+        )}
         <Button variant="ghost" fullWidth onClick={resend}>
           Send a new code
         </Button>
@@ -291,6 +315,14 @@ export function ClaimForm({
         ageError={errors.age}
         termsError={errors.acceptTerms}
       />
+      {turnstileSiteKey && (
+        <Turnstile
+          siteKey={turnstileSiteKey}
+          action="signup"
+          onToken={setTurnstileToken}
+          resetKey={turnstileReset}
+        />
+      )}
       <Button type="submit" fullWidth loading={busy}>
         {busy ? (
           'Creating account…'

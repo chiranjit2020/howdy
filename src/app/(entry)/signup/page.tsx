@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { getCurrentUser, googleEnabled } from '@/modules/auth';
+import { getCurrentUser, googleEnabled, turnstileSiteKey } from '@/modules/auth';
 import { inviterName } from '@/modules/invites';
 import { INVITE_CODE_PATTERN } from '@/shared/validation/invites';
 import { AuthCard } from '../auth-card';
@@ -26,6 +26,7 @@ export default async function SignupPage({
       <AuthCard
         initial="signup"
         google={googleEnabled()}
+        turnstileSiteKey={turnstileSiteKey()}
         {...(code && invitedBy ? { invite: { code, invitedBy } } : {})}
       />
     </main>

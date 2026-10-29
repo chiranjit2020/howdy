@@ -133,7 +133,7 @@ We use a few companies to run Howdy. They process data only to provide their ser
 
 - **Vercel:** hosts the website and runs the app.
 - **Neon:** hosts the database.
-- **Cloudflare:** stores profile photo, post, group and Story photos (R2), stores our encrypted nightly backups (R2; Cloudflare cannot read them), and provides our domain's DNS.
+- **Cloudflare:** stores profile photo, post, group and Story photos (R2), stores our encrypted nightly backups (R2; Cloudflare cannot read them), and provides our domain's DNS. On the sign-up page, Cloudflare **Turnstile** checks that you are a person and not a program making fake accounts: it looks at your browser and connection (such as its IP address) while the page is open, usually without asking anything. Cloudflare does not use this for advertising, and it sets no cookies to follow you to other sites.
 - **GitHub:** runs the nightly backup job. The copy exists unencrypted only inside that short-lived job, which checks it and encrypts it before storing it anywhere; it is not kept by GitHub.
 - **Resend:** sends account emails.
 - A managed **Redis** provider: holds short-lived rate-limit counters.
