@@ -93,31 +93,55 @@ export function Switch({ label, hint, checked, onCheckedChange, disabled, id }: 
         {label}
         {hint && <span className="text-metadata text-text-muted">{hint}</span>}
       </label>
-      {/* The button is the 44px touch target; the visible track inside it is 32px tall. */}
-      <button
-        id={switchId}
-        type="button"
-        role="switch"
-        aria-checked={checked}
-        disabled={disabled}
-        onClick={() => onCheckedChange(!checked)}
-        className="relative flex h-11 w-14 shrink-0 items-center disabled:opacity-60"
+      <SwitchButton id={switchId} checked={checked} onCheckedChange={onCheckedChange} disabled={disabled} />
+    </div>
+  );
+}
+
+/**
+ * The switch on its own, for when something else names it (a card's heading, through `aria-labelledby`). The button is
+ * the 44px touch target; the visible track inside it is 32px tall.
+ */
+export function SwitchButton({
+  checked,
+  onCheckedChange,
+  disabled,
+  id,
+  ...aria
+}: {
+  checked: boolean;
+  onCheckedChange: (checked: boolean) => void;
+  disabled?: boolean | undefined;
+  id?: string | undefined;
+  'aria-labelledby'?: string;
+  'aria-describedby'?: string;
+  'aria-label'?: string;
+}) {
+  return (
+    <button
+      id={id}
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      disabled={disabled}
+      onClick={() => onCheckedChange(!checked)}
+      className="relative flex h-11 w-14 shrink-0 items-center disabled:opacity-60"
+      {...aria}
+    >
+      <span
+        aria-hidden="true"
+        className={cn(
+          'relative h-8 w-14 rounded-pill border-2 transition-colors duration-200',
+          checked ? 'border-accent bg-accent' : 'border-border-strong bg-surface-sunken',
+        )}
       >
         <span
-          aria-hidden="true"
           className={cn(
-            'relative h-8 w-14 rounded-pill border-2 transition-colors duration-200',
-            checked ? 'border-accent bg-accent' : 'border-border-strong bg-surface-sunken',
+            'absolute top-0.5 left-0.5 size-6 rounded-pill bg-surface shadow-clay-sm transition-transform duration-200 ease-spring',
+            checked && 'translate-x-6',
           )}
-        >
-          <span
-            className={cn(
-              'absolute top-0.5 left-0.5 size-6 rounded-pill bg-surface shadow-clay-sm transition-transform duration-200 ease-spring',
-              checked && 'translate-x-6',
-            )}
-          />
-        </span>
-      </button>
-    </div>
+        />
+      </span>
+    </button>
   );
 }

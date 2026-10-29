@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState, type FormEvent } from 'react';
+import { useId, useState, type FormEvent } from 'react';
 import {
   LIGHT_MINUTES,
   LIGHT_NOTE_MAX,
@@ -15,7 +15,7 @@ import { Glyph } from '@/ui/art/glyph';
 import { WhisperIcon } from '@/ui/icons';
 import { apiRequest } from '@/ui/auth/api';
 import { FormMessage } from '@/ui/auth/form-parts';
-import { Avatar, Button, Input, Radio } from '@/ui/primitives';
+import { Avatar, Button, Input, SwitchButton } from '@/ui/primitives';
 
 /** Times are formatted on the server (Howdy's calendar), so the page and the browser never disagree about them. */
 export interface LitPalRow {
@@ -33,28 +33,68 @@ export interface MyLightState {
 }
 
 const MINUTES_LABEL: Record<LightMinutes, string> = { 30: '30 min', 60: '1 hour', 120: '2 hours' };
+const AUDIENCE_LABEL: Record<LightAudience, string> = { pals: 'All friends', close: 'Close friends' };
 const iconButton =
-  'inline-flex size-11 shrink-0 items-center justify-center rounded-pill text-text-secondary no-underline hover:bg-surface hover:text-text-primary';
+  'inline-flex size-11 shrink-0 items-center justify-center rounded-pill text-text-secondary no-underline hover:bg-surface-sunken hover:text-text-primary';
+const chip =
+  'cursor-pointer rounded-pill border border-border px-3 py-1.5 text-caption text-text-primary transition-colors ' +
+  'hover:bg-surface-sunken has-[:checked]:border-accent has-[:checked]:bg-accent has-[:checked]:text-on-accent ' +
+  'has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-focus';
+
+/** The last time and audience used, so one tap on the switch means what it meant last time (this device only). */
+const PREFS_KEY = 'howdy.light.prefs';
+function readPrefs(): { minutes: LightMinutes; audience: LightAudience } | null {
+  try {
+    const p = JSON.parse(window.localStorage.getItem(PREFS_KEY) ?? 'null') as {
+      minutes?: unknown;
+      audience?: unknown;
+    } | null;
+    if (!p) return null;
+    const minutes = LIGHT_MINUTES.find((m) => m === p.minutes);
+    const audience = p.audience === 'close' || p.audience === 'pals' ? p.audience : undefined;
+    return minutes && audience ? { minutes, audience } : null;
+  } catch {
+    return null;
+  }
+}
+function savePrefs(minutes: LightMinutes, audience: LightAudience) {
+  try {
+    window.localStorage.setItem(PREFS_KEY, JSON.stringify({ minutes, audience }));
+  } catch {
+    /* private mode: it will use the defaults next time */
+  }
+}
 
 /**
- * Porch Light (ADR-032) on Home: the Pals who are free to talk right now, and my own switch. Nobody is notified when a
- * light comes on; it is only seen by those who look, and it turns itself off.
+ * Free to talk (Porch Light, ADR-032) on Home, compact: one row with the switch, one line saying how it stands, and the
+ * friends who are free right now. One tap switches it on for as long, and for whom, as last time (1 hour, all friends
+ * the first time); "Options" changes that before or after. Nobody is notified when a light comes on; it is only seen by
+ * those who look, and it turns itself off.
  */
 export function PorchLightCard({ lit, mine }: { lit: LitPalRow[]; mine: MyLightState | null }) {
   const router = useRouter();
+  const headingId = useId();
+  const statusId = useId();
   const [open, setOpen] = useState(false);
-  const [minutes, setMinutes] = useState<LightMinutes>(60);
-  const [audience, setAudience] = useState<LightAudience>('pals');
-  const [note, setNote] = useState('');
+  // Last time's choice (read in the browser; the server has no storage and uses the defaults). Only the Options panel
+  // shows these, and it starts closed, so the page the server sent and the one in the browser still match.
+  const [minutes, setMinutes] = useState<LightMinutes>(() =>
+    typeof window === 'undefined' ? 60 : (readPrefs()?.minutes ?? 60),
+  );
+  const [audience, setAudience] = useState<LightAudience>(
+    () => mine?.audience ?? (typeof window === 'undefined' ? 'pals' : (readPrefs()?.audience ?? 'pals')),
+  );
+  const [note, setNote] = useState(mine?.note ?? '');
   const [noteError, setNoteError] = useState<string | undefined>();
   const [formError, setFormError] = useState<string | undefined>();
   const [busy, setBusy] = useState(false);
 
-  async function switchOn(e: FormEvent) {
-    e.preventDefault();
+  async function switchOn(e?: FormEvent) {
+    e?.preventDefault();
     setFormError(undefined);
     const parsed = switchOnLightSchema.safeParse({ minutes, audience, ...(note.trim() ? { note } : {}) });
     if (!parsed.success) {
+      setOpen(true);
       setNoteError(parsed.error.issues[0]?.message);
       return;
     }
@@ -63,11 +103,13 @@ export function PorchLightCard({ lit, mine }: { lit: LitPalRow[]; mine: MyLightS
     const res = await apiRequest('PUT', '/api/me/light', parsed.data);
     setBusy(false);
     if (res.ok) {
+      savePrefs(minutes, audience);
       setOpen(false);
-      setNote('');
       router.refresh();
-    } else if (res.error?.fields?.note) setNoteError(res.error.fields.note);
-    else setFormError(res.error?.message);
+    } else if (res.error?.fields?.note) {
+      setOpen(true);
+      setNoteError(res.error.fields.note);
+    } else setFormError(res.error?.message);
   }
 
   async function switchOff() {
@@ -75,34 +117,131 @@ export function PorchLightCard({ lit, mine }: { lit: LitPalRow[]; mine: MyLightS
     setBusy(true);
     const res = await apiRequest('DELETE', '/api/me/light');
     setBusy(false);
-    if (res.ok) router.refresh();
-    else setFormError(res.error?.message);
+    if (res.ok) {
+      setOpen(false);
+      setNote('');
+      router.refresh();
+    } else setFormError(res.error?.message);
   }
 
   return (
-    <section aria-labelledby="porch-light-heading" className="clay flex flex-col gap-3 p-4 sm:p-5">
-      <h2
-        id="porch-light-heading"
-        className="flex items-center gap-1.5 text-metadata font-semibold tracking-wider text-text-secondary uppercase"
-      >
-        <Glyph emoji="💡" size="free" className="size-5" />
-        Free to talk
-      </h2>
+    <section aria-labelledby={headingId} className="clay flex flex-col gap-1 p-3 sm:p-4">
+      <div className="flex items-center gap-1 pl-2">
+        <h2
+          id={headingId}
+          className="flex min-w-0 flex-1 items-center gap-1.5 text-metadata font-semibold tracking-wider text-text-secondary uppercase"
+        >
+          <Glyph emoji="💡" size="free" className="size-5" />
+          Free to talk
+        </h2>
+        <button
+          type="button"
+          aria-expanded={open}
+          onClick={() => setOpen((o) => !o)}
+          className="min-h-11 shrink-0 rounded-md px-2 text-caption font-semibold text-link hover:bg-surface-sunken"
+        >
+          Options
+        </button>
+        <SwitchButton
+          checked={mine !== null}
+          disabled={busy}
+          onCheckedChange={(on) => void (on ? switchOn() : switchOff())}
+          aria-labelledby={headingId}
+          aria-describedby={statusId}
+        />
+      </div>
+
+      <p id={statusId} className="px-2 text-caption [overflow-wrap:anywhere] text-text-secondary">
+        {mine ? (
+          <>
+            On until <strong className="font-semibold text-text-primary">{mine.untilLabel}</strong> ·{' '}
+            {mine.audience === 'close' ? 'close friends' : 'all friends'}
+            {mine.note && <> · “{mine.note}”</>}
+          </>
+        ) : (
+          `Off${lit.length === 0 ? ' · no friend is free right now' : ''}.`
+        )}
+      </p>
+
+      {formError && <FormMessage tone="error">{formError}</FormMessage>}
+
+      {open && (
+        <form
+          onSubmit={switchOn}
+          noValidate
+          className="mt-2 flex flex-col gap-3 border-t border-border px-2 pt-3"
+        >
+          <p className="text-metadata text-text-muted">
+            Lets your friends see you’re free to talk. Nobody is notified, and it turns itself off.
+          </p>
+          <fieldset className="flex flex-col gap-1.5">
+            <legend className="mb-1.5 text-caption font-semibold text-text-primary">For how long?</legend>
+            <div className="flex flex-wrap gap-1.5">
+              {LIGHT_MINUTES.map((m) => (
+                <label key={m} className={chip}>
+                  <input
+                    type="radio"
+                    name="light-minutes"
+                    className="sr-only"
+                    checked={minutes === m}
+                    onChange={() => setMinutes(m)}
+                  />
+                  {MINUTES_LABEL[m]}
+                </label>
+              ))}
+            </div>
+          </fieldset>
+          <fieldset className="flex flex-col gap-1.5">
+            <legend className="mb-1.5 text-caption font-semibold text-text-primary">Who sees it?</legend>
+            <div className="flex flex-wrap gap-1.5">
+              {(['pals', 'close'] as const).map((a) => (
+                <label key={a} className={chip}>
+                  <input
+                    type="radio"
+                    name="light-audience"
+                    className="sr-only"
+                    checked={audience === a}
+                    onChange={() => setAudience(a)}
+                  />
+                  {AUDIENCE_LABEL[a]}
+                </label>
+              ))}
+            </div>
+          </fieldset>
+          <Input
+            label="Note (optional)"
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            maxLength={LIGHT_NOTE_MAX}
+            placeholder="free for chai ☕"
+            error={noteError}
+            hint="No links."
+          />
+          <div className="flex flex-wrap gap-2">
+            <Button type="submit" size="sm" loading={busy}>
+              {mine ? 'Update' : 'Switch on'}
+            </Button>
+            <Button variant="secondary" size="sm" onClick={() => setOpen(false)}>
+              Cancel
+            </Button>
+          </div>
+        </form>
+      )}
 
       {lit.length > 0 && (
-        <ul aria-label="Friends free to talk" className="flex flex-col gap-2">
+        <ul aria-label="Friends free to talk" className="mt-1 flex flex-col border-t border-border pt-1">
           {lit.map((p) => (
-            <li key={p.handle} className="flex items-center gap-3">
+            <li key={p.handle} className="flex items-center gap-2.5 px-2">
               <Avatar name={p.displayName} tint={p.portraitTint} src={p.portraitUrl} size="sm" />
               <div className="min-w-0 flex-1">
-                <p className="text-body [overflow-wrap:anywhere] text-text-primary">
+                <p className="truncate text-caption text-text-primary">
                   <Link href={`/profile/${p.handle}`} className="font-semibold">
                     {p.displayName}
                   </Link>{' '}
-                  <span className="text-caption text-text-secondary">is free until {p.untilLabel}</span>
+                  <span className="text-text-secondary">until {p.untilLabel}</span>
                 </p>
                 {p.note && (
-                  <p className="text-caption [overflow-wrap:anywhere] text-text-secondary">“{p.note}”</p>
+                  <p className="text-metadata [overflow-wrap:anywhere] text-text-secondary">“{p.note}”</p>
                 )}
               </div>
               <Link
@@ -116,84 +255,6 @@ export function PorchLightCard({ lit, mine }: { lit: LitPalRow[]; mine: MyLightS
             </li>
           ))}
         </ul>
-      )}
-
-      {formError && <FormMessage tone="error">{formError}</FormMessage>}
-
-      {mine ? (
-        <div className="flex flex-col gap-2 rounded-md bg-warning/20 p-3">
-          <p className="text-body text-text-primary">
-            Your light is on until <strong>{mine.untilLabel}</strong>, for{' '}
-            {mine.audience === 'close' ? 'your close friends' : 'all your friends'}.
-          </p>
-          {mine.note && (
-            <p className="text-caption [overflow-wrap:anywhere] text-text-secondary">“{mine.note}”</p>
-          )}
-          <Button variant="secondary" size="sm" loading={busy} onClick={switchOff} className="self-start">
-            Switch off
-          </Button>
-        </div>
-      ) : open ? (
-        <form onSubmit={switchOn} noValidate className="flex flex-col gap-3">
-          <fieldset className="flex flex-col">
-            <legend className="mb-1 text-caption font-semibold text-text-primary">For how long?</legend>
-            <div className="flex flex-wrap gap-x-4">
-              {LIGHT_MINUTES.map((m) => (
-                <Radio
-                  key={m}
-                  name="light-minutes"
-                  label={MINUTES_LABEL[m]}
-                  checked={minutes === m}
-                  onChange={() => setMinutes(m)}
-                />
-              ))}
-            </div>
-          </fieldset>
-          <fieldset className="flex flex-col">
-            <legend className="mb-1 text-caption font-semibold text-text-primary">Who sees it?</legend>
-            <Radio
-              name="light-audience"
-              label="All friends"
-              checked={audience === 'pals'}
-              onChange={() => setAudience('pals')}
-            />
-            <Radio
-              name="light-audience"
-              label="Close friends only"
-              checked={audience === 'close'}
-              onChange={() => setAudience('close')}
-            />
-          </fieldset>
-          <Input
-            label="Note (optional)"
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            maxLength={LIGHT_NOTE_MAX}
-            placeholder="free for chai ☕"
-            error={noteError}
-            hint="No links."
-          />
-          <div className="flex flex-wrap gap-3">
-            <Button type="submit" loading={busy}>
-              Switch on
-            </Button>
-            <Button variant="secondary" onClick={() => setOpen(false)}>
-              Cancel
-            </Button>
-          </div>
-        </form>
-      ) : (
-        <div className="flex flex-col gap-2">
-          {lit.length === 0 && (
-            <p className="text-caption text-text-secondary">No friend has their light on right now.</p>
-          )}
-          <Button variant="secondary" onClick={() => setOpen(true)} className="self-start">
-            Show you’re free to talk
-          </Button>
-          <p className="text-metadata text-text-muted">
-            Lets your friends see you’re free to talk. Nobody is notified, and it turns itself off.
-          </p>
-        </div>
       )}
     </section>
   );

@@ -62,7 +62,10 @@ test.describe('Free to talk (production build, real CSP)', () => {
     await owner.page.goto('/home');
     await pageReady(owner.page);
     const card = owner.page.getByRole('region', { name: 'Free to talk' });
-    await card.getByRole('button', { name: 'Show you’re free to talk' }).tap();
+    const lightSwitch = card.getByRole('switch', { name: 'Free to talk' });
+    await expect(lightSwitch).toHaveAttribute('aria-checked', 'false');
+    // Options first (a note), then switch it on from there.
+    await card.getByRole('button', { name: 'Options' }).tap();
     await card.getByLabel('2 hours').check();
     await expect(card.getByLabel('All friends')).toBeChecked();
     await card.getByLabel('Note (optional)').fill(note);
@@ -70,9 +73,8 @@ test.describe('Free to talk (production build, real CSP)', () => {
     expect(await smallTargets(owner.page)).toEqual([]);
     expect(await horizontalOverflow(owner.page)).toBe(0);
     await card.getByRole('button', { name: 'Switch on', exact: true }).tap();
-    await expect(
-      card.getByText(/Your light is on until \d{1,2}:\d{2} [ap]m, for all your friends\./),
-    ).toBeVisible();
+    await expect(lightSwitch).toHaveAttribute('aria-checked', 'true');
+    await expect(card.getByText(/On until \d{1,2}:\d{2} [ap]m · all friends/)).toBeVisible();
     await expect(card.getByText(note)).toBeVisible();
 
     // The Pal sees it on Home, with a Whisper button.
@@ -80,7 +82,7 @@ test.describe('Free to talk (production build, real CSP)', () => {
     await pageReady(pal.page);
     const lit = pal.page.getByRole('list', { name: 'Friends free to talk' });
     await expect(lit.getByRole('link', { name: owner.handle, exact: true })).toBeVisible();
-    await expect(lit.getByText(/is free until \d{1,2}:\d{2} [ap]m/)).toBeVisible();
+    await expect(lit.getByText(/until \d{1,2}:\d{2} [ap]m/)).toBeVisible();
     await expect(lit.getByText(note)).toBeVisible();
     expect(await axeViolations(pal.page)).toEqual([]);
     expect(await smallTargets(pal.page)).toEqual([]);
@@ -96,11 +98,13 @@ test.describe('Free to talk (production build, real CSP)', () => {
     expect(await horizontalOverflow(pal.page)).toBe(0);
 
     // The owner switches it off; it is gone for the Pal.
-    await owner.page.getByRole('button', { name: 'Switch off' }).tap();
-    await expect(card.getByRole('button', { name: 'Show you’re free to talk' })).toBeVisible();
+    await lightSwitch.tap();
+    await expect(lightSwitch).toHaveAttribute('aria-checked', 'false');
     await pal.page.goto('/home');
     await pageReady(pal.page);
-    await expect(pal.page.getByText('No friend has their light on right now.')).toBeVisible();
+    await expect(
+      pal.page.getByRole('region', { name: 'Free to talk' }).getByText(/no friend is free right now/),
+    ).toBeVisible();
     expect(
       (
         await db.query(
