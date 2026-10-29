@@ -71,6 +71,7 @@ describe('WCAG AA contrast (both themes)', () => {
           ['on-accent', 'accent-hover'],
           ['on-success', 'success'],
           ['on-warning', 'warning'],
+          ['on-highlight', 'highlight'],
           ['on-danger', 'danger'],
           ['on-info', 'info'],
           ['on-mystery', 'mystery'],

@@ -212,6 +212,7 @@ export function KitShowcase({ initialTheme }: { initialTheme: Theme | undefined 
         <div className="flex flex-wrap items-center gap-2">
           <Badge>Neutral</Badge>
           <Badge tone="accent">Accent</Badge>
+          <Badge tone="new">3 new</Badge>
           <Badge tone="success">Success</Badge>
           <Badge tone="warning">Warning</Badge>
           <Badge tone="danger">Danger</Badge>

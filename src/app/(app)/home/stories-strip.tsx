@@ -75,7 +75,13 @@ export function StoriesStrip({
               aria-label={`${r.person.displayName}’s Story${r.unseen ? ', new' : ''}`}
               className="flex w-20 flex-col items-center gap-1"
             >
-              <span className={cn('rounded-pill p-0.5', r.unseen ? 'bg-accent' : 'bg-border')}>
+              {/* Unseen: violet into sunflower, like the rays on the icon (the violet half keeps it visible on white). */}
+              <span
+                className={cn(
+                  'rounded-pill',
+                  r.unseen ? 'bg-linear-to-tr from-accent to-highlight p-[3px]' : 'bg-border p-0.5',
+                )}
+              >
                 <Avatar
                   name={r.person.displayName}
                   tint={r.person.portraitTint}

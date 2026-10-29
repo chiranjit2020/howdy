@@ -21,7 +21,7 @@ interface FieldShellProps {
   hideLabel?: boolean | undefined;
   /** A small link or button at the end of the label row (e.g. "Forgot password?"). Outside the <label> itself. */
   labelAction?: ReactNode;
-  /** `entry`: the sign-up look (softly tinted boxes). Default: the app's ordinary fields. */
+  /** `entry`: the sign-up look (the "@" set apart as its own block). Default: the app's ordinary fields. */
   look?: FieldLook | undefined;
   children: (control: ControlProps) => ReactNode;
   className?: string | undefined;
@@ -93,14 +93,8 @@ const CONTROL =
   'focus:border-focus focus:ring-2 focus:ring-focus/20 ' +
   'aria-invalid:border-danger aria-invalid:focus:ring-danger/20';
 
-/** The sign-up look: a softly tinted box that turns white with an accent ring while typing, rose when wrong. */
-const ENTRY_CONTROL =
-  'w-full rounded-lg border border-border-strong/40 bg-surface-sunken/60 px-3.5 py-2.5 text-body text-text-primary ' +
-  'placeholder:text-text-muted transition-colors hover:border-border-strong disabled:cursor-not-allowed ' +
-  'disabled:opacity-60 focus:border-accent focus:bg-surface focus:ring-2 focus:ring-accent/20 ' +
-  'aria-invalid:border-danger aria-invalid:bg-danger-soft/40 aria-invalid:ring-2 aria-invalid:ring-danger/15';
-
-const CONTROLS: Record<FieldLook, string> = { default: CONTROL, entry: ENTRY_CONTROL };
+// Sign-up's boxes are the same white boxes as Log in (2026-10-30: the tinted ones made the two pages look unrelated).
+const CONTROLS: Record<FieldLook, string> = { default: CONTROL, entry: CONTROL };
 
 interface FieldProps {
   label: ReactNode;
@@ -145,7 +139,7 @@ export function Input({
                 'pointer-events-none absolute inset-y-0 left-0 flex items-center text-body text-text-secondary',
                 // The entry look sets the prefix apart as its own little block, like part of the box.
                 look === 'entry'
-                  ? 'my-px ml-px w-10 justify-center rounded-l-lg border-r border-border-strong/30 bg-surface-sunken font-semibold'
+                  ? 'my-px ml-px w-10 justify-center rounded-l-md border-r border-border-strong/30 font-semibold'
                   : 'pl-4',
               )}
             >

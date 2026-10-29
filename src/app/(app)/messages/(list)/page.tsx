@@ -60,7 +60,7 @@ export default async function WhispersPage() {
                     </span>
                   </span>
                   {t.unread > 0 && (
-                    <Badge tone="accent">
+                    <Badge tone="new">
                       {t.unread > 99 ? '99+' : t.unread}
                       <span className="sr-only"> unread</span>
                     </Badge>

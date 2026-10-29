@@ -240,7 +240,7 @@ export function WelcomeStory({ invite }: { invite?: { code: string; invitedBy: s
             <h1 className="font-display text-[clamp(2.6rem,1.6rem+4.6vw,4.75rem)] leading-[1.02] font-semibold tracking-tight text-text-primary">
               Your people.
               <br />
-              <span className="box-decoration-clone bg-linear-to-t from-accent-soft from-30% to-transparent to-30% px-1 -mx-1">
+              <span className="box-decoration-clone bg-linear-to-t from-highlight from-35% to-transparent to-35% px-1 -mx-1">
                 Not the whole internet.
               </span>
             </h1>
@@ -343,7 +343,7 @@ export function WelcomeStory({ invite }: { invite?: { code: string; invitedBy: s
               <li key={a.name} className="relative">
                 <span
                   aria-hidden="true"
-                  className="absolute top-5 -left-[calc(1.5rem+7px)] size-3 rounded-pill bg-accent ring-4 ring-background sm:-left-[calc(2rem+7px)]"
+                  className="absolute top-5 -left-[calc(1.5rem+7px)] size-3 rounded-pill border-2 border-accent bg-highlight ring-4 ring-background sm:-left-[calc(2rem+7px)]"
                 />
                 <div className="clay flex flex-col gap-2 p-5">
                   <span className="self-start rounded-pill bg-warning px-2.5 py-0.5 font-mono text-metadata text-on-warning">

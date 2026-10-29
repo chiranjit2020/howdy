@@ -103,8 +103,9 @@
   --color-auth-link: light-dark(#260959, #c4b2f5);
   --color-brand-ink: light-dark(#260959, #f8f7ff);
 
-  /* The earned Trusted tick (a gold seal): fixed in both schemes, like the team's blue Verified artwork. */
-  --color-trusted: #f2b33d;
+  /* The earned Trusted tick (a gold seal) in the palette's Sunflower: fixed in both schemes, like the team's blue
+     Verified artwork. */
+  --color-trusted: #f8cf35;
   --color-trusted-edge: #8a5a12;
   --color-trusted-ink: #4a2f06;
   /* The Dynamic Island: a near-black pill in both themes (it reads as hardware, like the phone's own). */

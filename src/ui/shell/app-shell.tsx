@@ -110,7 +110,7 @@ export function AppShell({
                   {unread > 0 && (
                     <span
                       aria-hidden="true"
-                      className="absolute -top-1 -right-1 grid min-w-5 place-items-center rounded-pill bg-accent-strong px-1 text-metadata font-semibold text-on-accent"
+                      className="absolute -top-1 -right-1 grid min-w-5 place-items-center rounded-pill bg-highlight px-1 text-metadata font-bold text-on-highlight ring-2 ring-surface"
                     >
                       {unread > 99 ? '99+' : unread}
                     </span>

@@ -53,7 +53,7 @@ export function Navigation({
               </span>
               {it.label}
               {it.badge && (
-                <span className="ml-auto rounded-pill bg-danger px-2 text-metadata text-on-danger">
+                <span className="ml-auto rounded-pill bg-highlight px-2 text-metadata font-bold text-on-highlight">
                   {it.badge}
                 </span>
               )}
@@ -83,7 +83,9 @@ function TabIcon({ current, badge, children }: { current: boolean; badge: boolea
     >
       {children}
       {badge && (
-        <span className="absolute -top-0.5 -right-0.5 size-2 animate-yo-pop rounded-full bg-danger ring-2 ring-surface" />
+        // "Something new" is sunflower everywhere. With no number in it, the dot gets a dark edge: yellow alone is too
+        // faint against the white bar.
+        <span className="absolute -top-0.5 -right-0.5 size-2.5 animate-yo-pop rounded-full border border-on-highlight bg-highlight ring-2 ring-surface" />
       )}
     </span>
   );
@@ -125,7 +127,7 @@ function ActionButton({ action }: { action: NavAction }) {
     <Link
       href={action.href}
       aria-label={action.description ?? action.label}
-      className="group nav-action-gloss absolute -top-8 left-1/2 grid size-16 -translate-x-1/2 place-items-center rounded-full no-underline transition-[transform,box-shadow] duration-150"
+      className="group nav-action-gloss absolute -top-8 left-1/2 grid size-16 -translate-x-1/2 place-items-center rounded-full text-on-accent no-underline transition-[transform,box-shadow] duration-150"
     >
       <ActionIcon>{action.icon}</ActionIcon>
     </Link>
