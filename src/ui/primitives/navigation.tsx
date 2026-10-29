@@ -44,7 +44,7 @@ export function Navigation({
               className={cn(
                 'flex min-h-11 items-center gap-3 rounded-pill px-4 text-body font-medium no-underline transition-colors',
                 it.current
-                  ? 'bg-accent-strong text-on-accent shadow-clay-sm'
+                  ? 'bg-accent text-on-accent shadow-clay-sm'
                   : 'text-text-primary hover:bg-surface-sunken',
               )}
             >

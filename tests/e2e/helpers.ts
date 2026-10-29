@@ -219,7 +219,10 @@ export async function axeViolations(page: Page): Promise<string[]> {
     const axe = (
       window as unknown as {
         axe: {
-          run: () => Promise<{
+          run: (
+            context?: { exclude: string[][] },
+            options?: { runOnly?: string[]; rules?: Record<string, { enabled: boolean }> },
+          ) => Promise<{
             violations: {
               id: string;
               help: string;
@@ -229,7 +232,11 @@ export async function axeViolations(page: Page): Promise<string[]> {
         };
       }
     ).axe;
-    return (await axe.run()).violations.map(
+    // Buttons filled with the brand green carry white labels at 3.8:1 by the user's choice (tokens.css, and pinned
+    // at 3:1 in design-tokens.test.ts), so colour contrast skips only those; every other rule still covers them.
+    const all = await axe.run(undefined, { rules: { 'color-contrast': { enabled: false } } });
+    const contrast = await axe.run({ exclude: [['.bg-accent']] }, { runOnly: ['color-contrast'] });
+    return [...all.violations, ...contrast.violations].map(
       (v) =>
         `${v.id}: ${v.help} (${v.nodes.map((n) => `${n.target.join(' ')} — ${n.any.map((x) => x.message).join('; ')}`).join(', ')})`,
     );

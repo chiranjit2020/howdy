@@ -23,7 +23,7 @@ export function IconButton({
         'inline-flex size-11 shrink-0 items-center justify-center rounded-pill text-title transition duration-150',
         'disabled:cursor-not-allowed disabled:opacity-60',
         tone === 'accent'
-          ? 'bg-accent-strong text-on-accent shadow-clay-sm hover:bg-accent-hover'
+          ? 'bg-accent text-on-accent shadow-clay-sm hover:bg-accent-strong'
           : 'text-text-primary hover:bg-surface-sunken',
         className,
       )}

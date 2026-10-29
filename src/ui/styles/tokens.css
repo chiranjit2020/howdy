@@ -59,9 +59,10 @@
   --color-focus: light-dark(#6a83a6, #9ad7e6);
 
   /*
-   * Theme colour: emerald #059669 (2026-10-29, until the new palette). Used for marks, ticks, dots, rings and bars.
-   * White text on it is only 3.8:1, so anything filled that carries words (buttons, badges, bubbles) uses
-   * `accent-strong` (5.5:1) and darkens to `accent-hover` (7.7:1). The same in both schemes.
+   * Theme colour: emerald #059669 (2026-10-29, the user's pick). Marks, ticks, dots, rings, bars, and the fill of
+   * buttons and the current nav item (short semibold labels; white on it is 3.8:1, a deliberate brand choice).
+   * Small or long white text (badges, counts, message bubbles) sits on `accent-strong` (5.5:1); buttons darken to it
+   * on hover. The same in both schemes.
    */
   --color-accent: #059669;
   --color-accent-strong: #047857;
