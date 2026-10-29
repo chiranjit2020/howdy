@@ -10,11 +10,11 @@ import { ImageResponse } from 'next/og';
 export const SHARE_CARD_SIZE = { width: 1200, height: 630 };
 
 // The palette's own values (an image has no CSS tokens to read).
-const CREAM = '#f8f5ee';
-const INK = '#2b2d42';
-const SLATE = '#475169';
-const ACCENT_STRONG = '#047857';
-const ACCENT_SOFT = '#d1fae5';
+const CREAM = '#f8f7ff';
+const INK = '#100b00';
+const SLATE = '#4a4540';
+const ACCENT_STRONG = '#1a063f';
+const ACCENT_SOFT = '#ebe6f8';
 const ON_ACCENT = '#ffffff';
 
 const font = (file: string) => readFile(path.join(process.cwd(), 'assets', 'fonts', file));
@@ -74,7 +74,7 @@ export async function shareCard(kicker: string = 'A small-circle social world'):
         style={{ position: 'absolute', bottom: 60, right: 330 }}
         alt=""
       />
-      <img src={logo} width={300} height={95} alt="" />
+      <img src={logo} width={300} height={92} alt="" />
       <div
         style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 28, color: SLATE, fontSize: 30 }}
       >

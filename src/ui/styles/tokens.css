@@ -14,7 +14,18 @@
   --radius-*: initial;
   --shadow-*: initial;
 
-  /* -- Brand palette (decorative use; prefer semantic tokens) -- */
+  /*
+   * -- Howdy palette (2026-10-29, the user's pick): the five colours the semantic tokens below are built from. --
+   * Royal Violet is the primary (buttons, current nav item, links), Sunflower the accent (highlights, warnings),
+   * Crimson errors, Ink the body text, Ghost White the page.
+   */
+  --palette-royal-violet: #260959;
+  --palette-sunflower: #f8cf35;
+  --palette-crimson: #ca054d;
+  --palette-ink: #100b00;
+  --palette-ghost-white: #f8f7ff;
+
+  /* -- Older brand palette (decorative use only; prefer semantic tokens) -- */
   --palette-canvas-cream: #f8f5ee;
   --palette-clay-white: #ffffff;
   --palette-sherbet-pink: #f4a2b3;
@@ -43,49 +54,54 @@
   --palette-deep-navy-blue: #344b70;
 
   /* -- Semantic colors: light-dark(Daylight, Dusk) -- */
-  --color-background: light-dark(#f8f5ee, #1e1b2e);
+  --color-background: light-dark(#f8f7ff, #1e1b2e);
   --color-surface: light-dark(#ffffff, #2a2640);
   --color-surface-raised: light-dark(#ffffff, #353052);
-  --color-surface-sunken: light-dark(#f1ede3, #181526);
-  --color-parchment: light-dark(#fdfbf7, #2f2a47);
-  --color-tribute: light-dark(#fff6d6, #3a3352);
-  --color-border: light-dark(#e6e0d2, #3f3a5c);
-  --color-border-strong: light-dark(#7a8599, #8a84a8);
+  --color-surface-sunken: light-dark(#efedf9, #181526);
+  --color-parchment: light-dark(#fcfbff, #2f2a47);
+  --color-tribute: light-dark(#fef6d7, #3a3352);
+  --color-border: light-dark(#e3e0f0, #3f3a5c);
+  --color-border-strong: light-dark(#7a7590, #8a84a8);
 
-  --color-text-primary: light-dark(#2b2d42, #f3effa);
-  --color-text-secondary: light-dark(#475169, #b9b3d0);
-  --color-text-muted: light-dark(#586378, #a29cbd);
-  --color-link: light-dark(#1b6a80, #9ad7e6);
-  --color-focus: light-dark(#6a83a6, #9ad7e6);
+  --color-text-primary: light-dark(#100b00, #f8f7ff);
+  --color-text-secondary: light-dark(#4a4540, #b9b3d0);
+  --color-text-muted: light-dark(#5e5850, #a29cbd);
+  --color-link: light-dark(#260959, #c4b2f5);
+  --color-focus: light-dark(#260959, #c4b2f5);
 
   /*
-   * Theme colour: emerald #059669 (2026-10-29, the user's pick). Marks, ticks, dots, rings, bars, and the fill of
-   * buttons and the current nav item (short semibold labels; white on it is 3.8:1, a deliberate brand choice).
-   * Small or long white text (badges, counts, message bubbles) sits on `accent-strong` (5.5:1); buttons darken to it
-   * on hover. The same in both schemes.
+   * Theme colour: Royal Violet #260959 (2026-10-29, the user's pick). Marks, ticks, dots, rings, bars, and the fill of
+   * buttons and the current nav item; white on it is 16.6:1. `accent-strong` is a shade deeper for badges, counts and
+   * message bubbles; buttons LIGHTEN to `accent-hover` (the base is too dark for a darker hover to show). Dusk swaps in
+   * a light violet with ink on it, so marks stay visible on dark surfaces.
    */
-  --color-accent: #059669;
-  --color-accent-strong: #047857;
-  --color-accent-hover: #065f46;
-  --color-accent-soft: light-dark(#d1fae5, #12392c);
-  --color-on-accent: #ffffff;
+  --color-accent: light-dark(#260959, #c4b2f5);
+  --color-accent-strong: light-dark(#1a063f, #d6c9f8);
+  --color-accent-hover: light-dark(#3d1a80, #a990ec);
+  --color-accent-soft: light-dark(#ebe6f8, #2d2150);
+  --color-on-accent: light-dark(#ffffff, #100b00);
+
+  /* Sunflower #f8cf35: the second brand colour, for highlights (text selection, "new" marks). Ink on it is 13:1. */
+  --color-highlight: #f8cf35;
+  --color-on-highlight: #100b00;
 
   --color-success: #b7e4c7;
-  --color-on-success: #2b2d42;
+  --color-on-success: #100b00;
   --color-success-text: light-dark(#23694a, #8fdcb0);
-  --color-warning: #ffeaa7;
-  --color-on-warning: #2b2d42;
-  --color-danger: light-dark(#b4372f, #ff9c94);
-  --color-on-danger: light-dark(#ffffff, #2b0f0d);
-  --color-danger-soft: light-dark(#fce4e1, #4a2530);
+  --color-warning: #f8cf35;
+  --color-on-warning: #100b00;
+  /* Crimson #ca054d for errors: 5.4:1 as text on the page, 5.8:1 under white. */
+  --color-danger: light-dark(#ca054d, #ff8fb1);
+  --color-on-danger: light-dark(#ffffff, #2b0013);
+  --color-danger-soft: light-dark(#fce4ee, #4a1a2e);
   --color-info: #bee1e6;
   --color-on-info: #2b2d42;
   --color-mystery: #d8b4e2;
   --color-on-mystery: #2b2d42;
 
   /* Shared brand accents, used wherever a page wants the navy "signature" ink or link colour (Ranch header, side cards). */
-  --color-auth-link: light-dark(#2e3e62, #9ad7e6);
-  --color-brand-ink: light-dark(#344b70, #f3effa);
+  --color-auth-link: light-dark(#260959, #c4b2f5);
+  --color-brand-ink: light-dark(#260959, #f8f7ff);
 
   /* The earned Trusted tick (a gold seal): fixed in both schemes, like the team's blue Verified artwork. */
   --color-trusted: #f2b33d;
@@ -388,8 +404,8 @@
     border-radius: var(--radius-sm);
   }
   ::selection {
-    background: var(--color-accent);
-    color: var(--color-on-accent);
+    background: var(--color-highlight);
+    color: var(--color-on-highlight);
   }
   /* Dialog backdrop */
   dialog::backdrop {

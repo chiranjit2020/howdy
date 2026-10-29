@@ -212,8 +212,8 @@ export function WelcomeStory({ invite }: { invite?: { code: string; invitedBy: s
         <Link href="/welcome" aria-label="Howdy" className="inline-flex min-h-11 items-center no-underline">
           <Img
             src="/brand/howdy-wordmark.png"
-            width={766}
-            height={243}
+            width={728}
+            height={224}
             alt="Howdy"
             loading="eager"
             className="h-9 w-auto sm:h-11"

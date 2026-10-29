@@ -1,12 +1,11 @@
 'use client';
 
 import { useEffect, useId, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
-import { cn } from '../cn';
 import { currentActivity, dismissActivity, onIslandChange, type IslandActivity } from './store';
 
 /**
- * The Dynamic Island: a dark pill that floats just under the top bar and shows one activity at a time (see store.ts).
- * Compact, it is an icon and a few words; tapping it opens the expanded face in place (the pill grows into a card);
+ * The Dynamic Island: a dark card that floats just under the top bar and shows one activity at a time (see store.ts).
+ * Compact, it is an icon and a few words; tapping it opens the expanded face underneath (the card grows taller);
  * × sends the activity away. Escape or a tap outside closes the expanded face. Rendered once, by PwaBoot.
  */
 export function DynamicIsland() {
@@ -58,11 +57,9 @@ function IslandBody({ activity }: { activity: IslandActivity }) {
       ref={box}
       role="region"
       aria-label="Howdy island"
-      className={cn(
-        'pointer-events-auto animate-island-in overflow-hidden bg-island text-on-island shadow-float',
-        'ring-1 ring-on-island/10 transition-[border-radius] duration-300 ease-out motion-reduce:transition-none',
-        open ? 'w-full max-w-sm rounded-3xl' : 'max-w-full rounded-pill',
-      )}
+      // One shape, open or not: a rounded card of a fixed width. Opening only reveals the panel underneath; the outline
+      // never morphs (a pill turning into a card looked awkward).
+      className="pointer-events-auto w-full max-w-sm animate-island-in overflow-hidden rounded-xl bg-island text-on-island shadow-float ring-1 ring-on-island/10"
     >
       <div className="flex items-center gap-1 p-1">
         {activity.expanded ? (
@@ -71,7 +68,7 @@ function IslandBody({ activity }: { activity: IslandActivity }) {
             aria-expanded={open}
             aria-controls={panelId}
             onClick={() => setOpen((o) => !o)}
-            className="flex min-h-11 min-w-0 flex-1 items-center gap-2.5 rounded-pill py-1 pr-2 pl-1.5 text-left focus-visible:outline-2 focus-visible:outline-on-island"
+            className="flex min-h-11 min-w-0 flex-1 items-center gap-2.5 rounded-lg py-1 pr-2 pl-1.5 text-left focus-visible:outline-2 focus-visible:outline-on-island"
           >
             <Face icon={activity.icon} label={activity.label} />
           </button>
@@ -90,7 +87,7 @@ function IslandBody({ activity }: { activity: IslandActivity }) {
         </button>
       </div>
       {open && activity.expanded && (
-        <div id={panelId} className="animate-flip-in px-4 pt-1 pb-4">
+        <div id={panelId} className="animate-toast-in px-4 pt-1 pb-4">
           {activity.expanded(() => setOpen(false))}
         </div>
       )}

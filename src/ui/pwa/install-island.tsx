@@ -83,7 +83,8 @@ export function InstallIsland() {
             {browser === 'offer' ? (
               <Button
                 size="sm"
-                className="self-start"
+                // The island is near-black: violet would vanish on it, so the action wears the sunflower highlight.
+                className="self-start bg-highlight text-on-highlight hover:bg-highlight/85"
                 onClick={async () => {
                   if (await promptInstall()) dismissActivity(ID);
                   else close();

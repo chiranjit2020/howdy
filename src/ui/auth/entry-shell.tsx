@@ -25,8 +25,8 @@ export function EntryLogo() {
     >
       <Img
         src="/brand/howdy-wordmark.png"
-        width={766}
-        height={243}
+        width={728}
+        height={224}
         alt="Howdy"
         loading="eager"
         className="h-auto w-28 sm:w-32"

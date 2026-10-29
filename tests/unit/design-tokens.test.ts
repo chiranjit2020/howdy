@@ -83,7 +83,7 @@ describe('WCAG AA contrast (both themes)', () => {
         }
       });
 
-      // Buttons and the current nav item are filled with the brand green itself (user's choice): their short
+      // Buttons and the current nav item are filled with the brand violet itself (user's choice): their short
       // semibold labels get 3:1, the large-text level; everything smaller stays on accent-strong above.
       it('button labels on the theme colour meet 3:1', () => {
         expect(contrast(get('on-accent', scheme), get('accent', scheme))).toBeGreaterThanOrEqual(3);

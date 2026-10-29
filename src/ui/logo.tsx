@@ -23,8 +23,8 @@ export function HowdyLogo({
     >
       <Img
         src="/brand/howdy-wordmark.png"
-        width={766}
-        height={243}
+        width={728}
+        height={224}
         alt="Howdy"
         loading="eager"
         className={cn('h-auto', LOGO_WIDTH[size])}
