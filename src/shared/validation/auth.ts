@@ -138,6 +138,8 @@ export const handleSchema = z
   .string()
   .trim()
   .toLowerCase()
+  // Empty first: a blank box should ask for a username, not complain about its characters.
+  .min(1, 'Choose a username.')
   .regex(/^[a-z0-9_]+$/, 'Use only letters, numbers and underscores.')
   .min(LIMITS.HANDLE_MIN, `At least ${LIMITS.HANDLE_MIN} characters.`)
   .max(LIMITS.HANDLE_MAX, `At most ${LIMITS.HANDLE_MAX} characters.`)

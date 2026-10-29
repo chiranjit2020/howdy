@@ -58,7 +58,7 @@ export function StoriesStrip({
                 // Decoration only: the whole picture is the button (a 28 px badge would be too small to tap).
                 <span
                   aria-hidden="true"
-                  className="pointer-events-none absolute -right-1 -bottom-1 flex size-7 items-center justify-center rounded-pill border-2 border-surface bg-accent text-title leading-none font-bold text-on-accent shadow-clay-sm"
+                  className="pointer-events-none absolute -right-1 -bottom-1 flex size-7 items-center justify-center rounded-pill border-2 border-surface bg-accent-strong text-title leading-none font-bold text-on-accent shadow-clay-sm"
                 >
                   +
                 </span>

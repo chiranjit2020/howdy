@@ -101,7 +101,7 @@ test.describe('authentication journey (production build, real CSP, real cookies)
     const ctx = await newContext(browser);
     const page = await ctx.newPage();
     await page.goto('/signup');
-    await page.getByRole('button', { name: 'Create account' }).click();
+    await page.getByRole('button', { name: /^Create free account/ }).click();
     // Email comes first on the form, so it is where you land.
     await expect(page.getByLabel('Email address')).toBeFocused();
     await expect(page.getByLabel('Username')).toHaveAttribute('aria-invalid', 'true');
@@ -110,7 +110,7 @@ test.describe('authentication journey (production build, real CSP, real cookies)
     await expect(page.getByLabel('Username')).toHaveValue('x_howdy');
     await page.getByLabel('Username').fill('admin');
     await page.getByLabel('Password', { exact: true }).fill('short');
-    await page.getByRole('button', { name: 'Create account' }).click();
+    await page.getByRole('button', { name: /^Create free account/ }).click();
     await expect(page.getByText('That username is reserved.')).toBeVisible();
     await expect(page.getByText(/at least 10 characters/i).first()).toBeVisible();
 
@@ -146,8 +146,9 @@ test.describe('authentication journey (production build, real CSP, real cookies)
     // Submitting with it still wrong sends nothing and puts you back in the email box.
     await page.getByLabel('Username').fill('mail_check');
     await page.getByLabel('Password', { exact: true }).fill('correct horse battery staple');
-    await page.getByRole('checkbox').check();
-    await page.getByRole('button', { name: 'Create account' }).click();
+    await page.getByRole('checkbox', { name: /I am 18 or older/ }).check();
+    await page.getByRole('checkbox', { name: /I agree to the Terms/ }).check();
+    await page.getByRole('button', { name: /^Create free account/ }).click();
     await expect(email).toBeFocused();
     expect(posts).toEqual([]);
 

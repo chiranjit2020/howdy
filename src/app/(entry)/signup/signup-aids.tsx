@@ -73,7 +73,11 @@ export function useHandleStatus(handle: string): HandleStatus {
   return { state: answer.available ? 'available' : 'taken' };
 }
 
-/** The password rules, ticked off live as they are met. Not announced on every key press (it is the field's hint). */
+/**
+ * The password rules as three chips, ticked off live: grey before anything is typed, then a red ✕ or a green ✓ each.
+ * The short words fit a phone; screen readers hear the full rule and whether it is met. Not announced on every key
+ * press (it is the field's hint).
+ */
 export function PasswordChecklist({
   password,
   email,
@@ -83,26 +87,42 @@ export function PasswordChecklist({
   email: string;
   handle: string;
 }) {
+  const typed = password.length > 0;
   const rules = [
-    { ok: password.length >= PASSWORD_MIN, text: `At least ${PASSWORD_MIN} characters` },
-    { ok: !!password && !isCommonPassword(password), text: 'Not a common password' },
     {
-      ok: !!password && !passwordMatchesIdentity(password, email, handle),
-      text: 'Doesn’t contain your email or username',
+      ok: password.length >= PASSWORD_MIN,
+      short: `${PASSWORD_MIN}+ chars`,
+      full: `At least ${PASSWORD_MIN} characters`,
+    },
+    { ok: typed && !isCommonPassword(password), short: 'Not common', full: 'Not a common password' },
+    {
+      ok: typed && !passwordMatchesIdentity(password, email, handle),
+      short: 'Not your name',
+      full: 'Does not contain your email or username',
     },
   ];
   return (
-    <ul className="flex flex-col gap-0.5">
+    <ul className="grid grid-cols-3 gap-1.5 pt-0.5">
       {rules.map((r) => (
         <li
-          key={r.text}
-          className={cn('flex items-center gap-1.5', r.ok ? 'text-success-text' : 'text-text-secondary')}
+          key={r.short}
+          className={cn(
+            'flex min-w-0 items-center justify-center gap-1 rounded-md border px-1 py-1 font-mono text-metadata whitespace-nowrap transition-colors',
+            !typed
+              ? 'border-border bg-surface-sunken text-text-secondary'
+              : r.ok
+                ? 'border-accent/40 bg-accent-soft font-semibold text-success-text'
+                : 'border-danger/30 bg-danger-soft text-danger',
+          )}
         >
-          <span aria-hidden="true" className="w-3 text-center">
-            {r.ok ? '✓' : '•'}
+          <span aria-hidden="true">{!typed ? '•' : r.ok ? '✓' : '✕'}</span>
+          <span aria-hidden="true" className="truncate">
+            {r.short}
           </span>
-          {r.text}
-          <span className="sr-only">{r.ok ? ' (done)' : ''}</span>
+          <span className="sr-only">
+            {r.full}
+            {typed ? (r.ok ? ': done' : ': not yet') : ''}
+          </span>
         </li>
       ))}
     </ul>

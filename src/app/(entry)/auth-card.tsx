@@ -18,7 +18,7 @@ const MODES: Record<AuthMode, { title: string; prompt: string; other: AuthMode; 
   },
   signup: {
     title: 'Create account',
-    prompt: 'Already have an account?',
+    prompt: 'Already a member?',
     other: 'login',
     otherLabel: 'Log in',
   },
@@ -70,7 +70,7 @@ export function AuthCard({
           <a
             href={`/${mode.other}`}
             onClick={swap}
-            className="inline-flex min-h-11 items-center font-semibold text-auth-link no-underline hover:underline"
+            className="inline-flex min-h-11 items-center font-semibold text-accent-strong no-underline hover:underline"
           >
             {mode.otherLabel}
           </a>

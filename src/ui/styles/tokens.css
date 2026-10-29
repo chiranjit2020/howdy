@@ -59,12 +59,14 @@
   --color-focus: light-dark(#6a83a6, #9ad7e6);
 
   /*
-   * Theme colour: green (2026-10-29, replacing Sherbet Pink until the new palette). The same in both schemes, deep
-   * enough that white text on it passes WCAG AA (5:1; 7:1 on hover).
+   * Theme colour: emerald #059669 (2026-10-29, until the new palette). Used for marks, ticks, dots, rings and bars.
+   * White text on it is only 3.8:1, so anything filled that carries words (buttons, badges, bubbles) uses
+   * `accent-strong` (5.5:1) and darkens to `accent-hover` (7.7:1). The same in both schemes.
    */
-  --color-accent: #15803d;
-  --color-accent-hover: #166534;
-  --color-accent-soft: light-dark(#dcfce7, #173523);
+  --color-accent: #059669;
+  --color-accent-strong: #047857;
+  --color-accent-hover: #065f46;
+  --color-accent-soft: light-dark(#d1fae5, #12392c);
   --color-on-accent: #ffffff;
 
   --color-success: #b7e4c7;

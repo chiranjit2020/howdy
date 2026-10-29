@@ -163,9 +163,9 @@ describe('the legal documents', () => {
     expect(AUDIT_RETENTION_DAYS).toBe(365);
     expect(text).toContain('**Security records:** 12 months, then deleted.');
     expect(text).not.toContain('fixed retention period for security records');
-    expect(text).toContain(`**Signal:** ${SIGNAL_TTL_MS / 3_600_000} hours`);
+    expect(text).toContain(`**Status:** ${SIGNAL_TTL_MS / 3_600_000} hours`);
     expect(text).toContain(`**Messages:** ${WHISPER_RETENTION_DAYS} days`);
-    expect(text).toContain(`**Tracks:** ${TRACK_DAYS} days`);
+    expect(text).toContain(`**Profile visits:** ${TRACK_DAYS} days`);
     expect(text).toContain(
       `**Notifications:** ${READ_RETENTION_MS / day} days after you read them, or ${UNREAD_RETENTION_MS / day} days`,
     );

@@ -6,7 +6,7 @@ export type Tone = 'neutral' | 'accent' | 'success' | 'warning' | 'danger' | 'in
 
 export const TONE: Record<Tone, string> = {
   neutral: 'bg-surface-sunken text-text-primary',
-  accent: 'bg-accent text-on-accent',
+  accent: 'bg-accent-strong text-on-accent',
   success: 'bg-success text-on-success',
   warning: 'bg-warning text-on-warning',
   danger: 'bg-danger text-on-danger',

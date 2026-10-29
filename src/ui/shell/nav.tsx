@@ -97,7 +97,7 @@ export function ShellSidebarNav({ items }: { items: ShellNavItem[] }) {
                 {it.badge ? (
                   <>
                     <span className="sr-only">, </span>
-                    <span className="ml-auto rounded-pill bg-accent px-2 text-metadata font-semibold text-on-accent">
+                    <span className="ml-auto rounded-pill bg-accent-strong px-2 text-metadata font-semibold text-on-accent">
                       {badgeText(it.badge)}
                       <span className="sr-only"> unread</span>
                     </span>

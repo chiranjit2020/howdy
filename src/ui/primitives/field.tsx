@@ -2,7 +2,7 @@
 
 import { useId, useState, type ChangeEvent, type ComponentProps, type ReactNode } from 'react';
 import { cn } from '../cn';
-import { EyeIcon, EyeOffIcon } from '../icons';
+import { AlertIcon, EyeIcon, EyeOffIcon } from '../icons';
 
 interface ControlProps {
   id: string;
@@ -21,9 +21,18 @@ interface FieldShellProps {
   hideLabel?: boolean | undefined;
   /** A small link or button at the end of the label row (e.g. "Forgot password?"). Outside the <label> itself. */
   labelAction?: ReactNode;
+  /** `entry`: the sign-up look (small caps labels, softly tinted boxes). Default: the app's ordinary fields. */
+  look?: FieldLook | undefined;
   children: (control: ControlProps) => ReactNode;
   className?: string | undefined;
 }
+
+export type FieldLook = 'default' | 'entry';
+
+const LABEL: Record<FieldLook, string> = {
+  default: 'text-caption font-semibold text-text-primary',
+  entry: 'font-mono text-metadata font-bold tracking-wider text-text-primary uppercase',
+};
 
 /** Label + control + hint + error, wired together with ids so screen readers announce them. */
 export function FieldShell({
@@ -34,6 +43,7 @@ export function FieldShell({
   extraDescribedBy,
   hideLabel,
   labelAction,
+  look = 'default',
   children,
   className,
 }: FieldShellProps) {
@@ -43,10 +53,7 @@ export function FieldShell({
   const errorId = error ? `${fieldId}-error` : undefined;
   const describedBy = [hintId, errorId, extraDescribedBy].filter(Boolean).join(' ') || undefined;
   const labelEl = (
-    <label
-      htmlFor={fieldId}
-      className={hideLabel ? 'sr-only' : 'text-caption font-semibold text-text-primary'}
-    >
+    <label htmlFor={fieldId} className={hideLabel ? 'sr-only' : LABEL[look]}>
       {label}
     </label>
   );
@@ -68,8 +75,9 @@ export function FieldShell({
         </div>
       )}
       {error && (
-        <p id={errorId} className="text-caption font-medium text-danger">
-          {error}
+        <p id={errorId} className="flex items-start gap-1.5 text-caption font-medium text-danger">
+          <AlertIcon className="mt-0.5 size-4 shrink-0" />
+          <span>{error}</span>
         </p>
       )}
     </div>
@@ -84,10 +92,22 @@ const CONTROL =
   'focus:border-focus focus:ring-2 focus:ring-focus/20 ' +
   'aria-invalid:border-danger aria-invalid:focus:ring-danger/20';
 
+/** The sign-up look: a softly tinted box that turns white with an accent ring while typing, rose when wrong. */
+const ENTRY_CONTROL =
+  'w-full rounded-lg border border-border-strong/40 bg-surface-sunken/60 px-3.5 py-2.5 text-body text-text-primary ' +
+  'placeholder:text-text-muted transition-colors hover:border-border-strong disabled:cursor-not-allowed ' +
+  'disabled:opacity-60 focus:border-accent focus:bg-surface focus:ring-2 focus:ring-accent/20 ' +
+  'aria-invalid:border-danger aria-invalid:bg-danger-soft/40 aria-invalid:ring-2 aria-invalid:ring-danger/15';
+
+const CONTROLS: Record<FieldLook, string> = { default: CONTROL, entry: ENTRY_CONTROL };
+
 interface FieldProps {
   label: ReactNode;
   hint?: ReactNode;
   error?: ReactNode;
+  /** Small text or a link at the end of the label row ("Optional", "Forgot password?", a live check). */
+  labelAction?: ReactNode;
+  look?: FieldLook;
 }
 
 export function Input({
@@ -97,6 +117,8 @@ export function Input({
   className,
   id,
   prefix,
+  labelAction,
+  look = 'default',
   ...rest
 }: FieldProps &
   Omit<ComponentProps<'input'>, 'prefix'> & {
@@ -104,20 +126,38 @@ export function Input({
     prefix?: string;
   }) {
   return (
-    <FieldShell id={id} label={label} hint={hint} error={error} className={className}>
+    <FieldShell
+      id={id}
+      label={label}
+      hint={hint}
+      error={error}
+      labelAction={labelAction}
+      look={look}
+      className={className}
+    >
       {(c) =>
         prefix ? (
           <div className="relative">
             <span
               aria-hidden="true"
-              className="pointer-events-none absolute inset-y-0 left-4 flex items-center text-body text-text-secondary"
+              className={cn(
+                'pointer-events-none absolute inset-y-0 left-0 flex items-center text-body text-text-secondary',
+                // The entry look sets the prefix apart as its own little block, like part of the box.
+                look === 'entry'
+                  ? 'my-px ml-px w-10 justify-center rounded-l-lg border-r border-border-strong/30 bg-surface-sunken font-mono font-semibold'
+                  : 'pl-4',
+              )}
             >
               {prefix}
             </span>
-            <input className={cn(CONTROL, 'min-h-11 pl-9')} {...c} {...rest} />
+            <input
+              className={cn(CONTROLS[look], 'min-h-11', look === 'entry' ? 'pl-13' : 'pl-9')}
+              {...c}
+              {...rest}
+            />
           </div>
         ) : (
-          <input className={cn(CONTROL, 'min-h-11')} {...c} {...rest} />
+          <input className={cn(CONTROLS[look], 'min-h-11')} {...c} {...rest} />
         )
       }
     </FieldShell>
@@ -133,10 +173,11 @@ export function PasswordInput({
   hint,
   error,
   labelAction,
+  look = 'default',
   className,
   id,
   ...rest
-}: FieldProps & Omit<ComponentProps<'input'>, 'type'> & { labelAction?: ReactNode }) {
+}: FieldProps & Omit<ComponentProps<'input'>, 'type'>) {
   const [visible, setVisible] = useState(false);
   return (
     <FieldShell
@@ -145,12 +186,13 @@ export function PasswordInput({
       hint={hint}
       error={error}
       labelAction={labelAction}
+      look={look}
       className={className}
     >
       {(c) => (
         <div className="relative">
           <input
-            className={cn(CONTROL, 'min-h-11 pr-12')}
+            className={cn(CONTROLS[look], 'min-h-11 pr-12')}
             type={visible ? 'text' : 'password'}
             autoCapitalize="none"
             spellCheck={false}

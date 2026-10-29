@@ -60,6 +60,17 @@ export const UsersIcon = (p: IconProps) => (
     {...p}
   />
 );
+// A circle with "!": next to an error message, so it is not told by colour alone.
+export const AlertIcon = (p: IconProps) => (
+  <Svg d="M12 21a9 9 0 1 1 0-18 9 9 0 0 1 0 18zM12 8v4.5M12 16h.01" {...p} />
+);
+export const CheckCircleIcon = (p: IconProps) => (
+  <Svg d="M12 21a9 9 0 1 1 0-18 9 9 0 0 1 0 18zM8.5 12.2l2.3 2.3 4.7-4.8" {...p} />
+);
+export const XCircleIcon = (p: IconProps) => (
+  <Svg d="M12 21a9 9 0 1 1 0-18 9 9 0 0 1 0 18zM9.5 9.5l5 5M14.5 9.5l-5 5" {...p} />
+);
+export const ArrowRightIcon = (p: IconProps) => <Svg d="M5 12h14M13 6l6 6-6 6" {...p} />;
 export const UserIcon = (p: IconProps) => (
   <Svg d="M20 21v-1a5 5 0 0 0-5-5H9a5 5 0 0 0-5 5v1M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" {...p} />
 );

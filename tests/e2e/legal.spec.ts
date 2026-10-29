@@ -136,7 +136,7 @@ test.describe('Legal pages (production build, real CSP)', () => {
 });
 
 test.describe('Agreeing (production build)', () => {
-  test('Sign up will not go ahead until the box is ticked', async ({ browser }) => {
+  test('Sign up will not go ahead until both boxes are ticked', async ({ browser }) => {
     const ctx = await newContext(browser);
     const page = await ctx.newPage();
     const a = uniqueAccount('untick');
@@ -144,14 +144,19 @@ test.describe('Agreeing (production build)', () => {
     await page.getByLabel('Username').fill(a.handle);
     await page.getByLabel('Email address').fill(a.email);
     await page.getByLabel('Password', { exact: true }).fill(a.password);
-    await page.getByRole('button', { name: 'Create account' }).click();
+    await page.getByRole('button', { name: /^Create free account/ }).click();
     await expect(page.getByText(/confirm you are 18 or older/).first()).toBeVisible();
     await expect(page.getByRole('checkbox', { name: /I am 18 or older/ })).toBeFocused();
     await expect(page.getByRole('heading', { name: 'Check your email' })).toHaveCount(0);
     // The links in the label open in a new tab, so the half-filled form is kept.
     await expect(page.getByRole('link', { name: 'Terms of Service' })).toHaveAttribute('target', '_blank');
     await page.getByRole('checkbox', { name: /I am 18 or older/ }).check();
-    await page.getByRole('button', { name: 'Create account' }).click();
+    // Old enough is not enough: the Terms box is its own.
+    await page.getByRole('button', { name: /^Create free account/ }).click();
+    await expect(page.getByText('Please agree to the Terms of Service and Privacy Policy.')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Check your email' })).toHaveCount(0);
+    await page.getByRole('checkbox', { name: /I agree to the Terms/ }).check();
+    await page.getByRole('button', { name: /^Create free account/ }).click();
     await expect(page.getByRole('heading', { name: 'Check your email' })).toBeVisible();
     await ctx.close();
   });

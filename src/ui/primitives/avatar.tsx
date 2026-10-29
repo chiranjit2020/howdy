@@ -12,7 +12,7 @@ const PX = { sm: 32, md: 44, lg: 64, xl: 112 } as const;
 
 // Pastel fills; every one carries dark text with >=7:1 contrast (see design-tokens test).
 const FILLS = [
-  'bg-accent text-on-accent',
+  'bg-accent-strong text-on-accent',
   'bg-success text-on-success',
   'bg-warning text-on-warning',
   'bg-mystery text-on-mystery',

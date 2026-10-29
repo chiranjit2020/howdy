@@ -38,7 +38,7 @@ export function WhisperBubble({
         className={cn(
           'relative max-w-[85%] rounded-lg px-3 py-1.5',
           out
-            ? 'rounded-br-sm bg-accent text-on-accent shadow-clay-sm'
+            ? 'rounded-br-sm bg-accent-strong text-on-accent shadow-clay-sm'
             : 'rounded-bl-sm bg-surface text-text-primary shadow-clay-sm',
         )}
       >

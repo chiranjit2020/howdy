@@ -183,7 +183,7 @@ function PhonePeek() {
           <p className="max-w-[85%] self-start rounded-lg rounded-bl-sm bg-surface-sunken px-3 py-2 text-caption text-text-primary">
             Saw you’re free to talk. Still up?
           </p>
-          <p className="max-w-[85%] self-end rounded-lg rounded-br-sm bg-accent px-3 py-2 text-caption text-on-accent">
+          <p className="max-w-[85%] self-end rounded-lg rounded-br-sm bg-accent-strong px-3 py-2 text-caption text-on-accent">
             Always, for you 😄
           </p>
           <p className="self-end font-mono text-metadata text-text-muted">11:02 PM · Seen</p>

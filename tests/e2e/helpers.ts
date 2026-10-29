@@ -159,7 +159,8 @@ export async function signUpVia(page: Page, a: { handle: string; email: string; 
   await page.getByLabel('Email address').fill(a.email);
   await page.getByLabel('Password', { exact: true }).fill(a.password);
   await page.getByRole('checkbox', { name: /I am 18 or older/ }).check();
-  await page.getByRole('button', { name: 'Create account' }).click();
+  await page.getByRole('checkbox', { name: /I agree to the Terms/ }).check();
+  await page.getByRole('button', { name: /^Create free account/ }).click();
   await page.getByRole('heading', { name: 'Check your email' }).waitFor();
 }
 

@@ -9,7 +9,7 @@ self.addEventListener('activate', (event) => event.waitUntil(self.clients.claim(
 function safePath(url) {
   return typeof url === 'string' && url.startsWith('/') && !url.startsWith('//') && !url.includes('\\')
     ? url
-    : '/chimes';
+    : '/notifications';
 }
 
 self.addEventListener('push', (event) => {

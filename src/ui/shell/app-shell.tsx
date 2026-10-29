@@ -20,7 +20,7 @@ const AUTH_PILL =
 const AUTH_PILL_LABEL = 'text-metadata font-semibold min-[360px]:text-caption';
 const AUTH_PILL_SECONDARY =
   'border border-border bg-surface text-text-primary shadow-clay-sm hover:bg-surface-sunken';
-const AUTH_PILL_PRIMARY = 'bg-accent text-on-accent shadow-clay-sm hover:bg-accent-hover';
+const AUTH_PILL_PRIMARY = 'bg-accent-strong text-on-accent shadow-clay-sm hover:bg-accent-hover';
 
 export interface ShellMe {
   handle: string;
@@ -110,7 +110,7 @@ export function AppShell({
                   {unread > 0 && (
                     <span
                       aria-hidden="true"
-                      className="absolute -top-1 -right-1 grid min-w-5 place-items-center rounded-pill bg-accent px-1 text-metadata font-semibold text-on-accent"
+                      className="absolute -top-1 -right-1 grid min-w-5 place-items-center rounded-pill bg-accent-strong px-1 text-metadata font-semibold text-on-accent"
                     >
                       {unread > 99 ? '99+' : unread}
                     </span>

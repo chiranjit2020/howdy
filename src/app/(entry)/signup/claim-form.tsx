@@ -2,16 +2,21 @@
 
 import { useRef, useState, type FormEvent } from 'react';
 import { emailSchema, signUpSchema } from '@/shared/validation/auth';
+import { LEGAL_FACTS } from '@/shared/legal';
 import { LIMITS } from '@/shared/limits';
 import { postJson } from '@/ui/auth/api';
 import { FormMessage, focusFirstInvalid } from '@/ui/auth/form-parts';
 import { GoogleButton } from '@/ui/auth/google-button';
-import { TermsCheckbox } from '@/ui/auth/terms-checkbox';
+import { ArrowRightIcon, CheckCircleIcon, XCircleIcon } from '@/ui/icons';
 import { Button, Input, PasswordInput } from '@/ui/primitives';
+import { ConsentBoxes } from './consent-boxes';
 import { PasswordChecklist, suggestHandle, useHandleStatus } from './signup-aids';
 
 type Fields = { handle: string; displayName: string; email: string; password: string };
-type Errors = Partial<Fields & { acceptTerms: string }>;
+type Errors = Partial<Fields & { acceptTerms: string; age: string }>;
+
+const AGE_MESSAGE = `Please confirm you are ${LEGAL_FACTS.minimumAge} or older.`;
+const TERMS_MESSAGE = 'Please agree to the Terms of Service and Privacy Policy.';
 
 export function ClaimForm({
   invite,
@@ -19,7 +24,9 @@ export function ClaimForm({
 }: { invite?: { code: string; invitedBy: string }; google?: boolean } = {}) {
   const formRef = useRef<HTMLFormElement>(null);
   const [values, setValues] = useState<Fields>({ handle: '', displayName: '', email: '', password: '' });
-  const [acceptTerms, setAcceptTerms] = useState(false);
+  // Two boxes on the page, one agreement on the server (`acceptTerms` needs both).
+  const [ageOk, setAgeOk] = useState(false);
+  const [termsOk, setTermsOk] = useState(false);
   const [errors, setErrors] = useState<Errors>({});
   const [formError, setFormError] = useState<string | undefined>();
   const [attempt, setAttempt] = useState(0);
@@ -63,12 +70,21 @@ export function ClaimForm({
       : handleStatus.state === 'invalid' && handleEdited
         ? handleStatus.message
         : undefined);
-  const handleHint =
-    handleStatus.state === 'checking'
-      ? 'Checking…'
-      : handleStatus.state === 'available'
-        ? `@${values.handle.trim().toLowerCase()} is available.`
-        : `${LIMITS.HANDLE_MIN}–${LIMITS.HANDLE_MAX} characters: letters, numbers and underscores.`;
+  // The live check, at the end of the label row (as in the design); the rule itself stays under the box.
+  const handleNote = handleError ? (
+    <span className="flex items-center gap-1 font-mono text-metadata font-semibold text-danger">
+      <XCircleIcon className="size-3.5" />
+      {handleStatus.state === 'taken' && !errors.handle ? 'Taken' : 'Not valid'}
+    </span>
+  ) : handleStatus.state === 'available' ? (
+    <span className="flex items-center gap-1 font-mono text-metadata font-semibold text-success-text">
+      <CheckCircleIcon className="size-3.5" />
+      Available
+    </span>
+  ) : handleStatus.state === 'checking' ? (
+    <span className="font-mono text-metadata text-text-secondary">Checking…</span>
+  ) : undefined;
+  const handleHint = `${LIMITS.HANDLE_MIN}–${LIMITS.HANDLE_MAX} characters: lowercase letters, numbers and underscores.`;
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -78,7 +94,7 @@ export function ClaimForm({
     const parsed = signUpSchema.safeParse({
       ...rest,
       ...(displayName.trim() ? { displayName } : {}),
-      acceptTerms,
+      acceptTerms: ageOk && termsOk,
       ...(invite ? { invite: invite.code } : {}),
     });
     if (!parsed.success) {
@@ -86,6 +102,12 @@ export function ClaimForm({
       for (const issue of parsed.error.issues) {
         const key = issue.path[0] as keyof Errors;
         next[key] ??= issue.message;
+      }
+      // The schema has one box; the page has two, so say which one is missing.
+      if (next.acceptTerms) {
+        if (!ageOk) next.age = AGE_MESSAGE;
+        if (termsOk) delete next.acceptTerms;
+        else next.acceptTerms = TERMS_MESSAGE;
       }
       setErrors(next);
       setAttempt((n) => n + 1);
@@ -136,14 +158,14 @@ export function ClaimForm({
   return (
     <form ref={formRef} onSubmit={onSubmit} noValidate className="flex flex-col gap-4">
       <div className="flex flex-col gap-1">
-        <h1 className="text-body font-semibold text-text-primary">Create your account</h1>
+        <h1 className="text-heading font-bold tracking-tight text-text-primary">Start your Howdy journey</h1>
         <p className="text-caption font-normal text-text-secondary">
-          Join Howdy and connect with your people.
+          Claim your unique username and connect instantly.
         </p>
       </div>
       {invite && (
         // Says exactly what will happen, and nothing more is granted (ADR-045).
-        <p className="rounded-md border border-border bg-accent-soft px-3 py-2 text-caption font-normal text-text-primary">
+        <p className="rounded-md border border-accent/30 bg-accent-soft px-3 py-2 text-caption font-normal text-text-primary">
           <strong className="font-semibold">{invite.invitedBy}</strong> invited you. Once you confirm your
           email, they get a friend request from you.
         </p>
@@ -164,23 +186,13 @@ export function ClaimForm({
           {formError}
         </FormMessage>
       )}
-      {/* Email first: the username is suggested from it, so most people only type an email and a password. */}
       <Input
-        label="Email address"
-        name="email"
-        type="email"
-        autoComplete="email"
-        inputMode="email"
-        placeholder="you@example.com"
-        value={values.email}
-        onChange={onEmailChange}
-        onBlur={checkEmail}
-        error={errors.email}
-      />
-      <Input
+        look="entry"
         label="Username"
+        labelAction={handleNote}
         name="handle"
         prefix="@"
+        placeholder="yourname"
         autoComplete="username"
         autoCapitalize="none"
         spellCheck={false}
@@ -190,35 +202,68 @@ export function ClaimForm({
         error={handleError}
         hint={handleError ? undefined : handleHint}
       />
+      <Input
+        look="entry"
+        label="Display name"
+        labelAction={
+          <span className="font-mono text-metadata tracking-wider text-text-secondary uppercase">
+            Optional
+          </span>
+        }
+        name="displayName"
+        placeholder="e.g. Priya Sharma"
+        autoComplete="name"
+        value={values.displayName}
+        onChange={set('displayName')}
+        error={errors.displayName}
+      />
+      <Input
+        look="entry"
+        label="Email address"
+        name="email"
+        type="email"
+        autoComplete="email"
+        inputMode="email"
+        placeholder="name@example.com"
+        value={values.email}
+        onChange={onEmailChange}
+        onBlur={checkEmail}
+        error={errors.email}
+      />
       <PasswordInput
+        look="entry"
         label="Password"
         name="password"
+        placeholder="Create a strong password"
         autoComplete="new-password"
         value={values.password}
         onChange={set('password')}
         error={errors.password}
         hint={<PasswordChecklist password={values.password} email={values.email} handle={values.handle} />}
       />
-      <Input
-        label="Display name (optional)"
-        name="displayName"
-        autoComplete="name"
-        value={values.displayName}
-        onChange={set('displayName')}
-        error={errors.displayName}
-        hint="Shown on your profile. Leave blank to use your username."
-      />
-      <TermsCheckbox
-        checked={acceptTerms}
-        onChange={(v) => {
-          setAcceptTerms(v);
+      <ConsentBoxes
+        age={ageOk}
+        terms={termsOk}
+        onAge={(v) => {
+          setAgeOk(v);
+          if (v) setErrors(({ age: _, ...others }) => others);
+        }}
+        onTerms={(v) => {
+          setTermsOk(v);
           if (v) setErrors(({ acceptTerms: _, ...others }) => others);
         }}
-        invalid={!!errors.acceptTerms}
+        ageError={errors.age}
+        termsError={errors.acceptTerms}
       />
-      {errors.acceptTerms && <FormMessage tone="error">{errors.acceptTerms}</FormMessage>}
-      <Button type="submit" fullWidth loading={busy}>
-        Create account
+      <Button type="submit" fullWidth loading={busy} className="min-h-12">
+        {busy ? (
+          'Creating account…'
+        ) : (
+          <>
+            Create free account
+            <ArrowRightIcon className="size-4" />
+          </>
+        )}
       </Button>
     </form>
   );

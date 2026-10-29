@@ -7,7 +7,7 @@ type NativeProps = Omit<ComponentProps<'input'>, 'type'>;
 
 const BOX =
   'size-5 mt-0.5 shrink-0 appearance-none border-[1.5px] border-border-strong bg-surface ' +
-  'transition-colors checked:border-accent checked:bg-accent disabled:opacity-60';
+  'transition-colors checked:border-accent checked:bg-accent aria-invalid:border-danger disabled:opacity-60';
 
 function ChoiceRow({
   label,

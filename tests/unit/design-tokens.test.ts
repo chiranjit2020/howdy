@@ -67,7 +67,7 @@ describe('WCAG AA contrast (both themes)', () => {
 
       it('text on filled colour tokens', () => {
         for (const [fg, bg] of [
-          ['on-accent', 'accent'],
+          ['on-accent', 'accent-strong'],
           ['on-accent', 'accent-hover'],
           ['on-success', 'success'],
           ['on-warning', 'warning'],
@@ -152,7 +152,7 @@ describe('design-system discipline', () => {
       CREAM: 'background',
       INK: 'text-primary',
       SLATE: 'text-secondary',
-      ACCENT: 'accent',
+      ACCENT_STRONG: 'accent-strong',
       ACCENT_SOFT: 'accent-soft',
       ON_ACCENT: 'on-accent',
     };
