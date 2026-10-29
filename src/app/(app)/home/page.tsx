@@ -29,13 +29,16 @@ const SECTION_TITLE =
 interface Glance {
   href: string;
   icon: ReactNode;
-  /** null = nothing to count right now (the note says why). */
+  /** null = nothing to count right now (`spoken` says why). */
   value: number | null;
+  /** One or two words: the row is a single line. */
   label: string;
-  /** A short second line: what needs you, or why there is no number. */
-  note?: string | undefined;
-  /** Something is waiting for you here: the number is highlighted. */
+  /** The whole thing in a sentence, for screen readers and as the hover title ("4 friends, 2 requests waiting"). */
+  spoken: string;
+  /** Something is waiting for you here: the number turns sunflower. */
   waiting?: boolean;
+  /** A tiny sunflower extra after the label, e.g. "+2" friend requests. */
+  extra?: string | undefined;
 }
 
 /** First protected page. The session check happens on the server: an unauthenticated request never reaches the markup. */
@@ -77,44 +80,53 @@ export default async function HomePage() {
     ? tracks.people.filter((p) => p.when === 'today').length + tracks.hidden.today
     : null;
 
+  const count = (n: number | null, one: string, many: string) =>
+    n === null ? `No ${many}` : `${n} ${n === 1 ? one : many}`;
   const glance: Glance[] = [
     {
       href: '/messages',
       icon: <WhisperIcon />,
       value: whispers,
-      label: whispers === 1 ? 'Unread message' : 'Unread messages',
+      label: 'Messages',
+      spoken: count(whispers, 'unread message', 'unread messages'),
       waiting: (whispers ?? 0) > 0,
     },
     {
       href: '/notifications',
       icon: <BellIcon />,
       value: chimes,
-      label: chimes === 1 ? 'New notification' : 'New notifications',
+      label: 'Notifications',
+      spoken: count(chimes, 'new notification', 'new notifications'),
       waiting: (chimes ?? 0) > 0,
     },
     {
       href: '/friends',
       icon: <UsersIcon />,
       value: lists.posse.length,
-      label: lists.posse.length === 1 ? 'Friend' : 'Friends',
-      note: requests > 0 ? `${requests} ${requests === 1 ? 'request' : 'requests'} waiting` : undefined,
-      waiting: requests > 0,
+      label: 'Friends',
+      spoken:
+        count(lists.posse.length, 'friend', 'friends') +
+        (requests > 0 ? `, ${requests} ${requests === 1 ? 'request' : 'requests'} waiting` : ''),
+      extra: requests > 0 ? `+${requests > 99 ? '99' : requests}` : undefined,
     },
     {
       href: '/visitors',
       icon: <TracksIcon />,
       // On Shadow Walk your own Tracks are frozen, so there is honestly nothing to count.
       value: tracks?.frozen ? null : visitsToday,
-      label: 'Profile visits today',
-      note: tracks?.frozen ? 'Private browsing is on' : undefined,
+      label: 'Visits today',
+      spoken: tracks?.frozen
+        ? 'Profile visits: private browsing is on'
+        : count(visitsToday, 'profile visit today', 'profile visits today'),
     },
   ];
 
   return (
-    // Two columns from lg up: the main column right beside the sidebar, and a right sidebar (At a glance, Free to talk)
-    // that stays in view. Below lg the right column's cards simply follow the main ones. No side padding of its own: the
-    // shell's px-4 is the gutter, so the cards use the full phone width.
-    <div className="flex w-full flex-col gap-4 py-4 sm:gap-6 sm:py-8 lg:grid lg:grid-cols-[minmax(0,1fr)_19rem] lg:items-start">
+    // Two columns from xl up (1280 px; any narrower and the main column would be phone-thin): the main column right
+    // beside the sidebar, and a right sidebar (At a glance, Free to talk) that stays in view. Below xl the right column's
+    // cards simply follow the main ones. No side padding of its own: the shell's px-4 is the gutter, so the cards use the
+    // full phone width.
+    <div className="flex w-full flex-col gap-4 py-4 sm:gap-6 sm:py-8 xl:grid xl:grid-cols-[minmax(0,1fr)_23rem] xl:items-start">
       <main id="main" className="flex w-full max-w-2xl min-w-0 flex-col gap-4 sm:gap-6">
         <StoriesStrip
           initial={ring}
@@ -164,43 +176,39 @@ export default async function HomePage() {
       {/* The right sidebar. top-24 clears the sticky top bar (4rem) with room to breathe. */}
       <aside
         aria-label="At a glance and Free to talk"
-        className="flex min-w-0 flex-col gap-4 sm:gap-6 lg:sticky lg:top-24"
+        className="flex min-w-0 flex-col gap-4 sm:gap-6 xl:sticky xl:top-24"
       >
-        {/* A few numbers worth a glance, each a way into the page that has the detail. */}
-        <ClayCard className="p-4 sm:p-5">
-          <section aria-labelledby="glance" className="flex flex-col gap-2">
-            <h2 id="glance" className={SECTION_TITLE}>
+        {/* A few numbers worth a glance, each a way into the page that has the detail: one line each, two by two. */}
+        <ClayCard className="p-3 sm:p-4">
+          <section aria-labelledby="glance" className="flex flex-col gap-1">
+            <h2 id="glance" className={cn(SECTION_TITLE, 'px-2')}>
               At a glance
             </h2>
-            <ul className="grid grid-cols-2 gap-2">
+            <ul className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-1">
               {glance.map((g) => (
                 <li key={g.href}>
                   <Link
                     href={g.href}
-                    className={cn(
-                      'flex h-full min-h-11 flex-col gap-1 rounded-lg p-3 no-underline transition-colors hover:no-underline',
-                      g.waiting
-                        ? 'bg-accent/15 hover:bg-accent/25'
-                        : 'bg-surface-sunken hover:bg-surface-sunken/70',
-                    )}
+                    aria-label={g.spoken}
+                    title={g.spoken}
+                    className="flex min-h-11 items-center gap-1.5 rounded-md px-2 text-text-primary no-underline transition-colors hover:bg-surface-sunken hover:no-underline"
                   >
-                    <span className="flex items-center justify-between gap-2">
-                      <span className="text-heading font-semibold text-text-primary tabular-nums">
-                        {g.value === null ? '–' : g.value > 99 ? '99+' : g.value}
-                      </span>
-                      <span aria-hidden="true" className="flex shrink-0 text-title text-text-secondary">
-                        {g.icon}
-                      </span>
+                    <span aria-hidden="true" className="flex shrink-0 text-body text-text-secondary">
+                      {g.icon}
                     </span>
-                    <span className="text-caption leading-tight text-text-primary">{g.label}</span>
-                    {g.note && (
-                      <span
-                        className={cn(
-                          'text-metadata leading-tight',
-                          g.waiting ? 'font-semibold text-text-primary' : 'text-text-secondary',
-                        )}
-                      >
-                        {g.note}
+                    <span
+                      className={cn(
+                        'shrink-0 text-body font-semibold tabular-nums',
+                        g.waiting &&
+                          'rounded-pill bg-highlight px-1.5 text-caption font-bold text-on-highlight',
+                      )}
+                    >
+                      {g.value === null ? '–' : g.value > 99 ? '99+' : g.value}
+                    </span>
+                    <span className="min-w-0 truncate text-caption">{g.label}</span>
+                    {g.extra && (
+                      <span className="shrink-0 rounded-pill bg-highlight px-1.5 text-metadata font-bold text-on-highlight">
+                        {g.extra}
                       </span>
                     )}
                   </Link>

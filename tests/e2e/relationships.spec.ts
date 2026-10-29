@@ -64,13 +64,11 @@ test.describe('Posse, Block and Flag trouble (production build, real CSP)', () =
     await b.page.getByRole('button', { name: 'Ask to be friends' }).click();
     await expect(b.page.getByText('If @nobody_home_zzz is out there')).toBeVisible(); // identical for a call sign that does not exist
     await a.page.goto('/home');
-    await expect(
-      a.page.getByRole('main').getByRole('link', { name: /Friends.*1 request waiting/ }),
-    ).toBeVisible();
-    await a.page
-      .getByRole('main')
-      .getByRole('link', { name: /Friends/ })
-      .click();
+    // Home's "At a glance" (in the right sidebar) says a request is waiting, and leads to it.
+    const glance = a.page.getByRole('region', { name: 'At a glance' });
+    const friends = glance.getByRole('link', { name: /friends?, 1 request waiting/ });
+    await expect(friends).toBeVisible();
+    await friends.click();
     await expect(a.page.getByRole('heading', { name: 'Requests for you (1)' })).toBeVisible();
     await expect(a.page.getByText('wants to be your friend')).toBeVisible();
     expect((await b.page.goto(`/profile/${a.handle}`))?.status()).toBe(404); // still hidden while pending
