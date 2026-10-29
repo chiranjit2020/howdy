@@ -71,31 +71,31 @@ describe('YoButton', () => {
     const { rerender } = render(<YoButton count={1} active={false} onToggle={onToggle} />);
     const btn = screen.getByRole('button', { name: /Wave/ });
     expect(btn).toHaveAttribute('aria-pressed', 'false');
-    expect(screen.getByLabelText('1 Yo')).toBeInTheDocument();
+    expect(screen.getByLabelText('1 wave')).toBeInTheDocument();
     await user.click(btn);
     expect(onToggle).toHaveBeenCalledTimes(1);
     rerender(<YoButton count={14} active onToggle={onToggle} />);
     expect(btn).toHaveAttribute('aria-pressed', 'true');
-    expect(screen.getByLabelText('14 Yos')).toBeInTheDocument();
+    expect(screen.getByLabelText('14 waves')).toBeInTheDocument();
   });
 });
 
 describe('VibeMatrix', () => {
   const counts = (gem: number, pure: number) => ({ gem, pure, chill: 0, sharp: 0, bold: 0 });
 
-  it('shows earned counts with meanings below 20 Marks, and the percentage bars from 20', () => {
+  it('shows earned counts with meanings below 20 badges, and the percentage bars from 20', () => {
     const { rerender } = render(<VibeMatrix counts={counts(12, 7)} total={19} />);
     expect(screen.getByText('Rare, genuinely valuable')).toBeInTheDocument();
-    expect(screen.getByText((_, el) => el?.textContent === '12 Marks')).toBeInTheDocument(); // count + hidden word
+    expect(screen.getByText((_, el) => el?.textContent === '12 badges')).toBeInTheDocument(); // count + hidden word
     expect(
       screen.getByText(/19 badges total\. The percentages show up after 20 — 1 to go\./),
     ).toBeInTheDocument();
     expect(screen.queryByRole('img', { name: /%$/ })).not.toBeInTheDocument();
 
     rerender(<VibeMatrix counts={counts(13, 7)} total={20} />);
-    expect(screen.getByRole('img', { name: 'Gem: 13 Marks, 65%' })).toBeInTheDocument();
-    expect(screen.getByRole('img', { name: 'Bold: 0 Marks, 0%' })).toBeInTheDocument();
-    expect(screen.getByText('20 Marks total.')).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'Gem: 13 badges, 65%' })).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'Bold: 0 badges, 0%' })).toBeInTheDocument();
+    expect(screen.getByText('20 badges total.')).toBeInTheDocument();
     expect(screen.queryByText('Rare, genuinely valuable')).not.toBeInTheDocument();
   });
 
@@ -140,8 +140,8 @@ describe('PostCard', () => {
     expect(screen.queryByText('Late-night canteen run?')).not.toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Replies' })).toBeInTheDocument();
     expect(screen.getByText('Bringing coffee.')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Back to card/ })).toHaveFocus();
-    await user.click(screen.getByRole('button', { name: /Back to card/ }));
+    expect(screen.getByRole('button', { name: /Back to post/ })).toHaveFocus();
+    await user.click(screen.getByRole('button', { name: /Back to post/ }));
     expect(screen.getByText('Late-night canteen run?')).toBeInTheDocument();
     expect(screen.queryByText('Bringing coffee.')).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Flip/ })).toHaveFocus();
@@ -168,8 +168,8 @@ describe('PostCard', () => {
     const user = userEvent.setup();
     const onReact = vi.fn();
     const { rerender } = render(card({ onReact }));
-    expect(screen.getByRole('img', { name: '3 reactions: 2 Yo, 1 Laugh' })).toBeInTheDocument();
-    const main = screen.getByRole('button', { name: 'Yo' });
+    expect(screen.getByRole('img', { name: '3 reactions: 2 Wave, 1 Laugh' })).toBeInTheDocument();
+    const main = screen.getByRole('button', { name: 'Wave' });
     expect(main).toHaveAttribute('aria-pressed', 'false');
     await user.click(main);
     expect(onReact).toHaveBeenLastCalledWith('yo');
@@ -192,7 +192,7 @@ describe('PostCard', () => {
 
   it('without the right to react, only the summary shows', () => {
     render(card({ canReact: false }));
-    expect(screen.queryByRole('button', { name: 'Yo' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Wave' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'More reactions' })).not.toBeInTheDocument();
     expect(screen.getByRole('img', { name: /3 reactions/ })).toBeInTheDocument();
   });
@@ -299,9 +299,9 @@ describe('PosseBadge', () => {
       unmount();
     }
   });
-  it('shows a block as "Block"', () => {
+  it('shows a block as "Blocked"', () => {
     render(<PosseBadge state="BLOCKED" />);
-    expect(screen.getByText('Block')).toBeInTheDocument();
+    expect(screen.getByText('Blocked')).toBeInTheDocument();
   });
 });
 
@@ -323,7 +323,7 @@ describe('Wall', () => {
   it('shows an empty state when there are no cards, and no "older" button unless there is more', () => {
     render(<Fence />);
     expect(screen.getByText('No posts yet')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Older cards' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Older posts' })).not.toBeInTheDocument();
   });
 
   it('lists cards in order and offers explicit pagination when there is more', async () => {
@@ -339,7 +339,7 @@ describe('Wall', () => {
     const items = Array.from(screen.getAllByRole('list')[0]!.children);
     expect(items[0]).toHaveTextContent('first');
     expect(items[1]).toHaveTextContent('second');
-    await user.click(screen.getByRole('button', { name: 'Older cards' }));
+    await user.click(screen.getByRole('button', { name: 'Older posts' }));
     expect(onLoadMore).toHaveBeenCalled();
   });
 
