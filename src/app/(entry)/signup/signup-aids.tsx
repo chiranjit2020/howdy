@@ -107,11 +107,11 @@ export function PasswordChecklist({
         <li
           key={r.short}
           className={cn(
-            'flex min-w-0 items-center justify-center gap-1 rounded-md border px-1 py-1 font-mono text-metadata whitespace-nowrap transition-colors',
+            'flex min-w-0 items-center justify-center gap-1 rounded-md border px-1 py-1 text-metadata whitespace-nowrap transition-colors',
             !typed
               ? 'border-border bg-surface-sunken text-text-secondary'
               : r.ok
-                ? 'border-accent/40 bg-accent-soft font-semibold text-success-text'
+                ? 'border-success-text/30 bg-success/30 font-semibold text-success-text'
                 : 'border-danger/30 bg-danger-soft text-danger',
           )}
         >

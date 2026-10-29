@@ -5,6 +5,7 @@ import { parseCookies } from '@/platform/http/cookies';
 import { json, route } from '@/platform/http/route';
 import { AppError } from '@/platform/errors';
 import { INVITE_CODE_PATTERN } from '@/shared/validation/invites';
+import { displayNameSchema } from '@/shared/validation/profile';
 import {
   appealProofSchema,
   confirmAppSchema,
@@ -19,6 +20,7 @@ import {
   resetPasswordSchema,
   signInProofSchema,
   signUpSchema,
+  verifyEmailCodeSchema,
   verifyEmailSchema,
 } from '@/shared/validation/auth';
 import { audit } from './audit';
@@ -36,6 +38,7 @@ import {
   signUp,
   signUpWithGoogle,
   verifyEmail,
+  verifyEmailCode,
 } from './accounts';
 import {
   clearedGoogleCookie,
@@ -167,11 +170,14 @@ export const authHandlers = {
       throw new AppError('UNAUTHENTICATED', { message: 'That took too long. Start again with Google.' });
     }
     const ctx = requestContext(req, requestId);
+    // The form no longer asks for a display name: use the one Google gave, screened like a typed one (or none, and
+    // the profile is named after the username).
+    const fromGoogle = pending.name ? displayNameSchema.safeParse(pending.name) : null;
     const { userId } = await signUpWithGoogle(
       {
         email: pending.email,
         handle: body.handle,
-        displayName: body.displayName,
+        displayName: body.displayName ?? (fromGoogle?.success ? fromGoogle.data : undefined),
         invite: pending.invite ?? undefined,
       },
       ctx,
@@ -260,6 +266,21 @@ export const authHandlers = {
     const { token } = await readJson(req, verifyEmailSchema);
     await verifyEmail(token, requestContext(req, requestId));
     return json(ACCEPTED);
+  }),
+
+  /** The 6-digit code typed on the sign-up page: confirms the email and, as a rule, signs straight in. */
+  verifyEmailCode: route(async ({ req, requestId }) => {
+    const body = await readJson(req, verifyEmailCodeSchema);
+    const result = await verifyEmailCode(body, {
+      ...requestContext(req, requestId),
+      userAgent: req.headers.get('user-agent'),
+      previousToken: sessionTokenFrom(req.headers),
+    });
+    if (!result) return json({ signedIn: false });
+    return withCookie(
+      json({ signedIn: true, user: result.user }),
+      sessionCookie(result.token, result.maxAgeSec),
+    );
   }),
 
   resendVerification: route(async ({ req, requestId }) => {

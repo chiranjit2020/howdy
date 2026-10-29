@@ -21,7 +21,7 @@ interface FieldShellProps {
   hideLabel?: boolean | undefined;
   /** A small link or button at the end of the label row (e.g. "Forgot password?"). Outside the <label> itself. */
   labelAction?: ReactNode;
-  /** `entry`: the sign-up look (small caps labels, softly tinted boxes). Default: the app's ordinary fields. */
+  /** `entry`: the sign-up look (softly tinted boxes). Default: the app's ordinary fields. */
   look?: FieldLook | undefined;
   children: (control: ControlProps) => ReactNode;
   className?: string | undefined;
@@ -31,7 +31,8 @@ export type FieldLook = 'default' | 'entry';
 
 const LABEL: Record<FieldLook, string> = {
   default: 'text-caption font-semibold text-text-primary',
-  entry: 'font-mono text-metadata font-bold tracking-wider text-text-primary uppercase',
+  // Same label as everywhere else (the mono capitals from the design mockup made sign-up read unlike the rest of Howdy).
+  entry: 'text-caption font-semibold text-text-primary',
 };
 
 /** Label + control + hint + error, wired together with ids so screen readers announce them. */
@@ -144,7 +145,7 @@ export function Input({
                 'pointer-events-none absolute inset-y-0 left-0 flex items-center text-body text-text-secondary',
                 // The entry look sets the prefix apart as its own little block, like part of the box.
                 look === 'entry'
-                  ? 'my-px ml-px w-10 justify-center rounded-l-lg border-r border-border-strong/30 bg-surface-sunken font-mono font-semibold'
+                  ? 'my-px ml-px w-10 justify-center rounded-l-lg border-r border-border-strong/30 bg-surface-sunken font-semibold'
                   : 'pl-4',
               )}
             >

@@ -1,74 +1,66 @@
-import { getEnv } from '@/platform/config/env';
 import type { MailMessage } from '@/platform/mailer';
+import { composeEmail, siteLink, spacedCode, type Paragraph } from './email-layout';
 
-/** Plain-text transactional emails. Links always go to APP_URL; tokens are single-use and expire (see config). */
-const link = (path: string, token?: string) => {
-  const url = new URL(path, getEnv().APP_URL);
-  if (token) url.searchParams.set('token', token);
-  return url.toString();
-};
+/** Transactional emails, all in the shared layout (email-layout.ts). Links always go to APP_URL; tokens are single-use. */
 
-export function verifyEmailMessage(to: string, token: string): MailMessage {
-  return {
-    to,
-    subject: 'Confirm your email to get your Howdy deed',
-    text: [
-      'Howdy!',
-      '',
-      'Confirm your email to finish staking your claim:',
-      link('/verify', token),
-      '',
-      'This link works once and expires in 24 hours.',
-      'If you did not sign up for Howdy, you can ignore this email.',
-    ].join('\n'),
-  };
+const NOT_YOU_SIGNUP = 'If you did not sign up for Howdy, ignore this email: nothing can be used until it is confirmed.';
+/** Read when an email is built, never at import (settings are only checked at run time). */
+const reset = () => siteLink('/forgot-password');
+
+/**
+ * Confirm the email: a 6-digit code to type on the page that is still open (it works for 15 minutes), and a button for
+ * whoever reads this on the same device (the link works for 24 hours). Names the username, so a person can tell which
+ * account they are confirming.
+ */
+export function verifyEmailMessage(to: string, token: string, handle: string, code: string): MailMessage {
+  return composeEmail(to, {
+    subject: `${spacedCode(code)} is your Howdy code`,
+    preheader: `Confirm your email for @${handle}.`,
+    heading: 'Confirm your email',
+    intro: [`Enter this code on Howdy to finish creating @${handle}:`],
+    code,
+    button: { label: 'Verify account', href: siteLink('/verify', { token }) },
+    after: ['The code works for 15 minutes; the button for 24 hours. Each works once.', NOT_YOU_SIGNUP],
+  });
 }
 
 /** Sent instead of a second account when someone signs up with an email that is already registered. */
 export function alreadyRegisteredMessage(to: string): MailMessage {
-  return {
-    to,
+  return composeEmail(to, {
     subject: 'You already have a Howdy account',
-    text: [
-      'Howdy!',
-      '',
-      'Someone (hopefully you) tried to sign up with this email, but it already has a Howdy account.',
-      '',
-      `Log in: ${link('/login')}`,
-      `Forgot password? ${link('/forgot-password')}`,
-      '',
-      'If this was not you, you can ignore this email. Nothing has changed.',
-    ].join('\n'),
-  };
+    preheader: 'Log in instead, or reset your password.',
+    heading: 'You already have an account',
+    intro: ['Someone (hopefully you) tried to sign up with this email, but it already has a Howdy account.'],
+    button: { label: 'Log in', href: siteLink('/login') },
+    after: [
+      ['Forgot your password? ', { href: reset(), label: 'Reset it' }, '.'],
+      'If this was not you, ignore this email. Nothing has changed.',
+    ],
+  });
 }
 
 export function passwordResetMessage(to: string, token: string): MailMessage {
-  return {
-    to,
+  return composeEmail(to, {
     subject: 'Reset your Howdy password',
-    text: [
-      'Howdy!',
-      '',
-      'Use this link to choose a new password:',
-      link('/forgot-password/reset', token),
-      '',
+    preheader: 'Choose a new password. The link works for 1 hour.',
+    heading: 'Reset your password',
+    intro: ['Tap the button to choose a new password.'],
+    button: { label: 'Choose a new password', href: siteLink('/forgot-password/reset', { token }) },
+    after: [
       'This link works once and expires in 1 hour.',
       'If you did not ask for this, ignore this email. Your password has not changed.',
-    ].join('\n'),
-  };
+    ],
+  });
 }
 
 export function passwordChangedMessage(to: string): MailMessage {
-  return {
-    to,
+  return composeEmail(to, {
     subject: 'Your Howdy password was changed',
-    text: [
-      'Howdy!',
-      '',
-      'Your password was just changed and every device was signed out.',
-      `If this was not you, reset it right away: ${link('/forgot-password')}`,
-    ].join('\n'),
-  };
+    preheader: 'Every device was signed out.',
+    heading: 'Your password was changed',
+    intro: ['Your password was just changed and every device was signed out.'],
+    after: [['If this was not you, ', { href: reset(), label: 'reset it right away' }, '.']],
+  });
 }
 
 const longDate = (d: Date) =>
@@ -76,36 +68,30 @@ const longDate = (d: Date) =>
 
 /** Sent when someone asks to delete their account: when it goes, and how to keep it (ADR-027). */
 export function deletionScheduledMessage(to: string, deleteOn: Date): MailMessage {
-  return {
-    to,
+  return composeEmail(to, {
     subject: 'Your Howdy account will be deleted',
-    text: [
-      'Howdy.',
-      '',
-      `You asked us to delete your Howdy account. It is closed now, and on ${longDate(deleteOn)} it will be deleted for good,`,
-      'with your profile, posts, messages, friends and photo.',
-      '',
-      `Changed your mind? Log in before then and choose "Keep my account": ${link('/login')}`,
-      '',
-      'If this was not you, log in and keep your account, then change your password right away.',
-    ].join('\n'),
-  };
+    preheader: `It will be deleted on ${longDate(deleteOn)}.`,
+    heading: 'Your account will be deleted',
+    intro: [
+      `You asked us to delete your Howdy account. It is closed now, and on ${longDate(deleteOn)} it will be deleted for good, with your profile, posts, messages, friends and photo.`,
+      'Changed your mind? Log in before then and choose “Keep my account”.',
+    ],
+    button: { label: 'Log in', href: siteLink('/login') },
+    after: ['If this was not you, log in and keep your account, then change your password right away.'],
+  });
 }
 
 /** Sent once the account is gone. */
 export function accountDeletedMessage(to: string): MailMessage {
-  return {
-    to,
+  return composeEmail(to, {
     subject: 'Your Howdy account has been deleted',
-    text: [
-      'Howdy.',
-      '',
+    heading: 'Your account has been deleted',
+    intro: [
       'Your Howdy account has now been deleted, as you asked. Thank you for spending time on Howdy.',
-      '',
       'We keep only what our Privacy Policy describes (for example, reports about your account, with your name removed).',
-      `You are welcome back any time: ${link('/signup')}`,
-    ].join('\n'),
-  };
+    ],
+    after: [['You are welcome back any time: ', { href: siteLink('/signup'), label: 'create an account' }, '.']],
+  });
 }
 
 /**
@@ -156,17 +142,17 @@ const TWO_STEP_LINES: Record<TwoStepChange, { subject: string; line: string }> =
 
 export function twoStepChangedMessage(to: string, change: TwoStepChange, extra?: string): MailMessage {
   const { subject, line } = TWO_STEP_LINES[change];
-  return {
-    to,
+  const after: Paragraph[] = [
+    [
+      'If this was you, there is nothing to do. If it was not, ',
+      { href: reset(), label: 'reset your password now' },
+      ', then check “Sign-in security” in your Settings.',
+    ],
+  ];
+  return composeEmail(to, {
     subject,
-    text: [
-      'Howdy!',
-      '',
-      line,
-      ...(extra ? [extra] : []),
-      '',
-      `If this was you, there is nothing to do. If it was not, reset your password now: ${link('/forgot-password')}`,
-      'and then check "Sign-in security" in your Settings.',
-    ].join('\n'),
-  };
+    heading: subject,
+    intro: [line, ...(extra ? [extra] : [])],
+    after,
+  });
 }

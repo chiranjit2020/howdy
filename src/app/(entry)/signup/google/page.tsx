@@ -21,7 +21,7 @@ export default async function GoogleSignupPage() {
     <main id="main" className="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center py-4">
       <Card className="flex flex-col gap-5 p-5 shadow-clay sm:p-7">
         <EntryLogo />
-        <GoogleFinishForm email={pending.email} name={pending.name ?? ''} suggested={suggested} />
+        <GoogleFinishForm email={pending.email} suggested={suggested} />
       </Card>
       <EntryFooter />
     </main>

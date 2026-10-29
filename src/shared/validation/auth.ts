@@ -238,6 +238,17 @@ export const tokenSchema = z.string().regex(/^[A-Za-z0-9_-]{43}$/, 'That link is
 
 export const verifyEmailSchema = z.object({ token: tokenSchema });
 
+export const EMAIL_CODE_MESSAGE = 'Enter the 6-digit code from the email.';
+
+/** The 6-digit code from the confirmation email, as typed or pasted ("482 913" works too). */
+export const emailCodeSchema = z
+  .string()
+  .max(32, EMAIL_CODE_MESSAGE)
+  .transform((s) => s.replace(/[\s-]/g, ''))
+  .pipe(z.string().regex(/^\d{6}$/, EMAIL_CODE_MESSAGE));
+
+export const verifyEmailCodeSchema = z.object({ email: emailSchema, code: emailCodeSchema });
+
 export const resetPasswordSchema = z.object({ token: tokenSchema, password: passwordSchema });
 
 // ─── Two-step sign-in (ADR-040) ──────────────────────────────────────────────────────────────────────────────────────

@@ -14,6 +14,8 @@ export const SESSION_BROWSER_MS = DAY;
 export const SESSION_TOUCH_INTERVAL_MS = 5 * MIN;
 
 export const VERIFY_EMAIL_TTL_MS = 24 * HOUR;
+/** The 6-digit code in the same email: much shorter-lived than its link, because it is so much shorter. */
+export const VERIFY_CODE_TTL_MS = 15 * MIN;
 export const RESET_PASSWORD_TTL_MS = HOUR;
 
 /**
@@ -39,6 +41,13 @@ export const RATE = {
   resendIp: rule(10, 3600),
   resendEmail: rule(3, 3600),
   tokenIp: rule(20, 3600),
+  /**
+   * The 6-digit email code: 5 tries per address per 15 minutes (the code's whole life) and 20 a day, whatever the source.
+   * Over a year that is under 1% for a guesser, and an unconfirmed account is replaced by any new sign-up long before.
+   */
+  emailCodeIp: rule(30, 900),
+  emailCodeEmail: rule(5, 900),
+  emailCodeEmailDay: rule(20, 86_400),
   /** Asking to delete my account (it re-checks the password, so it is limited like a sign-in). */
   deleteAccount: rule(5, 3600),
   /** Attempts to download my data (each re-checks the password, so limited like a sign-in). Spent before the check. */

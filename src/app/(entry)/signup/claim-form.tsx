@@ -1,7 +1,8 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useRef, useState, type FormEvent } from 'react';
-import { emailSchema, signUpSchema } from '@/shared/validation/auth';
+import { emailCodeSchema, emailSchema, signUpSchema } from '@/shared/validation/auth';
 import { LEGAL_FACTS } from '@/shared/legal';
 import { LIMITS } from '@/shared/limits';
 import { postJson } from '@/ui/auth/api';
@@ -12,7 +13,7 @@ import { Button, Input, PasswordInput } from '@/ui/primitives';
 import { ConsentBoxes } from './consent-boxes';
 import { PasswordChecklist, suggestHandle, useHandleStatus } from './signup-aids';
 
-type Fields = { handle: string; displayName: string; email: string; password: string };
+type Fields = { handle: string; email: string; password: string };
 type Errors = Partial<Fields & { acceptTerms: string; age: string }>;
 
 const AGE_MESSAGE = `Please confirm you are ${LEGAL_FACTS.minimumAge} or older.`;
@@ -23,7 +24,7 @@ export function ClaimForm({
   google = false,
 }: { invite?: { code: string; invitedBy: string }; google?: boolean } = {}) {
   const formRef = useRef<HTMLFormElement>(null);
-  const [values, setValues] = useState<Fields>({ handle: '', displayName: '', email: '', password: '' });
+  const [values, setValues] = useState<Fields>({ handle: '', email: '', password: '' });
   // Two boxes on the page, one agreement on the server (`acceptTerms` needs both).
   const [ageOk, setAgeOk] = useState(false);
   const [termsOk, setTermsOk] = useState(false);
@@ -33,6 +34,9 @@ export function ClaimForm({
   const [busy, setBusy] = useState(false);
   const [sentTo, setSentTo] = useState<string | undefined>();
   const [resent, setResent] = useState(false);
+  const [code, setCode] = useState('');
+  const [codeError, setCodeError] = useState<string | undefined>();
+  const router = useRouter();
 
   // The username follows the email (suggestHandle) until the person types one of their own.
   const [handleEdited, setHandleEdited] = useState(false);
@@ -72,28 +76,26 @@ export function ClaimForm({
         : undefined);
   // The live check, at the end of the label row (as in the design); the rule itself stays under the box.
   const handleNote = handleError ? (
-    <span className="flex items-center gap-1 font-mono text-metadata font-semibold text-danger">
+    <span className="flex items-center gap-1 text-metadata font-semibold text-danger">
       <XCircleIcon className="size-3.5" />
       {handleStatus.state === 'taken' && !errors.handle ? 'Taken' : 'Not valid'}
     </span>
   ) : handleStatus.state === 'available' ? (
-    <span className="flex items-center gap-1 font-mono text-metadata font-semibold text-success-text">
+    <span className="flex items-center gap-1 text-metadata font-semibold text-success-text">
       <CheckCircleIcon className="size-3.5" />
       Available
     </span>
   ) : handleStatus.state === 'checking' ? (
-    <span className="font-mono text-metadata text-text-secondary">Checking…</span>
+    <span className="text-metadata text-text-secondary">Checking…</span>
   ) : undefined;
-  const handleHint = `${LIMITS.HANDLE_MIN}–${LIMITS.HANDLE_MAX} characters: lowercase letters, numbers and underscores.`;
+  const handleHint = `${LIMITS.HANDLE_MIN}–${LIMITS.HANDLE_MAX} lowercase letters, numbers or _`;
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setFormError(undefined);
-    // A blank Display name is not an error: the Ranch is simply named after the call sign.
-    const { displayName, ...rest } = values;
+    // No display name is asked for: the profile starts out named after the username, and can be renamed in Settings.
     const parsed = signUpSchema.safeParse({
-      ...rest,
-      ...(displayName.trim() ? { displayName } : {}),
+      ...values,
       acceptTerms: ageOk && termsOk,
       ...(invite ? { invite: invite.code } : {}),
     });
@@ -134,35 +136,84 @@ export function ClaimForm({
   async function resend() {
     if (!sentTo) return;
     await postJson('/api/auth/resend-verification', { email: sentTo });
+    setCode('');
+    setCodeError(undefined);
     setResent(true);
+  }
+
+  async function submitCode(value: string) {
+    if (!sentTo || busy) return;
+    const parsed = emailCodeSchema.safeParse(value);
+    if (!parsed.success) {
+      setCodeError(parsed.error.issues[0]?.message);
+      return;
+    }
+    setCodeError(undefined);
+    setBusy(true);
+    const res = await postJson<{ signedIn: boolean }>('/api/auth/verify-email-code', {
+      email: sentTo,
+      code: parsed.data,
+    });
+    if (res.ok) {
+      // Confirmed, and (as a rule) signed in: straight into Howdy. Otherwise log in as usual.
+      router.push(res.data?.signedIn ? '/home' : '/login');
+      router.refresh();
+      return;
+    }
+    setBusy(false);
+    setCodeError(res.error?.message ?? 'Something went wrong. Try again.');
   }
 
   if (sentTo) {
     return (
-      <div className="flex flex-col gap-4">
-        <div className="flex flex-col gap-1">
-          <h1 className="text-body font-semibold text-text-primary">Check your email</h1>
-          <p className="text-caption font-normal text-text-secondary">
-            If <strong className="font-semibold text-text-primary">{sentTo}</strong> can be used for a new
-            Howdy account, a confirmation link is on its way. It works once and expires in 24 hours.
-          </p>
-        </div>
-        {resent && <FormMessage tone="success">Sent again, if there is anything to send.</FormMessage>}
-        <Button variant="secondary" fullWidth onClick={resend}>
-          Send it again
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          void submitCode(code);
+        }}
+        noValidate
+        className="flex flex-col gap-3"
+      >
+        <h1 className="text-title text-text-primary">Check your email</h1>
+        <p className="text-caption font-normal text-text-secondary">
+          If <strong className="font-semibold [overflow-wrap:anywhere] text-text-primary">{sentTo}</strong> can be
+          used for a new Howdy account, we sent it a 6-digit code. Enter it here, or tap “Verify account” in the
+          email.
+        </p>
+        <Input
+          look="entry"
+          label="Code"
+          name="code"
+          inputMode="numeric"
+          autoComplete="one-time-code"
+          autoFocus
+          maxLength={7}
+          placeholder="000000"
+          value={code}
+          onChange={(e) => {
+            const value = e.target.value;
+            setCode(value);
+            if (codeError) setCodeError(undefined);
+            // The sixth digit (typed, pasted or filled in by the phone) sends it: no extra tap.
+            if (value.replace(/\D/g, '').length === 6) void submitCode(value);
+          }}
+          error={codeError}
+          className="[&_input]:text-center [&_input]:text-heading [&_input]:font-semibold [&_input]:tracking-[0.35em]"
+        />
+        <Button type="submit" fullWidth loading={busy}>
+          {busy ? 'Checking…' : 'Verify and continue'}
         </Button>
-      </div>
+        {resent && <FormMessage tone="success">A new code is on its way, if there is anything to send.</FormMessage>}
+        <Button variant="ghost" fullWidth onClick={resend}>
+          Send a new code
+        </Button>
+      </form>
     );
   }
 
   return (
-    <form ref={formRef} onSubmit={onSubmit} noValidate className="flex flex-col gap-4">
-      <div className="flex flex-col gap-1">
-        <h1 className="text-heading font-bold tracking-tight text-text-primary">Start your Howdy journey</h1>
-        <p className="text-caption font-normal text-text-secondary">
-          Claim your unique username and connect instantly.
-        </p>
-      </div>
+    <form ref={formRef} onSubmit={onSubmit} noValidate className="flex flex-col gap-3">
+      <h1 className="text-title text-text-primary">Create your account</h1>
       {invite && (
         // Says exactly what will happen, and nothing more is granted (ADR-045).
         <p className="rounded-md border border-accent/30 bg-accent-soft px-3 py-2 text-caption font-normal text-text-primary">
@@ -204,21 +255,6 @@ export function ClaimForm({
       />
       <Input
         look="entry"
-        label="Display name"
-        labelAction={
-          <span className="font-mono text-metadata tracking-wider text-text-secondary uppercase">
-            Optional
-          </span>
-        }
-        name="displayName"
-        placeholder="e.g. Priya Sharma"
-        autoComplete="name"
-        value={values.displayName}
-        onChange={set('displayName')}
-        error={errors.displayName}
-      />
-      <Input
-        look="entry"
         label="Email address"
         name="email"
         type="email"
@@ -255,7 +291,7 @@ export function ClaimForm({
         ageError={errors.age}
         termsError={errors.acceptTerms}
       />
-      <Button type="submit" fullWidth loading={busy} className="min-h-12">
+      <Button type="submit" fullWidth loading={busy}>
         {busy ? (
           'Creating account…'
         ) : (

@@ -10,22 +10,16 @@ import { TermsCheckbox } from '@/ui/auth/terms-checkbox';
 import { Button, Input } from '@/ui/primitives';
 import { useHandleStatus } from '../signup-aids';
 
-type Errors = Partial<Record<'handle' | 'displayName' | 'acceptTerms', string>>;
+type Errors = Partial<Record<'handle' | 'acceptTerms', string>>;
 
-/** Username (suggested from the Google name, checked live), display name (from Google, optional) and the box. */
-export function GoogleFinishForm({
-  email,
-  name,
-  suggested,
-}: {
-  email: string;
-  name: string;
-  suggested: string;
-}) {
+/**
+ * Username (suggested from the Google name, checked live) and the box. The display name is not asked for: the server
+ * uses the name Google gave, and it can be changed later in Settings.
+ */
+export function GoogleFinishForm({ email, suggested }: { email: string; suggested: string }) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
   const [handle, setHandle] = useState(suggested);
-  const [displayName, setDisplayName] = useState(name);
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [errors, setErrors] = useState<Errors>({});
   const [formError, setFormError] = useState<string | undefined>();
@@ -50,11 +44,7 @@ export function GoogleFinishForm({
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setFormError(undefined);
-    const parsed = googleSignUpSchema.safeParse({
-      handle,
-      ...(displayName.trim() ? { displayName } : {}),
-      acceptTerms,
-    });
+    const parsed = googleSignUpSchema.safeParse({ handle, acceptTerms });
     if (!parsed.success) {
       const next: Errors = {};
       for (const issue of parsed.error.issues) next[issue.path[0] as keyof Errors] ??= issue.message;
@@ -80,9 +70,9 @@ export function GoogleFinishForm({
   }
 
   return (
-    <form ref={formRef} onSubmit={onSubmit} noValidate className="flex flex-col gap-4">
+    <form ref={formRef} onSubmit={onSubmit} noValidate className="flex flex-col gap-3">
       <div className="flex flex-col gap-1">
-        <h1 className="text-body font-semibold text-text-primary">Almost there</h1>
+        <h1 className="text-title text-text-primary">Almost there</h1>
         <p className="text-caption font-normal [overflow-wrap:anywhere] text-text-secondary">
           Signing up as <strong className="font-semibold text-text-primary">{email}</strong>. Pick a username
           and you are in.
@@ -108,15 +98,6 @@ export function GoogleFinishForm({
         }}
         error={handleError}
         hint={handleError ? undefined : handleHint}
-      />
-      <Input
-        label="Display name (optional)"
-        name="displayName"
-        autoComplete="name"
-        value={displayName}
-        onChange={(e) => setDisplayName(e.target.value)}
-        error={errors.displayName}
-        hint="Shown on your profile. Leave blank to use your username."
       />
       <TermsCheckbox
         checked={acceptTerms}

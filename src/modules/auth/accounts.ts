@@ -1,5 +1,6 @@
+import { timingSafeEqual } from 'node:crypto';
 import { credentials, emailTokens, sessions, users } from '@db/schema';
-import { and, eq, gt, isNull } from 'drizzle-orm';
+import { and, desc, eq, gt, isNull, not } from 'drizzle-orm';
 import { runAfterResponse } from '@/platform/background';
 import { getDb } from '@/platform/db';
 import { AppError } from '@/platform/errors';
@@ -13,7 +14,7 @@ import { recordAcceptance } from './legal';
 import { closeAccount, deletionDate, isHandleHeld, keepAccount } from './deletion';
 import { fileAppeal, suspensionAtSignIn, type SuspensionNotice } from '@/modules/moderation';
 import { createProfile } from '@/modules/profiles';
-import { RATE, RESET_PASSWORD_TTL_MS, VERIFY_EMAIL_TTL_MS } from './config';
+import { RATE, RESET_PASSWORD_TTL_MS, VERIFY_CODE_TTL_MS, VERIFY_EMAIL_TTL_MS } from './config';
 import { dummyPasswordHash, hashPassword, hashToken, keyDigest, newToken, verifyPassword } from './crypto';
 import {
   alreadyRegisteredMessage,
@@ -21,10 +22,10 @@ import {
   passwordResetMessage,
   verifyEmailMessage,
 } from './emails';
-import { issueTicket, readTicket } from './factor-crypto';
+import { emailCode, issueTicket, readTicket } from './factor-crypto';
 import { verifyPasskeySignIn } from './passkeys';
 import { createSession, revokeSessionByToken } from './sessions';
-import { requireSecondStep } from './two-step';
+import { hasTwoStep, requireSecondStep } from './two-step';
 
 type Db = ReturnType<typeof getDb>;
 type Writer = Pick<Db, 'insert' | 'delete'>;
@@ -37,6 +38,11 @@ export interface RequestContext {
 
 export const INVALID_CREDENTIALS_MESSAGE = 'That handle, email or password isn’t right.';
 const INVALID_LINK_MESSAGE = 'That link is invalid or has expired. Ask for a fresh one.';
+export const WRONG_EMAIL_CODE_MESSAGE = 'That code isn’t right, or it has expired. Check the email or send a new one.';
+
+/** The confirmation email: one secret, sent as a button link and as the 6-digit code derived from it. */
+const verifyMail = (email: string, handle: string, token: string) =>
+  verifyEmailMessage(email, token, handle, emailCode(hashToken(token)));
 
 /** Name of the violated unique constraint for a Postgres 23505 error (also unwraps Drizzle's wrapper), if any. */
 function uniqueViolation(err: unknown): string | undefined {
@@ -83,6 +89,12 @@ export async function handleAvailable(handle: string, ctx: RequestContext): Prom
  * success, and a registered address instead receives an "already have an account" email. (Handles are public
  * identifiers, so "handle taken" is reported normally.) Password hashing always runs first so timing does not
  * separate the two cases, and mail is sent after the response.
+ *
+ * An account that never confirmed this email never proved it owns it, so a new sign-up with the same email REPLACES it
+ * (same transaction) instead of re-sending ITS confirmation. Otherwise someone could register another person's email
+ * first, wait for them to sign up and click "confirm" on the squatter's account, and then lock them out with two-step
+ * (a "pre-hijack"; security audit 2026-10-29, finding 1). It also lets a person who never confirmed simply start again
+ * with the same username.
  */
 export async function signUp(
   input: {
@@ -105,16 +117,20 @@ export async function signUp(
       message: 'Some fields need another look.',
       fields: { handle: 'That username is taken.' },
     });
+  // The never-confirmed account of this same email is about to be replaced, so its username does not count as taken.
+  const replaceable = and(eq(users.email, input.email), isNull(users.emailVerifiedAt), eq(users.status, 'active'));
   const [taken] = await db
     .select({ id: users.id })
     .from(users)
-    .where(eq(users.handle, input.handle))
+    .where(and(eq(users.handle, input.handle), not(replaceable!)))
     .limit(1);
   // A deleted account's call sign is held back for a while; it answers exactly like a taken one (ADR-027).
   if (taken || (await isHandleHeld(input.handle))) throw handleTaken();
 
   try {
     const created = await db.transaction(async (tx) => {
+      // Rolled back with everything else if the insert below fails (e.g. the username was taken in a race).
+      await tx.delete(users).where(replaceable);
       const [u] = await tx
         .insert(users)
         .values({ email: input.email, handle: input.handle })
@@ -129,7 +145,7 @@ export async function signUp(
     });
     await audit('signup', { userId: created.userId, requestId: ctx.requestId });
     runAfterResponse('mail.verify_email', async () =>
-      getMailer().send(verifyEmailMessage(input.email, created.token)),
+      getMailer().send(verifyMail(input.email, input.handle, created.token)),
     );
     // Who listens (e.g. invite links, ADR-045) is not auth's business; it runs after the response either way.
     emit({ type: 'account.created', userId: created.userId, invite: input.invite ?? null });
@@ -226,36 +242,29 @@ export async function claimAccountForGoogle(email: string, ctx: RequestContext):
   return row.id;
 }
 
+/**
+ * The email belongs to a confirmed account (or a closing / suspended one): never-confirmed ones are replaced by signUp.
+ * Its owner is told; nothing in the email can take the account over.
+ */
 async function handleExistingEmail(email: string): Promise<void> {
-  const db = getDb();
-  const [user] = await db
-    .select({ id: users.id, status: users.status, verified: users.emailVerifiedAt })
-    .from(users)
-    .where(eq(users.email, email))
-    .limit(1);
-  if (!user) return;
-  if (user.status === 'active' && !user.verified) {
-    const token = await issueEmailToken(db, user.id, 'verify_email', VERIFY_EMAIL_TTL_MS);
-    await getMailer().send(verifyEmailMessage(email, token));
-  } else {
-    await getMailer().send(alreadyRegisteredMessage(email));
-  }
+  const [user] = await getDb().select({ id: users.id }).from(users).where(eq(users.email, email)).limit(1);
+  if (user) await getMailer().send(alreadyRegisteredMessage(email));
 }
 
 // ─── Email verification ──────────────────────────────────────────────────────
 
-export async function verifyEmail(token: string, ctx: RequestContext): Promise<void> {
-  await enforceRateLimit(`auth:token:ip:${ctx.ip}`, RATE.tokenIp);
-  const now = new Date();
-  const db = getDb();
-  // Single atomic claim: only one caller can ever flip used_at for a given token.
-  const userId = await db.transaction(async (tx) => {
+/**
+ * Use a confirmation token once and mark the email confirmed. A single atomic claim: only one caller can ever flip
+ * used_at for a given token, whether it came as the link or as the code. Returns the account, or null.
+ */
+async function claimVerifyToken(tokenHash: Buffer, now: Date): Promise<string | null> {
+  return getDb().transaction(async (tx) => {
     const [claimed] = await tx
       .update(emailTokens)
       .set({ usedAt: now })
       .where(
         and(
-          eq(emailTokens.tokenHash, hashToken(token)),
+          eq(emailTokens.tokenHash, tokenHash),
           eq(emailTokens.purpose, 'verify_email'),
           isNull(emailTokens.usedAt),
           gt(emailTokens.expiresAt, now),
@@ -269,9 +278,64 @@ export async function verifyEmail(token: string, ctx: RequestContext): Promise<v
       .where(and(eq(users.id, claimed.userId), isNull(users.emailVerifiedAt)));
     return claimed.userId;
   });
+}
+
+export async function verifyEmail(token: string, ctx: RequestContext): Promise<void> {
+  await enforceRateLimit(`auth:token:ip:${ctx.ip}`, RATE.tokenIp);
+  const userId = await claimVerifyToken(hashToken(token), new Date());
   if (!userId) throw new AppError('BAD_REQUEST', { message: INVALID_LINK_MESSAGE });
   await audit('email_verified', { userId, requestId: ctx.requestId });
   emit({ type: 'account.verified', userId });
+}
+
+/**
+ * Confirm the email with the 6-digit code from the confirmation email, typed on the page the person signed up on, and
+ * sign them straight in. A code has only a million values, so: it works for 15 minutes; tries are limited per email
+ * (5 per 15 minutes, 20 a day) and per source, spent BEFORE anything is looked up, so an address with no account
+ * answers exactly like a wrong code; and it is compared in constant time. An account with two-step on (it cannot have
+ * it yet, but never assume) is confirmed but not signed in: it logs in the usual way. Returns null in that case.
+ */
+export async function verifyEmailCode(
+  input: { email: string; code: string },
+  ctx: SessionCtx,
+): Promise<LoginResult | null> {
+  await enforceRateLimit(`auth:email-code:ip:${ctx.ip}`, RATE.emailCodeIp);
+  await enforceRateLimit(`auth:email-code:email:${keyDigest(input.email)}`, RATE.emailCodeEmail);
+  await enforceRateLimit(`auth:email-code:email-day:${keyDigest(input.email)}`, RATE.emailCodeEmailDay);
+  const now = new Date();
+  const wrong = () =>
+    new AppError('BAD_REQUEST', { message: WRONG_EMAIL_CODE_MESSAGE, fields: { code: WRONG_EMAIL_CODE_MESSAGE } });
+
+  // The newest live confirmation of this email, still inside the code's 15 minutes.
+  const [row] = await getDb()
+    .select({ tokenHash: emailTokens.tokenHash, handle: users.handle, status: users.status })
+    .from(emailTokens)
+    .innerJoin(users, eq(users.id, emailTokens.userId))
+    .where(
+      and(
+        eq(users.email, input.email),
+        eq(emailTokens.purpose, 'verify_email'),
+        isNull(emailTokens.usedAt),
+        gt(emailTokens.expiresAt, now),
+        gt(emailTokens.createdAt, new Date(now.getTime() - VERIFY_CODE_TTL_MS)),
+      ),
+    )
+    .orderBy(desc(emailTokens.createdAt))
+    .limit(1);
+  const want = Buffer.from(row ? emailCode(row.tokenHash) : '------');
+  const got = Buffer.from(input.code.padEnd(6, '-').slice(0, 6));
+  if (!row || !timingSafeEqual(want, got)) throw wrong();
+
+  const userId = await claimVerifyToken(row.tokenHash, now);
+  if (!userId) throw wrong(); // used a moment ago (the link, or a double tap)
+  await audit('email_verified', { userId, requestId: ctx.requestId, meta: { method: 'code' } });
+  emit({ type: 'account.verified', userId });
+
+  if (row.status !== 'active' || (await hasTwoStep(userId))) return null;
+  if (ctx.previousToken) await revokeSessionByToken(ctx.previousToken);
+  const session = await createSession(userId, ctx.userAgent, undefined, { remember: ctx.remember });
+  await audit('login_success', { userId, requestId: ctx.requestId, meta: { method: 'email_code' } });
+  return { token: session.token, maxAgeSec: session.maxAgeSec, user: { id: userId, handle: row.handle } };
 }
 
 /** Always succeeds from the caller's point of view; the work happens after the response. */
@@ -281,13 +345,13 @@ export async function resendVerification(email: string, ctx: RequestContext): Pr
   runAfterResponse('resend_verification', async () => {
     const db = getDb();
     const [user] = await db
-      .select({ id: users.id, status: users.status, verified: users.emailVerifiedAt })
+      .select({ id: users.id, handle: users.handle, status: users.status, verified: users.emailVerifiedAt })
       .from(users)
       .where(eq(users.email, email))
       .limit(1);
     if (!user || user.status !== 'active' || user.verified) return;
     const token = await issueEmailToken(db, user.id, 'verify_email', VERIFY_EMAIL_TTL_MS);
-    await getMailer().send(verifyEmailMessage(email, token));
+    await getMailer().send(verifyMail(email, user.handle, token));
   });
 }
 

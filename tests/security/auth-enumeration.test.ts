@@ -78,14 +78,35 @@ describe('sign up does not reveal whether an email is registered', () => {
     ).toBe(0);
   });
 
-  it('an unverified existing email simply gets a fresh verification link', async () => {
+  it('a never-confirmed account is REPLACED by a new sign-up with its email (no pre-hijack)', async () => {
+    // The squatter registers someone else's email first and never confirms it.
+    const squatter = uniqueUser('squat');
+    await signUpUser(kit, squatter);
+    const before = await usersCount();
+    kit.mailer.sent.length = 0;
+
+    // The real owner signs up later: THEIR account is made, with their username and password.
+    const owner = { ...uniqueUser('owner'), email: squatter.email };
+    const again = await signUpUser(kit, owner);
+    expect(again.response.status).toBe(202);
+    expect(await usersCount()).toBe(before);
+    const handles = (
+      await getPool().query('select handle from users where email = $1', [squatter.email])
+    ).rows.map((r: { handle: string }) => r.handle);
+    expect(handles).toEqual([owner.handle]);
+
+    // The email confirms the owner's account (it names it), not the squatter's.
+    expect(kit.mailer.sent).toHaveLength(1);
+    expect(kit.mailer.sent[0]!.subject).toMatch(/is your Howdy code/i);
+    expect(kit.mailer.sent[0]!.text).toContain(`@${owner.handle}`);
+    expect(kit.mailer.sent[0]!.text).not.toContain(`@${squatter.handle}`);
+  });
+
+  it('signing up again before confirming can reuse the same username', async () => {
     const u = uniqueUser();
     await signUpUser(kit, u);
-    kit.mailer.sent.length = 0;
-    const again = await signUpUser(kit, { ...uniqueUser(), email: u.email });
+    const again = await signUpUser(kit, { ...u, password: `${PASSWORD} again` });
     expect(again.response.status).toBe(202);
-    expect(kit.mailer.sent).toHaveLength(1);
-    expect(kit.mailer.sent[0]!.subject).toMatch(/confirm your email/i);
   });
 
   it('email matching is case-insensitive (Foo@x.com is the same account as foo@x.com)', async () => {

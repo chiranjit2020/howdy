@@ -8,8 +8,10 @@ import { logger } from '../logger';
 export interface MailMessage {
   to: string;
   subject: string;
-  /** Plain text only: no HTML, no tracking pixels. */
+  /** Always present: the whole message as plain text (mail apps that block HTML show this). */
   text: string;
+  /** Optional designed version of the same message. Never a tracking pixel and never remote content but the logo. */
+  html?: string | undefined;
 }
 
 export interface Mailer {
@@ -62,6 +64,7 @@ export class ResendMailer implements Mailer {
         to: [message.to],
         subject: message.subject,
         text: message.text,
+        ...(message.html ? { html: message.html } : {}),
       }),
       signal: AbortSignal.timeout(10_000),
     });

@@ -70,6 +70,18 @@ export function recoveryCodeHash(input: string): Buffer {
   return createHmac('sha256', subkey('recovery-code')).update(normaliseRecoveryCode(input)).digest();
 }
 
+// ─── the email confirmation code ─────────────────────────────────────────────────────────────────────────────────────
+
+/**
+ * The 6-digit code in a confirmation email, derived from that email's token (by its stored hash) with a keyed hash. The
+ * code and the link are one secret, so nothing new is stored, issuing a new email replaces both, and using either one
+ * uses the other up. Without AUTH_SECRET, a leaked token hash does not give the code.
+ */
+export function emailCode(tokenHash: Buffer): string {
+  const n = createHmac('sha256', subkey('email-code')).update(tokenHash).digest().readUInt32BE(0) % 1_000_000;
+  return String(n).padStart(6, '0');
+}
+
 // ─── the sign-in ticket ──────────────────────────────────────────────────────────────────────────────────────────────
 
 /** How long a ticket lasts: long enough to write an appeal, short enough to be useless if it leaks later. */
