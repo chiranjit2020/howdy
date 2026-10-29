@@ -1,5 +1,5 @@
-import { auditLog, emailTokens, sessions, totpFactors, webauthnChallenges } from '@db/schema';
-import { and, isNotNull, isNull, lt, or } from 'drizzle-orm';
+import { auditLog, emailTokens, sessions, totpFactors, users, webauthnChallenges } from '@db/schema';
+import { and, eq, isNotNull, isNull, lt, or } from 'drizzle-orm';
 import { getDb } from '@/platform/db';
 import { TOTP_SETUP_TTL_MS } from './config';
 
@@ -67,6 +67,32 @@ export async function purgeExpiredAuthData(
     challenges: challenges.length,
     unfinishedApps: unfinished.length,
   };
+}
+
+/** An account whose email nobody confirmed is deleted this long after it was made. */
+export const UNCONFIRMED_ACCOUNT_DAYS = 7;
+
+/**
+ * Delete accounts whose email was never confirmed, 7 days after sign-up (security audit 2026-10-29, finding 5). They
+ * could never sign in, so they hold nothing but a username, a profile with nothing on it and an email that may not be
+ * theirs: kept forever, they would squat usernames and keep someone else's address on file. Deleted outright (no grace
+ * period, and the username is free at once: nobody ever used it). Nobody is emailed, since the address was never proven.
+ * Only `active` ones: a suspended or closing account follows its own rules. Idempotent.
+ */
+export async function purgeUnconfirmedAccounts(
+  now: Date = new Date(),
+): Promise<{ unconfirmedAccounts: number }> {
+  const rows = await getDb()
+    .delete(users)
+    .where(
+      and(
+        isNull(users.emailVerifiedAt),
+        eq(users.status, 'active'),
+        lt(users.createdAt, new Date(now.getTime() - UNCONFIRMED_ACCOUNT_DAYS * DAY_MS)),
+      ),
+    )
+    .returning({ id: users.id });
+  return { unconfirmedAccounts: rows.length };
 }
 
 /** Retention for the security audit trail: delete entries older than AUDIT_RETENTION_DAYS. Idempotent. */

@@ -1,4 +1,9 @@
-import { purgeExpiredAuthData, purgeFreedHandles, purgeOldAuditLog } from '@/modules/auth';
+import {
+  purgeExpiredAuthData,
+  purgeFreedHandles,
+  purgeOldAuditLog,
+  purgeUnconfirmedAccounts,
+} from '@/modules/auth';
 import { openDue } from '@/modules/capsules';
 import { purgeDeletedAccounts } from './account-deletion';
 import { purgeStaleWaiting } from '@/modules/fence';
@@ -24,6 +29,8 @@ export async function runAllPurges() {
   // Devices of ended sessions first (a revoked session row may be kept a while; its phone must not be).
   const devices = await purgeDeadSubscriptions();
   const auth = await purgeExpiredAuthData();
+  // Accounts nobody confirmed within 7 days: they never signed in, and their email may not even be theirs.
+  const unconfirmed = await purgeUnconfirmedAccounts();
   const signals = await clearExpiredSignals();
   // Porch Lights that went out (ADR-032): already treated as off; deleting them keeps no trace of when someone was around.
   const lights = await purgeExpiredLights();
@@ -60,6 +67,7 @@ export async function runAllPurges() {
   return {
     ...devices,
     ...auth,
+    ...unconfirmed,
     signals,
     ...lights,
     ...invites,

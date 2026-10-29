@@ -1,9 +1,16 @@
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { hashToken, newToken } from '@/modules/auth/crypto';
-import { purgeExpiredAuthData, purgeOldAuditLog } from '@/modules/auth';
+import { purgeExpiredAuthData, purgeOldAuditLog, purgeUnconfirmedAccounts } from '@/modules/auth';
 import { clearExpiredSignals } from '@/modules/profiles';
 import { getPool } from '@/platform/db';
-import { freshAuthState, signedInUser, uniqueUser, type TestKit } from '../helpers/auth';
+import {
+  freshAuthState,
+  signUpUser,
+  signedInUser,
+  uniqueUser,
+  userByEmail,
+  type TestKit,
+} from '../helpers/auth';
 import { setSignal, sql, viewRanch } from '../helpers/ranch';
 
 let kit: TestKit;
@@ -138,5 +145,44 @@ describe('security records (audit log) retention: 12 months', () => {
     const left = (await sql('select event from audit_log order by event')).rows.map((r) => r.event);
     expect(left).toEqual(['edge', 'new']);
     expect(await purgeOldAuditLog()).toEqual({ auditEntries: 0 });
+  });
+});
+
+describe('accounts nobody confirmed (security audit finding 5)', () => {
+  const age = (email: string, days: number) =>
+    sql(`update users set created_at = now() - make_interval(days => $2) where email = $1`, [email, days]);
+
+  it('are deleted after 7 days with everything they had, and their username is free again at once', async () => {
+    const stale = await signUpUser(kit, uniqueUser('stale'));
+    const fresh = await signUpUser(kit, uniqueUser('fresh'));
+    const confirmed = await signedInUser(kit, uniqueUser('real'));
+    await age(stale.email, 8);
+    await age(confirmed.email, 30);
+
+    expect(await purgeUnconfirmedAccounts()).toEqual({ unconfirmedAccounts: 1 });
+    expect(await userByEmail(stale.email)).toBeUndefined();
+    expect(await userByEmail(fresh.email)).toBeDefined(); // still inside its 7 days
+    expect(await userByEmail(confirmed.email)).toBeDefined(); // confirmed accounts are never touched
+    // The profile went with it, and the username can be taken by anyone straight away.
+    expect(
+      (
+        await sql(
+          'select count(*)::int as n from profiles p join users u on u.id = p.user_id where u.handle = $1',
+          [stale.handle],
+        )
+      ).rows[0].n,
+    ).toBe(0);
+    expect((await signUpUser(kit, { ...uniqueUser('next'), handle: stale.handle })).response.status).toBe(
+      202,
+    );
+
+    expect(await purgeUnconfirmedAccounts()).toEqual({ unconfirmedAccounts: 0 }); // idempotent
+  });
+
+  it('leaves a suspended or closing account to its own rules', async () => {
+    const u = await signUpUser(kit, uniqueUser('held'));
+    await age(u.email, 30);
+    await sql(`update users set status = 'suspended' where email = $1`, [u.email]);
+    expect(await purgeUnconfirmedAccounts()).toEqual({ unconfirmedAccounts: 0 });
   });
 });

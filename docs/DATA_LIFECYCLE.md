@@ -110,7 +110,8 @@ streamed and never kept on the server. See ADR-037 for exactly what is and is no
 | **Signal** (`profiles.signal*`) | 12 hours from being set. Reads ignore an expired Signal immediately | `clearExpiredSignals()` physically clears it |
 | Session (`sessions`) | idle 14 d / absolute 60 d; dead rows kept 30 d after revoke/expiry for support | `purgeExpiredAuthData()` |
 | Push devices (`push_subscriptions`, ADR-022) | while the session that subscribed is live; a push service's 404/410 forgets it at once | session delete cascades; `purgeDeadSubscriptions()` (in `pnpm jobs:purge`) for revoked/expired sessions; unsubscribing |
-| Email tokens (`email_tokens`) | verify 24 h, reset 1 h; spent/expired rows kept 7 d | `purgeExpiredAuthData()` |
+| Email tokens (`email_tokens`) | verify link 24 h (its 6-digit code, derived from the token, 15 min), reset 1 h; spent/expired rows kept 7 d | `purgeExpiredAuthData()` |
+| Unconfirmed accounts (`users` with `email_verified_at` null, status `active`) | **7 days** after sign-up, then deleted with everything they cascade to (they never signed in); username free at once | `purgeUnconfirmedAccounts()` (in `pnpm jobs:purge`) |
 | Audit log (`audit_log`) | **12 months**, then deleted (kept that long after an account is deleted, anonymised) | `purgeOldAuditLog()` (in `pnpm jobs:purge`) |
 | Rate-limit counters (Redis) | ≤ 1 hour, expire on their own | Redis TTL |
 | **Tracks** (`tracks`) | **7 days**: a row holds only the UTC date of the latest visit; reads ignore older rows at once | `purgeOldTracks()` (in `pnpm jobs:purge`); also deleted with either person |
