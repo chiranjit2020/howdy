@@ -41,13 +41,19 @@ test.describe('authentication journey (production build, real CSP, real cookies)
     await confirmEmailVia(page, a.email);
     await stepInsideVia(page, a.handle, a.password); // by call sign this time
     await expect(page).toHaveURL(/\/home$/);
-    // Home greets by display name (which defaults to the call sign) and still names the call sign.
-    await expect(page.getByRole('heading', { name: `Howdy, ${a.handle}` })).toBeVisible();
-    await expect(page.locator('main').getByText(`@${a.handle}`, { exact: true })).toBeVisible();
-    // "At a glance": four numbers, each a way into the page with the detail.
-    const glance = page.getByRole('region', { name: 'At a glance' });
-    for (const href of ['/messages', '/notifications', '/friends', '/visitors'])
-      await expect(glance.locator(`a[href="${href}"]`)).toBeVisible();
+    // Home: friends' posts in the middle (a new account has none yet), and the account menu knows who you are.
+    await expect(page.getByRole('heading', { level: 1, name: 'Home' })).toBeAttached();
+    await expect(page.getByRole('region', { name: 'Friends’ posts' })).toBeVisible();
+    await page.getByRole('button', { name: 'Your account' }).click();
+    await expect(
+      page.getByRole('region', { name: 'Your account' }).getByText(`@${a.handle}`, { exact: true }),
+    ).toBeVisible();
+    await page.keyboard.press('Escape');
+    // The menu leads to Friends, Visitors and Messages (with their counts); notifications are the bell in the top bar.
+    const menu = page.getByRole('navigation', { name: 'Primary' }).first();
+    for (const href of ['/friends', '/visitors', '/messages'])
+      await expect(menu.locator(`a[href="${href}"]`)).toBeVisible();
+    await expect(page.getByRole('banner').locator('a[href="/notifications"]')).toBeVisible();
 
     // The session cookie: HttpOnly, Secure, __Host- prefixed, SameSite=Lax, site-wide, and invisible to page scripts.
     const session = (await ctx.cookies()).find((c) => c.name === '__Host-howdy_session');
@@ -58,7 +64,7 @@ test.describe('authentication journey (production build, real CSP, real cookies)
 
     // Persistence: a reload, and visiting signed-out pages, keep you inside.
     await page.reload();
-    await expect(page.getByRole('heading', { name: /^Howdy, / })).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Friends’ posts' })).toBeVisible();
     await page.goto('/login');
     await expect(page).toHaveURL(/\/home$/);
 
@@ -269,7 +275,7 @@ test.describe('authentication journey (production build, real CSP, real cookies)
     await p2.reload();
     await expect(p2).toHaveURL(/\/login$/);
     await p1.goto('/home');
-    await expect(p1.getByRole('heading', { name: /^Howdy, / })).toBeVisible(); // this device stays inside
+    await expect(p1.getByRole('region', { name: 'Friends’ posts' })).toBeVisible(); // this device stays inside
     await first.close();
     await second.close();
   });

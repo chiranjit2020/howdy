@@ -128,6 +128,24 @@ export async function listTracks(userId: string): Promise<TracksView> {
   };
 }
 
+/**
+ * How many people visited my profile today, for the count beside Visitors in the menu: the "Today" of `listTracks`, by the
+ * same rules (people I muted or blocked, or who blocked me, and inactive accounts are not counted; on Shadow Walk there is
+ * nothing to count). It names nobody, so it does not spend the list's rate limit: the menu asks on every page.
+ */
+export async function visitsToday(userId: string): Promise<number> {
+  if (await isShadowWalking(userId)) return 0;
+  const rows = await getDb()
+    .select({ visitorId: tracks.visitorId })
+    .from(tracks)
+    .where(and(eq(tracks.ownerId, userId), eq(tracks.seenOn, UTC_TODAY)))
+    .limit(SCAN);
+  const ids = rows.map((r) => r.visitorId);
+  if (ids.length === 0) return 0;
+  const [cards, hidden] = await Promise.all([getCards(ids), hiddenAuthors(userId, ids)]);
+  return ids.filter((id) => cards.has(id) && !hidden.has(id)).length;
+}
+
 // ─── retention ───────────────────────────────────────────────────────────────────────────────────────────────────────
 
 /** Retention: remove Tracks older than 7 days. Returns how many were removed. */

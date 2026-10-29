@@ -77,7 +77,13 @@ describe('Avatar profile photo tint', () => {
 describe('AppShell', () => {
   it('signed in: Home / My profile / Friends / Settings with the current page marked, and unread counts as text', () => {
     render(
-      <AppShell me={{ handle: 'chiru', displayName: 'Chiru' }} unread={3} unreadWhispers={2}>
+      <AppShell
+        me={{ handle: 'chiru', displayName: 'Chiru' }}
+        unread={3}
+        unreadWhispers={2}
+        friendRequests={1}
+        visitsToday={4}
+      >
         <main>page</main>
       </AppShell>,
     );
@@ -86,12 +92,15 @@ describe('AppShell', () => {
     expect(navs).toHaveLength(2);
     const nav = within(navs[0]!);
     expect(nav.getByRole('link', { name: 'My profile' })).toHaveAttribute('href', '/profile/chiru');
-    expect(nav.getByRole('link', { name: 'Friends' })).toHaveAttribute('href', '/friends');
+    expect(nav.getByRole('link', { name: /^Friends/ })).toHaveAttribute('href', '/friends');
     expect(nav.getByRole('link', { name: 'Settings' })).toHaveAttribute('aria-current', 'page');
     expect(nav.getByRole('link', { name: 'Home' })).not.toHaveAttribute('aria-current');
-    // The count is text (not only a coloured pill), and the link still starts with its label.
-    expect(nav.getByRole('link', { name: /^Notifications/ })).toHaveTextContent(/3\s*unread/);
+    // Each count is text (not only a coloured pill) that says what it counts, and the link still starts with its label.
     expect(nav.getByRole('link', { name: /^Messages/ })).toHaveTextContent(/2\s*unread/);
+    expect(nav.getByRole('link', { name: /^Friends/ })).toHaveTextContent(/1\s*waiting/);
+    expect(nav.getByRole('link', { name: /^Visitors/ })).toHaveTextContent(/4\s*today/);
+    // Notifications have the bell instead of a menu item.
+    expect(nav.queryByRole('link', { name: /^Notifications/ })).not.toBeInTheDocument();
     // The top bar: a bell that says how many are unread, and the way to your own Ranch.
     expect(screen.getByRole('link', { name: 'Notifications, 3 unread' })).toHaveAttribute(
       'href',
@@ -106,8 +115,12 @@ describe('AppShell', () => {
     expect(panel.getByRole('link', { name: 'My profile' })).toHaveAttribute('href', '/profile/chiru');
     expect(panel.getByRole('heading', { name: 'Devices' })).toBeInTheDocument();
     expect(panel.getByRole('button', { name: 'Sign out everywhere…' })).toBeInTheDocument();
-    // Phones: the pages that are not tabs are behind "More" (CSS hides it from md up).
-    expect(screen.getByRole('button', { name: 'More pages' })).toHaveAttribute('aria-haspopup', 'menu');
+    // Phones: the pages that are not tabs are behind "More" (CSS hides it from md up), which says when one has news
+    // (Visitors is in there, with today's 4).
+    expect(screen.getByRole('button', { name: 'More pages, 4 new' })).toHaveAttribute(
+      'aria-haspopup',
+      'menu',
+    );
   });
   it('signed out: only a way in, and no handle-based links', () => {
     render(

@@ -3,5 +3,5 @@
  * least it can (a pair of ids and a UTC date, one row per pair, 7 days) and decides at READ time who may be named. It depends on
  * `profiles` and `relationships` only; nothing depends on it.
  */
-export { bucketOf, handleEvent, listTracks, purgeOldTracks, recordVisit } from './service';
+export { bucketOf, handleEvent, listTracks, purgeOldTracks, recordVisit, visitsToday } from './service';
 export type { TrackPerson, TracksView, When } from './service';

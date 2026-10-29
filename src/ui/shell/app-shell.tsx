@@ -1,12 +1,10 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import type { PortraitTint } from '@/shared/validation/profile';
-import { Art } from '../art/glyph';
 import { BellIcon } from '../icons';
 import { cn } from '../cn';
 import { HowdyLogo } from '../logo';
 import { AccountMenu } from './account-menu';
-import { BirdVisitor } from './bird-visitor';
 import { ShellBottomNav, ShellMoreMenu, ShellSidebarNav, type ShellNavItem } from './nav';
 import { SiteFooter } from './site-footer';
 
@@ -31,7 +29,7 @@ export interface ShellMe {
 }
 
 /**
- * The frame around every signed-in page: a top bar (logo, notifications, your avatar), a left sidebar with the navigation,
+ * The frame around every signed-in page: a top bar (logo, the notifications bell, your avatar), a left sidebar with the navigation,
  * and the page in the middle. Below `md` the sidebar becomes a bottom tab bar. Signed out (a Ranch can be opened without an
  * account) there is only the top bar, with a way in. The counts are already filtered for this person by the caller.
  */
@@ -39,6 +37,8 @@ export function AppShell({
   me,
   unread = 0,
   unreadWhispers = 0,
+  friendRequests = 0,
+  visitsToday = 0,
   townHallInvites = 0,
   moderator = false,
   admin = false,
@@ -47,8 +47,13 @@ export function AppShell({
   children,
 }: {
   me?: ShellMe | undefined;
+  /** Unread notifications: on the bell in the top bar (they have no menu item of their own). */
   unread?: number;
   unreadWhispers?: number;
+  /** Friend requests waiting for an answer. */
+  friendRequests?: number;
+  /** People who visited your profile today. */
+  visitsToday?: number;
   townHallInvites?: number;
   /** Adds the sidebar-only Moderation link. Only a hint: the page and API check the role themselves. */
   moderator?: boolean;
@@ -65,10 +70,10 @@ export function AppShell({
     ? [
         { key: 'home', href: '/home', label: 'Home' },
         { key: 'ranch', href: `/profile/${me.handle}`, label: 'My profile' },
-        { key: 'posse', href: '/friends', label: 'Friends' },
-        { key: 'tracks', href: '/visitors', label: 'Visitors' },
+        { key: 'posse', href: '/friends', label: 'Friends', badge: friendRequests, badgeSays: 'waiting' },
+        { key: 'tracks', href: '/visitors', label: 'Visitors', badge: visitsToday, badgeSays: 'today' },
         { key: 'whispers', href: '/messages', label: 'Messages', badge: unreadWhispers },
-        { key: 'chimes', href: '/notifications', label: 'Notifications', badge: unread },
+        // Notifications have the bell in the top bar, with their count, so no menu item of their own.
         // Sidebar-only on wide screens; on a phone these are in the top bar's "More" menu (ShellMoreMenu).
         { key: 'workshop', href: '/settings', label: 'Settings' },
         { key: 'town-halls', href: '/groups', label: 'Groups', badge: townHallInvites },
@@ -92,15 +97,6 @@ export function AppShell({
             <HowdyLogo size={me || logoOnly ? 'xs' : 'bar'} href={me ? '/home' : '/gate'} />
             {logoOnly ? null : me ? (
               <div className="flex items-center gap-3">
-                {/* Decorative: a little bird that hops beside the bell, and now and then flies off to visit a card
-                  (BirdVisitor); its spot stays empty until it is back. */}
-                <span
-                  aria-hidden="true"
-                  data-howdy-bird
-                  className="pointer-events-none transition-opacity duration-500 select-none [:root[data-bird-away]_&]:opacity-0 [:root[data-bird-away]_&]:duration-0"
-                >
-                  <Art name="bird" size="free" className="w-9 origin-bottom animate-bird-hop" />
-                </span>
                 <Link
                   href="/notifications"
                   aria-label={unread > 0 ? `Notifications, ${unread} unread` : 'Notifications'}
@@ -156,7 +152,6 @@ export function AppShell({
         </div>
       </div>
       {me && <ShellBottomNav items={items} me={me} />}
-      {me && <BirdVisitor />}
     </div>
   );
 }

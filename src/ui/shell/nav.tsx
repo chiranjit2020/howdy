@@ -41,8 +41,10 @@ export interface ShellNavItem {
   key: ShellNavKey;
   href: string;
   label: string;
-  /** Unread count (already filtered for this person); shown as a pill and announced as text. */
+  /** A count of something new (already filtered for this person); shown as a pill and announced as text. */
   badge?: number;
+  /** What the count is, said after the number to screen readers: "3 unread", "1 waiting", "2 today". Default "unread". */
+  badgeSays?: string;
 }
 
 /** Flat line icons, drawn in the text colour (they follow the current / hover state like the label does). */
@@ -100,7 +102,7 @@ export function ShellSidebarNav({ items }: { items: ShellNavItem[] }) {
                     <span className="sr-only">, </span>
                     <span className="ml-auto rounded-pill bg-highlight px-2 text-metadata font-bold text-on-highlight">
                       {badgeText(it.badge)}
-                      <span className="sr-only"> unread</span>
+                      <span className="sr-only"> {it.badgeSays ?? 'unread'}</span>
                     </span>
                   </>
                 ) : null}
@@ -200,7 +202,7 @@ export function ShellBottomNav({ items, me }: { items: ShellNavItem[]; me: Shell
             ICON[key]
           ),
         current,
-        ...(it.badge ? { badge: `${badgeText(it.badge)} unread` } : {}),
+        ...(it.badge ? { badge: `${badgeText(it.badge)} ${it.badgeSays ?? 'unread'}` } : {}),
       },
     ];
   });

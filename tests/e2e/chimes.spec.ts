@@ -46,8 +46,8 @@ async function untilUnread(p: Person, n: number) {
     .toBe(n);
 }
 
-const bellLink = (page: Page) =>
-  page.getByRole('navigation', { name: 'Primary' }).getByRole('link', { name: /^Notifications/ });
+// The bell in the top bar: notifications have no menu item of their own.
+const bellLink = (page: Page) => page.getByRole('banner').getByRole('link', { name: /^Notifications/ });
 
 test.describe('Notifications in a real browser (production build, real CSP)', () => {
   test('ring, badge, open, mark read, mute hides — and notification settings switch a kind off', async ({
