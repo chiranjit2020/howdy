@@ -11,6 +11,8 @@ export {
   Dialog,
   ConfirmationDialog,
   PhotoViewer,
+  FullScreen,
+  FullScreenClose,
   type ModalProps,
   type ConfirmationDialogProps,
 } from './dialog';

@@ -121,9 +121,78 @@ export function Modal(props: ModalProps) {
 }
 
 /**
- * A photo on its own, full screen: a near-black backdrop, the photo as large as it fits, a × in the corner. Esc, the ×
- * or a click anywhere outside the photo closes it. A native <dialog>, so focus is trapped and returned for free.
+ * Something on its own, full screen: a near-black backdrop with the content centred (a photo, a Story being made). Esc,
+ * or a click on the dark area around the content, closes it; the content brings its own close button. A native
+ * <dialog>, so focus is trapped and returned for free.
  */
+export function FullScreen({
+  open,
+  onClose,
+  label,
+  children,
+}: {
+  open: boolean;
+  onClose: () => void;
+  /** What a screen reader announces for it. */
+  label: string;
+  children: ReactNode;
+}) {
+  const ref = useRef<HTMLDialogElement>(null);
+  // Set while WE close it (unmounting, or React's development double-mount): that close must not count as the person
+  // closing it, or content that is mounted already open (a Story being made) would cancel itself.
+  const closingOurselves = useRef(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || !open || el.open) return;
+    el.showModal();
+    // Content can name where the cursor starts (data-autofocus), e.g. a Story's caption; otherwise the browser's choice.
+    el.querySelector<HTMLElement>('[data-autofocus]')?.focus();
+    lockScroll(true);
+    return () => {
+      if (el.open) {
+        closingOurselves.current = true;
+        el.close();
+      }
+      lockScroll(false);
+    };
+  }, [open]);
+
+  return (
+    <dialog
+      ref={ref}
+      aria-label={label}
+      onClose={() => {
+        if (closingOurselves.current) closingOurselves.current = false;
+        else onClose();
+      }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose(); // the dark area around the content
+      }}
+      className="m-0 h-dvh max-h-none w-dvw max-w-none place-items-center bg-scrim p-4 backdrop:bg-transparent open:grid"
+    >
+      {open && children}
+    </dialog>
+  );
+}
+
+/** A round × for content shown full screen. */
+export function FullScreenClose({ onClick, className }: { onClick: () => void; className?: string }) {
+  return (
+    <button
+      type="button"
+      aria-label="Close"
+      onClick={onClick}
+      className={cn(
+        'grid size-11 place-items-center rounded-pill text-on-scrim hover:bg-on-scrim/15 pointer-fine:size-9',
+        className,
+      )}
+    >
+      <CloseIcon className="size-6" />
+    </button>
+  );
+}
+
+/** A photo on its own, full screen, as large as it fits, with a × in the corner. */
 export function PhotoViewer({
   open,
   onClose,
@@ -139,49 +208,18 @@ export function PhotoViewer({
   height: number;
   alt: string;
 }) {
-  const ref = useRef<HTMLDialogElement>(null);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el || !open || el.open) return;
-    el.showModal();
-    lockScroll(true);
-    return () => {
-      if (el.open) el.close();
-      lockScroll(false);
-    };
-  }, [open]);
-
   return (
-    <dialog
-      ref={ref}
-      aria-label={alt}
-      onClose={onClose}
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose(); // the dark area around the photo
-      }}
-      className="m-0 h-dvh max-h-none w-dvw max-w-none place-items-center bg-scrim p-4 backdrop:bg-transparent open:grid"
-    >
-      {open && (
-        <>
-          <Img
-            src={src}
-            width={width}
-            height={height}
-            alt={alt}
-            loading="eager"
-            className="h-auto max-h-[calc(100dvh-2rem)] w-auto max-w-full rounded-md"
-          />
-          <button
-            type="button"
-            aria-label="Close"
-            onClick={onClose}
-            className="absolute top-3 right-3 grid size-11 place-items-center rounded-pill text-on-scrim hover:bg-on-scrim/15"
-          >
-            <CloseIcon className="size-6" />
-          </button>
-        </>
-      )}
-    </dialog>
+    <FullScreen open={open} onClose={onClose} label={alt}>
+      <Img
+        src={src}
+        width={width}
+        height={height}
+        alt={alt}
+        loading="eager"
+        className="h-auto max-h-[calc(100dvh-2rem)] w-auto max-w-full rounded-md"
+      />
+      <FullScreenClose onClick={onClose} className="absolute top-3 right-3" />
+    </FullScreen>
   );
 }
 

@@ -1,17 +1,17 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState, type FormEvent } from 'react';
+import { useEffect, useId, useRef, useState, type FormEvent } from 'react';
 import type { StoryRingItem } from '@/modules/stories';
 import { STORY_CAPTION_MAX, type StoryAudience } from '@/shared/validation/stories';
 import { postJson } from '@/ui/auth/api';
-import { FormMessage } from '@/ui/auth/form-parts';
 import { cn } from '@/ui/cn';
+import { SendIcon } from '@/ui/icons';
 import { uploadPhoto } from '@/ui/media/upload-photo';
-import { Avatar, Button, Input, Modal, useToast } from '@/ui/primitives';
+import { Avatar, FullScreen, FullScreenClose, IconButton, useToast } from '@/ui/primitives';
 import { StoryViewer } from './story-viewer';
 
-const AUDIENCE_LABEL: Record<StoryAudience, string> = { pals: 'All my friends', close: 'Close friends only' };
+const AUDIENCE_LABEL: Record<StoryAudience, string> = { pals: 'Friends', close: 'Close friends' };
 
 /**
  * Stories on Home (ADR-047): a row of rings — mine first, then Pals with Stories for me (a pink ring = not seen yet).
@@ -31,7 +31,9 @@ export function StoriesStrip({
 }) {
   const router = useRouter();
   const [open, setOpen] = useState<StoryRingItem | undefined>();
-  const [adding, setAdding] = useState(false);
+  const [file, setFile] = useState<File | undefined>();
+  const picker = useRef<HTMLInputElement>(null);
+  const startAdding = () => picker.current?.click();
   const mine = initial.find((r) => r.mine);
   const pals = initial.filter((r) => !r.mine);
 
@@ -48,7 +50,7 @@ export function StoriesStrip({
             <div className="relative">
               <button
                 type="button"
-                onClick={() => (mine ? setOpen(mine) : setAdding(true))}
+                onClick={() => (mine ? setOpen(mine) : startAdding())}
                 aria-label={mine ? 'Your Story' : 'Add to your Story'}
                 className={cn('rounded-pill p-0.5', mine ? 'bg-border-strong' : 'bg-transparent')}
               >
@@ -102,52 +104,80 @@ export function StoriesStrip({
           onClose={close}
           onAdd={() => {
             setOpen(undefined);
-            setAdding(true);
+            startAdding();
           }}
         />
       )}
-      <AddStory
-        open={adding}
-        onClose={() => setAdding(false)}
-        onPosted={() => {
-          setAdding(false);
-          router.refresh();
+      {/* Adding starts with the photo itself: the system picker opens straight away, no box before it. */}
+      <input
+        ref={picker}
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        tabIndex={-1}
+        aria-hidden="true"
+        className="sr-only"
+        onChange={(e) => {
+          const chosen = e.target.files?.[0];
+          e.target.value = ''; // so the same file can be chosen again
+          if (chosen) setFile(chosen);
         }}
       />
+      {file && (
+        <AddStory
+          key={`${file.name}:${file.lastModified}`}
+          file={file}
+          onClose={() => setFile(undefined)}
+          onPosted={() => {
+            setFile(undefined);
+            router.refresh();
+          }}
+        />
+      )}
     </section>
   );
 }
 
-/** Add a Story: choose a photo, an optional caption, and who sees it. */
-function AddStory({ open, onClose, onPosted }: { open: boolean; onClose: () => void; onPosted: () => void }) {
+/**
+ * Making a Story, after the photo is chosen: the photo itself, phone-shaped and full screen, with everything on it —
+ * close and who sees it at the top, the caption typed onto the photo and a Share button at the bottom. The photo
+ * uploads as soon as it opens; Share waits for it.
+ */
+function AddStory({ file, onClose, onPosted }: { file: File; onClose: () => void; onPosted: () => void }) {
   const toast = useToast();
-  const [photo, setPhoto] = useState<{ preview: string; id?: string } | undefined>();
+  const captionId = useId();
+  // A local address for the chosen file, made and freed by the same effect (so a remount never shows a freed one).
+  const [preview, setPreview] = useState<string | undefined>();
+  useEffect(() => {
+    const url = URL.createObjectURL(file);
+    queueMicrotask(() => setPreview(url));
+    return () => URL.revokeObjectURL(url);
+  }, [file]);
+  const [photoId, setPhotoId] = useState<string | undefined>();
   const [caption, setCaption] = useState('');
   const [audience, setAudience] = useState<StoryAudience>('pals');
   const [error, setError] = useState<string | undefined>();
   const [busy, setBusy] = useState(false);
-  const uploading = photo !== undefined && photo.id === undefined;
+  const uploading = !photoId && !error;
 
-  async function choose(file: File | undefined) {
-    if (!file) return;
-    setError(undefined);
-    const preview = URL.createObjectURL(file);
-    setPhoto({ preview });
-    const res = await uploadPhoto('/api/me/card-photo', file);
-    if (res.ok) setPhoto((p) => (p?.preview === preview ? { preview, id: res.mediaId } : p));
-    else {
-      setPhoto(undefined);
-      setError(res.message);
-    }
-  }
+  useEffect(() => {
+    let current = true;
+    void uploadPhoto('/api/me/card-photo', file).then((res) => {
+      if (!current) return;
+      if (res.ok) setPhotoId(res.mediaId);
+      else setError(res.message);
+    });
+    return () => {
+      current = false;
+    };
+  }, [file]);
 
   async function share(e: FormEvent) {
     e.preventDefault();
-    if (!photo?.id) return setError('Choose a photo first.');
+    if (!photoId) return;
     setBusy(true);
     setError(undefined);
     const res = await postJson('/api/stories', {
-      photoId: photo.id,
+      photoId,
       audience,
       ...(caption.trim() ? { caption } : {}),
     });
@@ -157,87 +187,100 @@ function AddStory({ open, onClose, onPosted }: { open: boolean; onClose: () => v
         res.error?.fields?.caption ?? res.error?.fields?.photo ?? res.error?.message ?? 'That did not work.',
       );
     }
-    setPhoto(undefined);
-    setCaption('');
     toast({ title: 'Your Story is up for 12 hours.', tone: 'success' });
     onPosted();
   }
 
   return (
-    <Modal open={open} onClose={onClose} title="Add to your Story" description="One photo, for 12 hours.">
-      <form onSubmit={share} noValidate className="flex flex-col gap-3">
-        {error && <FormMessage tone="error">{error}</FormMessage>}
-        {photo ? (
-          <div className="flex flex-col items-center gap-1">
-            {/* A phone-shaped preview, caption and all, the way Pals will see it. */}
-            <div className="relative aspect-[9/16] w-32 overflow-hidden rounded-lg bg-island shadow-clay-sm">
-              {/* eslint-disable-next-line @next/next/no-img-element -- a blob: preview; see ui/art/img.tsx */}
-              <img
-                src={photo.preview}
-                alt="The photo you chose for your Story"
-                className={cn('size-full object-cover', uploading && 'opacity-50')}
-              />
-              {uploading && (
-                <p className="absolute inset-0 flex items-center justify-center text-caption font-semibold text-on-island">
-                  Uploading…
-                </p>
-              )}
-              {caption.trim() && (
-                <p className="absolute inset-x-0 bottom-0 bg-linear-to-t from-island/80 to-transparent px-2 pt-6 pb-2 text-center text-metadata font-medium text-on-island [overflow-wrap:anywhere]">
-                  {caption}
-                </p>
-              )}
-            </div>
-            <Button type="button" size="sm" variant="ghost" onClick={() => setPhoto(undefined)}>
-              Change photo
-            </Button>
-          </div>
-        ) : (
-          <label className="mx-auto flex aspect-[9/16] w-32 cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-border-strong bg-surface-sunken p-3 text-center hover:border-accent">
-            <span className="text-body font-semibold text-text-primary">Choose a photo</span>
-            <span className="text-metadata text-text-secondary">JPEG, PNG or WebP, up to 5 MB</span>
-            <input
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              className="sr-only"
-              onChange={(e) => void choose(e.target.files?.[0])}
-            />
-          </label>
+    <FullScreen open onClose={onClose} label="Add to your Story">
+      <form
+        onSubmit={share}
+        noValidate
+        className="relative aspect-[9/16] h-[min(calc(100dvh-2rem),44rem)] max-w-full overflow-hidden rounded-xl bg-island shadow-float"
+      >
+        {preview && (
+          // eslint-disable-next-line @next/next/no-img-element -- a blob: preview; see ui/art/img.tsx
+          <img
+            src={preview}
+            alt="The photo for your Story"
+            className={cn(
+              'absolute inset-0 size-full object-cover transition-opacity',
+              uploading && 'opacity-60',
+            )}
+          />
         )}
-        <Input
-          label="Caption (optional)"
-          value={caption}
-          onChange={(e) => setCaption(e.target.value)}
-          maxLength={STORY_CAPTION_MAX}
-        />
-        <fieldset className="flex flex-col gap-2">
-          <legend className="mb-1.5 text-caption font-semibold text-text-primary">Who sees it</legend>
-          <div className="grid grid-cols-2 gap-1 rounded-pill bg-surface-sunken p-1">
-            {(['pals', 'close'] as const).map((a) => (
-              <label
-                key={a}
-                className={cn(
-                  'flex min-h-11 cursor-pointer items-center justify-center rounded-pill px-2 text-center text-caption font-semibold transition has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2',
-                  audience === a ? 'bg-surface text-text-primary shadow-clay-sm' : 'text-text-secondary',
-                )}
-              >
-                <input
-                  type="radio"
-                  name="story-audience"
-                  value={a}
-                  checked={audience === a}
-                  onChange={() => setAudience(a)}
-                  className="sr-only"
-                />
-                {AUDIENCE_LABEL[a]}
-              </label>
-            ))}
-          </div>
-        </fieldset>
-        <Button type="submit" loading={busy} disabled={uploading || !photo?.id}>
-          Share to Story
-        </Button>
+
+        <div className="absolute inset-x-0 top-0 flex items-center justify-between gap-2 bg-linear-to-b from-island/70 to-transparent p-3">
+          <FullScreenClose onClick={onClose} />
+          <fieldset>
+            <legend className="sr-only">Who sees it</legend>
+            <div className="flex rounded-pill bg-island/60 p-0.5 backdrop-blur">
+              {(['pals', 'close'] as const).map((a) => (
+                <label
+                  key={a}
+                  className={cn(
+                    // 44 px tall for fingers, compact with a mouse.
+                    'flex min-h-11 cursor-pointer items-center rounded-pill px-3 text-metadata font-semibold transition-colors pointer-fine:min-h-8 has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-focus',
+                    audience === a ? 'bg-surface text-text-primary' : 'text-on-island',
+                  )}
+                >
+                  <input
+                    type="radio"
+                    name="story-audience"
+                    value={a}
+                    checked={audience === a}
+                    onChange={() => setAudience(a)}
+                    className="sr-only"
+                  />
+                  {AUDIENCE_LABEL[a]}
+                </label>
+              ))}
+            </div>
+          </fieldset>
+        </div>
+
+        {uploading && (
+          <p
+            role="status"
+            className="absolute inset-x-0 top-1/2 -translate-y-1/2 text-center text-caption font-semibold text-on-island"
+          >
+            Uploading…
+          </p>
+        )}
+        {error && (
+          <p
+            role="alert"
+            className="absolute inset-x-3 top-16 rounded-md bg-danger px-3 py-2 text-caption text-on-danger"
+          >
+            {error}
+          </p>
+        )}
+
+        <div className="absolute inset-x-0 bottom-0 flex items-center gap-2 bg-linear-to-t from-island/80 to-transparent p-3 pt-12">
+          <label htmlFor={captionId} className="sr-only">
+            Caption
+          </label>
+          <input
+            id={captionId}
+            data-autofocus
+            value={caption}
+            onChange={(e) => setCaption(e.target.value)}
+            maxLength={STORY_CAPTION_MAX}
+            placeholder="Add a caption…"
+            autoComplete="off"
+            className="min-h-11 min-w-0 flex-1 rounded-pill bg-island/50 px-4 text-body text-on-island backdrop-blur placeholder:text-on-island-muted focus:ring-2 focus:ring-primary/70 focus:outline-none"
+          />
+          <IconButton
+            type="submit"
+            tone="accent"
+            label="Share to your Story"
+            disabled={!photoId || busy}
+            aria-busy={busy || undefined}
+          >
+            <SendIcon className="size-5" />
+          </IconButton>
+        </div>
       </form>
-    </Modal>
+    </FullScreen>
   );
 }

@@ -74,21 +74,24 @@ test('a Story: shared from Home on a phone, opened by a friend who reacts and re
   // The owner adds a Story from Home.
   await owner.page.goto('/home');
   await pageReady(owner.page);
-  await owner.page.getByRole('button', { name: 'Add to your Story' }).tap();
+  // "Add to your Story" opens the photo picker straight away; the composer appears once a photo is chosen.
   const add = owner.page.getByRole('dialog', { name: 'Add to your Story' });
-  const chooser = add.locator('input[type=file]');
-  // Retried: a file picked before the page has hydrated fires no React handler.
+  // Retried: a tap before the page has hydrated opens no picker.
   await expect(async () => {
-    await chooser.setInputFiles({ name: 'sunset.jpg', mimeType: 'image/jpeg', buffer: await photo() });
-    await expect(add.getByAltText('The photo you chose for your Story')).toBeVisible({ timeout: 1000 });
+    const [chooser] = await Promise.all([
+      owner.page.waitForEvent('filechooser', { timeout: 1000 }),
+      owner.page.getByRole('button', { name: 'Add to your Story' }).tap(),
+    ]);
+    await chooser.setFiles({ name: 'sunset.jpg', mimeType: 'image/jpeg', buffer: await photo() });
+    await expect(add.getByAltText('The photo for your Story')).toBeVisible({ timeout: 1000 });
   }).toPass({ timeout: 15_000 });
   await expect(add.getByText('Uploading…')).toHaveCount(0, { timeout: 15_000 });
-  await add.getByLabel('Caption (optional)').fill(caption);
+  await add.getByLabel('Caption').fill(caption);
   await owner.page.screenshot({ path: '.dev/story-add.png' });
   expect(await axeViolations(owner.page)).toEqual([]);
   expect(await smallTargets(owner.page)).toEqual([]);
   expect(await horizontalOverflow(owner.page)).toBe(0);
-  await add.getByRole('button', { name: 'Share to Story' }).tap();
+  await add.getByRole('button', { name: 'Share to your Story' }).tap();
   await expect(owner.page.getByText('Your Story is up for 12 hours.')).toBeVisible();
   await expect(owner.page.getByRole('button', { name: 'Your Story', exact: true })).toBeVisible();
 
