@@ -42,7 +42,7 @@ export function StoriesStrip({
 
   return (
     <section aria-label="Stories" className="flex flex-col gap-2">
-      <ul className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-1 [scrollbar-width:thin]">
+      <ul className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-1">
         <li className="shrink-0">
           <div className="flex w-20 flex-col items-center gap-1">
             <div className="relative">

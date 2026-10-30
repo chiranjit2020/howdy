@@ -76,6 +76,10 @@ describe('WCAG AA contrast (both themes)', () => {
           ['on-primary', 'primary'],
           ['on-primary', 'primary-hover'],
           ['primary', 'primary-mark'],
+          // Reply bubbles: the reply, the name, the @username.
+          ['text-primary', 'primary-soft'],
+          ['text-secondary', 'primary-soft'],
+          ['text-muted', 'primary-soft'],
           ['on-danger', 'danger'],
           ['on-info', 'info'],
           ['on-mystery', 'mystery'],

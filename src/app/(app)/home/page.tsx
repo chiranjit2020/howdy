@@ -64,8 +64,8 @@ export default async function HomePage() {
     // The feed at a comfortable reading width (672 px), centred in the space beside the menu; from xl (1280 px) up the
     // right panel beside it. No side padding of its own: the shell's 15 px is the gutter, so the cards use the full phone
     // width.
-    <div className="flex w-full py-4 sm:py-8 xl:grid xl:grid-cols-[minmax(0,1fr)_20rem] xl:items-start xl:gap-8">
-      <main id="main" className="mx-auto flex w-full max-w-2xl min-w-0 flex-col gap-4 sm:gap-6">
+    <div className="flex w-full py-4 xl:grid xl:grid-cols-[minmax(0,1fr)_18rem] xl:items-start xl:gap-6">
+      <main id="main" className="mx-auto flex w-full max-w-2xl min-w-0 flex-col gap-4">
         {/* The page's name for screen readers and the outline; on screen the sidebar already says where you are. */}
         <h1 className="sr-only">Home</h1>
         <StoriesStrip
@@ -108,10 +108,10 @@ export default async function HomePage() {
         )}
       </main>
 
-      {/* top-24 clears the sticky top bar (4rem) with room to breathe. */}
+      {/* top-18 clears the sticky top bar (3.5rem) plus the page's own 16 px top padding. */}
       <aside
         aria-label="Your circle"
-        className="sticky top-24 hidden max-h-[calc(100dvh-7rem)] flex-col gap-4 overflow-y-auto [scrollbar-width:thin] xl:flex [&>*]:shrink-0"
+        className="sticky top-18 hidden max-h-[calc(100dvh-5.5rem)] flex-col gap-4 overflow-y-auto xl:flex [&>*]:shrink-0"
       >
         <HomeRail
           free={free}

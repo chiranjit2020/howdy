@@ -95,7 +95,7 @@ export function AppShell({
         <header className="sticky top-0 z-30 border-b border-border/60 bg-background/90 backdrop-blur">
           <div
             className={cn(
-              'flex h-16 w-full items-center gap-2 px-[15px] min-[360px]:gap-4',
+              'flex h-14 w-full items-center gap-2 px-4 min-[360px]:gap-3',
               logoOnly ? 'justify-center' : 'justify-between',
               // Signed in, from md up: three columns, the two sides equal, so the search box sits in the middle of the
               // screen rather than of the space the logo and the buttons leave.
@@ -118,7 +118,7 @@ export function AppShell({
                 <Link
                   href="/search"
                   aria-label="Search people"
-                  className="grid size-11 place-items-center rounded-pill border border-border bg-surface text-text-primary no-underline shadow-clay-sm md:hidden"
+                  className="grid size-11 place-items-center rounded-pill pointer-fine:size-9 border border-border bg-surface text-text-primary no-underline shadow-clay-sm md:hidden"
                 >
                   <SearchIcon className="size-5" />
                 </Link>
@@ -126,7 +126,7 @@ export function AppShell({
                 <Link
                   href="/notifications"
                   aria-label={unread > 0 ? `Notifications, ${unread} unread` : 'Notifications'}
-                  className="relative grid size-11 place-items-center rounded-pill border border-border bg-surface text-heading text-text-primary no-underline shadow-clay-sm"
+                  className="relative grid size-11 place-items-center rounded-pill pointer-fine:size-9 border border-border bg-surface text-heading text-text-primary no-underline shadow-clay-sm"
                 >
                   <BellIcon className="size-5" />
                   {unread > 0 && (
@@ -160,10 +160,10 @@ export function AppShell({
         </header>
       )}
 
-      {/* Full width, with 15 px each side on every screen size. */}
-      <div className="flex w-full gap-8 px-[15px]">
+      {/* Full width, with 16 px each side on every screen size. */}
+      <div className="flex w-full gap-6 px-4">
         {me && (
-          <aside className="sticky top-16 hidden max-h-[calc(100dvh-4rem)] w-56 shrink-0 flex-col justify-between gap-6 self-start py-6 md:flex">
+          <aside className="sticky top-14 hidden max-h-[calc(100dvh-3.5rem)] w-52 shrink-0 flex-col justify-between gap-6 self-start py-4 md:flex">
             <ShellSidebarNav items={items} />
           </aside>
         )}

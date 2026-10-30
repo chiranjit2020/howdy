@@ -4,11 +4,11 @@ import { cn } from '../cn';
 
 const SIZE = {
   sm: 'size-8 text-metadata',
-  md: 'size-11 text-caption',
+  md: 'size-10 text-caption',
   lg: 'size-16 text-title',
   xl: 'size-28 text-heading',
 } as const;
-const PX = { sm: 32, md: 44, lg: 64, xl: 112 } as const;
+const PX = { sm: 32, md: 40, lg: 64, xl: 112 } as const;
 
 // Pastel fills; every one carries dark text with >=7:1 contrast (see design-tokens test).
 const FILLS = [

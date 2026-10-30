@@ -178,15 +178,12 @@ describe('PostCard', () => {
     expect(screen.getByText('Late-night canteen run?')).toBeInTheDocument();
   });
 
-  it('the reply count opens and closes the replies', async () => {
-    const user = userEvent.setup();
+  it('one row: your reaction, the counts and Reply sit together; the reply count is not repeated above it', () => {
     render(card());
-    const count = screen.getByRole('button', { name: '1 reply' });
-    await user.click(count);
-    expect(count).toHaveAttribute('aria-expanded', 'true');
-    expect(screen.getByRole('textbox', { name: /Write a reply/ })).toBeInTheDocument();
-    await user.click(count);
-    expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+    const row = screen.getByRole('button', { name: /^Reply$/ }).closest('footer')!;
+    expect(row).toContainElement(screen.getByRole('button', { name: 'Wave' }));
+    expect(row).toContainElement(screen.getByRole('img', { name: /3 reactions/ }));
+    expect(screen.queryByRole('button', { name: '1 reply' })).not.toBeInTheDocument();
   });
 
   it('the initial render does not steal focus', () => {

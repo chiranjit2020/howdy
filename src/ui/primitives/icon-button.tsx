@@ -20,7 +20,7 @@ export function IconButton({
       type={type}
       aria-label={label}
       className={cn(
-        'inline-flex size-11 shrink-0 items-center justify-center rounded-pill text-title transition duration-150',
+        'inline-flex size-11 shrink-0 items-center justify-center rounded-pill text-title transition duration-150 pointer-fine:size-9',
         'disabled:pointer-events-none disabled:text-text-muted',
         tone === 'accent'
           ? 'bg-primary text-on-primary shadow-clay-sm hover:bg-primary-hover disabled:bg-surface-sunken disabled:shadow-none'

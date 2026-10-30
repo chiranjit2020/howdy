@@ -5,6 +5,7 @@ export {
   PostCard,
   PostCardReply,
   PostCardComposer,
+  POST_LIST,
   type PostCardProps,
   type PostCardAuthor,
 } from './post-card';

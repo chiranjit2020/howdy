@@ -67,7 +67,7 @@ export function PostCardReply({
         size="sm"
       />
       <div className="min-w-0 flex-1">
-        <div className="w-fit max-w-full rounded-lg bg-surface-sunken px-3 py-2">
+        <div className="w-fit max-w-full rounded-lg bg-primary-soft px-3 py-2">
           <p className="text-caption [overflow-wrap:anywhere]">
             <Link href={`/profile/${author.handle}`} className={NAME_LINK}>
               {author.name}
@@ -312,6 +312,9 @@ export interface PostCardProps {
   wall?: { name: string; handle: string };
 }
 
+/** The list posts go in: each post its own card, 10 px apart (the user's call: merged posts hid who wrote what). */
+export const POST_LIST = 'flex flex-col gap-2.5';
+
 /** How many of the newest replies show under a card before "View all". */
 const REPLY_PREVIEW = 2;
 
@@ -323,7 +326,7 @@ function flatReplies(nodes: ReactNode): ReactNode[] {
 }
 
 /**
- * Post Card: who wrote it, the words and photo, a line of counts, then React and Reply. The newest replies show under the
+ * Post Card: who wrote it, the words and photo, then one row of reactions (yours and the counts) and Reply. The newest replies show under the
  * card; "View all" or Reply opens the rest together with the reply box (Reply also puts the cursor in it). Nothing hides
  * the post while you read its replies.
  */
@@ -376,7 +379,7 @@ export function PostCard({
     <article aria-label={`${noun} from ${author.name}`} className="clay flex flex-col">
       <div
         onDoubleClick={() => canReact && !myReaction && onReact('yo')}
-        className="flex flex-col gap-3 p-4 pb-2 sm:px-5 sm:pt-5"
+        className="flex flex-col gap-3 p-4 pb-3"
       >
         <header className="flex items-start gap-3">
           <Avatar name={author.name} src={author.avatarUrl} {...(author.tint ? { tint: author.tint } : {})} />
@@ -419,28 +422,16 @@ export function PostCard({
           />
         )}
         {notice && <p className="text-caption font-semibold text-text-secondary">{notice}</p>}
-        {(totalReactions > 0 || replyCount > 0) && (
-          <div className="flex items-center justify-between gap-2">
-            {totalReactions > 0 ? <ReactionSummary reactions={reactions} /> : <span />}
-            {replyCount > 0 && (
-              <button
-                type="button"
-                aria-expanded={open}
-                aria-controls={repliesId}
-                onClick={() => setOpen((o) => !o)}
-                className="min-h-11 text-caption text-text-secondary hover:text-text-primary hover:underline pointer-fine:min-h-0"
-              >
-                {repliesLabel}
-              </button>
-            )}
-          </div>
-        )}
       </div>
 
-      {(canReact || myReaction || replyComposer) && (
-        <footer className="mx-4 flex items-center gap-1 border-t border-border py-1 sm:mx-5">
-          {(canReact || myReaction) && (
-            <ReactionBar reactions={reactions} mine={myReaction} onReact={onReact} summary={false} />
+      {/* One row: your reaction, the picker and everyone's counts on the left, Reply on the right. How many replies
+          there are is said once, by "View all" under the post. */}
+      {(canReact || myReaction || replyComposer || totalReactions > 0) && (
+        <footer className="mx-4 flex items-center gap-1 border-t border-border py-1">
+          {canReact || myReaction ? (
+            <ReactionBar reactions={reactions} mine={myReaction} onReact={onReact} />
+          ) : (
+            totalReactions > 0 && <ReactionSummary reactions={reactions} />
           )}
           {replyComposer && (
             <Button
@@ -458,11 +449,7 @@ export function PostCard({
       )}
 
       {(shown.length > 0 || (open && replyComposer)) && (
-        <div
-          ref={repliesRef}
-          id={repliesId}
-          className="flex flex-col gap-3 border-t border-border px-4 pt-3 pb-4 sm:px-5"
-        >
+        <div ref={repliesRef} id={repliesId} className="flex flex-col gap-3 px-4 pt-1 pb-4">
           {hidden > 0 && (
             <button
               type="button"

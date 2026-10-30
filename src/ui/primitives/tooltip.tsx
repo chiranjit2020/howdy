@@ -48,7 +48,7 @@ export function Tooltip({
         id={id}
         role="tooltip"
         hidden={!open}
-        className="pointer-events-auto absolute bottom-full left-1/2 z-30 mb-2 w-max max-w-64 -translate-x-1/2 rounded-md bg-text-primary px-3 py-1.5 text-metadata text-background shadow-float"
+        className="pointer-events-auto absolute bottom-full left-1/2 z-35 mb-2 w-max max-w-64 -translate-x-1/2 rounded-md bg-text-primary px-3 py-1.5 text-metadata text-background shadow-float"
       >
         {content}
       </span>

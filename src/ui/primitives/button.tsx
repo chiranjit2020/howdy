@@ -17,14 +17,14 @@ const VARIANT: Record<ButtonVariant, string> = {
   link: 'bg-transparent text-accent hover:underline',
 };
 
-// Every size keeps a >=44px touch target on touch devices (min-h-11); `sm` shrinks only with a fine pointer.
+// Every size keeps a >=44px touch target on touch screens (min-h-11); with a mouse it is desktop-sized: 32 / 36 / 40 px.
 const SIZE: Record<ButtonSize, string> = {
-  sm: 'min-h-11 pointer-fine:min-h-9 text-caption',
-  md: 'min-h-11 text-body',
-  lg: 'min-h-12 text-title',
+  sm: 'min-h-11 pointer-fine:min-h-8 text-caption',
+  md: 'min-h-11 pointer-fine:min-h-9 text-caption',
+  lg: 'min-h-12 pointer-fine:min-h-10 text-body',
 };
 // Kept apart from SIZE so `compact` can replace it (cn does not merge conflicting classes).
-const PADDING: Record<ButtonSize, string> = { sm: 'px-4', md: 'px-5', lg: 'px-7' };
+const PADDING: Record<ButtonSize, string> = { sm: 'px-3', md: 'px-4', lg: 'px-6' };
 
 /** Class list shared by <Button> and link-styled-as-button (`<Link className={buttonClasses()}>`). */
 export function buttonClasses(

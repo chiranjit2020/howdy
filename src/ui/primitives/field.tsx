@@ -86,9 +86,9 @@ export function FieldShell({
 }
 
 const CONTROL =
-  'w-full rounded-md border border-border-strong/50 bg-surface px-3.5 py-2.5 text-body text-text-primary ' +
+  'w-full rounded-md border border-border-strong/50 bg-surface px-3 py-2 text-body text-text-primary ' +
   'placeholder:text-text-muted transition-colors hover:border-border-strong disabled:cursor-not-allowed ' +
-  'disabled:bg-surface-sunken disabled:opacity-60 ' +
+  'disabled:bg-surface-sunken disabled:text-text-muted ' +
   // A thin ring while typing, on top of the focus outline (which keyboard users still get).
   'focus:border-focus focus:ring-2 focus:ring-focus/20 ' +
   'aria-invalid:border-danger aria-invalid:focus:ring-danger/20';
@@ -150,13 +150,17 @@ export function Input({
               {prefix}
             </span>
             <input
-              className={cn(CONTROLS[look], 'min-h-11', look === 'entry' ? 'pl-13' : 'pl-9')}
+              className={cn(
+                CONTROLS[look],
+                'min-h-11 pointer-fine:min-h-9',
+                look === 'entry' ? 'pl-13' : 'pl-9',
+              )}
               {...c}
               {...rest}
             />
           </div>
         ) : (
-          <input className={cn(CONTROLS[look], 'min-h-11')} {...c} {...rest} />
+          <input className={cn(CONTROLS[look], 'min-h-11 pointer-fine:min-h-9')} {...c} {...rest} />
         )
       }
     </FieldShell>
@@ -191,7 +195,7 @@ export function PasswordInput({
       {(c) => (
         <div className="relative">
           <input
-            className={cn(CONTROLS[look], 'min-h-11 pr-12')}
+            className={cn(CONTROLS[look], 'min-h-11 pointer-fine:min-h-9 pr-12')}
             type={visible ? 'text' : 'password'}
             autoCapitalize="none"
             spellCheck={false}
@@ -225,7 +229,7 @@ export function Select({
   return (
     <FieldShell id={id} label={label} hint={hint} error={error} className={className}>
       {(c) => (
-        <select className={cn(CONTROL, 'min-h-11')} {...c} {...rest}>
+        <select className={cn(CONTROL, 'min-h-11 pointer-fine:min-h-9')} {...c} {...rest}>
           {children}
         </select>
       )}
@@ -274,7 +278,8 @@ export function Textarea({
       {(c) => (
         <>
           <textarea
-            className={cn(CONTROL, 'min-h-24 resize-none')}
+            // As tall as its `rows`, never less than two lines (no fixed 96 px box).
+            className={cn(CONTROL, 'min-h-16 resize-none')}
             maxLength={maxLength}
             onChange={handleChange}
             {...(value !== undefined ? { value } : { defaultValue })}

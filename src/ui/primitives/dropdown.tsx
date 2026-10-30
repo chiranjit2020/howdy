@@ -141,7 +141,7 @@ export function Dropdown({
           aria-label={label}
           onKeyDown={onMenuKey}
           className={cn(
-            'absolute top-full z-30 my-2 flex min-w-52 flex-col rounded-lg bg-surface-raised p-1.5 shadow-float',
+            'absolute top-full z-35 my-2 flex min-w-52 flex-col rounded-lg bg-surface-raised p-1.5 shadow-float',
             align === 'end' ? 'right-0' : 'left-0',
           )}
         >

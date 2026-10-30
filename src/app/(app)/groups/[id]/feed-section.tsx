@@ -6,9 +6,10 @@ import { dayOf, longDay } from '@/shared/calendar';
 import type { ReactionKind } from '@/shared/validation/fence';
 import { apiRequest, postJson } from '@/ui/auth/api';
 import { FormMessage } from '@/ui/auth/form-parts';
-import { PostCard, PostCardComposer, PostCardReply, type PostCardAuthor } from '@/ui/howdy';
+import { POST_LIST, PostCard, PostCardComposer, PostCardReply, type PostCardAuthor } from '@/ui/howdy';
 import { ReportDialog } from '@/ui/howdy/report-dialog';
 import { RelativeTime } from '@/ui/howdy/time';
+import { MoreIcon } from '@/ui/icons';
 import { Img } from '@/ui/art/img';
 import { uploadPhoto } from '@/ui/media/upload-photo';
 import {
@@ -190,7 +191,7 @@ export function FeedSection({
         items={items}
         trigger={(t) => (
           <IconButton label={label} {...t}>
-            ⋯
+            <MoreIcon className="size-5" />
           </IconButton>
         )}
       />
@@ -220,7 +221,7 @@ export function FeedSection({
             description="Say howdy to the group. Only members can see what is posted here."
           />
         ) : (
-          <ol className="flex flex-col gap-4">
+          <ol className={POST_LIST}>
             {posts.map((p) => (
               <li key={p.id}>
                 <PostCard

@@ -93,7 +93,8 @@ export function Popover({
               : undefined
           }
           className={cn(
-            'absolute top-full z-30 mt-2 bg-surface-raised shadow-float',
+            // Layers: page 0 · sticky top bar 30 · menus in the page 35 · bar menus and phone tab bar 40 · toasts 50.
+            'absolute top-full z-35 mt-2 bg-surface-raised shadow-float',
             align === 'end' ? 'right-0' : 'left-0',
             // `cn` does not merge, so a caller's own size and padding replace the defaults rather than fight them.
             className ?? 'min-w-56 rounded-lg p-4',

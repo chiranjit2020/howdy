@@ -2,8 +2,10 @@ import Link from 'next/link';
 import { Img } from './art/img';
 import { cn } from './cn';
 
-// `bar`: the top bar's logo, a little smaller on the narrowest phones so the two sign-in buttons fit beside it.
-const LOGO_WIDTH = { lg: 'w-68', sm: 'w-36', xs: 'w-24', bar: 'w-20 min-[360px]:w-24' } as const;
+// Sized by whole-pixel HEIGHT (width follows): sized by width, the height came out fractional (29.54 px) and the logo
+// shimmered up and down in the sticky bar while scrolling. `bar`: smaller on the narrowest phones so the two sign-in
+// buttons fit beside it.
+const LOGO_HEIGHT = { lg: 'h-21', sm: 'h-11', xs: 'h-7', bar: 'h-6 min-[360px]:h-7' } as const;
 
 /** The Howdy wordmark (the brand artwork). Links to the Gate unless told otherwise (signed-in pages point it at Home). */
 export function HowdyLogo({
@@ -11,7 +13,7 @@ export function HowdyLogo({
   href = '/gate',
   className,
 }: {
-  size?: keyof typeof LOGO_WIDTH;
+  size?: keyof typeof LOGO_HEIGHT;
   href?: string;
   className?: string;
 }) {
@@ -27,7 +29,7 @@ export function HowdyLogo({
         height={224}
         alt="Howdy"
         loading="eager"
-        className={cn('h-auto', LOGO_WIDTH[size])}
+        className={cn('w-auto', LOGO_HEIGHT[size])}
       />
     </Link>
   );

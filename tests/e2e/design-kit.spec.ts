@@ -43,7 +43,8 @@ test.describe('design kit (production build, real CSP)', () => {
       display: getComputedStyle(document.querySelector('h1')!).fontFamily,
     }));
     expect(families.body).toMatch(/Google Sans/);
-    expect(families.display).toMatch(/Fraunces/);
+    // One typeface: headings are Google Sans too (density pass).
+    expect(families.display).toMatch(/Google Sans/);
     const loaded = await page.evaluate(() =>
       [...document.fonts].filter((f) => f.status === 'loaded').map((f) => f.family),
     );

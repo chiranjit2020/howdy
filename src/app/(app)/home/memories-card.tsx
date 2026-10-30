@@ -12,7 +12,7 @@ const ago = (n: number) => (n === 1 ? 'A year ago today' : `${n} years ago today
 export function MemoriesCard({
   memories,
   handle,
-  className = 'clay bg-warning/15 p-4 sm:p-5',
+  className = 'clay bg-warning/15 p-4',
   headingId = 'memories-heading',
 }: {
   memories: MemoriesToday;

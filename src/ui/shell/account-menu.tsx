@@ -35,9 +35,9 @@ export function AccountMenu({ me }: { me: ShellMe }) {
         aria-label="Your account"
         onClick={() => setOpen((o) => !o)}
         // A real 44 px box: an image alone is too small to tap.
-        className="grid size-11 place-items-center rounded-pill"
+        className="grid size-11 place-items-center rounded-pill pointer-fine:size-9"
       >
-        <Avatar name={me.displayName} src={me.portraitUrl} tint={me.portraitTint} size="md" />
+        <Avatar name={me.displayName} src={me.portraitUrl} tint={me.portraitTint} size="sm" />
       </button>
       {open && (
         <div

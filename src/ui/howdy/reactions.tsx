@@ -15,6 +15,15 @@ export function ReactionArt({ kind, className }: { kind: ReactionKind; className
   return <ReactionEmoji kind={kind} {...(className ? { className } : {})} />;
 }
 
+// The picker's emoji come in one after another, 30 ms apart (classes, not inline styles: the CSP forbids those).
+const STAGGER = [
+  '[animation-delay:0ms]',
+  '[animation-delay:30ms]',
+  '[animation-delay:60ms]',
+  '[animation-delay:90ms]',
+  '[animation-delay:120ms]',
+];
+
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
 
 /** The biggest few kinds as overlapping art, then the total. Counts only: never who reacted with what. */
@@ -69,19 +78,19 @@ export function ReactionBar({
       <button
         type="button"
         aria-pressed={mine !== null}
+        // The emoji says it; the name is for screen readers and the hover tooltip only.
+        aria-label={REACTION_LABEL[shown]}
+        title={REACTION_LABEL[shown]}
         onClick={() => onReact(mine ? null : 'yo')}
         className={cn(
-          'inline-flex min-h-11 items-center gap-1.5 rounded-pill border pr-3.5 pl-2.5 text-caption font-semibold transition duration-150',
-
-          mine
-            ? 'border-accent bg-warning text-on-warning shadow-clay-pressed'
-            : 'border-border bg-surface text-text-primary shadow-clay-sm',
+          'inline-flex size-11 items-center justify-center rounded-pill transition-colors duration-150 pointer-fine:size-8',
+          // Picked: a quiet violet tint (yellow is for primary buttons). Not picked: just the emoji, grey on hover.
+          mine ? 'bg-accent-soft' : 'hover:bg-surface-sunken',
         )}
       >
         <span aria-hidden="true" className={cn('inline-flex', mine && 'animate-yo-pop')}>
-          <ReactionArt kind={shown} className="size-6" />
+          <ReactionArt kind={shown} className="size-5" />
         </span>
-        {REACTION_LABEL[shown]}
       </button>
       <Popover
         label="Reactions"
@@ -92,7 +101,7 @@ export function ReactionBar({
             type="button"
             aria-label="More reactions"
             title="More reactions"
-            className="inline-flex size-11 items-center justify-center rounded-pill text-title text-text-secondary hover:bg-surface-sunken hover:text-text-primary"
+            className="inline-flex size-11 items-center justify-center rounded-pill text-title text-text-secondary hover:bg-surface-sunken hover:text-text-primary pointer-fine:size-8"
             {...t}
           >
             <ReactIcon />
@@ -100,19 +109,17 @@ export function ReactionBar({
         )}
       >
         <div role="group" aria-label="Pick a reaction" className="flex gap-1">
-          {REACTION_KINDS.map((k) => (
+          {REACTION_KINDS.map((k, i) => (
             <button
               key={k}
               type="button"
               aria-pressed={mine === k}
+              aria-label={REACTION_LABEL[k]}
+              title={REACTION_LABEL[k]}
               onClick={() => onReact(mine === k ? null : k)}
-              className={cn(
-                'flex w-14 flex-col items-center gap-0.5 rounded-md py-1.5 text-metadata font-semibold text-text-secondary transition',
-                'hover:bg-surface-sunken hover:text-text-primary aria-pressed:bg-warning aria-pressed:text-on-warning',
-              )}
+              className="grid size-11 place-items-center rounded-md transition-colors hover:bg-surface-sunken aria-pressed:bg-accent-soft"
             >
-              <ReactionArt kind={k} className="size-8" />
-              {REACTION_LABEL[k]}
+              <ReactionArt kind={k} className={cn('size-7 animate-emoji-in', STAGGER[i])} />
             </button>
           ))}
         </div>

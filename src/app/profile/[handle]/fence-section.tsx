@@ -10,6 +10,7 @@ import { cn } from '@/ui/cn';
 import { Fence, PostCard, PostCardComposer, PostCardReply } from '@/ui/howdy';
 import { Button, ConfirmationDialog, Dropdown, IconButton, useToast } from '@/ui/primitives';
 import { ReportDialog } from '@/ui/howdy/report-dialog';
+import { MoreIcon } from '@/ui/icons';
 import { uploadPhoto } from '@/ui/media/upload-photo';
 
 /** The parts of a page this component uses. Dates arrive as Date objects (first paint) or ISO strings (later pages). */
@@ -178,7 +179,7 @@ export function FenceSection({
         items={items}
         trigger={(p) => (
           <IconButton label={label} {...p}>
-            ⋯
+            <MoreIcon className="size-5" />
           </IconButton>
         )}
       />
@@ -190,7 +191,7 @@ export function FenceSection({
       ref={composerRef}
       id="nail"
       // In the feed it stands on the page on its own, so it gets a card of its own.
-      className={cn('flex scroll-mt-24 flex-col gap-2', feed && 'clay p-4 sm:p-5')}
+      className={cn('flex scroll-mt-24 flex-col gap-2', feed && 'clay p-4')}
     >
       {initial.review && (
         <p className="text-caption text-text-secondary">

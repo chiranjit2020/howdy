@@ -153,7 +153,7 @@ export function KitShowcase({ initialTheme }: { initialTheme: Theme | undefined 
 
       <Section title="Typography">
         <div className="flex flex-col gap-2">
-          <p className="text-display font-display text-text-primary">Display — Fraunces</p>
+          <p className="text-display font-display text-text-primary">Display — Google Sans</p>
           <p className="text-heading text-text-primary">Heading — Google Sans</p>
           <p className="text-title text-text-primary">Title — the quick brown fox</p>
           <p className="text-body text-text-primary">Body — Write a post on the wall. Short and sweet.</p>

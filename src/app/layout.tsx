@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Fraunces, Google_Sans, JetBrains_Mono } from 'next/font/google';
+import { Google_Sans, JetBrains_Mono } from 'next/font/google';
 import { cookies } from 'next/headers';
 import type { ReactNode } from 'react';
 import { ToastProvider } from '@/ui/primitives';
@@ -8,7 +8,6 @@ import './globals.css';
 
 const googleSans = Google_Sans({ subsets: ['latin'], variable: '--font-google-sans', display: 'swap' });
 const jetbrains = JetBrains_Mono({ subsets: ['latin'], variable: '--font-jetbrains', display: 'swap' });
-const fraunces = Fraunces({ subsets: ['latin'], variable: '--font-fraunces', display: 'swap' });
 export const metadata: Metadata = {
   title: { default: 'Howdy', template: '%s · Howdy' },
   description: 'A small-circle social world.',
@@ -28,11 +27,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   // Theme is read on the server so the first paint is already correct — no inline script (CSP-safe).
   const theme = parseTheme((await cookies()).get(THEME_COOKIE)?.value);
   return (
-    <html
-      lang="en"
-      data-theme={theme}
-      className={`${googleSans.variable} ${jetbrains.variable} ${fraunces.variable}`}
-    >
+    <html lang="en" data-theme={theme} className={`${googleSans.variable} ${jetbrains.variable}`}>
       <body>
         <a
           href="#main"

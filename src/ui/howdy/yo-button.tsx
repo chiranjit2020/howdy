@@ -17,13 +17,14 @@ export function YoButton({ count, active, onToggle, className, ...rest }: YoButt
     <button
       type="button"
       aria-pressed={active}
+      title="Wave"
       onClick={onToggle}
       className={cn(
-        'inline-flex min-h-11 items-center gap-1.5 rounded-pill border px-3.5 text-caption font-semibold transition duration-150',
-
+        'inline-flex min-h-11 items-center gap-1.5 rounded-pill px-3 text-caption font-semibold transition-colors duration-150 pointer-fine:min-h-8',
+        // The same look as a post's reaction button: violet tint when on, plain words when off.
         active
-          ? 'border-accent bg-warning text-on-warning shadow-clay-pressed'
-          : 'border-border bg-surface text-text-primary shadow-clay-sm',
+          ? 'bg-accent-soft text-accent'
+          : 'text-text-secondary hover:bg-surface-sunken hover:text-text-primary',
         className,
       )}
       {...rest}
@@ -31,7 +32,8 @@ export function YoButton({ count, active, onToggle, className, ...rest }: YoButt
       <span aria-hidden="true" className={cn('inline-flex', active && 'animate-yo-pop')}>
         <Glyph emoji="👋" />
       </span>
-      <span>Wave</span>
+      {/* The emoji says it on screen; the word is for screen readers. */}
+      <span className="sr-only">Wave</span>
       <span className="text-metadata tabular-nums" aria-label={`${count} ${count === 1 ? 'wave' : 'waves'}`}>
         {count}
       </span>

@@ -84,7 +84,7 @@ export function ShellSidebarNav({ items }: { items: ShellNavItem[] }) {
                 href={it.href}
                 aria-current={current ? 'page' : undefined}
                 className={cn(
-                  'flex min-h-11 items-center gap-3 rounded-md px-3 text-body font-medium no-underline transition-colors',
+                  'flex min-h-11 items-center gap-2.5 rounded-md px-3 text-caption font-medium no-underline transition-colors pointer-fine:min-h-9',
                   // The current page: the primary fill, with its icon in the other palette colour (the two together).
                   current
                     ? 'bg-primary font-semibold text-on-primary hover:no-underline'
@@ -189,7 +189,7 @@ export function ShellMoreMenu({
             type="button"
             {...props}
             aria-label={waiting > 0 ? `More pages, ${waiting} new` : 'More pages'}
-            className="relative grid size-11 place-items-center rounded-pill border border-border bg-surface text-heading text-text-primary shadow-clay-sm"
+            className="relative grid size-11 place-items-center rounded-pill pointer-fine:size-9 border border-border bg-surface text-heading text-text-primary shadow-clay-sm"
           >
             <MoreIcon className="size-6" />
             {waiting > 0 && (

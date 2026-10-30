@@ -34,16 +34,21 @@ function Svg(props: IconProps & { d: string; dots?: [number, number][] }) {
 }
 
 export const CloseIcon = (p: IconProps) => <Svg d="M6 6l12 12M18 6L6 18" {...p} />;
+// "More": three solid dots, larger than the hairline icons' dots, so the menu reads as a button at a glance.
 export const MoreIcon = (p: IconProps) => (
-  <Svg
-    d=""
-    dots={[
-      [5, 12],
-      [12, 12],
-      [19, 12],
-    ]}
+  <svg
+    viewBox="0 0 24 24"
+    width="1em"
+    height="1em"
+    fill="currentColor"
+    aria-hidden="true"
+    focusable="false"
     {...p}
-  />
+  >
+    <circle cx="5" cy="12" r="2" />
+    <circle cx="12" cy="12" r="2" />
+    <circle cx="19" cy="12" r="2" />
+  </svg>
 );
 export const StarIcon = (p: IconProps) => (
   <Svg d="M12 3l2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3l-5.6 2.9 1.1-6.2L3 9.6l6.2-.9z" {...p} />

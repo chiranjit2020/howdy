@@ -75,7 +75,7 @@ export function FreeToTalkPill({ state }: { state: FreeToTalkState }) {
         aria-controls={panelId}
         aria-label={spoken}
         onClick={() => setOpen((o) => !o)}
-        className="flex min-h-11 items-center gap-2 rounded-pill border border-border bg-surface px-3.5 text-caption font-semibold whitespace-nowrap text-text-primary shadow-clay-sm hover:bg-surface-sunken"
+        className="flex min-h-11 items-center gap-2 rounded-pill border border-border bg-surface px-3 text-caption pointer-fine:min-h-9 font-semibold whitespace-nowrap text-text-primary shadow-clay-sm hover:bg-surface-sunken"
       >
         <FreeDot on={state.mine !== null} />
         {label}
