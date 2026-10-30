@@ -60,6 +60,18 @@ describe('passwordSchema', () => {
     expect(ok(passwordSchema, 'Password123')).toBe(false);
     expect(ok(passwordSchema, 'QWERTYUIOP')).toBe(false);
   });
+  it('allows spaces inside a passphrase, never at the start or end of a new password', () => {
+    expect(ok(passwordSchema, 'chai at five on the porch')).toBe(true);
+    expect(ok(passwordSchema, ' chai at five on the porch')).toBe(false);
+    expect(ok(passwordSchema, 'chai at five on the porch ')).toBe(false);
+    expect(ok(passwordSchema, 'chai at five on the porch\t')).toBe(false);
+    expect(ok(passwordSchema, '\nchai at five on the porch')).toBe(false);
+  });
+  it('signing in refuses a space at the start or end too, but not inside', () => {
+    expect(ok(loginSchema, { identifier: 'ann', password: 'chai at five on the porch ' })).toBe(false);
+    expect(ok(loginSchema, { identifier: 'ann', password: ' chai at five on the porch' })).toBe(false);
+    expect(ok(loginSchema, { identifier: 'ann', password: 'chai at five on the porch' })).toBe(true);
+  });
 });
 
 describe('passwordMatchesIdentity', () => {

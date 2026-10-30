@@ -38,8 +38,9 @@ export function WhisperBubble({
         className={cn(
           'relative max-w-[85%] rounded-lg px-3 py-1.5',
           out
-            ? 'rounded-br-sm bg-accent-strong text-on-accent shadow-clay-sm'
-            : 'rounded-bl-sm bg-surface text-text-primary shadow-clay-sm',
+            ? // Mine: the theme's Sunflower with violet words (the user's call, 2026-10-31).
+              'rounded-br-sm bg-primary text-on-primary shadow-bubble'
+            : 'rounded-bl-sm bg-surface text-text-primary shadow-bubble',
         )}
       >
         <p className="text-caption font-normal break-words whitespace-pre-wrap">
@@ -57,7 +58,7 @@ export function WhisperBubble({
         <p
           className={cn(
             'absolute right-3 bottom-1 text-tab whitespace-nowrap',
-            out ? 'text-on-accent' : 'text-text-muted',
+            out ? 'text-on-primary' : 'text-text-muted',
             shown === 'failed' && 'font-bold',
           )}
         >

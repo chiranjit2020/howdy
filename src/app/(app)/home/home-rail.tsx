@@ -8,6 +8,7 @@ import { formatRelative, VerifiedBadge } from '@/ui/howdy';
 import type { LitPalRow } from '@/ui/howdy/free-to-talk';
 import { WhisperIcon } from '@/ui/icons';
 import { Avatar } from '@/ui/primitives';
+import { ChatLink } from './chat-dock';
 import { MemoriesCard } from './memories-card';
 import { FindFriendsActions, SwitchYoursOn } from './rail-actions';
 import { RailRequests } from './rail-requests';
@@ -50,14 +51,20 @@ function FriendLine({
         </p>
         <p className="truncate text-metadata text-text-secondary">{line}</p>
       </div>
-      <Link
-        href={`/messages/${person.handle}`}
+      <ChatLink
+        // Only what the window needs crosses to the browser.
+        person={{
+          handle: person.handle,
+          displayName: person.displayName,
+          portraitTint: person.portraitTint,
+          portraitUrl: person.portraitUrl,
+        }}
         aria-label={`Message to ${person.displayName}`}
         title="Message"
         className={iconButton}
       >
         <WhisperIcon className="size-5" />
-      </Link>
+      </ChatLink>
     </li>
   );
 }
@@ -192,8 +199,13 @@ export function HomeRail({
             <ul aria-label="Latest messages" className="-mx-2 flex flex-col">
               {threads.slice(0, SHOW.threads).map((t) => (
                 <li key={t.handle}>
-                  <Link
-                    href={`/messages/${t.handle}`}
+                  <ChatLink
+                    person={{
+                      handle: t.handle,
+                      displayName: t.displayName,
+                      portraitTint: t.portraitTint,
+                      portraitUrl: t.portraitUrl,
+                    }}
                     className="flex min-h-11 items-center gap-2.5 rounded-md px-2 py-1.5 no-underline hover:bg-surface-sunken hover:no-underline"
                   >
                     <Avatar name={t.displayName} tint={t.portraitTint} src={t.portraitUrl} size="sm" />
@@ -228,7 +240,7 @@ export function HomeRail({
                         <span className="sr-only"> unread</span>
                       </span>
                     )}
-                  </Link>
+                  </ChatLink>
                 </li>
               ))}
             </ul>

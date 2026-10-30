@@ -14,7 +14,15 @@ export type DomainEvent =
   /** A card is held for the Fence owner: Review turned on (`pending`) or the writer is Restricted (`held`). Deliberately alike. */
   | { type: 'card.waiting'; cardId: string; ownerId: string; authorId: string }
   | { type: 'card.approved'; cardId: string; ownerId: string; authorId: string; wasPending: boolean }
-  | { type: 'reply.created'; cardId: string; ownerId: string; cardAuthorId: string; authorId: string }
+  | {
+      type: 'reply.created';
+      cardId: string;
+      ownerId: string;
+      cardAuthorId: string;
+      authorId: string;
+      /** The reply starts with "@handle" of someone who already replied on this card: they are told too. */
+      mentionedId?: string | undefined;
+    }
   | { type: 'reply.waiting'; cardId: string; ownerId: string; authorId: string }
   /** A Whisper was stored. `held`: the sender is Restricted by the recipient, so it is never delivered or rung. */
   | {

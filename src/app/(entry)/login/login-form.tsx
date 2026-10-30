@@ -19,14 +19,14 @@ import { readSuspension, SuspendedNotice, type Suspension } from './suspended-no
 /** "Remember this device": a 30-day session when ticked, one that ends with the browser when not. */
 function RememberDevice({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
   return (
-    <div className="flex items-start justify-between gap-3">
+    <div className="flex items-center justify-between gap-3">
       <Checkbox
         name="remember"
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
         label={<span className="text-caption font-normal">Remember this device</span>}
       />
-      <span aria-hidden="true" className="pt-2 text-metadata text-text-secondary">
+      <span aria-hidden="true" className="text-metadata text-text-secondary">
         30 days
       </span>
     </div>
@@ -336,10 +336,8 @@ export function LoginForm({ google = false }: { google?: boolean } = {}) {
 
   return (
     <form onSubmit={onSubmit} noValidate className="flex flex-col gap-4">
-      <div className="flex flex-col gap-1 text-center">
-        <h1 className="text-body font-semibold text-text-primary">Welcome back</h1>
-        <p className="text-caption font-normal text-text-secondary">Log in to your Howdy account.</p>
-      </div>
+      {/* The logo and the Log in button already say what this is; the heading is for screen readers and the outline. */}
+      <h1 className="sr-only">Log in</h1>
       {error && (
         <FormMessage tone="error" focusKey={attempt}>
           {error}
@@ -399,7 +397,7 @@ export function LoginForm({ google = false }: { google?: boolean } = {}) {
       {google && <GoogleButton remember={remember} />}
       {canPasskey && (
         <Button variant="secondary" fullWidth loading={passkeyBusy} onClick={signInWithPasskey}>
-          {!passkeyBusy && <KeyIcon className="text-text-secondary" />}
+          {!passkeyBusy && <KeyIcon className="size-5" />}
           Log in with a passkey
         </Button>
       )}

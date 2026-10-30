@@ -3,7 +3,8 @@
 import { LEGAL_FACTS } from '@/shared/legal';
 import { Checkbox } from '../primitives';
 
-const LINK = 'font-medium text-auth-link underline underline-offset-4';
+// Plain weight, always underlined: one sentence, and the links still look like links.
+const LINK = 'text-auth-link underline underline-offset-2';
 
 /**
  * "I am 18 or older and agree to the Terms and the Privacy Policy." Used at Stake a Claim and on /agree. The links
@@ -35,17 +36,12 @@ export function TermsCheckbox({
           <a href="/privacy" target="_blank" rel="noopener" className={LINK}>
             Privacy Policy
           </a>
-          .
-        </span>
-      }
-      hint={
-        <>
-          Please also read the{' '}
+          , and I’ll read the{' '}
           <a href="/community-guidelines" target="_blank" rel="noopener" className={LINK}>
             Community Guidelines
           </a>
           .
-        </>
+        </span>
       }
     />
   );

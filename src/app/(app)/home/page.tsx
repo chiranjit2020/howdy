@@ -11,6 +11,9 @@ import { storyRing } from '@/modules/stories';
 import { listThreads } from '@/modules/whispers';
 import { clockOf } from '@/shared/calendar';
 import { portraitUrl } from '@/shared/portrait';
+import { getEnv } from '@/platform/config/env';
+import { liveChannelFor } from '@/platform/live-ping';
+import { ChatDockProvider } from './chat-dock';
 import { HomeRail, WhatsNew } from './home-rail';
 import { MemoriesCard } from './memories-card';
 import { StoriesStrip } from './stories-strip';
@@ -61,69 +64,72 @@ export default async function HomePage() {
   const free = lit.map((l) => ({ ...l.pal, note: l.note, untilLabel: clockOf(l.until) }));
 
   return (
-    // The feed at a comfortable reading width (672 px), centred in the space beside the menu; from xl (1280 px) up the
-    // right panel beside it. No side padding of its own: the shell's 15 px is the gutter, so the cards use the full phone
-    // width.
-    <div className="flex w-full py-4 xl:grid xl:grid-cols-[minmax(0,1fr)_18rem] xl:items-start xl:gap-6">
-      <main id="main" className="mx-auto flex w-full max-w-2xl min-w-0 flex-col gap-4">
-        {/* The page's name for screen readers and the outline; on screen the sidebar already says where you are. */}
-        <h1 className="sr-only">Home</h1>
-        <StoriesStrip
-          initial={ring}
-          me={{
-            handle: user.handle,
-            displayName: ranch.displayName,
-            portraitTint: ranch.portraitTint,
-            ...(photo ? { portraitUrl: portraitUrl(user.handle, photo) } : {}),
-          }}
-        />
-        {/* Below xl there is no right panel: the team's note and On this day come before the feed instead. */}
-        {announcement && (
-          <div className="xl:hidden">
-            <WhatsNew news={announcement} id="whats-new" />
-          </div>
-        )}
-        {today && (
-          <div className="xl:hidden">
-            <MemoriesCard memories={today} handle={user.handle} />
-          </div>
-        )}
-        {feed ? (
-          <FenceSection
-            feed
-            myHandle={user.handle}
-            signedIn
-            initial={{
-              ...feed,
-              // "What's on your mind?" posts to your own wall: its owner may always post there, with a photo, and
-              // nothing waits for approval. The feed itself is not one wall, so nobody is its owner.
-              isOwner: false,
-              canPost: true,
-              canAddPhoto: true,
-              review: false,
+    // The chat window (wide screens) opens from the right panel's Message buttons; it needs the same live settings as
+    // the Messages page.
+    <ChatDockProvider wsUrl={getEnv().WS_PUBLIC_URL} liveChannel={liveChannelFor(user.id)}>
+      {/* The feed at a comfortable reading width (672 px), centred in the space beside the menu; from xl (1280 px) up
+          the right panel beside it. No side padding of its own: the shell's 16 px is the gutter. */}
+      <div className="flex w-full py-4 xl:grid xl:grid-cols-[minmax(0,1fr)_18rem] xl:items-start xl:gap-6">
+        <main id="main" className="mx-auto flex w-full max-w-2xl min-w-0 flex-col gap-4">
+          {/* The page's name for screen readers and the outline; on screen the sidebar already says where you are. */}
+          <h1 className="sr-only">Home</h1>
+          <StoriesStrip
+            initial={ring}
+            me={{
+              handle: user.handle,
+              displayName: ranch.displayName,
+              portraitTint: ranch.portraitTint,
+              ...(photo ? { portraitUrl: portraitUrl(user.handle, photo) } : {}),
             }}
           />
-        ) : (
-          <p className="text-caption text-text-secondary">Friends’ posts could not be loaded just now.</p>
-        )}
-      </main>
+          {/* Below xl there is no right panel: the team's note and On this day come before the feed instead. */}
+          {announcement && (
+            <div className="xl:hidden">
+              <WhatsNew news={announcement} id="whats-new" />
+            </div>
+          )}
+          {today && (
+            <div className="xl:hidden">
+              <MemoriesCard memories={today} handle={user.handle} />
+            </div>
+          )}
+          {feed ? (
+            <FenceSection
+              feed
+              myHandle={user.handle}
+              signedIn
+              initial={{
+                ...feed,
+                // "What's on your mind?" posts to your own wall: its owner may always post there, with a photo, and
+                // nothing waits for approval. The feed itself is not one wall, so nobody is its owner.
+                isOwner: false,
+                canPost: true,
+                canAddPhoto: true,
+                review: false,
+              }}
+            />
+          ) : (
+            <p className="text-caption text-text-secondary">Friends’ posts could not be loaded just now.</p>
+          )}
+        </main>
 
-      {/* top-18 clears the sticky top bar (3.5rem) plus the page's own 16 px top padding. */}
-      <aside
-        aria-label="Your circle"
-        className="sticky top-18 hidden max-h-[calc(100dvh-5.5rem)] flex-col gap-4 overflow-y-auto xl:flex [&>*]:shrink-0"
-      >
-        <HomeRail
-          free={free}
-          threads={threads}
-          requests={lists.incoming}
-          friends={[...lists.posse].sort((a, b) => b.at.localeCompare(a.at))}
-          myLight={mine ? { untilLabel: clockOf(mine.until) } : null}
-          memories={today}
-          news={announcement}
-          handle={user.handle}
-        />
-      </aside>
-    </div>
+        {/* top-18 clears the sticky top bar (3.5rem) plus the page's own 16 px top padding. */}
+        <aside
+          aria-label="Your circle"
+          className="sticky top-18 hidden max-h-[calc(100dvh-5.5rem)] flex-col gap-4 overflow-y-auto xl:flex [&>*]:shrink-0"
+        >
+          <HomeRail
+            free={free}
+            threads={threads}
+            requests={lists.incoming}
+            friends={[...lists.posse].sort((a, b) => b.at.localeCompare(a.at))}
+            myLight={mine ? { untilLabel: clockOf(mine.until) } : null}
+            memories={today}
+            news={announcement}
+            handle={user.handle}
+          />
+        </aside>
+      </div>
+    </ChatDockProvider>
   );
 }

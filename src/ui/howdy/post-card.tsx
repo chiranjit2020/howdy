@@ -3,8 +3,10 @@
 import Link from 'next/link';
 import {
   Children,
+  createContext,
   Fragment,
   isValidElement,
+  useContext,
   useEffect,
   useId,
   useRef,
@@ -21,6 +23,7 @@ import { cn } from '../cn';
 import { CameraIcon, ReplyIcon, SendIcon } from '../icons';
 import { Avatar } from '../primitives/avatar';
 import { Button, buttonClasses } from '../primitives/button';
+import { IconButton } from '../primitives/icon-button';
 import { Input, Textarea } from '../primitives/field';
 import { FormMessage } from '../auth/form-parts';
 import type { PhotoUpload } from '../media/upload-photo';
@@ -42,6 +45,31 @@ export interface PostCardAuthor {
   trusted?: boolean;
 }
 
+/**
+ * Between a Post Card and what is inside it: the Reply link under each reply asks the card to start a reply addressed to
+ * that person ("@ravi "), and the card's reply box picks the words up. Absent where nobody may reply.
+ */
+const ReplyTo = createContext<{ replyTo: (handle: string) => void; draft: string } | null>(null);
+
+/** "@handle" at the very start of a reply, shown as a link to that person (the server reads the same pattern). */
+const LEADING_MENTION = /^@([a-z0-9_]{3,24})(?![a-z0-9_])/i;
+
+function ReplyBody({ body }: { body: string }) {
+  const m = LEADING_MENTION.exec(body);
+  if (!m) return <>{body}</>;
+  return (
+    <>
+      <Link
+        href={`/profile/${m[1]!.toLowerCase()}`}
+        className="font-semibold text-accent no-underline hover:underline"
+      >
+        {m[0]}
+      </Link>
+      {body.slice(m[0].length)}
+    </>
+  );
+}
+
 /** One reply under a Post Card (max 80 chars, enforced server-side): a speech bubble with its writer's name in it. */
 export function PostCardReply({
   author,
@@ -58,6 +86,7 @@ export function PostCardReply({
   /** Per-reply actions (e.g. a Remove button). */
   actions?: ReactNode;
 }) {
+  const reply = useContext(ReplyTo);
   return (
     <li className="flex gap-2.5">
       <Avatar
@@ -75,11 +104,23 @@ export function PostCardReply({
             <NameBadge verified={author.verified} trusted={author.trusted} className="ml-0.5" />{' '}
             <span className="text-metadata text-text-muted">@{author.handle}</span>
           </p>
-          <p className="text-caption break-words text-text-primary">{body}</p>
+          <p className="text-caption break-words text-text-primary">
+            <ReplyBody body={body} />
+          </p>
         </div>
         <div className="flex flex-wrap items-center gap-x-2 pl-3 text-metadata text-text-muted">
           <RelativeTime date={createdAt} />
           {notice && <span>· {notice}</span>}
+          {reply && (
+            <Button
+              variant="link"
+              size="sm"
+              aria-label={`Reply to ${author.name}`}
+              onClick={() => reply.replyTo(author.handle)}
+            >
+              Reply
+            </Button>
+          )}
           {actions}
         </div>
       </div>
@@ -140,7 +181,9 @@ export function PostCardComposer({
   disabled?: boolean;
 }) {
   const { max, label, placeholder, rows, submit: submitLabel } = COMPOSER[kind];
-  const [body, setBody] = useState('');
+  // A reply box opened by "Reply" under someone's reply starts with "@them " (it is remounted for each one).
+  const preset = useContext(ReplyTo)?.draft ?? '';
+  const [body, setBody] = useState(kind === 'reply' ? preset : '');
   const [busy, setBusy] = useState(false);
   const [photo, setPhoto] = useState<{ preview: string; id?: string } | undefined>();
   const [photoError, setPhotoError] = useState<string | undefined>();
@@ -181,7 +224,7 @@ export function PostCardComposer({
     }
   }
 
-  // A reply is one line (80 characters at most): the box and a Send link side by side, Enter sends. How much
+  // A reply is one line (80 characters at most): the box and a round Sunflower Send (paper plane) side by side, Enter sends. How much
   // is left shows only near the end.
   if (kind === 'reply') {
     const left = max - body.length;
@@ -198,9 +241,15 @@ export function PostCardComposer({
             autoComplete="off"
             className="min-w-0 flex-1"
           />
-          <Button type="submit" variant="link" size="sm" loading={busy} disabled={disabled || !trimmed}>
-            {submitLabel}
-          </Button>
+          <IconButton
+            type="submit"
+            tone="accent"
+            label={submitLabel}
+            disabled={disabled || busy || !trimmed}
+            aria-busy={busy || undefined}
+          >
+            <SendIcon className="size-4" />
+          </IconButton>
         </div>
         {left <= 15 && (
           <p
@@ -352,14 +401,21 @@ export function PostCard({
   const wantsFocus = useRef(false);
   const repliesRef = useRef<HTMLDivElement>(null);
   const repliesId = useId();
-  const focusReplyBox = () => repliesRef.current?.querySelector<HTMLElement>('input, textarea')?.focus();
+  // What the reply box starts with, and a counter that gives it a fresh box each time (so the words are re-read).
+  const [draft, setDraft] = useState({ text: '', n: 0 });
+  const focusReplyBox = () => {
+    const box = repliesRef.current?.querySelector<HTMLInputElement>('input, textarea');
+    if (!box) return;
+    box.focus();
+    box.setSelectionRange(box.value.length, box.value.length); // after "@ravi ", ready to type
+  };
 
-  // Reply on a closed card opens the replies; the reply box exists only after that render, so focus it then.
+  // The reply box exists (or is fresh) only after the render that opens it, so focus it then.
   useEffect(() => {
     if (!open || !wantsFocus.current) return;
     wantsFocus.current = false;
     focusReplyBox();
-  }, [open]);
+  }, [open, draft.n]);
 
   function startReply() {
     if (open) focusReplyBox();
@@ -369,6 +425,13 @@ export function PostCard({
     }
   }
 
+  /** "Reply" under someone's reply: open the box addressed to them. */
+  function replyTo(handle: string) {
+    wantsFocus.current = true;
+    setDraft((d) => ({ text: `@${handle} `, n: d.n + 1 }));
+    setOpen(true);
+  }
+
   const all = flatReplies(replies);
   const shown = open ? all : all.slice(-REPLY_PREVIEW);
   const hidden = all.length - shown.length;
@@ -376,97 +439,105 @@ export function PostCard({
   const repliesLabel = `${replyCount} ${replyCount === 1 ? 'reply' : 'replies'}`;
 
   return (
-    <article aria-label={`${noun} from ${author.name}`} className="clay flex flex-col">
-      <div
-        onDoubleClick={() => canReact && !myReaction && onReact('yo')}
-        className="flex flex-col gap-3 p-4 pb-3"
-      >
-        <header className="flex items-start gap-3">
-          <Avatar name={author.name} src={author.avatarUrl} {...(author.tint ? { tint: author.tint } : {})} />
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-body">
-              <Link href={`/profile/${author.handle}`} className={NAME_LINK}>
-                {author.name}
-              </Link>
-              <NameBadge verified={author.verified} trusted={author.trusted} className="ml-1" />
-            </p>
-            {/* The username stays in sight: names are not unique, the username is (and a name may not hold "@"). */}
-            <p className="text-metadata [overflow-wrap:anywhere] text-text-muted">
-              @{author.handle} · <RelativeTime date={createdAt} />
-              {wall && (
-                <>
-                  {' · on '}
-                  <Link href={`/profile/${wall.handle}`} className="font-semibold text-text-secondary">
-                    {wall.name}
-                  </Link>
-                  ’s wall
-                </>
-              )}
-            </p>
-          </div>
-          {stamp && (
-            <span className="rounded-sm border-2 border-dashed border-border-strong px-2 py-0.5 text-metadata text-text-secondary">
-              {stamp}
-            </span>
+    // The Reply links under replies exist only where this viewer may reply.
+    <ReplyTo.Provider value={replyComposer ? { replyTo, draft: draft.text } : null}>
+      <article aria-label={`${noun} from ${author.name}`} className="clay flex flex-col">
+        <div
+          onDoubleClick={() => canReact && !myReaction && onReact('yo')}
+          className="flex flex-col gap-3 p-4 pb-3"
+        >
+          <header className="flex items-start gap-3">
+            <Avatar
+              name={author.name}
+              src={author.avatarUrl}
+              {...(author.tint ? { tint: author.tint } : {})}
+            />
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-body">
+                <Link href={`/profile/${author.handle}`} className={NAME_LINK}>
+                  {author.name}
+                </Link>
+                <NameBadge verified={author.verified} trusted={author.trusted} className="ml-1" />
+              </p>
+              {/* The username stays in sight: names are not unique, the username is (and a name may not hold "@"). */}
+              <p className="text-metadata [overflow-wrap:anywhere] text-text-muted">
+                @{author.handle} · <RelativeTime date={createdAt} />
+                {wall && (
+                  <>
+                    {' · on '}
+                    <Link href={`/profile/${wall.handle}`} className="font-semibold text-text-secondary">
+                      {wall.name}
+                    </Link>
+                    ’s wall
+                  </>
+                )}
+              </p>
+            </div>
+            {stamp && (
+              <span className="rounded-sm border-2 border-dashed border-border-strong px-2 py-0.5 text-metadata text-text-secondary">
+                {stamp}
+              </span>
+            )}
+            {actions}
+          </header>
+          <p className="text-body break-words whitespace-pre-wrap text-text-primary">{body}</p>
+          {photo && (
+            <Img
+              src={photo.url}
+              width={photo.width}
+              height={photo.height}
+              alt={`Photo on this ${noun === 'Post' ? 'post' : 'card'} from ${author.name}`}
+              // Its own shape: a landscape fills the width, a portrait is as wide as it is (never letterboxed in grey).
+              className="h-auto max-h-[32rem] w-auto max-w-full self-start rounded-md"
+            />
           )}
-          {actions}
-        </header>
-        <p className="text-body break-words whitespace-pre-wrap text-text-primary">{body}</p>
-        {photo && (
-          <Img
-            src={photo.url}
-            width={photo.width}
-            height={photo.height}
-            alt={`Photo on this ${noun === 'Post' ? 'post' : 'card'} from ${author.name}`}
-            className="h-auto max-h-[28rem] w-full rounded-md bg-surface-sunken object-contain"
-          />
-        )}
-        {notice && <p className="text-caption font-semibold text-text-secondary">{notice}</p>}
-      </div>
-
-      {/* One row: your reaction, the picker and everyone's counts on the left, Reply on the right. How many replies
-          there are is said once, by "View all" under the post. */}
-      {(canReact || myReaction || replyComposer || totalReactions > 0) && (
-        <footer className="mx-4 flex items-center gap-1 border-t border-border py-1">
-          {canReact || myReaction ? (
-            <ReactionBar reactions={reactions} mine={myReaction} onReact={onReact} />
-          ) : (
-            totalReactions > 0 && <ReactionSummary reactions={reactions} />
-          )}
-          {replyComposer && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="ml-auto"
-              aria-expanded={open}
-              aria-controls={repliesId}
-              onClick={startReply}
-            >
-              <ReplyIcon className="size-5" /> Reply
-            </Button>
-          )}
-        </footer>
-      )}
-
-      {(shown.length > 0 || (open && replyComposer)) && (
-        <div ref={repliesRef} id={repliesId} className="flex flex-col gap-3 px-4 pt-1 pb-4">
-          {hidden > 0 && (
-            <button
-              type="button"
-              onClick={() => setOpen(true)}
-              className="self-start text-caption font-semibold text-text-secondary hover:text-text-primary hover:underline"
-            >
-              View all {repliesLabel}
-            </button>
-          )}
-          {shown.length > 0 && (
-            <ul aria-label={`Replies to this ${noun.toLowerCase()}`} className="flex flex-col gap-3">
-              {shown}
-            </ul>
-          )}
-          {open && replyComposer}
+          {notice && <p className="text-caption font-semibold text-text-secondary">{notice}</p>}
         </div>
-      )}
-    </article>
+
+        {/* One row: your reaction, the picker and everyone's counts on the left, Reply on the right. How many replies
+          there are is said once, by "View all" under the post. */}
+        {(canReact || myReaction || replyComposer || totalReactions > 0) && (
+          <footer className="mx-4 flex items-center gap-1 border-t border-border py-1">
+            {canReact || myReaction ? (
+              <ReactionBar reactions={reactions} mine={myReaction} onReact={onReact} />
+            ) : (
+              totalReactions > 0 && <ReactionSummary reactions={reactions} />
+            )}
+            {replyComposer && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="ml-auto"
+                aria-expanded={open}
+                aria-controls={repliesId}
+                onClick={startReply}
+              >
+                <ReplyIcon className="size-5" /> Reply
+              </Button>
+            )}
+          </footer>
+        )}
+
+        {(shown.length > 0 || (open && replyComposer)) && (
+          <div ref={repliesRef} id={repliesId} className="flex flex-col gap-3 px-4 pt-1 pb-4">
+            {hidden > 0 && (
+              <button
+                type="button"
+                onClick={() => setOpen(true)}
+                className="self-start text-caption font-semibold text-text-secondary hover:text-text-primary hover:underline"
+              >
+                View all {repliesLabel}
+              </button>
+            )}
+            {shown.length > 0 && (
+              <ul aria-label={`Replies to this ${noun.toLowerCase()}`} className="flex flex-col gap-3">
+                {shown}
+              </ul>
+            )}
+            {open && <Fragment key={draft.n}>{replyComposer}</Fragment>}
+          </div>
+        )}
+      </article>
+    </ReplyTo.Provider>
   );
 }

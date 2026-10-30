@@ -5,9 +5,10 @@ import { cn } from '../cn';
 
 type NativeProps = Omit<ComponentProps<'input'>, 'type'>;
 
+// Ticked: Sunflower with a violet tick (checkbox-tick) and a deep gold edge, so the box still shows on white.
 const BOX =
-  'size-5 mt-0.5 shrink-0 appearance-none border-[1.5px] border-border-strong bg-surface ' +
-  'transition-colors checked:border-accent checked:bg-accent aria-invalid:border-danger disabled:opacity-60';
+  'size-5 shrink-0 appearance-none border-[1.5px] border-border-strong bg-surface ' +
+  'transition-colors checked:border-focus checked:bg-primary aria-invalid:border-danger disabled:opacity-60';
 
 function ChoiceRow({
   label,
@@ -21,7 +22,14 @@ function ChoiceRow({
   id: string;
 }) {
   return (
-    <div className="flex min-h-11 items-start gap-3 py-1.5">
+    // One line: the box centred on it. With a hint below: the box beside the first line. 44 px rows for fingers; with a
+    // mouse only as tall as the text, so stacked boxes sit close together.
+    <div
+      className={cn(
+        'flex min-h-11 gap-3 py-1.5 pointer-fine:min-h-0 pointer-fine:py-1',
+        hint ? 'items-start [&>input]:mt-0.5' : 'items-center',
+      )}
+    >
       {children}
       <label htmlFor={id} className="flex flex-col text-body text-text-primary">
         {label}

@@ -73,7 +73,7 @@ test.describe('Invite links (production build, real CSP)', () => {
     await page.getByLabel('Password', { exact: true }).fill(friend.password);
     await page.getByRole('checkbox', { name: /I am 18 or older/ }).check();
     await page.getByRole('checkbox', { name: /I agree to the Terms/ }).check();
-    await page.getByRole('button', { name: /^Create free account/ }).click();
+    await page.getByRole('button', { name: /^Create account/ }).click();
     await page.getByRole('heading', { name: 'Check your email' }).waitFor();
     await confirmEmailVia(page, friend.email);
 

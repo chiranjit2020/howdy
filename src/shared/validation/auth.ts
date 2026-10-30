@@ -149,10 +149,17 @@ export const handleSchema = z
 export const isCommonPassword = (p: string): boolean => COMMON_PASSWORDS.has(p.toLowerCase());
 
 /** Password rules independent of who is signing up. */
+/** A space (or tab, line break) at the very start or end of a password. */
+const EDGE_SPACE = /^\s|\s$/;
+const EDGE_SPACE_MESSAGE = 'Remove the space at the start or end of your password.';
+
 export const passwordSchema = z
   .string()
   .min(PASSWORD_MIN, `Use at least ${PASSWORD_MIN} characters.`)
   .max(PASSWORD_MAX, `Use at most ${PASSWORD_MAX} characters.`)
+  // Spaces inside are welcome (passphrases); at the very start or end they are almost always a copy-paste slip that
+  // would lock the person out later. Signing in refuses them too (loginSchema): no account was ever set up with one.
+  .refine((p) => !EDGE_SPACE.test(p), EDGE_SPACE_MESSAGE)
   .refine((p) => !isCommonPassword(p), 'That password is too common. Pick something less guessable.');
 
 /** Extra check that needs the account context: the password must not just be the email or handle. */
@@ -216,7 +223,12 @@ export const loginSchema = z.object({
     .max(254)
     // Control characters (notably NUL, which Postgres refuses in text) can never be part of a real identifier.
     .refine((s) => !/[\u0000-\u001f\u007f]/.test(s), 'Enter your email or username.'),
-  password: z.string().min(1, 'Enter your password.').max(PASSWORD_MAX),
+  // Says only that the format is wrong, the same for every account, so it reveals nothing about who has one.
+  password: z
+    .string()
+    .min(1, 'Enter your password.')
+    .max(PASSWORD_MAX)
+    .refine((p) => !EDGE_SPACE.test(p), EDGE_SPACE_MESSAGE),
 });
 
 /**

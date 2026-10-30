@@ -124,7 +124,8 @@ export function ReactionBar({
           ))}
         </div>
       </Popover>
-      {summary && <ReactionSummary reactions={reactions} />}
+      {/* Counts only once there is something to count: a bare "0" says nothing. */}
+      {summary && REACTION_KINDS.some((k) => reactions[k] > 0) && <ReactionSummary reactions={reactions} />}
     </div>
   );
 }

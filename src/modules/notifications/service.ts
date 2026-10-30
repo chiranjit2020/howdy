@@ -223,6 +223,12 @@ export async function handleEvent(event: DomainEvent): Promise<void> {
       if (event.ownerId !== event.cardAuthorId) {
         await deliver(event.ownerId, event.authorId, 'reply_created', event.cardId);
       }
+      // "@ravi …": Ravi hears about it too, unless he is already told above (or is the one writing). The same Chime type,
+      // so the same read-time rules decide whether he may see it; the wording says it was a reply to him.
+      const m = event.mentionedId;
+      if (m && m !== event.authorId && m !== event.cardAuthorId && m !== event.ownerId) {
+        await deliver(m, event.authorId, 'reply_created', event.cardId);
+      }
       return;
     }
     case 'reply.waiting':
@@ -421,7 +427,10 @@ function describe(userId: string, s: Shown, myHandle: string): { text: string; h
         text:
           s.row.cardAuthorId === userId
             ? `${name} replied to your post.`
-            : `${name} replied to a post on your wall.`,
+            : s.row.fenceOwnerId === userId
+              ? `${name} replied to a post on your wall.`
+              : // Neither the post nor the wall is theirs: they were @mentioned in a reply.
+                `${name} replied to you on a post.`,
         href: fence,
       };
     case 'reply_waiting':

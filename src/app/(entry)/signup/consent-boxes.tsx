@@ -4,7 +4,8 @@ import { LEGAL_FACTS } from '@/shared/legal';
 import { AlertIcon } from '@/ui/icons';
 import { Checkbox } from '@/ui/primitives';
 
-const LINK = 'font-semibold text-accent-strong no-underline hover:underline';
+// Plain weight, always underlined: the sentence reads as one, and the links still look like links.
+const LINK = 'text-accent-strong underline underline-offset-2';
 
 /** Small and inline, like the fields' own errors (the box above it carries aria-invalid). */
 function BoxError({ children }: { children: string }) {
@@ -37,7 +38,7 @@ export function ConsentBoxes({
   termsError?: string | undefined;
 }) {
   return (
-    <div className="flex flex-col gap-1 border-t border-border pt-3">
+    <div className="flex flex-col border-t border-border pt-3">
       <Checkbox
         name="ageConfirm"
         checked={age}
@@ -62,20 +63,16 @@ export function ConsentBoxes({
             <a href="/terms" target="_blank" rel="noopener" className={LINK}>
               Terms of Service
             </a>{' '}
-            &amp;{' '}
+            and{' '}
             <a href="/privacy" target="_blank" rel="noopener" className={LINK}>
               Privacy Policy
             </a>
-          </span>
-        }
-        hint={
-          <>
-            Please also read the{' '}
+            , and I’ll read the{' '}
             <a href="/community-guidelines" target="_blank" rel="noopener" className={LINK}>
               Community Guidelines
             </a>
             .
-          </>
+          </span>
         }
       />
       {termsError && <BoxError>{termsError}</BoxError>}

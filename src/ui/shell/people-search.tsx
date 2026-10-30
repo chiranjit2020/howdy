@@ -133,7 +133,7 @@ export function PeopleSearch({ page = false, autoFocus = false }: { page?: boole
           }}
           onFocus={() => setOpen(true)}
           onKeyDown={onKey}
-          className="min-h-11 w-full rounded-pill border border-border bg-surface py-2 pr-4 pl-10 text-caption pointer-fine:min-h-9 text-text-primary placeholder:text-text-muted focus:border-focus focus:ring-2 focus:ring-focus/20"
+          className="min-h-11 w-full rounded-pill border border-border bg-surface py-2 pr-4 pl-10 text-caption pointer-fine:min-h-9 text-text-primary placeholder:text-text-muted focus:border-focus focus:ring-3 focus:ring-primary/45 focus:outline-none"
         />
       </label>
       {/* Read out as the results change; visible as the list's last line. */}

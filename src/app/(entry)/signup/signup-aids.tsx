@@ -74,7 +74,8 @@ export function useHandleStatus(handle: string): HandleStatus {
 }
 
 /**
- * The password rules as three chips, ticked off live: grey before anything is typed, then a red ✕ or a green ✓ each.
+ * The password rules as one line of plain words, ticked off live: grey before anything is typed, then a crimson ✕ or a
+ * green ✓ each (the mark too, not colour alone). No boxes: boxed rules looked like buttons to tap.
  * The short words fit a phone; screen readers hear the full rule and whether it is met. Not announced on every key
  * press (it is the field's hint).
  */
@@ -102,17 +103,13 @@ export function PasswordChecklist({
     },
   ];
   return (
-    <ul className="grid grid-cols-3 gap-1.5 pt-0.5">
+    <ul className="flex flex-wrap gap-x-4 gap-y-1">
       {rules.map((r) => (
         <li
           key={r.short}
           className={cn(
-            'flex min-w-0 items-center justify-center gap-1 rounded-md border px-1 py-1 text-metadata whitespace-nowrap transition-colors',
-            !typed
-              ? 'border-border bg-surface-sunken text-text-secondary'
-              : r.ok
-                ? 'border-success-text/30 bg-success/30 font-semibold text-success-text'
-                : 'border-danger/30 bg-danger-soft text-danger',
+            'flex items-center gap-1 text-metadata whitespace-nowrap transition-colors',
+            !typed ? 'text-text-secondary' : r.ok ? 'text-success-text' : 'text-danger',
           )}
         >
           <span aria-hidden="true">{!typed ? '•' : r.ok ? '✓' : '✕'}</span>

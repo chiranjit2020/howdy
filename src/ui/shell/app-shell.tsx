@@ -4,23 +4,15 @@ import type { PortraitTint } from '@/shared/validation/profile';
 import { BellIcon, SearchIcon } from '../icons';
 import { cn } from '../cn';
 import { HowdyLogo } from '../logo';
+import { buttonClasses } from '../primitives/button';
 import { AccountMenu } from './account-menu';
 import { FreeToTalkPill, type FreeToTalkState } from './free-to-talk-menu';
 import { PeopleSearch } from './people-search';
 import { ShellBottomNav, ShellMoreMenu, ShellSidebarNav, type ShellNavItem } from './nav';
 import { SiteFooter } from './site-footer';
 
-// The signed-out top bar's two ways in: equal widths, never wrapping, sized to fit beside the logo on a 320 px phone.
-// Width comes from the text (both grid columns match the wider pill), so nothing is squeezed on a 320 px phone.
-const AUTH_PILL =
-  'flex w-full min-h-12 flex-col items-center justify-center rounded-md px-2 py-1 leading-tight whitespace-nowrap ' +
-  'no-underline select-none transition-colors duration-150 ease-out active:shadow-clay-pressed ' +
-  'hover:no-underline sm:min-w-36';
-// The main label drops one size step on the narrowest phones (under 360 px) so both pills fit beside the logo.
-const AUTH_PILL_LABEL = 'text-metadata font-semibold min-[360px]:text-caption';
-const AUTH_PILL_SECONDARY =
-  'border border-border bg-surface text-text-primary shadow-clay-sm hover:bg-surface-sunken';
-const AUTH_PILL_PRIMARY = 'bg-primary text-on-primary shadow-clay-sm hover:bg-primary-hover';
+// The signed-out top bar's two ways in: ordinary buttons of equal width (the wider word sets both), one word each.
+const AUTH_BUTTON = 'w-full whitespace-nowrap hover:no-underline sm:min-w-24';
 
 export interface ShellMe {
   handle: string;
@@ -144,15 +136,16 @@ export function AppShell({
                 <ShellMoreMenu items={items} freeToTalk={freeToTalk} />
               </div>
             ) : (
-              // Two equal pills: the Howdy name, and underneath what it plainly means.
+              // One word each: the old second line ("Sign in", "Create account") only repeated the first.
               <div className="grid grid-cols-2 gap-2">
-                <Link href="/login" className={cn(AUTH_PILL, AUTH_PILL_SECONDARY)}>
-                  <span className={AUTH_PILL_LABEL}>Log in</span>
-                  <span className="text-metadata text-text-secondary">Sign in</span>
+                <Link
+                  href="/login"
+                  className={cn(buttonClasses({ variant: 'secondary', size: 'sm' }), AUTH_BUTTON)}
+                >
+                  Log in
                 </Link>
-                <Link href="/signup" className={cn(AUTH_PILL, AUTH_PILL_PRIMARY)}>
-                  <span className={AUTH_PILL_LABEL}>Sign up</span>
-                  <span className="text-metadata">Create account</span>
+                <Link href="/signup" className={cn(buttonClasses({ size: 'sm' }), AUTH_BUTTON)}>
+                  Sign up
                 </Link>
               </div>
             )}

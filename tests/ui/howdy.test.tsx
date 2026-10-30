@@ -147,6 +147,37 @@ describe('PostCard', () => {
     expect(screen.getByText('one')).toBeInTheDocument();
   });
 
+  it('"Reply" under a reply opens the box addressed to that person, cursor after the name', async () => {
+    const user = userEvent.setup();
+    render(card());
+    await user.click(screen.getByRole('button', { name: 'Reply to Rahul' }));
+    const box = screen.getByRole('textbox', { name: /Write a reply/ });
+    expect(box).toHaveValue('@rahul ');
+    expect(box).toHaveFocus();
+    expect((box as HTMLInputElement).selectionStart).toBe('@rahul '.length);
+  });
+
+  it('no Reply link under replies where the viewer may not reply', () => {
+    render(card({ replyComposer: undefined }));
+    expect(screen.queryByRole('button', { name: 'Reply to Rahul' })).not.toBeInTheDocument();
+  });
+
+  it('a reply that starts with @handle shows the name as a link to their profile', () => {
+    render(
+      card({
+        replies: (
+          <PostCardReply
+            author={{ name: 'Rahul', handle: 'rahul' }}
+            body="@sneha see you there"
+            createdAt={at}
+          />
+        ),
+      }),
+    );
+    expect(screen.getByRole('link', { name: '@sneha' })).toHaveAttribute('href', '/profile/sneha');
+    expect(screen.getByText(/see you there/)).toBeInTheDocument();
+  });
+
   it('counts replies wrapped in a fragment one by one', () => {
     const r = (b: string) => (
       <PostCardReply author={{ name: 'Rahul', handle: 'rahul' }} body={b} createdAt={at} />

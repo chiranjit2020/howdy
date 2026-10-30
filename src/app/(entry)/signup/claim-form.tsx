@@ -328,7 +328,7 @@ export function ClaimForm({
           'Creating account…'
         ) : (
           <>
-            Create free account
+            Create account
             <ArrowRightIcon className="size-4" />
           </>
         )}

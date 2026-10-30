@@ -89,8 +89,8 @@ const CONTROL =
   'w-full rounded-md border border-border-strong/50 bg-surface px-3 py-2 text-body text-text-primary ' +
   'placeholder:text-text-muted transition-colors hover:border-border-strong disabled:cursor-not-allowed ' +
   'disabled:bg-surface-sunken disabled:text-text-muted ' +
-  // A thin ring while typing, on top of the focus outline (which keyboard users still get).
-  'focus:border-focus focus:ring-2 focus:ring-focus/20 ' +
+  // Typing: a gold border (3:1, the visible cue) in a soft sunflower glow; no second outline on top.
+  'focus:border-focus focus:ring-3 focus:ring-primary/45 focus:outline-none ' +
   'aria-invalid:border-danger aria-invalid:focus:ring-danger/20';
 
 // Sign-up's boxes are the same white boxes as Log in (2026-10-30: the tinted ones made the two pages look unrelated).

@@ -54,6 +54,8 @@ export const StarIcon = (p: IconProps) => (
   <Svg d="M12 3l2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3l-5.6 2.9 1.1-6.2L3 9.6l6.2-.9z" {...p} />
 );
 export const ChevronDownIcon = (p: IconProps) => <Svg d="M6 9l6 6 6-6" {...p} />;
+// Open in full: two corners pulling apart (the chat window's "open the full chat").
+export const ExpandIcon = (p: IconProps) => <Svg d="M14 4h6v6M20 4l-7 7M10 20H4v-6M4 20l7-7" {...p} />;
 // Reply: an empty speech bubble (Messages' bubble has two lines of text in it, so the two never read alike).
 export const ReplyIcon = (p: IconProps) => (
   <Svg
@@ -157,8 +159,13 @@ export const EyeOffIcon = (p: IconProps) => (
     {...p}
   />
 );
+// A key: a closed round head with a hole, the shaft, two teeth (the old head was an open arc and read as broken).
 export const KeyIcon = (p: IconProps) => (
-  <Svg d="M15.5 7.5a3.5 3.5 0 1 1-3.4 4.3L4 20M7 17l2 2M9 15l2 2" {...p} />
+  <Svg
+    d="M8.5 4a4.5 4.5 0 1 0 0 9 4.5 4.5 0 1 0 0-9zM11.7 11.7L20.5 20.5M17.5 17.5l2.5-2.5M14.8 14.8l2-2"
+    dots={[[8.5, 8.5]]}
+    {...p}
+  />
 );
 export const PlusIcon = (p: IconProps) => <Svg d="M12 5v14M5 12h14" {...p} />;
 export const PauseIcon = (p: IconProps) => <Svg d="M9 5v14M15 5v14" {...p} />;

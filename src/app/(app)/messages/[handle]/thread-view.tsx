@@ -20,8 +20,9 @@ import { apiRequest, postJson } from '@/ui/auth/api';
 import { FormMessage } from '@/ui/auth/form-parts';
 import { WhisperBubble } from '@/ui/howdy';
 import { ReportDialog } from '@/ui/howdy/report-dialog';
-import { MoreIcon, SendIcon } from '@/ui/icons';
-import { Avatar, Button, ConfirmationDialog, Dropdown, Textarea } from '@/ui/primitives';
+import { cn } from '@/ui/cn';
+import { CloseIcon, ExpandIcon, MoreIcon, SendIcon } from '@/ui/icons';
+import { Avatar, Button, ConfirmationDialog, Dropdown, IconButton, Input, Textarea } from '@/ui/primitives';
 
 type Msg = WhisperMessage & { state?: 'sending' | 'failed'; error?: string };
 type Live = 'live' | 'connecting' | 'offline' | 'ended' | 'off';
@@ -54,7 +55,13 @@ export function ThreadView({
   wsUrl,
   liveChannel,
   initialDraft,
+  dock,
 }: {
+  /**
+   * Shown in Home's chat window instead of the Messages page: compact, the messages scroll inside it, a one-line box,
+   * and Close / Open full chat in the header. Everything else (sending, live updates, Seen, flag, burn) is the same.
+   */
+  dock?: { onClose: () => void } | undefined;
   handle: string;
   displayName: string;
   portraitTint: PortraitTint;
@@ -93,6 +100,7 @@ export function ThreadView({
   const lastSeq = useRef(initial.messages.reduce((n, m) => Math.max(n, m.seq), 0));
   const readTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const bottom = useRef<HTMLDivElement>(null);
+  const log = useRef<HTMLDivElement>(null);
 
   /** Add server messages (from any path) without ever duplicating: matched by id, or by the client id of my own optimistic copy. */
   const merge = useCallback((incoming: WhisperMessage[]) => {
@@ -209,8 +217,10 @@ export function ThreadView({
   }, [markRead]);
 
   useEffect(() => {
-    bottom.current?.scrollIntoView({ block: 'end' });
-  }, [messages.length]);
+    // In the chat window the messages scroll inside it: move that, never the page behind it.
+    if (dock && log.current) log.current.scrollTop = log.current.scrollHeight;
+    else bottom.current?.scrollIntoView({ block: 'end' });
+  }, [messages.length, dock]);
 
   // ─── sending ───────────────────────────────────────────────────────────────────────────────────────────────────────
   function request(type: string, d: unknown): Promise<Frame> {
@@ -275,7 +285,7 @@ export function ThreadView({
     await deliver(clientId, body);
   }
 
-  function onKey(e: KeyboardEvent<HTMLTextAreaElement>) {
+  function onKey(e: KeyboardEvent<HTMLTextAreaElement | HTMLInputElement>) {
     if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
       e.preventDefault();
       void submit();
@@ -302,8 +312,10 @@ export function ThreadView({
     setBusy('burn');
     const res = await apiRequest('DELETE', `/api/whispers/${handle}`);
     setBusy(undefined);
-    if (res.ok) router.push('/messages');
-    else setError(res.error?.message ?? 'Could not burn the thread.');
+    if (res.ok) {
+      if (dock) dock.onClose();
+      else router.push('/messages');
+    } else setError(res.error?.message ?? 'Could not burn the thread.');
     setBurning(false);
   }
 
@@ -321,11 +333,26 @@ export function ThreadView({
     <>
       {/* Who you are talking to, and the thread's rarer actions behind one ⋯ button (as on a Porch), so the name
           keeps its width and nothing sits there unexplained. Not named "More": the phone top bar has that one. */}
-      <header className="flex items-center gap-3">
-        <Avatar name={displayName} tint={portraitTint} src={portraitUrl} />
+      <header className={cn('flex items-center', dock ? 'gap-2.5' : 'gap-3')}>
+        <Avatar
+          name={displayName}
+          tint={portraitTint}
+          src={portraitUrl}
+          {...(dock ? { size: 'sm' as const } : {})}
+        />
         <div className="min-w-0 flex-1">
-          <h1 className="text-title [overflow-wrap:anywhere] text-text-primary">{displayName}</h1>
-          <p className="text-caption [overflow-wrap:anywhere] text-text-secondary">
+          {/* On Home the page already has its h1; the window is a section of it. */}
+          {dock ? (
+            <h2 className="truncate text-caption font-semibold text-text-primary">{displayName}</h2>
+          ) : (
+            <h1 className="text-title [overflow-wrap:anywhere] text-text-primary">{displayName}</h1>
+          )}
+          <p
+            className={cn(
+              '[overflow-wrap:anywhere] text-text-secondary',
+              dock ? 'truncate text-metadata' : 'text-caption',
+            )}
+          >
             <Link href={`/profile/${handle}`} className="text-text-secondary no-underline hover:underline">
               @{handle}
             </Link>
@@ -339,7 +366,10 @@ export function ThreadView({
               type="button"
               aria-label="Thread options"
               title="Thread options"
-              className="-mr-2 inline-flex size-11 shrink-0 items-center justify-center rounded-pill text-title text-text-secondary hover:bg-surface-sunken"
+              className={cn(
+                'inline-flex size-11 shrink-0 items-center justify-center rounded-pill text-title text-text-secondary hover:bg-surface-sunken',
+                dock ? 'pointer-fine:size-8' : '-mr-2',
+              )}
               {...p}
             >
               <MoreIcon />
@@ -359,6 +389,27 @@ export function ThreadView({
             { id: 'burn', label: 'Burn thread…', danger: true, onSelect: () => setBurning(true) },
           ]}
         />
+        {dock && (
+          <>
+            <Link
+              href={`/messages/${handle}`}
+              aria-label={`Open the full chat with ${displayName}`}
+              title="Open full chat"
+              className="inline-flex size-11 shrink-0 items-center justify-center rounded-pill text-text-secondary no-underline hover:bg-surface-sunken hover:text-text-primary pointer-fine:size-8"
+            >
+              <ExpandIcon className="size-4" />
+            </Link>
+            <button
+              type="button"
+              aria-label={`Close the chat with ${displayName}`}
+              title="Close"
+              onClick={dock.onClose}
+              className="inline-flex size-11 shrink-0 items-center justify-center rounded-pill text-text-secondary hover:bg-surface-sunken hover:text-text-primary pointer-fine:size-8"
+            >
+              <CloseIcon className="size-4" />
+            </button>
+          </>
+        )}
       </header>
       {picking && (
         <div className="flex items-center gap-3 rounded-lg bg-surface-sunken p-3">
@@ -372,8 +423,15 @@ export function ThreadView({
         </div>
       )}
       {flagged && <FormMessage tone="success">Thanks. We will take a look. They are not told.</FormMessage>}
-      <p role="status" className="text-metadata text-text-secondary">
-        {/* Without our own socket, the Ably doorbell (ADR-035) is what makes the thread live. */}
+      {/* Without our own socket, the Ably doorbell (ADR-035) is what makes the thread live. The window only speaks up
+          when something is wrong (reconnecting, signed out); the page always says how it is connected. */}
+      <p
+        role="status"
+        className={cn(
+          'text-metadata text-text-secondary',
+          dock && (live === 'offline' || live === 'ended' ? '' : 'sr-only'),
+        )}
+      >
         {live === 'off' && ring !== 'off' ? status[ring] : status[live]}
       </p>
 
@@ -390,10 +448,16 @@ export function ThreadView({
       )}
 
       <div
+        ref={log}
         role="log"
         aria-live="polite"
         aria-label={`Messages with ${displayName}`}
-        className="flex min-h-40 flex-col gap-1.5 rounded-lg bg-surface-sunken p-2.5"
+        className={cn(
+          // Soft Sunflower, like reply bubbles under posts: conversations share one warm surface.
+          // …sunk in a soft well, so the bubbles in it sit up off the page.
+          'flex flex-col gap-1.5 rounded-lg bg-primary-soft p-2.5 shadow-well',
+          dock ? 'min-h-0 flex-1 overflow-y-auto' : 'min-h-40',
+        )}
       >
         {messages.length === 0 && (
           <p className="m-auto py-8 text-center text-caption text-text-secondary">
@@ -436,21 +500,41 @@ export function ThreadView({
       </div>
 
       {error && <FormMessage tone="error">{error}</FormMessage>}
-      <form onSubmit={submit} className="flex flex-col gap-2">
-        <Textarea
-          label={`Message to ${displayName}`}
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          onKeyDown={onKey}
-          maxLength={LIMITS.WHISPER_MAX}
-          showCount
-          rows={2}
-          placeholder="Just between the two of you…"
-        />
-        <Button type="submit" disabled={!text.trim()} className="self-end">
-          Send <SendIcon className="size-4" />
-        </Button>
-      </form>
+      {dock ? (
+        // The window's box: one line, Enter sends, a round Sunflower Send (paper plane) beside it.
+        <form onSubmit={submit} className="flex items-center gap-2">
+          <Input
+            label={`Message to ${displayName}`}
+            hideLabel
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            onKeyDown={onKey}
+            maxLength={LIMITS.WHISPER_MAX}
+            placeholder="Message…"
+            autoComplete="off"
+            className="min-w-0 flex-1"
+          />
+          <IconButton type="submit" tone="accent" label="Send" disabled={!text.trim()}>
+            <SendIcon className="size-4" />
+          </IconButton>
+        </form>
+      ) : (
+        <form onSubmit={submit} className="flex flex-col gap-2">
+          <Textarea
+            label={`Message to ${displayName}`}
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            onKeyDown={onKey}
+            maxLength={LIMITS.WHISPER_MAX}
+            showCount
+            rows={2}
+            placeholder="Just between the two of you…"
+          />
+          <IconButton type="submit" tone="accent" label="Send" disabled={!text.trim()} className="self-end">
+            <SendIcon className="size-4" />
+          </IconButton>
+        </form>
+      )}
 
       <ReportDialog
         open={flagId !== undefined}

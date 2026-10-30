@@ -1,4 +1,4 @@
-import { cardReplies, media, postCards, yos } from '@db/schema';
+import { cardReplies, media, postCards, users, yos } from '@db/schema';
 import { and, asc, count, desc, eq, gt, inArray, isNull, lt, or, sql } from 'drizzle-orm';
 import { canFence, holdFor, type Actor, type FenceContext, type FenceResource } from '@/modules/authz';
 import { enforceNewAccountLimit, shouldHoldForOthers } from '@/modules/moderation';
@@ -633,6 +633,25 @@ export async function postCard(
 }
 
 /** Write a reply on the back of a published card. Restricted writers' replies are held, without being told. */
+/** "@handle" at the very start of a reply (the Reply link under a reply writes it there). */
+const LEADING_MENTION = /^@([a-z0-9_]{3,24})(?![a-z0-9_])/i;
+
+/**
+ * Who a reply answers: the person whose "@handle" it starts with, but only if they already replied on this card. Typing
+ * anyone else's handle tells nobody, so a reply cannot be used to ping strangers.
+ */
+async function mentionedReplier(cardId: string, body: string): Promise<string | undefined> {
+  const handle = LEADING_MENTION.exec(body)?.[1]?.toLowerCase();
+  if (!handle) return undefined;
+  const [row] = await getDb()
+    .select({ id: cardReplies.authorId })
+    .from(cardReplies)
+    .innerJoin(users, eq(users.id, cardReplies.authorId))
+    .where(and(eq(cardReplies.cardId, cardId), eq(cardReplies.status, 'published'), eq(users.handle, handle)))
+    .limit(1);
+  return row?.id;
+}
+
 export async function postReply(userId: string, cardId: string, body: string): Promise<ReplyView> {
   await enforceRateLimit(`fence:reply:${userId}`, RATE.replyUser);
   await enforceNewAccountLimit(userId, 'reply');
@@ -669,6 +688,7 @@ export async function postReply(userId: string, cardId: string, body: string): P
           ownerId: fence.ownerId,
           cardAuthorId: card.authorId,
           authorId: userId,
+          mentionedId: await mentionedReplier(card.id, body),
         }
       : { type: 'reply.waiting', cardId: card.id, ownerId: fence.ownerId, authorId: userId },
   );

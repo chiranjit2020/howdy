@@ -112,7 +112,7 @@ test.describe('authentication journey (production build, real CSP, real cookies)
     const ctx = await newContext(browser);
     const page = await ctx.newPage();
     await page.goto('/signup');
-    await page.getByRole('button', { name: /^Create free account/ }).click();
+    await page.getByRole('button', { name: /^Create account/ }).click();
     // Email comes first on the form, so it is where you land.
     await expect(page.getByLabel('Email address')).toBeFocused();
     await expect(page.getByLabel('Username')).toHaveAttribute('aria-invalid', 'true');
@@ -121,7 +121,7 @@ test.describe('authentication journey (production build, real CSP, real cookies)
     await expect(page.getByLabel('Username')).toHaveValue('x_howdy');
     await page.getByLabel('Username').fill('admin');
     await page.getByLabel('Password', { exact: true }).fill('short');
-    await page.getByRole('button', { name: /^Create free account/ }).click();
+    await page.getByRole('button', { name: /^Create account/ }).click();
     await expect(page.getByText('That username is reserved.')).toBeVisible();
     await expect(page.getByText(/at least 10 characters/i).first()).toBeVisible();
 
@@ -159,7 +159,7 @@ test.describe('authentication journey (production build, real CSP, real cookies)
     await page.getByLabel('Password', { exact: true }).fill('correct horse battery staple');
     await page.getByRole('checkbox', { name: /I am 18 or older/ }).check();
     await page.getByRole('checkbox', { name: /I agree to the Terms/ }).check();
-    await page.getByRole('button', { name: /^Create free account/ }).click();
+    await page.getByRole('button', { name: /^Create account/ }).click();
     await expect(email).toBeFocused();
     expect(posts).toEqual([]);
 
@@ -422,7 +422,7 @@ test.describe('signed-out pages: accessibility and layout in a real browser', ()
       expect(boxes[0]!.width).toBeCloseTo(boxes[1]!.width, 0);
       for (const box of boxes) expect(box!.x + box!.width).toBeLessThanOrEqual(width);
       for (const pill of pills) {
-        // Each line of text stays whole (no wrapping, no clipped overflow).
+        // The word stays whole (no wrapping, no clipped overflow).
         const clipped = await pill.evaluate((el) =>
           [...el.querySelectorAll('span')].some(
             (s) => s.scrollWidth > s.clientWidth + 1 || s.getClientRects().length > 1,
