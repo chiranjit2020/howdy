@@ -29,7 +29,7 @@ export function YoButton({ count, active, onToggle, className, ...rest }: YoButt
       {...rest}
     >
       <span aria-hidden="true" className={cn('inline-flex', active && 'animate-yo-pop')}>
-        <Glyph emoji="🤘" />
+        <Glyph emoji="👋" />
       </span>
       <span>Wave</span>
       <span className="text-metadata tabular-nums" aria-label={`${count} ${count === 1 ? 'wave' : 'waves'}`}>

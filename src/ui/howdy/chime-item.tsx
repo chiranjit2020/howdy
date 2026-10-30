@@ -25,7 +25,7 @@ const ICON: Record<ChimeType, string> = {
   POST_CARD_CREATED: '📮',
   POST_CARD_REPLIED: '✍️',
   TRACK_CREATED: '👣',
-  YO_DROPPED: '🤘',
+  YO_DROPPED: '👋',
   MARK_AWARDED: '💎',
   TRIBUTE_CREATED: '📜',
   WHISPER_RECEIVED: '🤫',

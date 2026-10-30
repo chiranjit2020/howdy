@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
+import { ReactionEmoji } from '@/ui/art/emoji';
 import { Art, type ArtName } from '@/ui/art/glyph';
 import { Img } from '@/ui/art/img';
 import { cn } from '@/ui/cn';
@@ -158,12 +159,12 @@ function PhonePeek() {
             Chai on the porch at 6? Bring the guitar, I’ll bring the samosas.
           </p>
           <div className="flex items-center gap-2">
-            {(['react-yo', 'react-fire', 'react-love', 'react-laugh'] as const).map((r, i) => (
+            {(['yo', 'fire', 'love', 'laugh'] as const).map((r, i) => (
               <span
                 key={r}
                 className="flex items-center gap-1 rounded-pill bg-surface-sunken px-2 py-1 text-metadata font-semibold text-text-secondary"
               >
-                <Art name={r} size="free" className="size-5" loading="eager" />
+                <ReactionEmoji kind={r} loading="eager" />
                 {[4, 3, 6, 2][i]}
               </span>
             ))}

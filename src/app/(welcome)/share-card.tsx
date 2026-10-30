@@ -13,15 +13,16 @@ export const SHARE_CARD_SIZE = { width: 1200, height: 630 };
 const CREAM = '#f8f7ff';
 const INK = '#100b00';
 const SLATE = '#4a4540';
-const ACCENT_STRONG = '#1a063f';
 const ACCENT_SOFT = '#ebe6f8';
-const ON_ACCENT = '#ffffff';
+// The primary button: Sunflower with Royal Violet on it, like every primary button in the app.
+const PRIMARY = '#f8cf35';
+const ON_PRIMARY = '#260959';
 
 const font = (file: string) => readFile(path.join(process.cwd(), 'assets', 'fonts', file));
 
 async function art(file: string): Promise<string> {
   const bytes = await readFile(path.join(process.cwd(), 'public', file));
-  return `data:image/png;base64,${bytes.toString('base64')}`;
+  return `data:image/${file.endsWith('.svg') ? 'svg+xml' : 'png'};base64,${bytes.toString('base64')}`;
 }
 
 export async function shareCard(kicker: string = 'A small-circle social world'): Promise<ImageResponse> {
@@ -32,7 +33,7 @@ export async function shareCard(kicker: string = 'A small-circle social world'):
       'art/sun.png',
       'art/cloud.png',
       'art/mark-gem.png',
-      'art/react-yo.png',
+      'emoji/fluent/yo.svg',
     ].map(art),
   );
   const [fraunces, googleSans] = await Promise.all([font('fraunces-600.ttf'), font('google-sans-500.ttf')]);
@@ -104,8 +105,8 @@ export async function shareCard(kicker: string = 'A small-circle social world'):
           display: 'flex',
           marginTop: 36,
           alignSelf: 'flex-start',
-          background: ACCENT_STRONG,
-          color: ON_ACCENT,
+          background: PRIMARY,
+          color: ON_PRIMARY,
           fontSize: 30,
           fontWeight: 500,
           padding: '16px 34px',

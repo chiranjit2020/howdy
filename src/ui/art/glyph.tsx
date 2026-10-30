@@ -1,4 +1,6 @@
+import { reactionOfEmoji } from '@/shared/reactions';
 import { cn } from '../cn';
+import { ReactionEmoji } from './emoji';
 import { Img } from './img';
 
 /**
@@ -23,17 +25,12 @@ const FILES = {
   sparkle: { w: 65, h: 69 },
   star: { w: 96, h: 101 },
   sun: { w: 120, h: 98 },
-  /** The Vibe Matrix's five Marks and the Post Card reactions (only Yo is used so far). */
+  /** The Vibe Matrix's five Marks. (Reactions are Fluent Emoji now: see ./emoji.tsx.) */
   'mark-gem': { w: 160, h: 160 },
   'mark-pure': { w: 160, h: 160 },
   'mark-chill': { w: 160, h: 160 },
   'mark-sharp': { w: 160, h: 160 },
   'mark-bold': { w: 160, h: 160 },
-  'react-yo': { w: 160, h: 160 },
-  'react-laugh': { w: 160, h: 160 },
-  'react-fire': { w: 160, h: 160 },
-  'react-popcorn': { w: 160, h: 160 },
-  'react-love': { w: 160, h: 160 },
   /** The blue badge next to the Howdy team account's name. */
   verified: { w: 96, h: 96 },
   /** Navigation (cut from the user's icon sheet by .dev/cut-nav.mjs; 96 px = sharp at 32 px on a 3x phone). */
@@ -76,7 +73,6 @@ const BY_EMOJI: Record<string, ArtName> = {
   '📮': 'mailbox',
   '🤫': 'chat',
   '🤝': 'friends',
-  '🤘': 'react-yo',
   '📜': 'note',
   '🔔': 'sparkle',
   '💎': 'mark-gem',
@@ -121,7 +117,7 @@ export function Art({
   );
 }
 
-/** An emoji, drawn as clay artwork when we have it. */
+/** An emoji, drawn as a Fluent reaction emoji or clay artwork when we have one. */
 export function Glyph({
   emoji,
   size = 'inline',
@@ -131,6 +127,8 @@ export function Glyph({
   size?: GlyphSize;
   className?: string;
 }) {
+  const reaction = reactionOfEmoji(emoji);
+  if (reaction) return <ReactionEmoji kind={reaction} className={cn(SIZE[size], className)} />;
   const name = BY_EMOJI[emoji];
   if (!name) return <span aria-hidden="true">{emoji}</span>;
   return <Art name={name} size={size} {...(className ? { className } : {})} />;

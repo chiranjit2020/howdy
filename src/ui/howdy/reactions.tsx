@@ -1,29 +1,18 @@
 'use client';
 
+import { REACTIONS } from '@/shared/reactions';
 import { REACTION_KINDS, type ReactionKind } from '@/shared/validation/fence';
-import { Art, type ArtName } from '../art/glyph';
+import { ReactionEmoji } from '../art/emoji';
 import { cn } from '../cn';
 import { ReactIcon } from '../icons';
 import { Popover } from '../primitives/popover';
 
-export const REACTION_LABEL: Record<ReactionKind, string> = {
-  yo: 'Wave',
-  laugh: 'Laugh',
-  fire: 'Fire',
-  popcorn: 'Popcorn',
-  love: 'Love',
-};
-
-const REACTION_ART: Record<ReactionKind, ArtName> = {
-  yo: 'react-yo',
-  laugh: 'react-laugh',
-  fire: 'react-fire',
-  popcorn: 'react-popcorn',
-  love: 'react-love',
-};
+export const REACTION_LABEL = Object.fromEntries(
+  REACTION_KINDS.map((k) => [k, REACTIONS[k].label]),
+) as Record<ReactionKind, string>;
 
 export function ReactionArt({ kind, className }: { kind: ReactionKind; className?: string }) {
-  return <Art name={REACTION_ART[kind]} size="free" className={cn('size-5', className)} />;
+  return <ReactionEmoji kind={kind} {...(className ? { className } : {})} />;
 }
 
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
