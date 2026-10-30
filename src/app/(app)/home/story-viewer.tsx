@@ -160,6 +160,19 @@ export function StoryViewer({
     >
       <div className="relative flex h-full flex-col">
         {story && (
+          // The whole photo, never cropped, on a soft blurred copy of itself: the frame is always full, and what the
+          // writer saw while making it is exactly what is shown here.
+          <Img
+            key={`${story.id}-backdrop`}
+            src={story.photo.url}
+            width={story.photo.width}
+            height={story.photo.height}
+            alt=""
+            loading="eager"
+            className="pointer-events-none absolute inset-0 size-full scale-110 object-cover opacity-60 blur-2xl select-none"
+          />
+        )}
+        {story && (
           <Img
             key={story.id}
             src={story.photo.url}

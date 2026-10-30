@@ -158,6 +158,8 @@ function AddStory({ file, onClose, onPosted }: { file: File; onClose: () => void
   const [error, setError] = useState<string | undefined>();
   const [busy, setBusy] = useState(false);
   const uploading = !photoId && !error;
+  // Each attempt at uploading the photo (a failed one can be tried again without picking the photo again).
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     let current = true;
@@ -169,7 +171,12 @@ function AddStory({ file, onClose, onPosted }: { file: File; onClose: () => void
     return () => {
       current = false;
     };
-  }, [file]);
+  }, [file, attempt]);
+
+  function retryUpload() {
+    setError(undefined);
+    setAttempt((n) => n + 1);
+  }
 
   async function share(e: FormEvent) {
     e.preventDefault();
@@ -198,16 +205,26 @@ function AddStory({ file, onClose, onPosted }: { file: File; onClose: () => void
         noValidate
         className="relative aspect-[9/16] h-[min(calc(100dvh-2rem),44rem)] max-w-full overflow-hidden rounded-xl bg-island shadow-float"
       >
+        {/* Exactly what friends will see (story-viewer.tsx draws it the same way): the whole photo, never cropped, on
+            a soft blurred copy of itself. Nothing is cut off, so there is nothing to drag or pinch into place. */}
         {preview && (
-          // eslint-disable-next-line @next/next/no-img-element -- a blob: preview; see ui/art/img.tsx
-          <img
-            src={preview}
-            alt="The photo for your Story"
-            className={cn(
-              'absolute inset-0 size-full object-cover transition-opacity',
-              uploading && 'opacity-60',
-            )}
-          />
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element -- a blob: preview; see ui/art/img.tsx */}
+            <img
+              src={preview}
+              alt=""
+              className="absolute inset-0 size-full scale-110 object-cover opacity-60 blur-2xl"
+            />
+            {/* eslint-disable-next-line @next/next/no-img-element -- a blob: preview; see ui/art/img.tsx */}
+            <img
+              src={preview}
+              alt="The photo for your Story"
+              className={cn(
+                'absolute inset-0 size-full object-contain transition-opacity',
+                uploading && 'opacity-60',
+              )}
+            />
+          </>
         )}
 
         <div className="absolute inset-x-0 top-0 flex items-center justify-between gap-2 bg-linear-to-b from-island/70 to-transparent p-3">
@@ -247,13 +264,23 @@ function AddStory({ file, onClose, onPosted }: { file: File; onClose: () => void
             Uploading…
           </p>
         )}
+        {/* Calm and with a way forward: an upload that failed can be tried again right here. */}
         {error && (
-          <p
+          <div
             role="alert"
-            className="absolute inset-x-3 top-16 rounded-md bg-danger px-3 py-2 text-caption text-on-danger"
+            className="absolute inset-x-3 top-16 flex items-center justify-between gap-3 rounded-md bg-danger px-3 py-2 text-caption text-on-danger"
           >
-            {error}
-          </p>
+            <span>{error}</span>
+            {!photoId && (
+              <button
+                type="button"
+                onClick={retryUpload}
+                className="min-h-11 shrink-0 font-semibold underline underline-offset-2 pointer-fine:min-h-0"
+              >
+                Try again
+              </button>
+            )}
+          </div>
         )}
 
         <div className="absolute inset-x-0 bottom-0 flex items-center gap-2 bg-linear-to-t from-island/80 to-transparent p-3 pt-12">
