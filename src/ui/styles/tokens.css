@@ -93,6 +93,9 @@
   --color-primary: #f8cf35;
   --color-primary-hover: #efbf12;
   --color-on-primary: #260959;
+  /* Behind a photo shown full screen: neutral near-black (ink reads brown this dark), so the photo is all you see. */
+  --color-scrim: rgb(0 0 0 / 0.92);
+  --color-on-scrim: #ffffff;
   /* A whisper of Sunflower for quiet surfaces (reply bubbles): ink and violet both read on it. */
   --color-primary-soft: light-dark(#fef6d8, #3a3220);
   /* The icon of the current nav item, and a count badge on it (violet, so it never melts into the yellow). */

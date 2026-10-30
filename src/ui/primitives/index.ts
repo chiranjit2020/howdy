@@ -10,6 +10,7 @@ export {
   Drawer,
   Dialog,
   ConfirmationDialog,
+  PhotoViewer,
   type ModalProps,
   type ConfirmationDialogProps,
 } from './dialog';

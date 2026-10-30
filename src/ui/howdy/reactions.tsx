@@ -15,6 +15,9 @@ export function ReactionArt({ kind, className }: { kind: ReactionKind; className
   return <ReactionEmoji kind={kind} {...(className ? { className } : {})} />;
 }
 
+/** The summary's discs overlap left over right: the first (most given) is on top. */
+const STACK_LAYER = ['z-30', 'z-20', 'z-10'];
+
 // The picker's emoji come in one after another, 30 ms apart (classes, not inline styles: the CSP forbids those).
 const STAGGER = [
   '[animation-delay:0ms]',
@@ -39,18 +42,27 @@ export function ReactionSummary({ reactions }: { reactions: Record<ReactionKind,
     <span
       role="img"
       aria-label={total === 0 ? 'No reactions yet' : `${plural(total, 'reaction')}: ${spoken}`}
-      className="inline-flex items-center gap-1.5 text-caption font-semibold text-text-secondary"
+      className="inline-flex items-center gap-1 text-caption font-medium text-text-secondary"
     >
       {top.length > 0 && (
-        <span className="flex -space-x-1.5">
-          {top.map((k) => (
-            <span key={k} className="inline-flex rounded-pill bg-surface ring-2 ring-surface">
-              <ReactionArt kind={k} />
+        // A stack of discs: each emoji on a white disc with a soft shadow, the most-given one on top at the left.
+        <span className="flex -space-x-1">
+          {top.map((k, i) => (
+            <span
+              key={k}
+              className={cn(
+                // A white ring keeps overlapping discs apart; the soft shadow gives the stack its depth. No edge line.
+                'relative grid size-6 place-items-center rounded-pill bg-surface shadow-bubble ring-2 ring-surface',
+                STACK_LAYER[i],
+              )}
+            >
+              <ReactionArt kind={k} className="size-4" />
             </span>
           ))}
         </span>
       )}
-      <span className="text-metadata tabular-nums">{total}</span>
+      {/* Right against the stack and the same size as the words around it: it is the stack's count. */}
+      <span className="tabular-nums">{total}</span>
     </span>
   );
 }

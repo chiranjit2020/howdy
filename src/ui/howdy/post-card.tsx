@@ -22,6 +22,7 @@ import { Img } from '../art/img';
 import { cn } from '../cn';
 import { CameraIcon, ReplyIcon, SendIcon } from '../icons';
 import { Avatar } from '../primitives/avatar';
+import { PhotoViewer } from '../primitives/dialog';
 import { Button, buttonClasses } from '../primitives/button';
 import { IconButton } from '../primitives/icon-button';
 import { Input, Textarea } from '../primitives/field';
@@ -364,6 +365,46 @@ export interface PostCardProps {
 /** The list posts go in: each post its own card, 10 px apart (the user's call: merged posts hid who wrote what). */
 export const POST_LIST = 'flex flex-col gap-2.5';
 
+/** The tallest a photo stands in the feed: 4:5, as on Instagram and Facebook. Taller ones are cropped to it. */
+const TALLEST = 5 / 4;
+
+/**
+ * A post's photo, the way big feeds show them: always the post's full width; landscape and square whole; anything taller
+ * than 4:5 cropped from the centre to 4:5 so one photo never fills the screen. A tap shows the whole photo.
+ */
+function PostPhoto({ photo, alt }: { photo: { url: string; width: number; height: number }; alt: string }) {
+  const [open, setOpen] = useState(false);
+  const tall = photo.height / photo.width > TALLEST;
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        aria-label={`${alt}. Show the whole photo`}
+        // A double-click here opens the photo, nothing else (on the rest of the post it gives a Wave).
+        onDoubleClick={(e) => e.stopPropagation()}
+        className="block w-full cursor-zoom-in overflow-hidden rounded-md"
+      >
+        <Img
+          src={photo.url}
+          width={photo.width}
+          height={photo.height}
+          alt=""
+          className={cn('block w-full', tall ? 'aspect-[4/5] object-cover' : 'h-auto')}
+        />
+      </button>
+      <PhotoViewer
+        open={open}
+        onClose={() => setOpen(false)}
+        src={photo.url}
+        width={photo.width}
+        height={photo.height}
+        alt={alt}
+      />
+    </>
+  );
+}
+
 /** How many of the newest replies show under a card before "View all". */
 const REPLY_PREVIEW = 2;
 
@@ -444,7 +485,7 @@ export function PostCard({
       <article aria-label={`${noun} from ${author.name}`} className="clay flex flex-col">
         <div
           onDoubleClick={() => canReact && !myReaction && onReact('yo')}
-          className="flex flex-col gap-3 p-4 pb-3"
+          className="flex flex-col gap-3 p-4"
         >
           <header className="flex items-start gap-3">
             <Avatar
@@ -482,13 +523,9 @@ export function PostCard({
           </header>
           <p className="text-body break-words whitespace-pre-wrap text-text-primary">{body}</p>
           {photo && (
-            <Img
-              src={photo.url}
-              width={photo.width}
-              height={photo.height}
+            <PostPhoto
+              photo={photo}
               alt={`Photo on this ${noun === 'Post' ? 'post' : 'card'} from ${author.name}`}
-              // Its own shape: a landscape fills the width, a portrait is as wide as it is (never letterboxed in grey).
-              className="h-auto max-h-[32rem] w-auto max-w-full self-start rounded-md"
             />
           )}
           {notice && <p className="text-caption font-semibold text-text-secondary">{notice}</p>}
@@ -497,7 +534,8 @@ export function PostCard({
         {/* One row: your reaction, the picker and everyone's counts on the left, Reply on the right. How many replies
           there are is said once, by "View all" under the post. */}
         {(canReact || myReaction || replyComposer || totalReactions > 0) && (
-          <footer className="mx-4 flex items-center gap-1 border-t border-border py-1">
+          // 16 px of post above the line, 8 px around the row below it: the buttons' own 32 px fills the rest.
+          <footer className="mx-4 flex items-center gap-1 border-t border-border py-2">
             {canReact || myReaction ? (
               <ReactionBar reactions={reactions} mine={myReaction} onReact={onReact} />
             ) : (

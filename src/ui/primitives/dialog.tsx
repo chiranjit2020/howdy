@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useId, useRef, type ReactNode } from 'react';
+import { Img } from '../art/img';
 import { cn } from '../cn';
 import { CloseIcon } from '../icons';
 import { Button } from './button';
@@ -117,6 +118,71 @@ export interface ModalProps {
 /** Centered modal (bottom sheet on phones). */
 export function Modal(props: ModalProps) {
   return <DialogBase {...props} placement="center" />;
+}
+
+/**
+ * A photo on its own, full screen: a near-black backdrop, the photo as large as it fits, a × in the corner. Esc, the ×
+ * or a click anywhere outside the photo closes it. A native <dialog>, so focus is trapped and returned for free.
+ */
+export function PhotoViewer({
+  open,
+  onClose,
+  src,
+  width,
+  height,
+  alt,
+}: {
+  open: boolean;
+  onClose: () => void;
+  src: string;
+  width: number;
+  height: number;
+  alt: string;
+}) {
+  const ref = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || !open || el.open) return;
+    el.showModal();
+    lockScroll(true);
+    return () => {
+      if (el.open) el.close();
+      lockScroll(false);
+    };
+  }, [open]);
+
+  return (
+    <dialog
+      ref={ref}
+      aria-label={alt}
+      onClose={onClose}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose(); // the dark area around the photo
+      }}
+      className="m-0 h-dvh max-h-none w-dvw max-w-none place-items-center bg-scrim p-4 backdrop:bg-transparent open:grid"
+    >
+      {open && (
+        <>
+          <Img
+            src={src}
+            width={width}
+            height={height}
+            alt={alt}
+            loading="eager"
+            className="h-auto max-h-[calc(100dvh-2rem)] w-auto max-w-full rounded-md"
+          />
+          <button
+            type="button"
+            aria-label="Close"
+            onClick={onClose}
+            className="absolute top-3 right-3 grid size-11 place-items-center rounded-pill text-on-scrim hover:bg-on-scrim/15"
+          >
+            <CloseIcon className="size-6" />
+          </button>
+        </>
+      )}
+    </dialog>
+  );
 }
 
 /** Side panel (right) or bottom sheet. */
