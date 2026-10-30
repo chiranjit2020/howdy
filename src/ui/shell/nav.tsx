@@ -85,15 +85,15 @@ export function ShellSidebarNav({ items }: { items: ShellNavItem[] }) {
                 aria-current={current ? 'page' : undefined}
                 className={cn(
                   'flex min-h-11 items-center gap-3 rounded-md px-3 text-body font-medium no-underline transition-colors',
-                  // The current page: the brand violet, with its icon in sunflower (the two palette colours together).
+                  // The current page: the primary fill, with its icon in the other palette colour (the two together).
                   current
-                    ? 'bg-accent font-semibold text-on-accent hover:no-underline'
+                    ? 'bg-primary font-semibold text-on-primary hover:no-underline'
                     : 'text-text-primary hover:bg-surface-sunken',
                 )}
               >
                 <span
                   aria-hidden="true"
-                  className={cn('flex text-title', current ? 'text-highlight' : 'text-text-secondary')}
+                  className={cn('flex text-title', current ? 'text-primary-mark' : 'text-text-secondary')}
                 >
                   {ICON[it.key]}
                 </span>
@@ -101,7 +101,13 @@ export function ShellSidebarNav({ items }: { items: ShellNavItem[] }) {
                 {it.badge ? (
                   <>
                     <span className="sr-only">, </span>
-                    <span className="ml-auto rounded-pill bg-highlight px-2 text-metadata font-bold text-on-highlight">
+                    <span
+                      className={cn(
+                        'ml-auto rounded-pill px-2 text-metadata font-bold',
+                        // On the yellow current item the count turns violet, so it never melts into it.
+                        current ? 'bg-primary-mark text-primary' : 'bg-highlight text-on-highlight',
+                      )}
+                    >
                       {badgeText(it.badge)}
                       <span className="sr-only"> {it.badgeSays ?? 'unread'}</span>
                     </span>

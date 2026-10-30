@@ -68,7 +68,7 @@ export function TrustCard({ status }: { status: TrustStatus }) {
               <span className="min-w-0 [overflow-wrap:anywhere]">
                 <span className="sr-only">{c.met ? 'Done: ' : 'Not yet: '}</span>
                 {LABEL[c.key]}
-                {p && <span className="block font-mono text-metadata text-text-secondary">{p}</span>}
+                {p && <span className="block text-metadata tabular-nums text-text-secondary">{p}</span>}
               </span>
             </li>
           );

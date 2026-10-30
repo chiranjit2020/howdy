@@ -34,6 +34,7 @@
     "ws": "tsx scripts/ws.ts",
     "jobs:purge": "tsx scripts/purge.ts",
     "set-role": "tsx scripts/set-role.ts",
+    "seed:dev": "tsx scripts/seed-dev.ts",
     "db:app-role": "tsx scripts/db-app-role.ts"
   },
   "dependencies": {

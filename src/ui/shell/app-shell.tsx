@@ -20,7 +20,7 @@ const AUTH_PILL =
 const AUTH_PILL_LABEL = 'text-metadata font-semibold min-[360px]:text-caption';
 const AUTH_PILL_SECONDARY =
   'border border-border bg-surface text-text-primary shadow-clay-sm hover:bg-surface-sunken';
-const AUTH_PILL_PRIMARY = 'bg-accent text-on-accent shadow-clay-sm hover:bg-accent-hover';
+const AUTH_PILL_PRIMARY = 'bg-primary text-on-primary shadow-clay-sm hover:bg-primary-hover';
 
 export interface ShellMe {
   handle: string;

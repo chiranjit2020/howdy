@@ -44,7 +44,7 @@ export function Navigation({
               className={cn(
                 'flex min-h-11 items-center gap-3 rounded-pill px-4 text-body font-medium no-underline transition-colors',
                 it.current
-                  ? 'bg-accent text-on-accent shadow-clay-sm'
+                  ? 'bg-primary text-on-primary shadow-clay-sm'
                   : 'text-text-primary hover:bg-surface-sunken',
               )}
             >
@@ -127,7 +127,7 @@ function ActionButton({ action }: { action: NavAction }) {
     <Link
       href={action.href}
       aria-label={action.description ?? action.label}
-      className="group nav-action-gloss absolute -top-8 left-1/2 grid size-16 -translate-x-1/2 place-items-center rounded-full text-on-accent no-underline transition-[transform,box-shadow] duration-150"
+      className="group nav-action-gloss absolute -top-8 left-1/2 grid size-16 -translate-x-1/2 place-items-center rounded-full text-on-primary no-underline transition-[transform,box-shadow] duration-150"
     >
       <ActionIcon>{action.icon}</ActionIcon>
     </Link>

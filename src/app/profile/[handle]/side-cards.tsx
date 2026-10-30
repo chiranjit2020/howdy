@@ -69,7 +69,7 @@ export function SignalCard({ text, expiresLabel }: { text: string; expiresLabel:
       <p className="text-body break-words text-text-primary">
         <span className="sr-only">Signal: </span>
         {text}
-        <span className="mt-1 block font-mono text-metadata text-text-secondary">{expiresLabel}</span>
+        <span className="mt-1 block text-metadata tabular-nums text-text-secondary">{expiresLabel}</span>
       </p>
     </ClayCard>
   );

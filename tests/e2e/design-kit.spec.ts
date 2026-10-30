@@ -29,7 +29,7 @@ test.describe('design kit (production build, real CSP)', () => {
     expect(res?.headers()['content-security-policy']).toContain("script-src 'self' 'nonce-");
     await page.getByRole('button', { name: 'Modal', exact: true }).click();
     await page.keyboard.press('Escape');
-    await page.getByRole('button', { name: 'Flip' }).first().click();
+    await page.getByRole('button', { name: 'Reply', exact: true }).first().click();
     await page.getByRole('button', { name: 'Toast', exact: true }).click();
     await expect(page.getByRole('status').first()).toBeVisible();
     expect(problems).toEqual([]);
@@ -100,38 +100,23 @@ test.describe('design kit (production build, real CSP)', () => {
     await expect(trigger).toBeFocused();
   });
 
-  test('Post flips to its back; only the visible face exists and focus follows', async ({ page }) => {
+  test('Reply opens the reply box under the post, which stays in view, and puts the cursor in it', async ({
+    page,
+  }) => {
     await page.goto(KIT);
     const card = page.getByRole('article', { name: 'Post from Sneha Roy' });
-    await expect(card.getByText('Bringing coffee down now.')).toHaveCount(0); // back not rendered yet
-    await card.getByRole('button', { name: /Flip/ }).click();
-    await expect(card.getByRole('heading', { name: 'Replies' })).toBeVisible();
-    await expect(card.getByText('Bringing coffee down now.')).toBeVisible();
-    await expect(card.getByRole('button', { name: 'Back to post' })).toBeFocused();
-    // The flip is a real, named animation on the newly shown face.
-    const anim = await card.locator('> div').evaluate((el) => getComputedStyle(el).animationName);
-    expect(anim).toBe('flip-in');
-    await card.getByRole('button', { name: 'Back to post' }).click();
+    await expect(card.getByText('Bringing coffee down now.')).toBeVisible(); // newest replies show at once
+    await expect(card.getByRole('textbox')).toHaveCount(0);
+    await card.getByRole('button', { name: 'Reply', exact: true }).click();
+    await expect(card.getByLabel('Write a reply')).toBeFocused();
     await expect(card.getByText('Are we hitting the late-night canteen run')).toBeVisible();
-    await expect(card.getByRole('button', { name: /Flip/ })).toBeFocused();
   });
 
-  test('a post is only as tall as its own content (no dead space from the hidden face)', async ({ page }) => {
+  test('a post with no replies is only as tall as its own content', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 900 });
     await page.goto(KIT);
     const box = await page.getByRole('article', { name: 'Post from Rahul Das' }).boundingBox();
     expect(box!.height).toBeLessThan(220);
-  });
-
-  test('reduced motion removes the flip animation', async ({ browser }) => {
-    const ctx = await browser.newContext({ reducedMotion: 'reduce' });
-    const page = await ctx.newPage();
-    await page.goto(KIT);
-    const card = page.getByRole('article', { name: 'Post from Sneha Roy' });
-    await card.getByRole('button', { name: /Flip/ }).click();
-    const duration = await card.locator('> div').evaluate((el) => getComputedStyle(el).animationDuration);
-    expect(parseFloat(duration)).toBeLessThan(0.01);
-    await ctx.close();
   });
 
   test('no horizontal scroll at 320px wide, and the mobile bottom bar appears/disappears with width', async ({

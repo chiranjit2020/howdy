@@ -44,6 +44,11 @@ describe('displayNameSchema', () => {
     ['a bare domain', 'free-money.com'],
     ['a control character', 'bad\u0007name'],
     ['NUL', 'a\u0000b'],
+    // A name must never pass for a username.
+    ['an @', 'Ravi Menon @ravi'],
+    ['a bare @handle', '@ravi'],
+    ['a full-width ＠', 'Ravi ＠ravi'],
+    ['a small ﹫', 'Ravi ﹫ravi'],
   ])('rejects %s', (_n, v) => {
     expect(ok(displayNameSchema, v)).toBe(false);
   });

@@ -49,8 +49,12 @@ export const StarIcon = (p: IconProps) => (
   <Svg d="M12 3l2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3l-5.6 2.9 1.1-6.2L3 9.6l6.2-.9z" {...p} />
 );
 export const ChevronDownIcon = (p: IconProps) => <Svg d="M6 9l6 6 6-6" {...p} />;
-export const FlipIcon = (p: IconProps) => (
-  <Svg d="M3 12a9 9 0 0 1 15-6.7L21 8M21 3v5h-5M21 12a9 9 0 0 1-15 6.7L3 16M3 21v-5h5" {...p} />
+// Reply: an empty speech bubble (Messages' bubble has two lines of text in it, so the two never read alike).
+export const ReplyIcon = (p: IconProps) => (
+  <Svg
+    d="M5 4.5h14a1.5 1.5 0 0 1 1.5 1.5v9a1.5 1.5 0 0 1-1.5 1.5h-8l-5 4v-4H5A1.5 1.5 0 0 1 3.5 15V6A1.5 1.5 0 0 1 5 4.5z"
+    {...p}
+  />
 );
 export const PencilIcon = (p: IconProps) => (
   <Svg d="M4 20h4L19 9a2.83 2.83 0 0 0-4-4L4 16v4zM13.5 6.5l4 4" {...p} />

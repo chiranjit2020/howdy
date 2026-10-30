@@ -92,7 +92,7 @@ export function ActivityChart({ series, long }: { series: ActivityBucket[]; long
           })}
         </svg>
       </div>
-      <div className="flex justify-between font-mono text-metadata text-on-island-muted" aria-hidden>
+      <div className="flex justify-between text-metadata tabular-nums text-on-island-muted" aria-hidden>
         {ticks.map((i) => (
           <span key={i}>{series[i] ? fmtTick(series[i].at, long) : ''}</span>
         ))}

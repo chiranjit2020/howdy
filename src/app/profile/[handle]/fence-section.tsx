@@ -262,7 +262,7 @@ export function FenceSection({
                 actions={
                   r.canRemove ? (
                     <Button
-                      variant="ghost"
+                      variant="link"
                       size="sm"
                       aria-label={`Remove reply by @${r.author.handle}`}
                       onClick={() => setRemoval({ kind: 'reply', id: r.id })}

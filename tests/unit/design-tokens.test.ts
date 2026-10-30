@@ -72,6 +72,10 @@ describe('WCAG AA contrast (both themes)', () => {
           ['on-success', 'success'],
           ['on-warning', 'warning'],
           ['on-highlight', 'highlight'],
+          // Sunflower buttons and the current nav item, at rest and on hover; the violet count badge on it.
+          ['on-primary', 'primary'],
+          ['on-primary', 'primary-hover'],
+          ['primary', 'primary-mark'],
           ['on-danger', 'danger'],
           ['on-info', 'info'],
           ['on-mystery', 'mystery'],

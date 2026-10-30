@@ -125,26 +125,68 @@ describe('TipHatButton', () => {
 });
 
 describe('PostCard', () => {
-  it('shows only the front at first — the back does not exist for keyboard or screen-reader users', () => {
+  it('shows the post with its newest replies under it; the reply box waits for Reply', () => {
     render(card());
     expect(screen.getByText('Late-night canteen run?')).toBeInTheDocument();
-    expect(screen.queryByText('Bringing coffee.')).not.toBeInTheDocument();
-    expect(screen.queryByRole('heading', { name: 'Replies' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('textbox')).not.toBeInTheDocument(); // reply composer lives on the back
+    expect(screen.getByText('Bringing coffee.')).toBeInTheDocument();
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+    // The username stays beside the name: names are not unique.
+    expect(screen.getByText(/@sneha/)).toBeInTheDocument();
   });
 
-  it('Flip shows only the back (and moves focus to Back); Back returns (and focuses Flip)', async () => {
+  it('shows the newest two replies; "View all" opens the rest', async () => {
+    const user = userEvent.setup();
+    const replies = ['one', 'two', 'three'].map((b) => (
+      <PostCardReply key={b} author={{ name: 'Rahul', handle: 'rahul' }} body={b} createdAt={at} />
+    ));
+    render(card({ replies, replyCount: 3 }));
+    expect(screen.queryByText('one')).not.toBeInTheDocument();
+    expect(screen.getByText('two')).toBeInTheDocument();
+    expect(screen.getByText('three')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'View all 3 replies' }));
+    expect(screen.getByText('one')).toBeInTheDocument();
+  });
+
+  it('counts replies wrapped in a fragment one by one', () => {
+    const r = (b: string) => (
+      <PostCardReply author={{ name: 'Rahul', handle: 'rahul' }} body={b} createdAt={at} />
+    );
+    render(
+      card({
+        replies: (
+          <>
+            {r('one')}
+            {r('two')}
+            {r('three')}
+          </>
+        ),
+        replyCount: 3,
+      }),
+    );
+    expect(screen.queryByText('one')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'View all 3 replies' })).toBeInTheDocument();
+  });
+
+  it('Reply opens the reply box and puts the cursor in it; the post stays in view', async () => {
     const user = userEvent.setup();
     render(card());
-    await user.click(screen.getByRole('button', { name: /Flip/ }));
-    expect(screen.queryByText('Late-night canteen run?')).not.toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Replies' })).toBeInTheDocument();
-    expect(screen.getByText('Bringing coffee.')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Back to post/ })).toHaveFocus();
-    await user.click(screen.getByRole('button', { name: /Back to post/ }));
+    const reply = screen.getByRole('button', { name: /^Reply$/ });
+    expect(reply).toHaveAttribute('aria-expanded', 'false');
+    await user.click(reply);
+    expect(reply).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByRole('textbox', { name: /Write a reply/ })).toHaveFocus();
     expect(screen.getByText('Late-night canteen run?')).toBeInTheDocument();
-    expect(screen.queryByText('Bringing coffee.')).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Flip/ })).toHaveFocus();
+  });
+
+  it('the reply count opens and closes the replies', async () => {
+    const user = userEvent.setup();
+    render(card());
+    const count = screen.getByRole('button', { name: '1 reply' });
+    await user.click(count);
+    expect(count).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByRole('textbox', { name: /Write a reply/ })).toBeInTheDocument();
+    await user.click(count);
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
   });
 
   it('the initial render does not steal focus', () => {

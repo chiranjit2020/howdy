@@ -74,7 +74,13 @@ const cleanText = (max: number, emptyMessage: string, what: string) =>
         .refine((s) => !LINKISH.test(s), `Links are not allowed in ${what.toLowerCase()}.`),
     );
 
-export const displayNameSchema = cleanText(DISPLAY_NAME_MAX, 'Enter a display name.', 'Your name');
+/** "@" and its look-alikes (full-width ＠, small ﹫): a name must never pass for a username. */
+const AT_SIGN = /[@＠﹫]/;
+
+export const displayNameSchema = cleanText(DISPLAY_NAME_MAX, 'Enter a display name.', 'Your name').refine(
+  (s) => !AT_SIGN.test(s),
+  'Your name cannot contain “@”: that is for usernames.',
+);
 export const signalSchema = cleanText(LIMITS.SIGNAL_MAX, 'Say something, or clear your status.', 'A status');
 
 /** A short bio. Empty clears it. Screened like every public line: no links, no disguising characters. */

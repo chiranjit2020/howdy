@@ -1,21 +1,35 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useRef, useState, type ChangeEvent, type FormEvent, type ReactNode } from 'react';
+import {
+  Children,
+  Fragment,
+  isValidElement,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type FormEvent,
+  type ReactNode,
+} from 'react';
 import { LIMITS } from '@/shared/limits';
 import type { ReactionKind } from '@/shared/validation/fence';
 import type { PortraitTint } from '@/shared/validation/profile';
 import { Img } from '../art/img';
 import { cn } from '../cn';
-import { CameraIcon, FlipIcon, SendIcon } from '../icons';
+import { CameraIcon, ReplyIcon, SendIcon } from '../icons';
 import { Avatar } from '../primitives/avatar';
-import { Button } from '../primitives/button';
-import { Textarea } from '../primitives/field';
+import { Button, buttonClasses } from '../primitives/button';
+import { Input, Textarea } from '../primitives/field';
 import { FormMessage } from '../auth/form-parts';
 import type { PhotoUpload } from '../media/upload-photo';
 import { RelativeTime } from './time';
 import { NameBadge } from './verified-badge';
 import { ReactionBar, ReactionSummary } from './reactions';
+
+/** A person's name as a link to their profile: reads as a name, underlines on hover. */
+const NAME_LINK = 'font-semibold text-text-primary no-underline hover:underline';
 
 export interface PostCardAuthor {
   name: string;
@@ -28,7 +42,7 @@ export interface PostCardAuthor {
   trusted?: boolean;
 }
 
-/** One scribble on the back of a Post Card (max 80 chars, enforced server-side). */
+/** One reply under a Post Card (max 80 chars, enforced server-side): a speech bubble with its writer's name in it. */
 export function PostCardReply({
   author,
   body,
@@ -52,17 +66,22 @@ export function PostCardReply({
         {...(author.tint ? { tint: author.tint } : {})}
         size="sm"
       />
-      <div className="min-w-0">
-        <p className="text-metadata [overflow-wrap:anywhere] text-text-muted">
-          <span className="font-semibold text-text-secondary">
-            @{author.handle}
-            <NameBadge verified={author.verified} trusted={author.trusted} className="ml-0.5" />
-          </span>{' '}
-          · <RelativeTime date={createdAt} />
-        </p>
-        <p className="text-caption font-normal break-words text-text-primary">{body}</p>
-        {notice && <p className="text-metadata text-text-muted">{notice}</p>}
-        {actions}
+      <div className="min-w-0 flex-1">
+        <div className="w-fit max-w-full rounded-lg bg-surface-sunken px-3 py-2">
+          <p className="text-caption [overflow-wrap:anywhere]">
+            <Link href={`/profile/${author.handle}`} className={NAME_LINK}>
+              {author.name}
+            </Link>
+            <NameBadge verified={author.verified} trusted={author.trusted} className="ml-0.5" />{' '}
+            <span className="text-metadata text-text-muted">@{author.handle}</span>
+          </p>
+          <p className="text-caption break-words text-text-primary">{body}</p>
+        </div>
+        <div className="flex flex-wrap items-center gap-x-2 pl-3 text-metadata text-text-muted">
+          <RelativeTime date={createdAt} />
+          {notice && <span>· {notice}</span>}
+          {actions}
+        </div>
       </div>
     </li>
   );
@@ -80,9 +99,10 @@ const COMPOSER = {
   reply: {
     max: LIMITS.REPLY_MAX,
     label: 'Write a reply',
-    placeholder: 'One or two lines. Longer? Take it to a message.',
+    placeholder: 'Write a reply…',
     rows: 2,
-    submit: 'Reply',
+    // Not "Reply": the card's own Reply button (which opens this box) is right above it.
+    submit: 'Send',
   },
   /** Home: a card on your own wall, which your friends see in their feed. */
   home: {
@@ -161,6 +181,39 @@ export function PostCardComposer({
     }
   }
 
+  // A reply is one line (80 characters at most): the box and a Send link side by side, Enter sends. How much
+  // is left shows only near the end.
+  if (kind === 'reply') {
+    const left = max - body.length;
+    return (
+      <form onSubmit={submit} className="flex flex-col gap-1">
+        <div className="flex items-center gap-2">
+          <Input
+            label={label}
+            hideLabel
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            maxLength={max}
+            placeholder={placeholder}
+            autoComplete="off"
+            className="min-w-0 flex-1"
+          />
+          <Button type="submit" variant="link" size="sm" loading={busy} disabled={disabled || !trimmed}>
+            {submitLabel}
+          </Button>
+        </div>
+        {left <= 15 && (
+          <p
+            aria-live="polite"
+            className={cn('text-metadata', left <= 5 ? 'text-danger' : 'text-text-muted')}
+          >
+            {left} {left === 1 ? 'character' : 'characters'} left
+          </p>
+        )}
+      </form>
+    );
+  }
+
   return (
     <form onSubmit={submit} className="flex flex-col gap-2">
       <Textarea
@@ -196,14 +249,20 @@ export function PostCardComposer({
       )}
       <div className="flex flex-wrap items-center justify-between gap-2">
         {onPhoto && !photo ? (
-          <label className="inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-pill px-3 text-caption font-semibold text-text-secondary hover:bg-surface-sunken focus-within:outline-2 focus-within:outline-focus">
+          // A file input can only be opened by its label, so the label wears the secondary button's look.
+          <label
+            className={cn(
+              buttonClasses({ variant: 'secondary', size: 'sm' }),
+              'cursor-pointer focus-within:outline-2 focus-within:outline-focus',
+            )}
+          >
             <input
               type="file"
               accept="image/jpeg,image/png,image/webp"
               className="sr-only"
               onChange={choose}
             />
-            <CameraIcon className="size-5" /> Add a photo
+            <CameraIcon className="size-4" /> Add a photo
           </label>
         ) : (
           <span />
@@ -253,11 +312,20 @@ export interface PostCardProps {
   wall?: { name: string; handle: string };
 }
 
+/** How many of the newest replies show under a card before "View all". */
+const REPLY_PREVIEW = 2;
+
+/** Each reply on its own, whether they came as a list or wrapped in a fragment (`<>…</>`). */
+function flatReplies(nodes: ReactNode): ReactNode[] {
+  return Children.toArray(nodes).flatMap((n) =>
+    isValidElement<{ children?: ReactNode }>(n) && n.type === Fragment ? flatReplies(n.props.children) : [n],
+  );
+}
+
 /**
- * Post Card: the front shows the message + reactions; "Flip" turns it over to the scribbles (replies) and the reply composer.
- * Only the visible face is rendered, so the card is exactly as tall as its content and keyboard / screen-reader users
- * can only ever reach what they can see. The flip is an entrance animation on the newly shown face (removed under
- * prefers-reduced-motion), and focus moves to the control that replaces the one just used.
+ * Post Card: who wrote it, the words and photo, a line of counts, then React and Reply. The newest replies show under the
+ * card; "View all" or Reply opens the rest together with the reply box (Reply also puts the cursor in it). Nothing hides
+ * the post while you read its replies.
  */
 export function PostCard({
   author,
@@ -277,94 +345,139 @@ export function PostCard({
   noun = 'Post',
   wall,
 }: PostCardProps) {
-  const [flipped, setFlipped] = useState(false);
-  const [hasFlipped, setHasFlipped] = useState(false); // no animation / focus move on first paint
-  const flipBtn = useRef<HTMLButtonElement>(null);
-  const backBtn = useRef<HTMLButtonElement>(null);
+  const [open, setOpen] = useState(false);
+  const wantsFocus = useRef(false);
+  const repliesRef = useRef<HTMLDivElement>(null);
+  const repliesId = useId();
+  const focusReplyBox = () => repliesRef.current?.querySelector<HTMLElement>('input, textarea')?.focus();
 
+  // Reply on a closed card opens the replies; the reply box exists only after that render, so focus it then.
   useEffect(() => {
-    if (!hasFlipped) return;
-    (flipped ? backBtn : flipBtn).current?.focus();
-  }, [flipped, hasFlipped]);
+    if (!open || !wantsFocus.current) return;
+    wantsFocus.current = false;
+    focusReplyBox();
+  }, [open]);
 
-  function flip(to: boolean) {
-    setHasFlipped(true);
-    setFlipped(to);
+  function startReply() {
+    if (open) focusReplyBox();
+    else {
+      wantsFocus.current = true;
+      setOpen(true);
+    }
   }
 
-  const face = cn('clay flex flex-col gap-3 p-5', hasFlipped && 'animate-flip-in');
+  const all = flatReplies(replies);
+  const shown = open ? all : all.slice(-REPLY_PREVIEW);
+  const hidden = all.length - shown.length;
+  const totalReactions = Object.values(reactions).reduce((a, b) => a + b, 0);
+  const repliesLabel = `${replyCount} ${replyCount === 1 ? 'reply' : 'replies'}`;
 
   return (
-    <article aria-label={`${noun} from ${author.name}`} className="[perspective:1200px]">
-      {flipped ? (
-        <div className={cn(face, 'bg-parchment')}>
-          <div className="flex items-center justify-between">
-            <h3 className="text-title text-text-primary">Replies</h3>
-            <Button ref={backBtn} variant="ghost" size="sm" onClick={() => flip(false)}>
-              <FlipIcon /> Back to post
-            </Button>
-          </div>
-          {replyCount > 0 ? (
-            <ul className="flex flex-col gap-3">{replies}</ul>
-          ) : (
-            <p className="text-caption text-text-secondary">No replies yet. Be the first.</p>
-          )}
-          {replyComposer}
-        </div>
-      ) : (
-        <div onDoubleClick={() => canReact && !myReaction && onReact('yo')} className={face}>
-          <header className="flex items-start gap-3">
-            <Avatar
-              name={author.name}
-              src={author.avatarUrl}
-              {...(author.tint ? { tint: author.tint } : {})}
-            />
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-body font-semibold text-text-primary">
+    <article aria-label={`${noun} from ${author.name}`} className="clay flex flex-col">
+      <div
+        onDoubleClick={() => canReact && !myReaction && onReact('yo')}
+        className="flex flex-col gap-3 p-4 pb-2 sm:px-5 sm:pt-5"
+      >
+        <header className="flex items-start gap-3">
+          <Avatar name={author.name} src={author.avatarUrl} {...(author.tint ? { tint: author.tint } : {})} />
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-body">
+              <Link href={`/profile/${author.handle}`} className={NAME_LINK}>
                 {author.name}
-                <NameBadge verified={author.verified} trusted={author.trusted} className="ml-1" />
-              </p>
-              <p className="text-metadata [overflow-wrap:anywhere] text-text-muted">
-                @{author.handle} · <RelativeTime date={createdAt} />
-                {wall && (
-                  <>
-                    {' · on '}
-                    <Link href={`/profile/${wall.handle}`} className="font-semibold text-text-secondary">
-                      {wall.name}
-                    </Link>
-                    ’s wall
-                  </>
-                )}
-              </p>
-            </div>
-            {stamp && (
-              <span className="rounded-sm border-2 border-dashed border-border-strong px-2 py-0.5 font-mono text-metadata text-text-secondary">
-                {stamp}
-              </span>
-            )}
-            {actions}
-          </header>
-          <p className="text-body break-words whitespace-pre-wrap text-text-primary">{body}</p>
-          {photo && (
-            <Img
-              src={photo.url}
-              width={photo.width}
-              height={photo.height}
-              alt={`Photo on this ${noun === 'Post' ? 'post' : 'card'} from ${author.name}`}
-              className="h-auto max-h-[28rem] w-full rounded-md bg-surface-sunken object-contain"
-            />
+              </Link>
+              <NameBadge verified={author.verified} trusted={author.trusted} className="ml-1" />
+            </p>
+            {/* The username stays in sight: names are not unique, the username is (and a name may not hold "@"). */}
+            <p className="text-metadata [overflow-wrap:anywhere] text-text-muted">
+              @{author.handle} · <RelativeTime date={createdAt} />
+              {wall && (
+                <>
+                  {' · on '}
+                  <Link href={`/profile/${wall.handle}`} className="font-semibold text-text-secondary">
+                    {wall.name}
+                  </Link>
+                  ’s wall
+                </>
+              )}
+            </p>
+          </div>
+          {stamp && (
+            <span className="rounded-sm border-2 border-dashed border-border-strong px-2 py-0.5 text-metadata text-text-secondary">
+              {stamp}
+            </span>
           )}
-          {notice && <p className="text-caption font-semibold text-text-secondary">{notice}</p>}
-          <footer className="flex flex-wrap items-center justify-between gap-2">
-            {canReact || myReaction ? (
-              <ReactionBar reactions={reactions} mine={myReaction} onReact={onReact} />
-            ) : (
-              <ReactionSummary reactions={reactions} />
+          {actions}
+        </header>
+        <p className="text-body break-words whitespace-pre-wrap text-text-primary">{body}</p>
+        {photo && (
+          <Img
+            src={photo.url}
+            width={photo.width}
+            height={photo.height}
+            alt={`Photo on this ${noun === 'Post' ? 'post' : 'card'} from ${author.name}`}
+            className="h-auto max-h-[28rem] w-full rounded-md bg-surface-sunken object-contain"
+          />
+        )}
+        {notice && <p className="text-caption font-semibold text-text-secondary">{notice}</p>}
+        {(totalReactions > 0 || replyCount > 0) && (
+          <div className="flex items-center justify-between gap-2">
+            {totalReactions > 0 ? <ReactionSummary reactions={reactions} /> : <span />}
+            {replyCount > 0 && (
+              <button
+                type="button"
+                aria-expanded={open}
+                aria-controls={repliesId}
+                onClick={() => setOpen((o) => !o)}
+                className="min-h-11 text-caption text-text-secondary hover:text-text-primary hover:underline pointer-fine:min-h-0"
+              >
+                {repliesLabel}
+              </button>
             )}
-            <Button ref={flipBtn} variant="ghost" size="sm" className="ml-auto" onClick={() => flip(true)}>
-              <FlipIcon /> Flip · {replyCount} {replyCount === 1 ? 'reply' : 'replies'}
+          </div>
+        )}
+      </div>
+
+      {(canReact || myReaction || replyComposer) && (
+        <footer className="mx-4 flex items-center gap-1 border-t border-border py-1 sm:mx-5">
+          {(canReact || myReaction) && (
+            <ReactionBar reactions={reactions} mine={myReaction} onReact={onReact} summary={false} />
+          )}
+          {replyComposer && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="ml-auto"
+              aria-expanded={open}
+              aria-controls={repliesId}
+              onClick={startReply}
+            >
+              <ReplyIcon className="size-5" /> Reply
             </Button>
-          </footer>
+          )}
+        </footer>
+      )}
+
+      {(shown.length > 0 || (open && replyComposer)) && (
+        <div
+          ref={repliesRef}
+          id={repliesId}
+          className="flex flex-col gap-3 border-t border-border px-4 pt-3 pb-4 sm:px-5"
+        >
+          {hidden > 0 && (
+            <button
+              type="button"
+              onClick={() => setOpen(true)}
+              className="self-start text-caption font-semibold text-text-secondary hover:text-text-primary hover:underline"
+            >
+              View all {repliesLabel}
+            </button>
+          )}
+          {shown.length > 0 && (
+            <ul aria-label={`Replies to this ${noun.toLowerCase()}`} className="flex flex-col gap-3">
+              {shown}
+            </ul>
+          )}
+          {open && replyComposer}
         </div>
       )}
     </article>

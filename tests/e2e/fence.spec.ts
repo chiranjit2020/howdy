@@ -74,9 +74,10 @@ test.describe('The wall in a real browser (production build, real CSP)', () => {
     await b.page.getByRole('dialog', { name: 'Reactions' }).getByRole('button', { name: 'Laugh' }).click();
     await expect(owners.getByRole('button', { name: 'Laugh', pressed: true })).toBeVisible();
     await expect(owners.getByRole('img', { name: '1 reaction: 1 Laugh' })).toBeVisible();
-    await owners.getByRole('button', { name: /^Flip/ }).click();
+    await owners.getByRole('button', { name: 'Reply', exact: true }).click();
+    await expect(b.page.getByLabel('Write a reply')).toBeFocused();
     await b.page.getByLabel('Write a reply').fill('Nice ranch!');
-    await b.page.getByRole('button', { name: 'Reply' }).click();
+    await owners.getByRole('button', { name: 'Send' }).click();
     await expect(b.page.getByText('Nice ranch!')).toBeVisible();
 
     // A refresh keeps everything (it really was saved), and the owner sees the reaction count.
@@ -207,7 +208,7 @@ test.describe('Wall: accessibility and layout in a real browser', () => {
 
   for (const scheme of ['light', 'dark'] as const) {
     test(`axe finds no violations, including real colour contrast (${scheme})`, async ({ browser }) => {
-      // Reduced motion: axe must not measure a card halfway through its flip-in fade.
+      // Reduced motion: axe must not measure anything halfway through an animation.
       const { a, b } = await seed(browser, { colorScheme: scheme, bypassCSP: true, reducedMotion: 'reduce' });
       const source = axeSource();
       for (const [who, path] of [
@@ -218,9 +219,9 @@ test.describe('Wall: accessibility and layout in a real browser', () => {
         await who.page.goto(path);
         await pageReady(who.page);
         await who.page.evaluate(() => document.fonts.ready);
-        if (path.startsWith('/ranch')) {
-          // Also check the back of a card (replies + composer).
-          await who.page.getByRole('button', { name: /^Flip/ }).first().click();
+        if (path.startsWith('/profile') && who === b) {
+          // Also check an open card (replies + reply box).
+          await who.page.getByRole('button', { name: 'Reply', exact: true }).first().click();
         }
         await who.page.addScriptTag({ content: source });
         const violations = await who.page.evaluate(async () => {
@@ -287,10 +288,10 @@ test.describe('Wall: accessibility and layout in a real browser', () => {
       });
       expect(problems, `${path} layout`).toEqual([]);
     }
-    // The back of a card too.
+    // An open card too (replies + reply box).
     await b.page.goto(`/profile/${a.handle}`);
-    await b.page.getByRole('button', { name: /^Flip/ }).first().click();
-    expect(await horizontalOverflow(b.page), 'flipped overflow').toBeLessThanOrEqual(0);
+    await b.page.getByRole('button', { name: 'Reply', exact: true }).first().click();
+    expect(await horizontalOverflow(b.page), 'open card overflow').toBeLessThanOrEqual(0);
     await Promise.all([a.ctx.close(), b.ctx.close()]);
   });
 });

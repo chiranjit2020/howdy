@@ -32,7 +32,7 @@ export function YoButton({ count, active, onToggle, className, ...rest }: YoButt
         <Glyph emoji="🤘" />
       </span>
       <span>Wave</span>
-      <span className="font-mono text-metadata" aria-label={`${count} ${count === 1 ? 'wave' : 'waves'}`}>
+      <span className="text-metadata tabular-nums" aria-label={`${count} ${count === 1 ? 'wave' : 'waves'}`}>
         {count}
       </span>
     </button>

@@ -47,7 +47,7 @@ export function Fence({
       ) : (
         <ol className="flex flex-col gap-4">
           {cards.map((card, i) => (
-            // Keyed by the card's own key so a card keeps its state (flipped, typing) when others come and go.
+            // Keyed by the card's own key so a card keeps its state (replies open, typing) when others come and go.
             <li key={isValidElement(card) && card.key !== null ? card.key : i}>{card}</li>
           ))}
         </ol>

@@ -52,7 +52,7 @@ export function ReactionSummary({ reactions }: { reactions: Record<ReactionKind,
           ))}
         </span>
       )}
-      <span className="font-mono text-metadata">{total}</span>
+      <span className="text-metadata tabular-nums">{total}</span>
     </span>
   );
 }
@@ -65,11 +65,14 @@ export function ReactionBar({
   reactions,
   mine,
   onReact,
+  summary = true,
 }: {
   reactions: Record<ReactionKind, number>;
   mine: ReactionKind | null;
   /** A kind to give or switch to, or `null` to take yours back. */
   onReact: (kind: ReactionKind | null) => void;
+  /** Show the counts after the buttons. A Post Card shows them on a line of their own instead. */
+  summary?: boolean;
 }) {
   const shown = mine ?? 'yo';
   return (
@@ -125,7 +128,7 @@ export function ReactionBar({
           ))}
         </div>
       </Popover>
-      <ReactionSummary reactions={reactions} />
+      {summary && <ReactionSummary reactions={reactions} />}
     </div>
   );
 }

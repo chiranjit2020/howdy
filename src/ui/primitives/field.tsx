@@ -114,11 +114,14 @@ export function Input({
   prefix,
   labelAction,
   look = 'default',
+  hideLabel,
   ...rest
 }: FieldProps &
   Omit<ComponentProps<'input'>, 'prefix'> & {
     /** Fixed text painted inside the box before what is typed (e.g. "@"). Not part of the value. */
     prefix?: string;
+    /** Keep the label for screen readers but do not paint it (the placeholder says the same thing). */
+    hideLabel?: boolean;
   }) {
   return (
     <FieldShell
@@ -126,6 +129,7 @@ export function Input({
       label={label}
       hint={hint}
       error={error}
+      hideLabel={hideLabel}
       labelAction={labelAction}
       look={look}
       className={className}
@@ -281,7 +285,7 @@ export function Textarea({
             <p
               id={counterId}
               className={cn(
-                'self-end font-mono text-metadata',
+                'self-end text-metadata tabular-nums',
                 nearLimit ? 'text-danger' : 'text-text-muted',
               )}
             >

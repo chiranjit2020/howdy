@@ -89,9 +89,9 @@ test.describe('Group feed (production build, real CSP, phone)', () => {
       'aria-pressed',
       'true',
     );
-    await theirPost.getByRole('button', { name: /Flip/ }).tap();
+    await theirPost.getByRole('button', { name: 'Reply', exact: true }).tap();
     await owner.page.getByLabel('Write a reply').fill('Count me in!');
-    await owner.page.getByRole('button', { name: 'Reply', exact: true }).tap();
+    await theirPost.getByRole('button', { name: 'Send' }).tap();
     await expect(owner.page.getByText('Count me in!')).toBeVisible();
 
     // Ann's bell has both, and they lead back to the Town Hall.

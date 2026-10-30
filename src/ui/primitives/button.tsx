@@ -2,14 +2,19 @@ import type { ComponentProps } from 'react';
 import { cn } from '../cn';
 import { SpinnerIcon } from '../icons';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
+export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'link';
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
+// Disabled is neutral grey, never a faded brand colour: filled buttons lose their fill, every button its colour.
+const DISABLED_FILL = 'disabled:bg-surface-sunken aria-disabled:bg-surface-sunken disabled:shadow-none';
+
 const VARIANT: Record<ButtonVariant, string> = {
-  primary: 'bg-accent text-on-accent shadow-clay-sm hover:bg-accent-hover',
+  primary: cn('bg-primary text-on-primary shadow-clay-sm hover:bg-primary-hover', DISABLED_FILL),
   secondary: 'bg-surface text-text-primary border border-border shadow-clay-sm hover:bg-surface-sunken',
   ghost: 'bg-transparent text-text-primary hover:bg-surface-sunken',
-  danger: 'bg-danger text-on-danger shadow-clay-sm hover:opacity-90',
+  danger: cn('bg-danger text-on-danger shadow-clay-sm hover:opacity-90', DISABLED_FILL),
+  /** Words that act, like a link: no fill, no border. For small actions beside content (Send, Remove). */
+  link: 'bg-transparent text-accent hover:underline',
 };
 
 // Every size keeps a >=44px touch target on touch devices (min-h-11); `sm` shrinks only with a fine pointer.
@@ -35,10 +40,13 @@ export function buttonClasses(
   return cn(
     'inline-flex items-center justify-center gap-2 rounded-md font-semibold select-none no-underline',
     'transition-colors duration-150 ease-out active:shadow-clay-pressed',
-    'disabled:cursor-not-allowed disabled:opacity-60 aria-disabled:cursor-not-allowed aria-disabled:opacity-60',
+    // pointer-events-none: no hover colour on a disabled button (it would bring the brand colour back).
+    'disabled:pointer-events-none disabled:text-text-muted aria-disabled:pointer-events-none aria-disabled:text-text-muted',
     VARIANT[variant],
-    SIZE[size],
-    compact ? 'px-2.5 whitespace-nowrap' : PADDING[size],
+    // A link is only as tall as its words with a mouse; a finger still gets 44 px.
+    variant === 'link'
+      ? 'min-h-11 px-1 text-caption pointer-fine:min-h-0'
+      : cn(SIZE[size], compact ? 'px-2.5 whitespace-nowrap' : PADDING[size]),
     fullWidth && 'w-full',
   );
 }

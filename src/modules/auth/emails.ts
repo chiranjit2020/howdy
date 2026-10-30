@@ -3,7 +3,8 @@ import { composeEmail, siteLink, spacedCode, type Paragraph } from './email-layo
 
 /** Transactional emails, all in the shared layout (email-layout.ts). Links always go to APP_URL; tokens are single-use. */
 
-const NOT_YOU_SIGNUP = 'If you did not sign up for Howdy, ignore this email: nothing can be used until it is confirmed.';
+const NOT_YOU_SIGNUP =
+  'If you did not sign up for Howdy, ignore this email: nothing can be used until it is confirmed.';
 /** Read when an email is built, never at import (settings are only checked at run time). */
 const reset = () => siteLink('/forgot-password');
 
@@ -90,7 +91,9 @@ export function accountDeletedMessage(to: string): MailMessage {
       'Your Howdy account has now been deleted, as you asked. Thank you for spending time on Howdy.',
       'We keep only what our Privacy Policy describes (for example, reports about your account, with your name removed).',
     ],
-    after: [['You are welcome back any time: ', { href: siteLink('/signup'), label: 'create an account' }, '.']],
+    after: [
+      ['You are welcome back any time: ', { href: siteLink('/signup'), label: 'create an account' }, '.'],
+    ],
   });
 }
 

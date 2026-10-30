@@ -20,7 +20,7 @@ export function Signal({
       <span aria-hidden="true">⚡</span>
       <span className="sr-only">Signal: </span>
       <span className="min-w-0 break-words">{text}</span>
-      {expiresLabel && <span className="shrink-0 font-mono text-metadata opacity-80">{expiresLabel}</span>}
+      {expiresLabel && <span className="shrink-0 text-metadata tabular-nums opacity-80">{expiresLabel}</span>}
     </p>
   );
 }

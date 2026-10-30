@@ -104,7 +104,7 @@ function Section({
       aria-labelledby={`${id ?? kicker}-title`}
       className="mx-auto w-full max-w-6xl scroll-mt-6 px-4 py-14 sm:px-6 sm:py-20"
     >
-      <p className="font-mono text-metadata tracking-widest text-text-muted uppercase">{kicker}</p>
+      <p className="tabular-nums text-metadata tracking-widest text-text-muted uppercase">{kicker}</p>
       <h2
         id={`${id ?? kicker}-title`}
         className="mt-2 max-w-2xl font-display text-[clamp(1.75rem,1.2rem+2.2vw,2.75rem)] leading-tight font-semibold text-text-primary"
@@ -150,7 +150,7 @@ function PhonePeek() {
               <p className="text-caption font-semibold text-text-primary">Meera</p>
               <p className="text-metadata text-text-muted">@meera · just now</p>
             </div>
-            <span className="rounded-sm border-2 border-dashed border-border-strong px-2 py-0.5 font-mono text-metadata text-text-secondary">
+            <span className="rounded-sm border-2 border-dashed border-border-strong px-2 py-0.5 tabular-nums text-metadata text-text-secondary">
               Wall
             </span>
           </div>
@@ -181,7 +181,7 @@ function PhonePeek() {
           <p className="max-w-[85%] self-end rounded-lg rounded-br-sm bg-accent-strong px-3 py-2 text-caption text-on-accent">
             Always, for you 😄
           </p>
-          <p className="self-end font-mono text-metadata text-text-muted">11:02 PM · Seen</p>
+          <p className="self-end tabular-nums text-metadata text-text-muted">11:02 PM · Seen</p>
         </div>
 
         {/* Chime */}
@@ -341,7 +341,7 @@ export function WelcomeStory({ invite }: { invite?: { code: string; invitedBy: s
                   className="absolute top-5 -left-[calc(1.5rem+7px)] size-3 rounded-pill border-2 border-accent bg-highlight ring-4 ring-background sm:-left-[calc(2rem+7px)]"
                 />
                 <div className="clay flex flex-col gap-2 p-5">
-                  <span className="self-start rounded-pill bg-warning px-2.5 py-0.5 font-mono text-metadata text-on-warning">
+                  <span className="self-start rounded-pill bg-warning px-2.5 py-0.5 tabular-nums text-metadata text-on-warning">
                     {a.tag}
                   </span>
                   <h3 className="text-title text-text-primary">{a.name}</h3>

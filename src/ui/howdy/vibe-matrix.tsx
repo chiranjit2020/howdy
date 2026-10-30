@@ -114,7 +114,7 @@ export function VibeMatrix({
                   >
                     <span className={cn('block h-full rounded-pill bg-accent', barWidth(pct))} />
                   </span>
-                  <span className="w-10 shrink-0 text-right font-mono text-metadata text-text-secondary">
+                  <span className="w-10 shrink-0 text-right tabular-nums text-metadata text-text-secondary">
                     {pct}%
                   </span>
                 </>
@@ -124,7 +124,7 @@ export function VibeMatrix({
                     <span className="text-caption font-medium text-text-primary">{MARK_LABEL[kind]}</span>
                     <span className="text-metadata text-text-secondary">{MARK_MEANING[kind]}</span>
                   </span>
-                  <span className="shrink-0 text-right font-mono text-body font-semibold text-text-primary">
+                  <span className="shrink-0 text-right tabular-nums text-body font-semibold text-text-primary">
                     {n}
                     <span className="sr-only"> {n === 1 ? 'badge' : 'badges'}</span>
                   </span>

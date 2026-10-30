@@ -59,7 +59,7 @@ export function RanchHeader({
             {displayName}
             <NameBadge verified={verified} trusted={trusted} className="ml-1.5" />
           </h1>
-          <p className="font-mono text-code text-text-secondary">@{handle}</p>
+          <p className="text-caption text-text-secondary">@{handle}</p>
           {bio && <p className="mt-1.5 text-body break-words text-text-primary">{bio}</p>}
           {relationship && (
             <div className="mt-2">

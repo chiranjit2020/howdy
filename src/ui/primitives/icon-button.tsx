@@ -21,9 +21,9 @@ export function IconButton({
       aria-label={label}
       className={cn(
         'inline-flex size-11 shrink-0 items-center justify-center rounded-pill text-title transition duration-150',
-        'disabled:cursor-not-allowed disabled:opacity-60',
+        'disabled:pointer-events-none disabled:text-text-muted',
         tone === 'accent'
-          ? 'bg-accent text-on-accent shadow-clay-sm hover:bg-accent-hover'
+          ? 'bg-primary text-on-primary shadow-clay-sm hover:bg-primary-hover disabled:bg-surface-sunken disabled:shadow-none'
           : 'text-text-primary hover:bg-surface-sunken',
         className,
       )}

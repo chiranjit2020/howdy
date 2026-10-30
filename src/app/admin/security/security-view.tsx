@@ -79,7 +79,7 @@ function Delta({ c, upIsBad = false }: { c: Compare; upIsBad?: boolean }) {
   return (
     <span
       className={
-        'font-mono text-metadata tabular-nums ' +
+        'text-metadata tabular-nums ' +
         (pct === 0 ? 'text-on-island-muted' : good ? 'text-success' : 'text-signal-coral')
       }
     >
@@ -168,7 +168,7 @@ const navLink =
 
 function OpenBadge({ n }: { n: number }) {
   if (n <= 0) return null;
-  return <span className="rounded-sm bg-danger/20 px-1.5 font-mono text-metadata text-danger">{n}</span>;
+  return <span className="rounded-sm bg-danger/20 px-1.5 tabular-nums text-metadata text-danger">{n}</span>;
 }
 
 function Sidebar({ data }: { data: ConsoleData }) {
@@ -177,7 +177,7 @@ function Sidebar({ data }: { data: ConsoleData }) {
       <div className="flex h-14 shrink-0 items-center gap-2.5 border-b border-on-island/10 px-4">
         <span
           aria-hidden
-          className="flex size-7 items-center justify-center rounded-sm bg-telemetry/20 font-mono text-metadata font-bold text-telemetry-soft"
+          className="flex size-7 items-center justify-center rounded-sm bg-telemetry/20 tabular-nums text-metadata font-bold text-telemetry-soft"
         >
           H
         </span>
@@ -229,7 +229,7 @@ function EventsTable({ rows }: { rows: SecurityEventRow[] }) {
       <tbody className="divide-y divide-on-island/5">
         {rows.map((r, i) => (
           <tr key={i}>
-            <td className="py-1.5 font-mono text-on-island-muted tabular-nums">{clock(r.at)}</td>
+            <td className="py-1.5 text-on-island-muted tabular-nums">{clock(r.at)}</td>
             <td className="truncate py-1.5 text-caption text-on-island">
               <span
                 className={'mr-2 inline-block size-1.5 rounded-pill align-middle ' + eventTone(r.event)}
@@ -254,9 +254,7 @@ function TimedList({ rows, empty }: { rows: SecurityEventRow[]; empty: string })
             {label(r.event)}
             {r.handle && <span className="text-on-island-muted"> · {r.handle}</span>}
           </span>
-          <time className="shrink-0 font-mono text-metadata text-on-island-muted tabular-nums">
-            {when(r.at)}
-          </time>
+          <time className="shrink-0 text-metadata text-on-island-muted tabular-nums">{when(r.at)}</time>
         </li>
       ))}
     </ul>
@@ -283,7 +281,7 @@ export function SecurityView({ data }: { data: ConsoleData }) {
             <span className="font-semibold text-on-island">Mission Console</span>
           </p>
           <div className="flex flex-wrap items-center gap-2 text-metadata">
-            <span className="rounded-sm border border-on-island/10 px-2 py-1 font-mono text-on-island-muted">
+            <span className="rounded-sm border border-on-island/10 px-2 py-1 tabular-nums text-on-island-muted">
               Checked {clock(data.generatedAt)} IST
             </span>
             <span className="rounded-sm border border-on-island/10 px-2 py-1 text-on-island-muted">
@@ -329,7 +327,7 @@ export function SecurityView({ data }: { data: ConsoleData }) {
                     href={`/admin/security?range=${r}`}
                     aria-current={r === data.range ? 'true' : undefined}
                     className={
-                      'flex min-h-11 min-w-11 items-center justify-center rounded-sm px-2 font-mono text-metadata no-underline ' +
+                      'flex min-h-11 min-w-11 items-center justify-center rounded-sm px-2 tabular-nums text-metadata no-underline ' +
                       (r === data.range
                         ? 'bg-on-island/10 font-semibold text-on-island'
                         : 'text-on-island-muted hover:text-on-island')
@@ -425,7 +423,7 @@ export function SecurityView({ data }: { data: ConsoleData }) {
                 className="shrink-0"
                 bodyClass="px-4 py-2"
                 aside={
-                  <span className="rounded-sm bg-success/10 px-1.5 py-0.5 font-mono text-tab font-semibold text-success">
+                  <span className="rounded-sm bg-success/10 px-1.5 py-0.5 tabular-nums text-tab font-semibold text-success">
                     {okChecks}/{counted} OK
                   </span>
                 }
@@ -502,7 +500,7 @@ export function SecurityView({ data }: { data: ConsoleData }) {
                           >
                             {RULE_LABEL[a.rule] ?? label(a.rule)}
                           </span>
-                          <time className="shrink-0 font-mono text-metadata text-on-island-muted tabular-nums">
+                          <time className="shrink-0 text-metadata text-on-island-muted tabular-nums">
                             {when(a.at)}
                           </time>
                         </span>
@@ -561,12 +559,12 @@ export function SecurityView({ data }: { data: ConsoleData }) {
                     <li key={r.id} className="flex flex-col gap-0.5 rounded-sm bg-on-island/5 px-3 py-2">
                       <span className="flex items-baseline justify-between gap-2">
                         <span className="text-caption">
-                          <span className="mr-1.5 rounded-sm bg-warning/15 px-1 font-mono text-tab font-semibold text-warning uppercase">
+                          <span className="mr-1.5 rounded-sm bg-warning/15 px-1 tabular-nums text-tab font-semibold text-warning uppercase">
                             Open
                           </span>
                           #{r.id.slice(0, 8)}
                         </span>
-                        <time className="font-mono text-metadata text-on-island-muted">{when(r.at)}</time>
+                        <time className="tabular-nums text-metadata text-on-island-muted">{when(r.at)}</time>
                       </span>
                       <span className="text-metadata text-on-island-muted">
                         {label(r.reason)} · {label(r.subject)} ·{' '}
@@ -586,7 +584,7 @@ export function SecurityView({ data }: { data: ConsoleData }) {
                   {data.flagged.map((f) => (
                     <li key={f.handle} className="flex items-center justify-between gap-3 py-1">
                       <span className="min-w-0 truncate text-caption">{f.handle}</span>
-                      <span className="shrink-0 font-mono text-metadata text-warning tabular-nums">
+                      <span className="shrink-0 text-metadata text-warning tabular-nums">
                         {f.loginFailed} login{f.secondStepFailed > 0 && ` · ${f.secondStepFailed} 2-step`}
                       </span>
                     </li>
