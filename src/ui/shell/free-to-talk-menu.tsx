@@ -53,7 +53,7 @@ export function FreeToTalkPill({ state }: { state: FreeToTalkState }) {
     button.current?.focus();
   }, []);
   useDismiss(open, [root], close);
-  // Pages can ask for the panel (Home's "Switch yours on").
+  // Pages can ask for the panel (Home's "Tell friends you're free").
   useEffect(() => {
     const show = () => {
       setOpen(true);

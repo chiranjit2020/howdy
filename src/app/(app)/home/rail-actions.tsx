@@ -7,7 +7,7 @@ import { focusPeopleSearch, openFreeToTalk } from '@/ui/shell/shell-events';
 export function SwitchYoursOn() {
   return (
     <Button size="sm" variant="secondary" className="self-start" onClick={openFreeToTalk}>
-      Switch yours on
+      Tell friends you’re free
     </Button>
   );
 }
