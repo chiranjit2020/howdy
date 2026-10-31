@@ -106,15 +106,18 @@ describe('AppShell', () => {
       'href',
       '/notifications',
     );
-    // Your avatar opens the account menu: your profile, Settings, and your devices with the ways to sign out.
+    // Your avatar opens a short account menu: your profile, Settings, Devices (managed in Settings) and Sign out.
     const account = screen.getByRole('button', { name: 'Your account' });
     expect(account).toHaveAttribute('aria-expanded', 'false');
     fireEvent.click(account);
     expect(account).toHaveAttribute('aria-expanded', 'true');
     const panel = within(screen.getByRole('region', { name: 'Your account' }));
     expect(panel.getByRole('link', { name: 'My profile' })).toHaveAttribute('href', '/profile/chiru');
-    expect(panel.getByRole('heading', { name: 'Devices' })).toBeInTheDocument();
-    expect(panel.getByRole('button', { name: 'Sign out everywhere…' })).toBeInTheDocument();
+    expect(panel.getByRole('link', { name: 'Settings' })).toHaveAttribute('href', '/settings');
+    expect(panel.getByRole('link', { name: /^Devices/ })).toHaveAttribute('href', '/settings#devices');
+    expect(panel.getByRole('button', { name: 'Sign out' })).toBeInTheDocument();
+    // The device list and "Sign out everywhere" live in Settings, not in the menu.
+    expect(panel.queryByRole('button', { name: 'Sign out everywhere…' })).not.toBeInTheDocument();
     // Phones: the pages that are not tabs are behind "More" (CSS hides it from md up), which says when one has news
     // (Visitors is in there, with today's 4).
     expect(screen.getByRole('button', { name: 'More pages, 4 new' })).toHaveAttribute(

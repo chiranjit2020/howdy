@@ -17,6 +17,7 @@ export {
   type ConfirmationDialogProps,
 } from './dialog';
 export { Popover, type TriggerProps } from './popover';
+export { HelpTip } from './help-tip';
 export { Tooltip } from './tooltip';
 export { Dropdown, type DropdownItem, type MenuTriggerProps } from './dropdown';
 export { ToastProvider, useToast, type ToastInput, type ToastTone } from './toast';

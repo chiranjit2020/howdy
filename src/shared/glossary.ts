@@ -1,7 +1,14 @@
-/** Plain-English one-liners for Howdy's own vocabulary, shown by `GlossaryHint` next to a term's first appearance. */
+/**
+ * Plain-English one-liners for Howdy's own vocabulary, shown by `GlossaryHint` (a HelpTip) next to a term's first
+ * appearance. A hint can show on anyone's page, not only your own: say what the thing is, and keep it true for every
+ * setting (a wall may be friends-only; who may write on it is the owner's choice).
+ */
 export const GLOSSARY = {
   ranch: { term: 'Profile', definition: 'Your profile — the page people land on when they look you up.' },
-  fence: { term: 'Wall', definition: 'Your public wall. Anyone who can see it can leave a post here.' },
+  fence: {
+    term: 'Wall',
+    definition: 'The posts on a profile. Its owner chooses who can read the wall and who can write on it.',
+  },
   posse: {
     term: 'Friends',
     definition: 'Your friends on Howdy — people you have both agreed to connect with.',

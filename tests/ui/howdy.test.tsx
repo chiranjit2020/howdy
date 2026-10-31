@@ -293,6 +293,9 @@ describe('PostCardComposer', () => {
     const user = userEvent.setup();
     const onSubmit = vi.fn();
     render(<PostCardComposer kind="card" onSubmit={onSubmit} />);
+    // One line until you click in: no Post button yet.
+    expect(screen.queryByRole('button', { name: 'Post' })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('textbox'));
     const submit = screen.getByRole('button', { name: 'Post' });
     expect(submit).toBeDisabled();
     await user.type(screen.getByRole('textbox'), '   ');

@@ -13,6 +13,7 @@ import {
   Dropdown,
   EmptyState,
   ErrorState,
+  HelpTip,
   IconButton,
   Input,
   LoadingState,
@@ -268,6 +269,28 @@ describe('Popover', () => {
     await user.click(trigger);
     await user.click(screen.getByRole('button', { name: 'outside' }));
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+});
+
+describe('HelpTip', () => {
+  it('a named "?" with a 44px target opens its explanation and closes on Escape, focus back on the "?"', async () => {
+    const user = userEvent.setup();
+    const { container } = render(
+      <h2>
+        Badges <HelpTip label="What are badges?">Kind words from friends, counted.</HelpTip>
+      </h2>,
+    );
+    const tip = screen.getByRole('button', { name: 'What are badges?' });
+    expect(tip).toHaveClass('size-11');
+    expect(screen.queryByText('Kind words from friends, counted.')).not.toBeInTheDocument();
+    await user.click(tip);
+    expect(screen.getByRole('dialog', { name: 'What are badges?' })).toHaveTextContent(
+      'Kind words from friends, counted.',
+    );
+    expect(await axeViolations(container)).toEqual([]);
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(tip).toHaveFocus();
   });
 });
 
