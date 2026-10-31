@@ -1,29 +1,53 @@
 'use client';
 
 import Link from 'next/link';
-import { useCallback, useId, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
+import { apiRequest, postJson } from '../auth/api';
 import { Avatar } from '../primitives/avatar';
 import { useDismiss } from '../primitives/use-dismiss';
 import type { ShellMe } from './app-shell';
-import { Devices } from './devices';
+
+const ROW =
+  'flex min-h-11 items-center rounded-md px-2 text-body text-text-primary no-underline hover:bg-surface-sunken hover:no-underline';
 
 /**
- * Your avatar in the top bar (wide screens): opens a small panel with who you are, your profile and Settings, and your
- * devices with the ways to sign out. A disclosure, not a menu: it holds a list and buttons, so Tab moves through it as
+ * Your avatar in the top bar (wide screens): opens a short panel with who you are, My profile, Settings, Devices (how
+ * many, linking to Settings, where devices are managed) and Sign out. A disclosure, not a menu: Tab moves through it as
  * usual. Escape or a click outside closes it, and focus goes back to the avatar.
  */
 export function AccountMenu({ me }: { me: ShellMe }) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [devices, setDevices] = useState<number | undefined>();
+  const [leaving, setLeaving] = useState(false);
   const root = useRef<HTMLDivElement>(null);
   const button = useRef<HTMLButtonElement>(null);
   const panelId = useId();
   const close = useCallback(() => {
-    // While "Sign out of every device?" is asking, Escape belongs to that question: it closes the question only.
-    if (root.current?.querySelector('dialog[open]')) return;
     setOpen(false);
     button.current?.focus();
   }, []);
   useDismiss(open, [root], close);
+
+  // How many devices: fetched each time the panel opens (it changes when you sign in elsewhere).
+  useEffect(() => {
+    if (!open) return;
+    let gone = false;
+    void apiRequest<{ sessions: unknown[] }>('GET', '/api/auth/sessions').then((res) => {
+      if (!gone && res.ok && res.data) setDevices(res.data.sessions.length);
+    });
+    return () => {
+      gone = true;
+    };
+  }, [open]);
+
+  async function signOut() {
+    setLeaving(true);
+    await postJson('/api/auth/logout', {});
+    router.push('/gate');
+    router.refresh();
+  }
 
   return (
     <div ref={root} className="relative hidden md:block">
@@ -44,7 +68,7 @@ export function AccountMenu({ me }: { me: ShellMe }) {
           id={panelId}
           role="region"
           aria-label="Your account"
-          className="absolute top-full right-0 z-40 mt-2 flex w-80 flex-col gap-3 rounded-lg border border-border bg-surface p-4 shadow-float"
+          className="absolute top-full right-0 z-40 mt-2 flex w-72 flex-col gap-3 rounded-lg border border-border bg-surface p-4 shadow-float"
         >
           <div className="flex items-center gap-3">
             <Avatar name={me.displayName} src={me.portraitUrl} tint={me.portraitTint} size="md" />
@@ -58,18 +82,34 @@ export function AccountMenu({ me }: { me: ShellMe }) {
               { href: `/profile/${me.handle}`, label: 'My profile' },
               { href: '/settings', label: 'Settings' },
             ].map((l) => (
-              <Link
-                key={l.href}
-                href={l.href}
-                onClick={() => setOpen(false)}
-                className="flex min-h-11 items-center rounded-md px-2 text-body text-text-primary no-underline hover:bg-surface-sunken hover:no-underline"
-              >
+              <Link key={l.href} href={l.href} onClick={() => setOpen(false)} className={ROW}>
                 {l.label}
               </Link>
             ))}
+            <Link
+              href="/settings#devices"
+              onClick={() => setOpen(false)}
+              className={`${ROW} justify-between`}
+            >
+              Devices
+              {devices !== undefined && (
+                <span className="text-caption text-text-secondary">
+                  {devices}
+                  <span className="sr-only"> signed in</span>
+                </span>
+              )}
+            </Link>
           </nav>
-          <div className="border-t border-border pt-3">
-            <Devices plain />
+          <div className="border-t border-border pt-2">
+            <button
+              type="button"
+              onClick={() => void signOut()}
+              disabled={leaving}
+              aria-busy={leaving || undefined}
+              className={`${ROW} w-full text-left disabled:text-text-muted`}
+            >
+              {leaving ? 'Signing out…' : 'Sign out'}
+            </button>
           </div>
         </div>
       )}

@@ -268,6 +268,9 @@ test.describe('authentication journey (production build, real CSP, real cookies)
     const gates = p1.getByRole('region', { name: 'Devices' });
     await expect(gates.getByRole('listitem')).toHaveCount(2);
     await expect(gates.getByText('This device')).toHaveCount(1);
+    // This device first; each says when it signed in, so two "Chrome on Windows" can be told apart.
+    await expect(gates.getByRole('listitem').first()).toContainText('This device');
+    await expect(gates.getByRole('listitem').first()).toContainText(/· signed in \d{1,2} \w{3}/);
     await gates.getByRole('button', { name: /Sign out on/ }).click();
     await expect(gates.getByText('Where you are signed in · 1 device')).toBeVisible();
     await expect(gates.getByRole('listitem')).toHaveCount(1);
@@ -287,17 +290,20 @@ test.describe('authentication journey (production build, real CSP, real cookies)
     await signUpVia(page, a);
     await confirmEmailVia(page, a.email);
     await stepInsideVia(page, a.email, a.password);
-    // From the account menu under the avatar.
+    // The account menu under the avatar says how many devices, and leads to Settings, where they are managed.
     await page.getByRole('button', { name: 'Your account' }).click();
-    const panel = page.getByRole('region', { name: 'Your account' });
+    const devicesLink = page.getByRole('region', { name: 'Your account' }).getByRole('link', { name: /^Devices/ });
+    await expect(devicesLink).toHaveAccessibleName('Devices 1 signed in');
+    await devicesLink.click();
+    await expect(page).toHaveURL(/\/settings#devices$/);
+    const panel = page.getByRole('region', { name: 'Devices' });
     await panel.getByRole('button', { name: 'Sign out everywhere…' }).click();
     const dialog = page.getByRole('alertdialog', { name: 'Sign out of every device?' });
     await expect(dialog).toBeVisible();
     await expect(dialog.getByRole('button', { name: 'Cancel' })).toBeFocused(); // the safe choice is the default
     await page.keyboard.press('Escape');
     await expect(dialog).toBeHidden();
-    await expect(panel).toBeVisible(); // Escape closed the question, not the menu
-    await expect(page).toHaveURL(/\/home$/); // cancelling changed nothing
+    await expect(page).toHaveURL(/\/settings#devices$/); // cancelling changed nothing
     await panel.getByRole('button', { name: 'Sign out everywhere…' }).click();
     await dialog.getByRole('button', { name: 'Sign out everywhere' }).click();
     await expect(page).toHaveURL(/\/gate$/);

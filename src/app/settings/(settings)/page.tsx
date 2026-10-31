@@ -65,12 +65,13 @@ export default async function WorkshopPage() {
           })),
         }}
       />
-      {/* The phone's More menu links here (#devices); wide screens also have it under the avatar. */}
+      {/* The phone's More menu and the avatar menu ("Devices · 5") link here (#devices). */}
       <div id="devices" className="scroll-mt-20">
         <Devices
           initial={sessions.map((s) => ({
             id: s.id,
             deviceLabel: s.deviceLabel,
+            createdAt: s.createdAt.toISOString(),
             lastSeenAt: s.lastSeenAt.toISOString(),
             current: s.current,
           }))}

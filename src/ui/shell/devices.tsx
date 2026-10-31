@@ -3,23 +3,37 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useId, useState } from 'react';
 import { apiRequest, postJson } from '../auth/api';
-import { cn } from '../cn';
 import { RelativeTime } from '../howdy';
 import { Badge, Button, ConfirmationDialog } from '../primitives';
 
 export interface DeviceRow {
   id: string;
   deviceLabel: string;
+  createdAt: string;
   lastSeenAt: string;
   current: boolean;
 }
 
 /**
- * Where you are signed in, and the ways out: each other device can be closed on its own; "Sign out" leaves this one;
- * "Sign out everywhere" (rare and drastic) asks first. Lives in the avatar menu (wide screens) and in Settings (every
- * screen). Without `initial` it loads the list itself, when it is first shown.
+ * "28 Oct" (this year) or "28 Oct 2025": when a device signed in, so two "Chrome on Windows" rows can be told apart. A
+ * fixed locale and time zone (India, the audience): the server and the browser must print the same thing.
  */
-export function Devices({ initial, plain = false }: { initial?: DeviceRow[]; plain?: boolean }) {
+const signedInOn = (iso: string) => {
+  const d = new Date(iso);
+  return d.toLocaleDateString('en-IN', {
+    day: 'numeric',
+    month: 'short',
+    timeZone: 'Asia/Kolkata',
+    ...(d.getFullYear() === new Date().getFullYear() ? {} : { year: 'numeric' }),
+  });
+};
+
+/**
+ * Where you are signed in, and the ways out: each other device can be closed on its own; "Sign out" leaves this one;
+ * "Sign out everywhere" (rare and drastic) asks first. Lives in Settings (the avatar menu links to it). This device comes
+ * first. Without `initial` it loads the list itself, when it is first shown.
+ */
+export function Devices({ initial }: { initial?: DeviceRow[] }) {
   const router = useRouter();
   const headingId = useId();
   const [rows, setRows] = useState<DeviceRow[] | null>(initial ?? null);
@@ -59,7 +73,7 @@ export function Devices({ initial, plain = false }: { initial?: DeviceRow[]; pla
   }
 
   return (
-    <section aria-labelledby={headingId} className={cn('flex flex-col gap-2', !plain && 'clay p-4 sm:p-5')}>
+    <section aria-labelledby={headingId} className="clay flex flex-col gap-2 p-4 sm:p-5">
       <div>
         <h2 id={headingId} className="text-body font-semibold text-text-primary">
           Devices
@@ -78,28 +92,32 @@ export function Devices({ initial, plain = false }: { initial?: DeviceRow[]; pla
       {rows === null && !error && <p className="text-caption text-text-muted">Loading…</p>}
       {rows && (
         <ul className="flex flex-col divide-y divide-border/60">
-          {rows.map((r) => (
-            <li key={r.id} className="flex items-center gap-3 py-2">
-              <div className="min-w-0 flex-1">
-                <p className="text-caption text-text-primary">
-                  {r.deviceLabel} {r.current && <Badge tone="success">This device</Badge>}
-                </p>
-                <p className="text-metadata text-text-muted">
-                  Last active <RelativeTime date={r.lastSeenAt} />
-                </p>
-              </div>
-              {!r.current && (
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => close(r.id)}
-                  aria-label={`Sign out on ${r.deviceLabel}`}
-                >
-                  Sign out
-                </Button>
-              )}
-            </li>
-          ))}
+          {[...rows]
+            .sort((a, b) => Number(b.current) - Number(a.current))
+            .map((r) => (
+              <li key={r.id} className="flex items-center gap-3 py-2">
+                <div className="min-w-0 flex-1">
+                  <p className="text-caption text-text-primary">
+                    {r.deviceLabel}
+                    <span className="text-text-secondary"> · signed in {signedInOn(r.createdAt)}</span>{' '}
+                    {r.current && <Badge>This device</Badge>}
+                  </p>
+                  <p className="text-metadata text-text-muted">
+                    Last active <RelativeTime date={r.lastSeenAt} />
+                  </p>
+                </div>
+                {!r.current && (
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => close(r.id)}
+                    aria-label={`Sign out on ${r.deviceLabel}`}
+                  >
+                    Sign out
+                  </Button>
+                )}
+              </li>
+            ))}
         </ul>
       )}
       <div className="flex flex-wrap items-center gap-2 border-t border-border/60 pt-3">
