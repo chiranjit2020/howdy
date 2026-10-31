@@ -6,7 +6,7 @@ import type { StoryRingItem } from '@/modules/stories';
 import { STORY_CAPTION_MAX, type StoryAudience } from '@/shared/validation/stories';
 import { postJson } from '@/ui/auth/api';
 import { cn } from '@/ui/cn';
-import { SendIcon } from '@/ui/icons';
+import { PlusIcon, SendIcon } from '@/ui/icons';
 import { uploadPhoto } from '@/ui/media/upload-photo';
 import { Avatar, FullScreen, FullScreenClose, IconButton, useToast } from '@/ui/primitives';
 import { StoryViewer } from './story-viewer';
@@ -57,15 +57,16 @@ export function StoriesStrip({
         <Avatar name={me.displayName} tint={me.portraitTint} src={me.portraitUrl} size={lead ? 'md' : 'lg'} />
       </button>
       {!mine && (
-        // Decoration only: the whole picture is the button (the badge alone would be too small to tap).
+        // Decoration only: the whole picture is the button (the badge alone would be too small to tap). A drawn plus,
+        // not the "+" character: a glyph sits on the font's baseline, so it is never quite centred in the circle.
         <span
           aria-hidden="true"
           className={cn(
-            'pointer-events-none absolute flex items-center justify-center rounded-pill border-2 border-surface bg-accent-strong leading-none font-bold text-on-accent shadow-clay-sm',
-            lead ? '-right-0.5 -bottom-0.5 size-5 text-caption' : '-right-1 -bottom-1 size-7 text-title',
+            'pointer-events-none absolute flex items-center justify-center rounded-pill border-2 border-surface bg-accent-strong text-on-accent shadow-clay-sm',
+            lead ? '-right-0.5 -bottom-0.5 size-5' : '-right-1 -bottom-1 size-7',
           )}
         >
-          +
+          <PlusIcon strokeWidth={2} className={lead ? 'size-3' : 'size-4'} />
         </span>
       )}
     </div>
