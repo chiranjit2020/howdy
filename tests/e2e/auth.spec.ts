@@ -454,7 +454,8 @@ test.describe('signed-out pages: accessibility and layout in a real browser', ()
     await expect(page.getByLabel('Email or username')).toBeVisible();
 
     await page.getByRole('link', { name: 'Create account', exact: true }).click();
-    await expect(page.getByRole('heading', { name: 'Create your account' })).toBeVisible();
+    // The heading is for screen readers and the page outline (as on Log in); the form is what shows.
+    await expect(page.getByRole('heading', { name: 'Create your account' })).toHaveCount(1);
     await expect(page.getByLabel('Username')).toBeVisible();
     await expect(page.getByLabel('Email or username')).toHaveCount(0);
     await expect(page).toHaveURL(/\/signup$/);

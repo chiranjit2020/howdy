@@ -237,7 +237,8 @@ export function ClaimForm({
 
   return (
     <form ref={formRef} onSubmit={onSubmit} noValidate className="flex flex-col gap-3">
-      <h1 className="text-title text-text-primary">Create your account</h1>
+      {/* For screen readers only, as on Log in: the card itself (logo, fields, "Create account") says what it is. */}
+      <h1 className="sr-only">Create your account</h1>
       {invite && (
         // Says exactly what will happen, and nothing more is granted (ADR-045).
         <p className="rounded-md border border-accent/30 bg-accent-soft px-3 py-2 text-caption font-normal text-text-primary">
