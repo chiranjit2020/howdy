@@ -4,7 +4,7 @@ import { MAX_PENDING_OUTGOING, RATE } from '@/modules/relationships/service';
 import { getPool } from '@/platform/db';
 import { setRateLimiter } from '@/platform/rate-limit';
 import { freshAuthState, settledUser, stable, uniqueUser, type TestKit } from '../helpers/auth';
-import { patchRanch, setSignal, viewRanch } from '../helpers/ranch';
+import { patchRanch, viewRanch } from '../helpers/ranch';
 import { NONE, doAct, insertUser, myLists, q, relWith, userId } from '../helpers/social';
 
 let kit: TestKit;
@@ -279,11 +279,11 @@ describe('the database enforces the model even against buggy code', () => {
   });
 });
 
-describe('scouting or blocking does not leak through the Signal either', () => {
-  it('a blocked person never receives a members-only Signal', async () => {
+describe('blocking does not leak what is on the profile either', () => {
+  it('a blocked person never receives the members-only profile (its bio included)', async () => {
     const a = await person('alice');
     const b = await person('bob');
-    await setSignal('secret vibe', as(a));
+    await patchRanch({ bio: 'secret vibe' }, as(a));
     await doAct(b.handle, 'block', as(a));
     const r = await viewRanch(a.handle, as(b));
     expect(r.status).toBe(404);

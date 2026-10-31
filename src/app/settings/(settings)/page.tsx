@@ -42,7 +42,6 @@ export default async function WorkshopPage() {
       />
       <BoundaryForm
         ranchVisibility={ranch.ranchVisibility}
-        signalVisibility={ranch.signalVisibility}
         discoverable={ranch.discoverable}
         searchable={ranch.searchable}
         official={ranch.verified}

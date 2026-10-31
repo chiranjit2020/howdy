@@ -56,6 +56,8 @@ describe('only the signed-in owner can change a Ranch', () => {
   it('A setting or clearing a Signal only ever touches A’s own Signal', async () => {
     const a = await signedInUser(kit, uniqueUser('alice'));
     const b = await signedInUser(kit, uniqueUser('bob'));
+    // Only team accounts still have a Signal (the "What's new" note); make both one for this.
+    await sql("update users set role = 'admin' where handle in ($1, $2)", [a.handle, b.handle]);
     await setSignal('Bob’s vibe', { cookie: b.cookie });
     await setSignal('Alice’s vibe', { cookie: a.cookie });
     await clearSignal({ cookie: a.cookie });
@@ -101,7 +103,7 @@ describe('Tend the Ranch: validation is enforced on the server', () => {
     ['a control character in the name', { displayName: 'bad\u0007' }, 'displayName'],
     ['an unknown profile photo tint', { portraitTint: 'neon' }, 'portraitTint'],
     ['an unknown visibility', { ranchVisibility: 'public' }, 'ranchVisibility'],
-    ['a null visibility', { signalVisibility: null }, 'signalVisibility'],
+    ['a null visibility', { fenceVisibility: null }, 'fenceVisibility'],
   ])('%s → 422 on the right field, nothing changes', async (_n, body, field) => {
     const a = await signedInUser(kit);
     const r = await patchRanch(body, { cookie: a.cookie });
@@ -179,6 +181,7 @@ describe('Tend the Ranch: validation is enforced on the server', () => {
 describe('the Signal', () => {
   it('lasts 12 hours, can be replaced, and can be cleared', async () => {
     const a = await signedInUser(kit);
+    await sql("update users set role = 'admin' where handle = $1", [a.handle]); // the team's note
     const before = Date.now();
     const set = await setSignal('  Writing   code. Send chai.  ', { cookie: a.cookie });
     expect(set.status).toBe(200);
@@ -226,6 +229,7 @@ describe('edits are rate limited (and fail closed)', () => {
 
   it('Signal changes: 30 per hour per user', async () => {
     const a = await signedInUser(kit);
+    await sql("update users set role = 'admin' where handle = $1", [a.handle]); // the team's note
     for (let i = 0; i < RATE.signal.limit; i++)
       expect((await setSignal(`vibe ${i}`, { cookie: a.cookie })).status).toBe(200);
     expect((await setSignal('one too many', { cookie: a.cookie })).status).toBe(429);

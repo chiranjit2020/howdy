@@ -25,6 +25,8 @@ describe('Signal retention (master prompt §54: ephemeral data is not kept forev
   it('physically clears expired Signals, leaves live ones alone, and is idempotent', async () => {
     const a = await signedInUser(kit, uniqueUser('alice'));
     const b = await signedInUser(kit, uniqueUser('bob'));
+    // Only team accounts still have a Signal (the "What's new" note).
+    await sql("update users set role = 'admin' where handle in ($1, $2)", [a.handle, b.handle]);
     await setSignal('expired', { cookie: a.cookie });
     await setSignal('still alive', { cookie: b.cookie });
     await sql(
@@ -52,6 +54,7 @@ describe('Signal retention (master prompt §54: ephemeral data is not kept forev
 
   it('respects the supplied clock (a Signal is kept until its exact expiry)', async () => {
     const a = await signedInUser(kit);
+    await sql("update users set role = 'admin' where handle = $1", [a.handle]);
     await setSignal('hello', { cookie: a.cookie });
     expect(await clearExpiredSignals(new Date(Date.now() + 11 * 3_600_000))).toBe(0);
     expect(await clearExpiredSignals(new Date(Date.now() + 13 * 3_600_000))).toBe(1);

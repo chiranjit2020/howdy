@@ -4,7 +4,7 @@ import { setRateLimiter } from '@/platform/rate-limit';
 import { MemoryRateLimiter } from '@/platform/rate-limit';
 import { RATE } from '@/modules/profiles/service';
 import { freshAuthState, signedInUser, signUpUser, stable, uniqueUser, type TestKit } from '../helpers/auth';
-import { myRanch, patchRanch, setSignal, sql, viewRanch } from '../helpers/ranch';
+import { clearSignal, myRanch, patchRanch, setSignal, sql, viewRanch } from '../helpers/ranch';
 
 let kit: TestKit;
 beforeEach(async () => {
@@ -164,46 +164,29 @@ describe('what a viewer receives', () => {
   });
 });
 
-describe('the Signal has its own visibility, never broader than the Ranch', () => {
-  it('members see it by default; “posse” hides only the Signal, not the Ranch', async () => {
+describe('Status is retired for members (only the team keeps a Signal: its "What\'s new" note)', () => {
+  it('a member cannot set or clear one, and one left in the database is never shown, even to its owner', async () => {
     const { a, b } = await twoUsers();
-    await setSignal('In the zone', { cookie: b.cookie });
-    expect((await viewRanch(b.handle, { cookie: a.cookie })).data.ranch).toMatchObject({
-      signal: { text: 'In the zone' },
-    });
-    await patchRanch({ signalVisibility: 'posse' }, { cookie: b.cookie });
-    const r = await viewRanch(b.handle, { cookie: a.cookie });
-    expect(r.status).toBe(200);
-    expect(r.data.ranch).toMatchObject({ displayName: b.handle, signal: null });
-    expect(r.text).not.toContain('In the zone');
-    expect((await viewRanch(b.handle, { cookie: b.cookie })).data.ranch).toMatchObject({
-      signal: { text: 'In the zone' },
-    }); // owner still sees it
+    expect((await setSignal('In the zone', { cookie: b.cookie })).status).toBe(403);
+    expect((await clearSignal({ cookie: b.cookie })).status).toBe(403);
+    await patchRanch({ ranchVisibility: 'everyone' }, { cookie: b.cookie });
+    await sql(
+      "update profiles set signal = 'Left over', signal_set_at = now(), signal_expires_at = now() + interval '1 hour' where user_id = (select id from users where handle = $1)",
+      [b.handle],
+    );
+    for (const seen of [
+      await viewRanch(b.handle, { cookie: a.cookie }),
+      await viewRanch(b.handle),
+      await viewRanch(b.handle, { cookie: b.cookie }),
+    ]) {
+      expect(seen.data.ranch).toMatchObject({ signal: null });
+      expect(seen.text).not.toContain('Left over');
+    }
   });
 
-  it('a Signal set to “everyone” on a members-only Ranch leaks nothing to signed-out visitors', async () => {
-    const { b } = await twoUsers();
-    await setSignal('Only for members', { cookie: b.cookie });
-    await patchRanch({ ranchVisibility: 'members', signalVisibility: 'everyone' }, { cookie: b.cookie });
-    const anon = await viewRanch(b.handle);
-    expect(anon.status).toBe(404);
-    expect(anon.text).not.toContain('Only for members');
-  });
-
-  it('a public Ranch with a members-only Signal shows signed-out visitors the Ranch but not the Signal', async () => {
+  it('an expired team note is invisible immediately, without waiting for the purge job', async () => {
     const { a, b } = await twoUsers();
-    await setSignal('Members only vibe', { cookie: b.cookie });
-    await patchRanch({ ranchVisibility: 'everyone', signalVisibility: 'members' }, { cookie: b.cookie });
-    const anon = await viewRanch(b.handle);
-    expect(anon.status).toBe(200);
-    expect(anon.data.ranch).toMatchObject({ signal: null });
-    expect((await viewRanch(b.handle, { cookie: a.cookie })).data.ranch).toMatchObject({
-      signal: { text: 'Members only vibe' },
-    });
-  });
-
-  it('an expired Signal is invisible immediately — even to its owner — without waiting for the purge job', async () => {
-    const { a, b } = await twoUsers();
+    await sql("update users set role = 'admin' where handle = $1", [b.handle]);
     await setSignal('Gone soon', { cookie: b.cookie });
     await sql(
       "update profiles set signal_expires_at = now() - interval '1 second' where user_id = (select id from users where handle = $1)",

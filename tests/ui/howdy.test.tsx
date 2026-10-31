@@ -83,36 +83,37 @@ describe('YoButton', () => {
 describe('VibeMatrix', () => {
   const counts = (gem: number, pure: number) => ({ gem, pure, chill: 0, sharp: 0, bold: 0 });
 
-  it('shows earned counts with meanings below 20 badges, and the percentage bars from 20', () => {
+  it('one line per kind: the count below 20 badges, a percentage bar from 20', () => {
     const { rerender } = render(<VibeMatrix counts={counts(12, 7)} total={19} />);
-    expect(screen.getByText('Rare, genuinely valuable')).toBeInTheDocument();
     expect(screen.getByText((_, el) => el?.textContent === '12 badges')).toBeInTheDocument(); // count + hidden word
-    expect(
-      screen.getByText(/19 badges total\. The percentages show up after 20 — 1 to go\./),
-    ).toBeInTheDocument();
+    expect(screen.queryByText('Rare, genuinely valuable')).not.toBeInTheDocument(); // meanings live in the card's "?"
     expect(screen.queryByRole('img', { name: /%$/ })).not.toBeInTheDocument();
 
     rerender(<VibeMatrix counts={counts(13, 7)} total={20} />);
     expect(screen.getByRole('img', { name: 'Gem: 13 badges, 65%' })).toBeInTheDocument();
     expect(screen.getByRole('img', { name: 'Bold: 0 badges, 0%' })).toBeInTheDocument();
-    expect(screen.getByText('20 badges total.')).toBeInTheDocument();
-    expect(screen.queryByText('Rare, genuinely valuable')).not.toBeInTheDocument();
+    expect(screen.getByText('From 20 badges.')).toBeInTheDocument();
   });
 
-  it('offers five picks only when there is somewhere to send them, disabled with the reason when not allowed', () => {
+  it('each line is the button when a badge may be given; plain lines with the reason when not', async () => {
+    const user = userEvent.setup();
+    const given: string[] = [];
     const { rerender } = render(<VibeMatrix counts={counts(0, 0)} total={0} />);
-    expect(screen.queryByRole('group', { name: 'Give a badge' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button')).not.toBeInTheDocument();
+    rerender(<VibeMatrix counts={counts(3, 0)} total={3} canGive onGive={(k) => given.push(k)} />);
+    expect(screen.getAllByRole('button')).toHaveLength(5); // no second row of picks
+    await user.click(screen.getByRole('button', { name: /^Give a Gem badge/ }));
+    expect(given).toEqual(['gem']);
     rerender(
       <VibeMatrix
-        counts={counts(0, 0)}
-        total={0}
+        counts={counts(3, 0)}
+        total={3}
         canGive={false}
         onGive={() => undefined}
         disabledHint="You can give them a badge again in 3 days."
       />,
     );
-    expect(screen.getAllByRole('button')).toHaveLength(5);
-    for (const b of screen.getAllByRole('button')) expect(b).toBeDisabled();
+    expect(screen.queryByRole('button')).not.toBeInTheDocument(); // not greyed-out buttons: plain lines
     expect(screen.getByText('You can give them a badge again in 3 days.')).toBeInTheDocument();
   });
 });
@@ -440,9 +441,9 @@ describe('ChimeItem, TownHallCard, RanchHeader', () => {
     expect(container.textContent).not.toMatch(/\d+\s*(members|people)/i);
   });
 
-  it('a Ranch header has a single h1 with the display name and shows the Signal', () => {
+  it('a Ranch header has a single h1 with the display name and shows the bio', () => {
     render(
-      <RanchHeader displayName="Chiranjit" handle="chiranjit" signal="Writing code" relationship="POSSE" />,
+      <RanchHeader displayName="Chiranjit" handle="chiranjit" bio="Writing code" relationship="POSSE" />,
     );
     expect(screen.getByRole('heading', { level: 1, name: 'Chiranjit' })).toBeInTheDocument();
     expect(screen.getByText('@chiranjit')).toBeInTheDocument();
@@ -457,7 +458,7 @@ describe('ChimeItem, TownHallCard, RanchHeader', () => {
           displayName="Chiranjit"
           handle="chiranjit"
           online
-          signal="Writing code"
+          bio="Writing code"
           relationship="POSSE"
         />
         <Fence>{card()}</Fence>

@@ -1,6 +1,5 @@
 export { RanchHeader, type RanchHeaderProps } from './ranch-header';
 export { CoverSwatch, RanchCover } from './ranch-cover';
-export { Signal } from './signal';
 export {
   PostCard,
   PostCardReply,

@@ -34,7 +34,12 @@ async function makePals(asker: Person, asked: Person) {
   expect((await api(asked, `/api/relationships/${asker.handle}`, { action: 'accept' })).ok()).toBe(true);
 }
 
-const picks = (page: Page) => page.getByRole('group', { name: 'Give a badge' });
+/** The Badges card; for someone who may give one, each line is the button. */
+const card = (page: Page) => page.getByRole('region', { name: 'Badges' });
+const give = (page: Page, kind: string) =>
+  card(page).getByRole('button', { name: new RegExp(`^Give a ${kind} badge`) });
+/** The Sharp line (the badge Bob gives), to read its count. */
+const sharpLine = (page: Page) => card(page).getByRole('listitem').filter({ hasText: 'Sharp' });
 
 test.describe('Marks and the Vibe Matrix (production build, real CSP)', () => {
   test('a friend awards one Mark, sees it counted, then waits 30 days; the owner and a stranger cannot award', async ({
@@ -46,28 +51,24 @@ test.describe('Marks and the Vibe Matrix (production build, real CSP)', () => {
     const problems = await watchProblems(b.page);
     await makePals(b, a);
 
-    // Bob opens Alice's Porch: plain counts (nothing earned yet), each Mark's meaning, and five picks.
+    // Bob opens Alice's Porch: one line per kind, each one a button he can give.
     await b.page.goto(`/profile/${a.handle}`);
     await pageReady(b.page);
     const box = b.page;
-    await expect(box.getByText('Rare, genuinely valuable')).toBeVisible();
-    await expect(box.getByText('0 badges total. The percentages show up after 20 — 20 to go.')).toBeVisible();
     for (const kind of ['Gem', 'Pure', 'Chill', 'Sharp', 'Bold'])
-      await expect(picks(b.page).getByRole('button', { name: kind })).toBeEnabled();
+      await expect(give(b.page, kind)).toBeEnabled();
 
     // He gives a Sharp Mark: it is counted at once, and every pick is closed for 30 days.
-    await picks(b.page).getByRole('button', { name: 'Sharp' }).click();
+    await give(b.page, 'Sharp').click();
     await expect(b.page.getByText('You gave a Sharp badge.')).toBeVisible();
-    await expect(box.getByText('1 badge total. The percentages show up after 20 — 19 to go.')).toBeVisible();
     await expect(box.getByText('You can give them a badge again in 30 days.')).toBeVisible();
-    for (const kind of ['Gem', 'Pure', 'Chill', 'Sharp', 'Bold'])
-      await expect(picks(b.page).getByRole('button', { name: kind })).toBeDisabled();
+    await expect(card(b.page).getByRole('button', { name: /^Give a / })).toHaveCount(0);
 
     // It really was saved: a reload keeps the count and the wait.
     await b.page.reload();
     await pageReady(b.page);
-    await expect(b.page.getByText(/^1 badge total\./)).toBeVisible();
-    await expect(picks(b.page).getByRole('button', { name: 'Gem' })).toBeDisabled();
+    await expect(sharpLine(b.page)).toContainText('1 badge');
+    await expect(card(b.page).getByRole('button', { name: /^Give a / })).toHaveCount(0);
     await expect(b.page.getByText('You can give them a badge again in 30 days.')).toBeVisible();
 
     // Alice is told someone gave her a Mark, never which kind; her own Porch shows the count and no picks.
@@ -82,14 +83,14 @@ test.describe('Marks and the Vibe Matrix (production build, real CSP)', () => {
       .toContain(`${b.handle} gave you a badge.`);
     await a.page.goto(`/profile/${a.handle}`);
     await pageReady(a.page);
-    await expect(a.page.getByText(/^1 badge total\./)).toBeVisible();
-    await expect(picks(a.page)).toHaveCount(0);
+    await expect(sharpLine(a.page)).toContainText('1 badge');
+    await expect(card(a.page).getByRole('button', { name: /^Give a / })).toHaveCount(0);
 
     // Carol is not Alice's Pal: she sees the tally, but the picks are closed (and nothing says why).
     await c.page.goto(`/profile/${a.handle}`);
     await pageReady(c.page);
-    await expect(c.page.getByText(/^1 badge total\./)).toBeVisible();
-    await expect(picks(c.page).getByRole('button', { name: 'Gem' })).toBeDisabled();
+    await expect(sharpLine(c.page)).toContainText('1 badge');
+    await expect(card(c.page).getByRole('button', { name: /^Give a / })).toHaveCount(0);
     await expect(c.page.getByText(/give them a badge again/)).toHaveCount(0);
     expect((await api(c, `/api/porch/${a.handle}/marks`, { kind: 'gem' })).status()).toBe(403);
 

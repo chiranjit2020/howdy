@@ -157,16 +157,14 @@ export function TendForm({
   return bare ? form : <ClayCard>{form}</ClayCard>;
 }
 
-/** Boundary Lines: who may open the Ranch and read the Signal. */
+/** Boundary Lines: who may open the Ranch, and whether you are suggested and findable. */
 export function BoundaryForm({
   ranchVisibility,
-  signalVisibility,
   discoverable,
   searchable,
   official = false,
 }: {
   ranchVisibility: Visibility;
-  signalVisibility: Visibility;
   /** Suggest me to Pals of my Pals (ADR-029). */
   discoverable: boolean;
   /** Findable in search by anyone (off by default). */
@@ -177,7 +175,6 @@ export function BoundaryForm({
   const router = useRouter();
   const toast = useToast();
   const [ranch, setRanch] = useState(ranchVisibility);
-  const [signal, setSignal] = useState(signalVisibility);
   const [suggestMe, setSuggestMe] = useState(discoverable);
   const [findMe, setFindMe] = useState(searchable);
   const [formError, setFormError] = useState<string | undefined>();
@@ -189,7 +186,6 @@ export function BoundaryForm({
     setBusy(true);
     const res = await apiRequest('PATCH', '/api/me/porch', {
       ranchVisibility: ranch,
-      signalVisibility: signal,
       discoverable: suggestMe,
       searchable: findMe,
     });
@@ -207,8 +203,8 @@ export function BoundaryForm({
         {formError && <FormMessage tone="error">{formError}</FormMessage>}
         {official && (
           <FormMessage tone="info">
-            As the Howdy team account, your profile, status and wall are always open to everyone (signed in or
-            not), whatever you choose here, and nobody can block you.
+            As the Howdy team account, your profile and wall are always open to everyone (signed in or not),
+            whatever you choose here, and nobody can block you.
           </FormMessage>
         )}
         <Select
@@ -216,18 +212,6 @@ export function BoundaryForm({
           value={ranch}
           onChange={(e) => setRanch(e.target.value as Visibility)}
           hint="New profiles start with members only."
-        >
-          {VISIBILITIES.map((v) => (
-            <option key={v} value={v}>
-              {VISIBILITY_LABEL[v]}
-            </option>
-          ))}
-        </Select>
-        <Select
-          label="Who can read your status?"
-          value={signal}
-          onChange={(e) => setSignal(e.target.value as Visibility)}
-          hint="Never broader than who can visit your profile."
         >
           {VISIBILITIES.map((v) => (
             <option key={v} value={v}>

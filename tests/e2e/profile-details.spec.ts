@@ -52,6 +52,14 @@ test('add details with their own audiences; a friend, a stranger and the owner e
   await owner.page.goto(`/profile/${owner.handle}`);
   await pageReady(owner.page);
   const card = owner.page.getByRole('region', { name: 'Details' });
+  // A closed accordion: one row until it is opened.
+  // Opens it if it is closed (it stays open across a save).
+  const open = async (r: typeof card) => {
+    if (!(await r.locator('details').evaluate((d) => (d as HTMLDetailsElement).open)))
+      await r.locator('summary').click();
+  };
+  await expect(card.getByRole('button', { name: 'Add details' })).toBeHidden();
+  await open(card);
   await card.getByRole('button', { name: 'Add details' }).click();
   const dialog = owner.page.getByRole('dialog', { name: 'Your details' });
   await dialog.getByLabel('Lives in').fill('Kolkata');
@@ -87,6 +95,7 @@ test('add details with their own audiences; a friend, a stranger and the owner e
   await expect(seenByStranger).not.toContainText('12 March');
 
   // A link is refused, on its field, and nothing changes.
+  await open(card);
   await owner.page.getByRole('button', { name: 'Edit details' }).click();
   await dialog.getByLabel('Work', { exact: true }).fill('Hire me at example.com');
   await dialog.getByRole('button', { name: 'Save', exact: true }).click();

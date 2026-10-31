@@ -22,10 +22,12 @@ describe('The Howdy team account (role admin)', () => {
   it('its profile and Signal are open to everyone, even signed out, whatever its own settings say', async () => {
     const team = await person('team');
     const stranger = await person('stranger');
-    await patchRanch({ ranchVisibility: 'posse', signalVisibility: 'posse' }, as(team));
-    await setSignal('New: Profiles and friends!', as(team));
+    await patchRanch({ ranchVisibility: 'posse' }, as(team));
     expect((await viewRanch(team.handle, as(stranger))).status).toBe(404); // an ordinary private Porch first
+    // Only the team posts a "What's new" note (members' Status is retired).
+    expect((await setSignal('New: Profiles and friends!', as(team))).status).toBe(403);
     await makeTeam(team.handle);
+    expect((await setSignal('New: Profiles and friends!', as(team))).status).toBe(200);
 
     const seen = await viewRanch(team.handle, as(stranger));
     expect(seen.status).toBe(200);
@@ -61,9 +63,8 @@ describe('The Howdy team account (role admin)', () => {
   it('its live Signal is the announcement on everyone’s Home', async () => {
     const team = await person('team');
     expect(await getTeamAnnouncement()).toBeNull();
-    await setSignal('Try the new tab bar', as(team));
-    expect(await getTeamAnnouncement()).toBeNull(); // not the team yet
     await makeTeam(team.handle);
+    await setSignal('Try the new tab bar', as(team));
     expect(await getTeamAnnouncement()).toMatchObject({
       text: 'Try the new tab bar',
       author: { handle: team.handle, verified: true },

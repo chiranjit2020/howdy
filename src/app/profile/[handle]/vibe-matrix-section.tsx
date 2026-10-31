@@ -5,8 +5,9 @@ import type { VibeMatrix as VibeMatrixData } from '@/modules/marks';
 import type { MarkKind } from '@/shared/validation/marks';
 import { postJson } from '@/ui/auth/api';
 import { FormMessage } from '@/ui/auth/form-parts';
-import { GlossaryHint, MARK_LABEL, VibeMatrix } from '@/ui/howdy';
-import { ClayCard, useToast } from '@/ui/primitives';
+import { MARK_LABEL, MARK_MEANING, PERCENT_AFTER, VibeMatrix } from '@/ui/howdy';
+import { RailCard } from '@/ui/howdy/rail-card';
+import { HelpTip, useToast } from '@/ui/primitives';
 
 type Wire = Omit<VibeMatrixData, 'cooldownEndsAt'> & { cooldownEndsAt: Date | string | null };
 
@@ -40,11 +41,26 @@ export function VibeMatrixSection({ handle, initial }: { handle: string; initial
   }
 
   return (
-    <ClayCard className="flex flex-col gap-3 bg-mystery/10">
-      <div className="flex items-center">
-        <h2 className="text-title text-text-primary">Badges</h2>
-        <GlossaryHint term="vibeMatrix" />
-      </div>
+    <RailCard
+      id="profile-badges"
+      title="Badges"
+      action={
+        // What each kind means, and how they are counted: once, here, instead of a line under every badge.
+        <HelpTip label="What are badges?">
+          <p className="mb-1.5">
+            Kind words from friends and group neighbours, counted. Never a leaderboard.
+          </p>
+          <ul className="mb-1.5 flex flex-col gap-0.5">
+            {(Object.keys(MARK_MEANING) as MarkKind[]).map((k) => (
+              <li key={k}>
+                <strong className="font-semibold">{MARK_LABEL[k]}</strong> · {MARK_MEANING[k]}
+              </li>
+            ))}
+          </ul>
+          <p>Counts until {PERCENT_AFTER} badges, then a share of each.</p>
+        </HelpTip>
+      }
+    >
       {error && <FormMessage tone="error">{error}</FormMessage>}
       <VibeMatrix
         counts={matrix.counts}
@@ -56,6 +72,6 @@ export function VibeMatrixSection({ handle, initial }: { handle: string; initial
           !matrix.isOwner && matrix.cooldownEndsAt ? cooldownLabel(matrix.cooldownEndsAt) : undefined
         }
       />
-    </ClayCard>
+    </RailCard>
   );
 }

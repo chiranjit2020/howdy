@@ -24,18 +24,17 @@ async function person(browser: Browser, tag: string, opts: Parameters<typeof new
   return { ...account, ctx, page };
 }
 
-const signalOn = (page: Page, text: string) => page.locator('p', { hasText: text }).first();
-
-async function saveBoundaries(page: Page, ranch: string, signal: string) {
+async function saveBoundaries(page: Page, ranch: string) {
   await page.goto('/settings');
   await page.getByLabel('Who can visit your profile?').selectOption(ranch);
-  await page.getByLabel('Who can read your status?').selectOption(signal);
+  // Status is retired (2026-11-01): there is no "who can read your status" any more.
+  await expect(page.getByLabel('Who can read your status?')).toHaveCount(0);
   await page.getByRole('button', { name: 'Save Privacy' }).click();
   await expect(page.getByRole('status').filter({ hasText: 'Privacy updated' })).toBeVisible();
 }
 
-test.describe('Ranch, Signal and Settings (production build, real CSP)', () => {
-  test('tend your own Ranch: Signal, display name and profile photo', async ({ browser }) => {
+test.describe('Ranch and Settings (production build, real CSP)', () => {
+  test('tend your own Ranch: display name, bio and profile photo', async ({ browser }) => {
     const a = await person(browser, 'tender');
     const problems = await watchProblems(a.page);
 
@@ -57,22 +56,13 @@ test.describe('Ranch, Signal and Settings (production build, real CSP)', () => {
     await edit.getByRole('button', { name: 'Save', exact: true }).click();
     await expect(edit).toBeHidden();
     await expect(a.page.getByRole('heading', { level: 1, name: 'Priya on the porch' })).toBeVisible();
+    // The refresh re-renders the page head; the title is empty for an instant, so check once it is back.
+    await expect(a.page).toHaveTitle(/Profile/);
     expect(await axeViolations(a.page)).toEqual([]);
 
-    // Signal: set, see it (and the box empties for the next one), remove it.
-    await a.page.getByLabel('What is the vibe right now?').fill('In the zone. Send chai.');
-    await a.page.getByRole('button', { name: 'Set status' }).click();
-    await expect(signalOn(a.page, 'In the zone. Send chai.').filter({ hasText: /h left/ })).toBeVisible();
-    await expect(a.page.getByLabel('What is the vibe right now?')).toHaveValue('');
-    await a.page.reload();
-    await expect(a.page.getByLabel('What is the vibe right now?')).toHaveValue('');
-    await a.page.getByRole('button', { name: 'Remove status' }).click();
-    await expect(signalOn(a.page, 'In the zone. Send chai.').filter({ hasText: /h left/ })).toHaveCount(0);
-
-    // A link in a Signal is refused, on the field, with a reason.
-    await a.page.getByLabel('What is the vibe right now?').fill('follow me http://spam.example');
-    await a.page.getByRole('button', { name: 'Set status' }).click();
-    await expect(a.page.getByText(/Links are not allowed/)).toBeVisible();
+    // Status is retired for members: no status box on your profile (only the team account has its "What's new" note).
+    await expect(a.page.getByLabel('What is the vibe right now?')).toHaveCount(0);
+    await expect(a.page.getByLabel('What’s new on Howdy?')).toHaveCount(0);
 
     // Workshop: display name + portrait colour.
     await a.page.getByRole('link', { name: 'Settings', exact: true }).first().click();
@@ -118,16 +108,15 @@ test.describe('Ranch, Signal and Settings (production build, real CSP)', () => {
     const anon = await newContext(browser);
     const anonPage = await anon.newPage();
 
-    await a.page.goto(`/profile/${a.handle}`);
-    await a.page.getByLabel('What is the vibe right now?').fill('Members-only vibe');
-    await a.page.getByRole('button', { name: 'Set status' }).click();
-    await expect(signalOn(a.page, 'Members-only vibe').filter({ hasText: /h left/ })).toBeVisible();
+    await a.page.goto('/settings');
+    await a.page.getByLabel('Bio').fill('Members-only words');
+    await a.page.getByRole('button', { name: 'Save', exact: true }).click();
+    await expect(a.page.getByRole('status').filter({ hasText: 'Profile swept' })).toBeVisible();
 
-    // Default: a signed-in member sees the Ranch and the Signal.
+    // Default: a signed-in member sees the Ranch (its bio included).
     await b.page.goto(`/profile/${a.handle}`);
     await expect(b.page.getByRole('heading', { level: 1, name: a.handle })).toBeVisible();
-    await expect(signalOn(b.page, 'Members-only vibe')).toBeVisible();
-    await expect(b.page.getByLabel('What is the vibe right now?')).toHaveCount(0); // no owner controls for visitors
+    await expect(b.page.getByText('Members-only words')).toBeVisible();
     // No owner controls, and nobody else's friends (their number included) on a profile.
     await expect(b.page.getByRole('button', { name: 'Edit your profile' })).toHaveCount(0);
     await expect(b.page.getByRole('button', { name: 'Change your photo' })).toHaveCount(0);
@@ -147,26 +136,13 @@ test.describe('Ranch, Signal and Settings (production build, real CSP)', () => {
     expect(hiddenText).toMatch(/Log in to visit this profile/);
     expect(hiddenText).not.toContain(a.handle);
 
-    // Open the Ranch to everyone (Signal still members-only): signed-out sees the Ranch but NOT the Signal.
-    await saveBoundaries(a.page, 'everyone', 'members');
+    // Open the Ranch to everyone: signed-out visitors see it too.
+    await saveBoundaries(a.page, 'everyone');
     await anonPage.goto(`/profile/${a.handle}`);
     await expect(anonPage.getByRole('heading', { level: 1, name: a.handle })).toBeVisible();
-    await expect(anonPage.getByText('Members-only vibe')).toHaveCount(0);
-    await expect(signalOn(b.page, 'Members-only vibe')).toBeVisible(); // members still do, after a reload:
-    await b.page.reload();
-    await expect(signalOn(b.page, 'Members-only vibe')).toBeVisible();
-
-    // Signal to posse: the Ranch stays open, but members no longer see the Signal (nor does the page leak it anywhere).
-    await saveBoundaries(a.page, 'everyone', 'posse');
-    await b.page.reload();
-    await expect(b.page.getByRole('heading', { level: 1, name: a.handle })).toBeVisible();
-    await expect(b.page.getByText('Members-only vibe')).toHaveCount(0);
-    expect(await b.page.content()).not.toContain('Members-only vibe');
-    await a.page.goto(`/profile/${a.handle}`);
-    await expect(signalOn(a.page, 'Members-only vibe').filter({ hasText: /h left/ })).toBeVisible(); // owner still sees it
 
     // Ranch to posse: a signed-in stranger now gets a real 404, and a signed-out visitor the generic prompt.
-    await saveBoundaries(a.page, 'posse', 'posse');
+    await saveBoundaries(a.page, 'posse');
     const notFound = await b.page.goto(`/profile/${a.handle}`);
     expect(notFound?.status()).toBe(404);
     await expect(b.page.getByRole('heading', { level: 1, name: a.handle })).toHaveCount(0);

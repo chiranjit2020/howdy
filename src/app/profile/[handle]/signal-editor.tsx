@@ -9,8 +9,9 @@ import { FormMessage } from '@/ui/auth/form-parts';
 import { Button, ClayCard, Textarea } from '@/ui/primitives';
 
 /**
- * Owner-only: set or remove the Signal. It expires 12 hours after it is set. The live Signal is shown in its own card
- * above, so this box is only for writing a new one: it starts empty and empties again once a Signal is set.
+ * The Howdy team account only: write or remove the "What's new" note that everyone sees on Home (stored as the team
+ * account's Signal; members no longer have one). It lasts 12 hours. The box is for a new note: it starts empty and
+ * empties again once one is posted; the live note is shown above it.
  */
 export function SignalEditor({ current }: { current: string | undefined }) {
   const router = useRouter();
@@ -50,25 +51,30 @@ export function SignalEditor({ current }: { current: string | undefined }) {
   return (
     <ClayCard>
       <form onSubmit={save} noValidate className="flex flex-col gap-3">
-        <h2 className="text-title text-text-primary">Your status</h2>
+        <h2 className="text-title text-text-primary">What’s new note</h2>
+        {current && (
+          <p className="text-caption text-text-secondary">
+            Showing on everyone’s Home: <span className="text-text-primary">{current}</span>
+          </p>
+        )}
         {formError && <FormMessage tone="error">{formError}</FormMessage>}
         <Textarea
-          label="What is the vibe right now?"
+          label="What’s new on Howdy?"
           value={text}
           onChange={(e) => setText(e.target.value)}
           maxLength={LIMITS.SIGNAL_MAX}
           showCount
           rows={2}
           error={fieldError}
-          hint="Fades after 12 hours. Plain text only, no links."
+          hint="Shown on everyone’s Home for 12 hours. Plain text only, no links."
         />
         <div className="flex flex-wrap gap-3">
           <Button type="submit" loading={busy === 'set'}>
-            Set status
+            Post note
           </Button>
           {current && (
             <Button variant="secondary" loading={busy === 'clear'} onClick={remove}>
-              Remove status
+              Remove note
             </Button>
           )}
         </div>

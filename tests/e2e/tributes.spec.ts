@@ -40,16 +40,23 @@ const chimeTexts = async (p: Person) =>
     (c) => c.text,
   );
 
-/** The Tributes on the Porch, in the order shown (each is a quote in a figure). */
-const shownTributes = (page: Page) => page.locator('figure blockquote');
+/** The Testimonials card at the top of the profile's right panel, and its quotes in the order shown. */
+const card = (page: Page) => page.getByRole('region', { name: 'Testimonials' });
+const shownTributes = (page: Page) => card(page).locator('blockquote');
 /** The list item holding the Tribute with this text, for its own buttons. */
 const tributeItem = (page: Page, body: string) => page.getByRole('listitem').filter({ hasText: body });
 
 async function leaveTribute(p: Person, ownerHandle: string, body: string) {
   await p.page.goto(`/profile/${ownerHandle}`);
   await pageReady(p.page);
-  await p.page.getByLabel('Leave a testimonial').fill(body);
-  await p.page.getByRole('button', { name: 'Leave testimonial' }).click();
+  // Writing opens from one link (the box is not open on every profile).
+  await card(p.page)
+    .getByRole('button', { name: /^Write a testimonial for / })
+    .click();
+  await card(p.page)
+    .getByLabel(/^Your testimonial for /)
+    .fill(body);
+  await card(p.page).getByRole('button', { name: 'Send', exact: true }).click();
   await expect(p.page.getByText('Testimonial sent. It waits for approval.')).toBeVisible();
 }
 
@@ -71,12 +78,11 @@ test.describe('Testimonials (production build, real CSP)', () => {
     await expect(mine.getByText('Waiting for approval')).toBeVisible();
     await expect(mine.getByRole('button', { name: 'Take it back' })).toBeVisible();
 
-    // Carol is not Alice's Pal: nothing to read yet, and no box to write in.
+    // Carol is not Alice's Pal: nothing to read yet and nothing to write, so no card at all (no empty block).
     await c.page.goto(`/profile/${a.handle}`);
     await pageReady(c.page);
-    await expect(c.page.getByRole('heading', { name: 'Testimonials', level: 2 })).toBeVisible();
+    await expect(card(c.page)).toHaveCount(0);
     await expect(c.page.getByText(first)).toHaveCount(0);
-    await expect(c.page.getByLabel('Leave a testimonial')).toHaveCount(0);
 
     // Alice is told it is waiting, and approves it from her own Porch.
     await expect
@@ -106,16 +112,16 @@ test.describe('Testimonials (production build, real CSP)', () => {
     await pageReady(a.page);
     await a.page.getByRole('button', { name: 'Approve' }).click();
     await expect(shownTributes(a.page).first()).toContainText(second);
-    await tributeItem(a.page, first).getByRole('button', { name: 'Pin to top' }).click();
+    await tributeItem(a.page, first).getByRole('button', { name: 'Pin', exact: true }).click();
     await expect(shownTributes(a.page).first()).toContainText(first);
-    await expect(tributeItem(a.page, first).getByText('Pinned testimonial')).toBeVisible();
+    await expect(tributeItem(a.page, first).getByText('· Pinned')).toBeVisible();
     await expect(tributeItem(a.page, first).getByRole('button', { name: 'Unpin' })).toBeVisible();
     await c.page.reload(); // the order is saved, not just on Alice's screen
     await pageReady(c.page);
     await expect(shownTributes(c.page).first()).toContainText(first);
 
     // Alice takes the second one down; it is gone for everyone.
-    await tributeItem(a.page, second).getByRole('button', { name: 'Take it down' }).click();
+    await tributeItem(a.page, second).getByRole('button', { name: 'Take down' }).click();
     await a.page
       .getByRole('alertdialog', { name: 'Take this testimonial down?' })
       .getByRole('button', { name: 'Take it down' })

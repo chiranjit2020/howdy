@@ -31,7 +31,7 @@ import { EditPhotoButton, EditProfile, EditProfileButton } from './edit-profile'
 import { RelationshipBar } from './relationship-bar';
 import { FenceSection } from './fence-section';
 import { SignalEditor } from './signal-editor';
-import { PorchLightNotice, PosseCard, SignalCard, TracksCard } from './side-cards';
+import { PorchLightNotice, PosseCard, TracksCard } from './side-cards';
 import { TributesSection } from './tributes-section';
 import { TrustCard } from './trust-card';
 import { VibeMatrixSection } from './vibe-matrix-section';
@@ -48,11 +48,6 @@ async function unlessRateLimited<T>(work: Promise<T>): Promise<{ value: T | null
     if (err instanceof AppError && err.code === 'RATE_LIMITED') return { value: null, limited: true };
     throw err;
   }
-}
-
-function hoursLeft(expiresAt: Date): string {
-  const h = Math.max(1, Math.ceil((expiresAt.getTime() - Date.now()) / 3_600_000));
-  return `${h}h left`;
 }
 
 export default async function RanchPage({ params }: { params: Promise<{ handle: string }> }) {
@@ -279,18 +274,16 @@ export default async function RanchPage({ params }: { params: Promise<{ handle: 
             </ClayCard>
           )}
         </div>
-
-        {tributes && (
-          <div className="min-w-0">
-            <TributesSection handle={ranch.handle} ownerName={ranch.displayName} initial={tributes} />
-          </div>
-        )}
       </main>
 
       <aside
-        aria-label="Status, friends and visitors"
+        aria-label="More about this profile"
         className="mx-auto flex w-full max-w-2xl min-w-0 flex-col gap-4 xl:max-w-none"
       >
+        {/* Testimonials lead the panel: the one thing others write about this person that lasts. */}
+        {tributes && (
+          <TributesSection handle={ranch.handle} ownerName={ranch.displayName} initial={tributes} />
+        )}
         {light && (
           <PorchLightNotice
             owner={ranch.isOwner}
@@ -301,10 +294,8 @@ export default async function RanchPage({ params }: { params: Promise<{ handle: 
             {...('audience' in light ? { audience: light.audience } : {})}
           />
         )}
-        {ranch.signal && (
-          <SignalCard text={ranch.signal.text} expiresLabel={hoursLeft(ranch.signal.expiresAt)} />
-        )}
-        {ranch.isOwner && <SignalEditor current={ranch.signal?.text} />}
+        {/* Status is retired for members (2026-11-01). The team account keeps its "What's new" note editor here. */}
+        {ranch.isOwner && ranch.verified && <SignalEditor current={ranch.signal?.text} />}
         {waiting && <WaitingQueue waiting={waiting} tributes={waitingTributes} />}
         {vibe && <VibeMatrixSection handle={ranch.handle} initial={vibe} />}
         {trust && !trust.team && <TrustCard status={trust} />}

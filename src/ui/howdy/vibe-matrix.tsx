@@ -69,8 +69,9 @@ function barWidth(pct: number): string {
 
 /**
  * A Ranch's Vibe Matrix: an aggregate breakdown of Marks received, never a ranking against anyone else (see
- * PRODUCT_DISCOVERY.md C11). Until {@link PERCENT_AFTER} Marks it shows earned counts, then the percentage bars. Giving
- * one is a row of five picks; the caller decides what happens on a pick.
+ * PRODUCT_DISCOVERY.md C11). One line per kind: until {@link PERCENT_AFTER} Marks its count, then a percentage bar. For
+ * someone who may give one now, each line IS the button (no second row of picks); otherwise the lines are plain, with
+ * the reason (a 30-day wait) underneath. What each kind means lives in the card's "?" (see MARK_MEANING).
  */
 export function VibeMatrix({
   counts,
@@ -82,84 +83,77 @@ export function VibeMatrix({
 }: {
   counts: Record<MarkKind, number>;
   total: number;
-  /** May the viewer award a Mark right now? When false the picks are shown but disabled. */
+  /** May the viewer award a Mark right now? When false the lines are plain, not buttons. */
   canGive?: boolean;
   /** Which kind is mid-flight, if any. */
   giving?: MarkKind;
   onGive?: (kind: MarkKind) => void;
-  /** Shown under the picks when `canGive` is false and there is a reason worth stating. */
+  /** Shown under the lines when giving is offered but not possible now, and there is a reason worth stating. */
   disabledHint?: string;
 }) {
   const showPercent = total >= PERCENT_AFTER;
-  const toGo = PERCENT_AFTER - total;
+  const giveable = Boolean(onGive && canGive);
+  const line = (kind: MarkKind) => {
+    const n = counts[kind];
+    const pct = total > 0 ? Math.round((n / total) * 100) : 0;
+    const marks = `${n} ${n === 1 ? 'badge' : 'badges'}`;
+    return (
+      <>
+        <Art name={MARK_ART[kind]} size="free" className="size-6 shrink-0" />
+        <span className="w-14 shrink-0 text-caption font-medium text-text-primary">{MARK_LABEL[kind]}</span>
+        {showPercent ? (
+          <>
+            <span
+              className="h-2 min-w-0 flex-1 overflow-hidden rounded-pill bg-surface-sunken"
+              role="img"
+              aria-label={`${MARK_LABEL[kind]}: ${marks}, ${pct}%`}
+            >
+              <span className={cn('block h-full rounded-pill bg-accent', barWidth(pct))} />
+            </span>
+            <span className="w-10 shrink-0 text-right tabular-nums text-metadata text-text-secondary">
+              {pct}%
+            </span>
+          </>
+        ) : (
+          <span className="ml-auto shrink-0 tabular-nums text-caption font-semibold text-text-primary">
+            {n}
+            <span className="sr-only"> {n === 1 ? 'badge' : 'badges'}</span>
+          </span>
+        )}
+      </>
+    );
+  };
   return (
-    <div className="flex flex-col gap-3">
-      <ul className="flex flex-col gap-2.5">
-        {ORDER.map((kind) => {
-          const n = counts[kind];
-          const pct = total > 0 ? Math.round((n / total) * 100) : 0;
-          const marks = `${n} ${n === 1 ? 'badge' : 'badges'}`;
-          return (
-            <li key={kind} className="flex items-center gap-3">
-              <Art name={MARK_ART[kind]} size="free" className="size-8 shrink-0" />
-              {showPercent ? (
-                <>
-                  <span className="w-14 shrink-0 text-caption font-medium text-text-primary">
-                    {MARK_LABEL[kind]}
-                  </span>
-                  <span
-                    className="h-2 min-w-0 flex-1 overflow-hidden rounded-pill bg-surface-sunken"
-                    role="img"
-                    aria-label={`${MARK_LABEL[kind]}: ${marks}, ${pct}%`}
-                  >
-                    <span className={cn('block h-full rounded-pill bg-accent', barWidth(pct))} />
-                  </span>
-                  <span className="w-10 shrink-0 text-right tabular-nums text-metadata text-text-secondary">
-                    {pct}%
-                  </span>
-                </>
-              ) : (
-                <>
-                  <span className="flex min-w-0 flex-1 flex-col">
-                    <span className="text-caption font-medium text-text-primary">{MARK_LABEL[kind]}</span>
-                    <span className="text-metadata text-text-secondary">{MARK_MEANING[kind]}</span>
-                  </span>
-                  <span className="shrink-0 text-right tabular-nums text-body font-semibold text-text-primary">
-                    {n}
-                    <span className="sr-only"> {n === 1 ? 'badge' : 'badges'}</span>
-                  </span>
-                </>
-              )}
-            </li>
-          );
-        })}
-      </ul>
-      <p className="text-caption text-text-secondary">
-        {total} {total === 1 ? 'badge' : 'badges'} total.
-        {!showPercent && ` The percentages show up after ${PERCENT_AFTER} — ${toGo} to go.`}
-      </p>
-      {onGive && (
-        <div className="flex flex-col gap-2">
-          <div className="flex flex-wrap gap-2" role="group" aria-label="Give a badge">
-            {ORDER.map((kind) => (
+    <div className="flex flex-col gap-2">
+      <ul className="-mx-2 flex flex-col">
+        {ORDER.map((kind) => (
+          <li key={kind}>
+            {giveable ? (
               <button
-                key={kind}
                 type="button"
-                title={MARK_MEANING[kind]}
-                disabled={!canGive || giving !== undefined}
-                onClick={() => onGive(kind)}
-                className={cn(
-                  'inline-flex min-h-11 items-center gap-1.5 rounded-pill border border-border bg-surface pr-3.5 pl-2 text-caption font-semibold text-text-primary shadow-clay-sm transition',
-                  'disabled:cursor-not-allowed disabled:opacity-50',
-                )}
+                onClick={() => onGive!(kind)}
+                disabled={giving !== undefined}
+                aria-label={`Give a ${MARK_LABEL[kind]} badge (${MARK_MEANING[kind].toLowerCase()})`}
+                className="flex min-h-11 w-full items-center gap-2.5 rounded-md px-2 text-left hover:bg-surface-sunken disabled:cursor-wait pointer-fine:min-h-9"
               >
-                <Art name={MARK_ART[kind]} size="free" className="size-6" />
-                {MARK_LABEL[kind]}
+                {line(kind)}
               </button>
-            ))}
-          </div>
-          {!canGive && disabledHint && <p className="text-caption text-text-secondary">{disabledHint}</p>}
-        </div>
+            ) : (
+              <div className="flex min-h-9 items-center gap-2.5 px-2">{line(kind)}</div>
+            )}
+          </li>
+        ))}
+      </ul>
+      {showPercent && (
+        <p className="text-metadata text-text-secondary">
+          From {total} {total === 1 ? 'badge' : 'badges'}.
+        </p>
+      )}
+      {giveable && (
+        <p className="text-metadata text-text-secondary">Tap one to give it. One every 30 days.</p>
+      )}
+      {onGive && !canGive && disabledHint && (
+        <p className="text-metadata text-text-secondary">{disabledHint}</p>
       )}
     </div>
   );

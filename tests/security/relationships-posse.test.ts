@@ -2,7 +2,7 @@ import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { relationshipOf } from '@/modules/relationships';
 import { getPool } from '@/platform/db';
 import { freshAuthState, signedInUser, stable, uniqueUser, type TestKit } from '../helpers/auth';
-import { patchRanch, setSignal, viewRanch } from '../helpers/ranch';
+import { patchRanch, viewRanch } from '../helpers/ranch';
 import { NONE, doAct, myLists, q, relWith, userId } from '../helpers/social';
 
 let kit: TestKit;
@@ -148,12 +148,11 @@ describe('a declined request is silent — and cannot be used to badger someone'
 });
 
 describe('“posse” visibility now works end to end (the Phase 3 stub is gone)', () => {
-  it('a Posse member can open a posse-only Ranch and read a posse-only Signal; strangers and signed-out visitors cannot', async () => {
+  it('a Posse member can open a posse-only Ranch and read what is on it; strangers and signed-out visitors cannot', async () => {
     const owner = await person('owner');
     const friend = await person('friend');
     const stranger = await person('stranger');
-    await patchRanch({ ranchVisibility: 'posse', signalVisibility: 'posse' }, as(owner));
-    await setSignal('Only for my Posse', as(owner));
+    await patchRanch({ ranchVisibility: 'posse', bio: 'Only for my Posse' }, as(owner));
 
     expect((await viewRanch(owner.handle, as(friend))).status).toBe(404); // not in the Posse yet
     await doAct(owner.handle, 'request', as(friend));
@@ -161,7 +160,7 @@ describe('“posse” visibility now works end to end (the Phase 3 stub is gone)
 
     const seen = await viewRanch(owner.handle, as(friend));
     expect(seen.status).toBe(200);
-    expect(seen.data.ranch).toMatchObject({ signal: { text: 'Only for my Posse' } });
+    expect(seen.data.ranch).toMatchObject({ bio: 'Only for my Posse' });
     expect((await viewRanch(owner.handle, as(stranger))).status).toBe(404);
     expect((await viewRanch(owner.handle)).status).toBe(404);
   });

@@ -61,9 +61,9 @@ describe('profile header extras', () => {
 });
 
 describe('Ranch rendering treats user text as text', () => {
-  it('a hostile display name, handle-like text and Signal are never interpreted as markup', () => {
+  it('a hostile display name, handle-like text and bio are never interpreted as markup', () => {
     const { container } = render(
-      <RanchHeader displayName={XSS} handle="mallory" signal={XSS} portraitTint="mint" />,
+      <RanchHeader displayName={XSS} handle="mallory" bio={XSS} portraitTint="mint" />,
     );
     expect(container.querySelector('img[src="x"]')).toBeNull();
     expect(container.querySelector('script')).toBeNull();
@@ -80,8 +80,7 @@ describe('Ranch rendering treats user text as text', () => {
         <RanchHeader
           displayName="Priya Sharma"
           handle="priya"
-          signal="Writing code"
-          signalExpiresLabel="11h left"
+          bio="Writing code"
           portraitTint="lavender"
           relationship="POSSE"
         />

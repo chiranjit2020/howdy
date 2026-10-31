@@ -155,7 +155,6 @@ export async function buildDataExport(userId: string, now: Date = new Date()): P
       signal: ranch.signal ? { words: ranch.signal.text, until: iso(ranch.signal.expiresAt) } : null,
       settings: {
         whoCanOpenMyPorch: ranch.ranchVisibility,
-        whoCanSeeMySignal: ranch.signalVisibility,
         whoCanReadMyFence: ranch.fenceVisibility,
         whoCanWriteOnMyFence: ranch.fencePosting,
         reviewCardsFirst: ranch.fenceReview,

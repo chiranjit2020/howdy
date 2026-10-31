@@ -122,7 +122,6 @@ export const updateRanchSchema = z
     portraitTint: portraitTintSchema.optional(),
     coverPreset: z.enum(COVER_PRESETS).optional(),
     ranchVisibility: visibilitySchema.optional(),
-    signalVisibility: visibilitySchema.optional(),
     fenceVisibility: visibilitySchema.optional(),
     fencePosting: fencePostingSchema.optional(),
     fenceReview: z.boolean().optional(),

@@ -52,7 +52,6 @@ import {
   PostCardComposer,
   PostCardReply,
   RanchHeader,
-  Signal,
   TipHatButton,
   TownHallCard,
   TrackItem,
@@ -188,7 +187,7 @@ export function KitShowcase({ initialTheme }: { initialTheme: Theme | undefined 
         <ClayCard className="flex flex-col gap-4">
           <Input label="Handle" hint="Your username. 3–24 characters." placeholder="chiranjit" />
           <Input label="password" type="password" error="That password is too short." defaultValue="abc" />
-          <Textarea label="Status" showCount maxLength={LIMITS.SIGNAL_MAX} hint="Expires after 12 hours." />
+          <Textarea label="Bio" showCount maxLength={LIMITS.BIO_MAX} hint="A line about you." />
           <Select label="Who can read your wall?" defaultValue="posse">
             <option value="all">Anyone</option>
             <option value="posse">Friends only</option>
@@ -411,8 +410,7 @@ export function KitShowcase({ initialTheme }: { initialTheme: Theme | undefined 
             handle="chiranjit"
             online
             relationship="POSSE"
-            signal="Writing code. Send chai."
-            signalExpiresLabel="11h left"
+            bio="Writing code. Send chai."
             actions={
               <>
                 <TipHatButton tipped={tipped} onTip={() => setTipped(true)} />
@@ -428,7 +426,6 @@ export function KitShowcase({ initialTheme }: { initialTheme: Theme | undefined 
             }
           />
         </ClayCard>
-        <Signal text="Short signal" />
       </Section>
 
       <Section title="Wall & Posts">

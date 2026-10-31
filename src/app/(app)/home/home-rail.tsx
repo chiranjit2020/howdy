@@ -1,11 +1,11 @@
 import Link from 'next/link';
-import type { ReactNode } from 'react';
 import type { PersonEntry } from '@/app/_lib/social';
 import type { MemoriesToday } from '@/modules/memories';
 import type { ThreadSummary } from '@/modules/whispers';
 import type { PortraitTint } from '@/shared/validation/profile';
 import { formatRelative, VerifiedBadge } from '@/ui/howdy';
 import type { LitPalRow } from '@/ui/howdy/free-to-talk';
+import { RAIL_CARD, RailCard } from '@/ui/howdy/rail-card';
 import { WhisperIcon } from '@/ui/icons';
 import { Avatar } from '@/ui/primitives';
 import { ChatLink } from './chat-dock';
@@ -13,13 +13,6 @@ import { MemoriesCard } from './memories-card';
 import { FindFriendsActions, SwitchYoursOn } from './rail-actions';
 import { RailRequests } from './rail-requests';
 
-// A 6 px "caution tape" stripe along the top: violet and sunflower at 45 degrees (a trial look).
-export const RAIL_CARD =
-  'relative flex flex-col gap-3 overflow-hidden rounded-lg border border-border bg-surface p-4 pt-6 ' +
-  'before:absolute before:inset-x-0 before:top-0 before:h-1.5 before:content-[""] ' +
-  'before:bg-[repeating-linear-gradient(-45deg,var(--color-accent)_0_8px,var(--color-highlight)_8px_16px)]';
-const RAIL_TITLE = 'text-metadata font-semibold tracking-wider text-text-secondary uppercase';
-const RAIL_MORE = 'text-caption font-semibold';
 export const NAME_LINK = 'font-semibold text-text-primary no-underline hover:underline';
 const iconButton =
   'inline-flex size-11 shrink-0 items-center justify-center rounded-pill text-text-secondary no-underline hover:bg-surface-sunken hover:text-text-primary';
@@ -72,34 +65,6 @@ function FriendLine({
 export interface Announcement {
   text: string;
   author: { handle: string; displayName: string; verified?: boolean };
-}
-
-function RailCard({
-  id,
-  title,
-  more,
-  children,
-}: {
-  id: string;
-  title: string;
-  more?: { href: string; label: string };
-  children: ReactNode;
-}) {
-  return (
-    <section aria-labelledby={id} className={RAIL_CARD}>
-      <div className="flex items-baseline justify-between gap-2">
-        <h2 id={id} className={RAIL_TITLE}>
-          {title}
-        </h2>
-        {more && (
-          <Link href={more.href} className={RAIL_MORE}>
-            {more.label}
-          </Link>
-        )}
-      </div>
-      {children}
-    </section>
-  );
 }
 
 /** The team's current "what's new" note: in the right panel on wide screens, above the feed on narrower ones. */

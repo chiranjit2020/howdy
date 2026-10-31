@@ -4,7 +4,6 @@ import type { RelationshipState } from '@/shared/relationship';
 import type { PortraitTint } from '@/shared/validation/profile';
 import { Avatar } from '../primitives/avatar';
 import { PosseBadge } from './posse-badge';
-import { Signal } from './signal';
 import { NameBadge } from './verified-badge';
 
 export interface RanchHeaderProps {
@@ -15,8 +14,6 @@ export interface RanchHeaderProps {
   portraitUrl?: string | null;
   portraitTint?: PortraitTint | undefined;
   online?: boolean;
-  signal?: string;
-  signalExpiresLabel?: string;
   relationship?: RelationshipState;
   /** Action row: Tip Hat / Yo / Whisper for visitors, Tend the Ranch for the owner. */
   actions?: ReactNode;
@@ -35,7 +32,7 @@ export interface RanchHeaderProps {
   portraitAction?: ReactNode;
 }
 
-/** Top of a Ranch (profile): portrait, name, handle, relationship, actions (and the Signal, when shown here). */
+/** Top of a Ranch (profile): portrait, name, handle, bio, relationship and actions. */
 export function RanchHeader({
   displayName,
   handle,
@@ -43,8 +40,6 @@ export function RanchHeader({
   portraitUrl,
   portraitTint,
   online,
-  signal,
-  signalExpiresLabel,
   relationship,
   actions,
   overlap,
@@ -85,7 +80,6 @@ export function RanchHeader({
         </div>
         {actions && <div className="flex flex-wrap gap-3 sm:self-center">{actions}</div>}
       </div>
-      {signal && <Signal text={signal} expiresLabel={signalExpiresLabel} />}
     </header>
   );
 }

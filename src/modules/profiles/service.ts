@@ -101,7 +101,6 @@ export interface RanchPatch {
   portraitTint?: PortraitTint | undefined;
   coverPreset?: CoverPreset | undefined;
   ranchVisibility?: Visibility | undefined;
-  signalVisibility?: Visibility | undefined;
   fenceVisibility?: Visibility | undefined;
   fencePosting?: FencePosting | undefined;
   fenceReview?: boolean | undefined;
@@ -219,7 +218,8 @@ export async function getRanchForViewer(
   if (viewer.kind === 'user' && viewer.id !== row.userId) {
     emit({ type: 'ranch.visited', viewerId: viewer.id, ownerId: row.userId });
   }
-  const showSignal = can(viewer, 'signal:view', resource, ctx).allow;
+  // Only the team account still has a Signal (its "What's new" note); a member's leftover one is never shown.
+  const showSignal = isOfficial(row.role) && can(viewer, 'signal:view', resource, ctx).allow;
   return toView(row, viewer.kind === 'user' && viewer.id === row.userId, now, showSignal);
 }
 
@@ -465,7 +465,6 @@ export async function updateRanch(userId: string, patch: RanchPatch): Promise<Ow
   if (patch.portraitTint !== undefined) set.portraitTint = patch.portraitTint;
   if (patch.coverPreset !== undefined) set.coverPreset = patch.coverPreset;
   if (patch.ranchVisibility !== undefined) set.ranchVisibility = patch.ranchVisibility;
-  if (patch.signalVisibility !== undefined) set.signalVisibility = patch.signalVisibility;
   if (patch.fenceVisibility !== undefined) set.fenceVisibility = patch.fenceVisibility;
   if (patch.fencePosting !== undefined) set.fencePosting = patch.fencePosting;
   if (patch.fenceReview !== undefined) set.fenceReview = patch.fenceReview;
@@ -478,9 +477,22 @@ export async function updateRanch(userId: string, patch: RanchPatch): Promise<Ow
   return getOwnRanch(userId);
 }
 
-/** Set the caller's Signal; it expires after 12 hours. */
+/**
+ * Status is retired for members (2026-11-01): it repeated Free to talk, Stories and posts, and only showed on a profile.
+ * What remains is the Howdy team account's Signal, which is the "What's new" note on everyone's Home. Anyone else asking
+ * to set or clear one is refused.
+ */
+async function assertTeamAccount(userId: string): Promise<void> {
+  const [row] = await getDb().select({ role: users.role }).from(users).where(eq(users.id, userId)).limit(1);
+  if (!row || !isOfficial(row.role)) {
+    throw new AppError('FORBIDDEN', { message: 'Only the Howdy team posts the “What’s new” note.' });
+  }
+}
+
+/** Set the team's "What's new" note (its Signal); it expires after 12 hours. The Howdy team account only. */
 export async function setSignal(userId: string, text: string, now: Date = new Date()): Promise<OwnRanch> {
   await assertMayEditOwn(userId, 'signal:set');
+  await assertTeamAccount(userId);
   await enforceRateLimit(`ranch:signal:${userId}`, RATE.signal);
   await getDb()
     .update(profiles)
@@ -494,8 +506,10 @@ export async function setSignal(userId: string, text: string, now: Date = new Da
   return getOwnRanch(userId, now);
 }
 
+/** Remove the team's "What's new" note. The Howdy team account only. */
 export async function clearSignal(userId: string): Promise<OwnRanch> {
   await assertMayEditOwn(userId, 'signal:set');
+  await assertTeamAccount(userId);
   await enforceRateLimit(`ranch:signal:${userId}`, RATE.signal);
   await getDb()
     .update(profiles)
