@@ -64,12 +64,14 @@ const schema = z.object({
     .optional(),
   /**
    * The photo check (ADR-039): every uploaded Portrait and Post Card photo is shown to OpenAI's free moderation model
-   * before anyone else sees it. Unset = no check (photos go up as before; reports still work).
+   * before anyone else sees it. Unset or blank = no check (photos go up as before; reports still work). Blank is how the e2e
+   * server switches it off over a key in .env.local.
    */
   OPENAI_API_KEY: z
     .string()
     .regex(/^sk-[\w-]{20,}$/, 'OPENAI_API_KEY must look like sk-…')
-    .optional(),
+    .optional()
+    .or(z.literal('').transform(() => undefined)),
   /**
    * Web Push (VAPID) key pair, from `npx web-push generate-vapid-keys`. Both or neither. Unset = phones get no notifications
    * while Howdy is closed (everything else works). The public key is sent to browsers; the private key never leaves the server.

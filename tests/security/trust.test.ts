@@ -40,7 +40,7 @@ const seen = (id: string, daysAgo = 0) =>
     [id, randomBytes(32), daysAgo],
   );
 const portrait = (id: string) =>
-  q("insert into media (owner_id, kind, status, object_key) values ($1, 'profile photo', 'ready', $2)", [
+  q("insert into media (owner_id, kind, status, object_key) values ($1, 'portrait', 'ready', $2)", [
     id,
     `portraits/${randomUUID()}.webp`,
   ]);

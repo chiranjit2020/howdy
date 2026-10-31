@@ -320,13 +320,13 @@ describe('only the owner can start, finish or remove their own profile photo', (
     const id = await userId(a.handle);
     await expect(
       q(
-        "insert into media (owner_id, kind, status, object_key) values ($1, 'profile photo', 'ready', 'portraits/second.webp')",
+        "insert into media (owner_id, kind, status, object_key) values ($1, 'portrait', 'ready', 'portraits/second.webp')",
         [id],
       ),
     ).rejects.toThrow(/media_one_ready_per_owner_idx/);
     await expect(
       q(
-        "insert into media (owner_id, kind, status, object_key) values ($1, 'profile photo', 'weird', 'portraits/x.webp')",
+        "insert into media (owner_id, kind, status, object_key) values ($1, 'portrait', 'weird', 'portraits/x.webp')",
         [id],
       ),
     ).rejects.toThrow(/media_status_check/);

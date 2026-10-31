@@ -52,6 +52,8 @@ export default defineConfig({
         // Test-only storage: Portraits go to a folder instead of Cloudflare R2 (production refuses this without the flag).
         ENABLE_TEST_STORAGE: '1',
         STORAGE_LOCAL_DIR: '.dev/e2e-media',
+        // No photo check (ADR-039): a key in .env.local would send test photos to OpenAI and hold them.
+        OPENAI_API_KEY: '',
         // The spec gives every browser context its own X-Forwarded-For, so per-IP rate limits never bleed between runs.
         TRUST_PROXY_HOPS: '1',
         // Where pages connect for live Whispers. Also the only socket origin the CSP allows.

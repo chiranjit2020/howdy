@@ -61,6 +61,14 @@ describe('parseEnv', () => {
     }
   });
 
+  it('the photo check key: blank means off (how the e2e server overrides .env.local); malformed is refused', () => {
+    expect(parseEnv({ ...base, OPENAI_API_KEY: '' }).OPENAI_API_KEY).toBeUndefined();
+    expect(parseEnv(base).OPENAI_API_KEY).toBeUndefined();
+    const key = 'sk-' + 'a'.repeat(24);
+    expect(parseEnv({ ...base, OPENAI_API_KEY: key }).OPENAI_API_KEY).toBe(key);
+    expect(() => parseEnv({ ...base, OPENAI_API_KEY: 'not-a-key' })).toThrow(/OPENAI_API_KEY/);
+  });
+
   it('defaults the mail and proxy settings safely', () => {
     const env = parseEnv(base);
     expect(env.TRUST_PROXY_HOPS).toBe(0);

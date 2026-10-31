@@ -122,7 +122,7 @@ describe('Testimonial anniversaries', () => {
     const meId = await userId(me.handle);
     const palId = await userId(pal.handle);
     await q(
-      `insert into testimonials (owner_id, author_id, body, status, created_at) values
+      `insert into tributes (owner_id, author_id, body, status, created_at) values
        ($1, $2, 'kind words', 'published', $3), ($1, $2, 'still waiting', 'pending', $3)`,
       [meId, palId, yearsAgo(1)],
     );
@@ -130,7 +130,7 @@ describe('Testimonial anniversaries', () => {
     expect(m.tributes.map((t) => [t.body, t.author.handle, t.yearsAgo])).toEqual([
       ['kind words', pal.handle, 1],
     ]);
-    await q("delete from testimonials where body = 'kind words'");
+    await q("delete from tributes where body = 'kind words'");
     expect((await mem(me)).tributes).toEqual([]);
   });
 });

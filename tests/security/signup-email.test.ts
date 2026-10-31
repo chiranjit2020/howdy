@@ -86,8 +86,8 @@ describe('sign-up accepts real addresses, normalised', () => {
     expect(stable(again.data)).toBe(stable(first.data)); // nothing tells the second caller the address is taken
     expect(await users()).toEqual([{ email: 'priya.das@example.com' }]);
     expect(kit.mailer.sent.map((m) => m.to)).toEqual(['priya.das@example.com', 'priya.das@example.com']);
-    // Not confirmed yet, so the repeat just sends the confirmation link again (a confirmed one would get "you already
+    // Not confirmed yet, so the repeat just sends the confirmation code again (a confirmed one would get "you already
     // have an account" — see auth-enumeration.test.ts). Either way there is no second account.
-    for (const m of kit.mailer.sent) expect(m.subject).toMatch(/^Confirm your email/);
+    for (const m of kit.mailer.sent) expect(m.subject).toMatch(/^\d{3} \d{3} is your Howdy code$/);
   });
 });

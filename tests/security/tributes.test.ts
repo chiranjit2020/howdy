@@ -24,8 +24,8 @@ afterAll(async () => {
 const person = (tag: string) => signedInUser(kit, uniqueUser(tag));
 type P = Awaited<ReturnType<typeof person>>;
 const as = (p: { cookie: string }) => ({ cookie: p.cookie });
-const rows = async () => (await q('select * from testimonials order by created_at')).rows;
-const count = async () => (await q('select count(*)::int n from testimonials')).rows[0].n as number;
+const rows = async () => (await q('select * from tributes order by created_at')).rows;
+const count = async () => (await q('select count(*)::int n from tributes')).rows[0].n as number;
 
 async function posse(a: P, b: P) {
   await doAct(b.handle, 'request', as(a));
@@ -220,19 +220,16 @@ describe('database invariants', () => {
     const owner = await person('owner');
     const o = await userId(owner.handle);
     await expect(
-      q("insert into testimonials (owner_id, author_id, body, status) values ($1, $1, 'hi', 'pending')", [o]),
+      q("insert into tributes (owner_id, author_id, body, status) values ($1, $1, 'hi', 'pending')", [o]),
     ).rejects.toThrow(/tributes_not_self/);
     const friend = await person('friend');
     const f = await userId(friend.handle);
     await expect(
-      q("insert into testimonials (owner_id, author_id, body, status) values ($1, $2, 'hi', 'bogus')", [
-        o,
-        f,
-      ]),
+      q("insert into tributes (owner_id, author_id, body, status) values ($1, $2, 'hi', 'bogus')", [o, f]),
     ).rejects.toThrow(/tributes_status_check/);
     await expect(
       q(
-        "insert into testimonials (owner_id, author_id, body, status, pinned) values ($1, $2, 'hi', 'pending', true)",
+        "insert into tributes (owner_id, author_id, body, status, pinned) values ($1, $2, 'hi', 'pending', true)",
         [o, f],
       ),
     ).rejects.toThrow(/tributes_pinned_published/);
@@ -244,12 +241,12 @@ describe('database invariants', () => {
     const o = await userId(owner.handle);
     const f = await userId(friend.handle);
     await q(
-      "insert into testimonials (owner_id, author_id, body, status, pinned) values ($1, $2, 'a', 'published', true)",
+      "insert into tributes (owner_id, author_id, body, status, pinned) values ($1, $2, 'a', 'published', true)",
       [o, f],
     );
     await expect(
       q(
-        "insert into testimonials (owner_id, author_id, body, status, pinned) values ($1, $2, 'b', 'published', true)",
+        "insert into tributes (owner_id, author_id, body, status, pinned) values ($1, $2, 'b', 'published', true)",
         [o, f],
       ),
     ).rejects.toThrow(/tributes_one_pinned_per_owner_idx/);
@@ -291,15 +288,15 @@ describe('retention', () => {
     const o = await userId(owner.handle);
     const f = await userId(friend.handle);
     await q(
-      "insert into testimonials (owner_id, author_id, body, status, created_at) values ($1, $2, 'old', 'pending', now() - interval '31 days')",
+      "insert into tributes (owner_id, author_id, body, status, created_at) values ($1, $2, 'old', 'pending', now() - interval '31 days')",
       [o, f],
     );
     await q(
-      "insert into testimonials (owner_id, author_id, body, status, created_at) values ($1, $2, 'recent', 'pending', now() - interval '2 days')",
+      "insert into tributes (owner_id, author_id, body, status, created_at) values ($1, $2, 'recent', 'pending', now() - interval '2 days')",
       [o, f],
     );
     await q(
-      "insert into testimonials (owner_id, author_id, body, status, created_at) values ($1, $2, 'old but published', 'published', now() - interval '31 days')",
+      "insert into tributes (owner_id, author_id, body, status, created_at) values ($1, $2, 'old but published', 'published', now() - interval '31 days')",
       [o, f],
     );
     expect((await purgeStaleTributes()).tributes).toBe(1);

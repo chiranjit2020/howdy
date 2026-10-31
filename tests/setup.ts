@@ -11,6 +11,8 @@ env.AUTH_SECRET = 'test-secret-test-secret-test-secret-0123456789';
 // Tests vary the caller with X-Forwarded-For to exercise per-IP rate limits.
 env.TRUST_PROXY_HOPS = '1';
 delete env.MAIL_TRANSPORT;
+// Never send test photos to the real photo check (ADR-039); its tests install their own checker.
+delete env.OPENAI_API_KEY;
 if (env.TEST_DATABASE_URL) env.DATABASE_URL = env.TEST_DATABASE_URL;
 
 // Domain events reach the notifications module the way they do in the running server.
