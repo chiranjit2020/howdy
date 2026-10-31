@@ -1,6 +1,7 @@
 import { expect, test, type Browser, type Page } from '@playwright/test';
 import {
   axeSource,
+  axeViolations,
   horizontalOverflow,
   confirmEmailVia,
   newContext,
@@ -45,6 +46,18 @@ test.describe('Ranch, Signal and Settings (production build, real CSP)', () => {
       .click();
     await expect(a.page).toHaveURL(new RegExp(`/profile/${a.handle}$`));
     await expect(a.page.getByRole('heading', { level: 1, name: a.handle })).toBeVisible(); // display name defaults to the handle
+
+    // Your own profile: how many friends, after the username; and editing right here (the camera on the picture and
+    // "Edit your profile" open the same dialog, with the same forms as Settings).
+    await expect(a.page.getByRole('link', { name: '0 friends' })).toHaveAttribute('href', '/friends');
+    await a.page.getByRole('button', { name: 'Change your photo' }).click();
+    const edit = a.page.getByRole('dialog', { name: 'Edit your profile' });
+    await expect(edit.getByRole('heading', { name: 'Profile photo' })).toBeVisible();
+    await edit.getByLabel('Display name').fill('Priya on the porch');
+    await edit.getByRole('button', { name: 'Save', exact: true }).click();
+    await expect(edit).toBeHidden();
+    await expect(a.page.getByRole('heading', { level: 1, name: 'Priya on the porch' })).toBeVisible();
+    expect(await axeViolations(a.page)).toEqual([]);
 
     // Signal: set, see it (and the box empties for the next one), remove it.
     await a.page.getByLabel('What is the vibe right now?').fill('In the zone. Send chai.');
@@ -115,7 +128,10 @@ test.describe('Ranch, Signal and Settings (production build, real CSP)', () => {
     await expect(b.page.getByRole('heading', { level: 1, name: a.handle })).toBeVisible();
     await expect(signalOn(b.page, 'Members-only vibe')).toBeVisible();
     await expect(b.page.getByLabel('What is the vibe right now?')).toHaveCount(0); // no owner controls for visitors
-    await expect(b.page.getByRole('link', { name: 'Edit your profile' })).toHaveCount(0);
+    // No owner controls, and nobody else's friends (their number included) on a profile.
+    await expect(b.page.getByRole('button', { name: 'Edit your profile' })).toHaveCount(0);
+    await expect(b.page.getByRole('button', { name: 'Change your photo' })).toHaveCount(0);
+    await expect(b.page.getByRole('link', { name: /\d+ friends?$/ })).toHaveCount(0);
 
     // A signed-out visitor gets the SAME screen for a hidden Ranch and one that does not exist.
     // Read each page only once it has streamed in: right after goto, `main` may still be the "Loading…" outline.

@@ -22,11 +22,14 @@ export function PortraitForm({
   displayName,
   portraitTint,
   portraitSrc,
+  bare = false,
 }: {
   displayName: string;
   portraitTint: PortraitTint;
   /** The current photo's address, or null when there is none (the coloured initials show instead). */
   portraitSrc: string | null;
+  /** Inside another surface (the profile's edit dialog): no card of its own, a smaller heading. */
+  bare?: boolean;
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -93,9 +96,16 @@ export function PortraitForm({
 
   const shown = preview && preview.against === portraitSrc ? preview.url : portraitSrc;
   const accept = PORTRAIT_TYPES.join(',');
+  // Settings: a card of its own. In the profile's "Edit your profile" dialog (`bare`): a section under the dialog's title.
+  const Shell = bare ? 'section' : ClayCard;
+  const Heading = bare ? 'h3' : 'h2';
   return (
-    <ClayCard className="flex flex-col gap-3">
-      <h2 className="text-title text-text-primary">Profile photo</h2>
+    <Shell className="flex flex-col gap-3">
+      <Heading
+        className={bare ? 'text-body font-semibold text-text-primary' : 'text-title text-text-primary'}
+      >
+        Profile photo
+      </Heading>
       {error && <FormMessage tone="error">{error}</FormMessage>}
       <div className="flex items-center gap-4">
         <Avatar name={displayName} src={shown} tint={portraitTint} size="lg" />
@@ -132,6 +142,6 @@ export function PortraitForm({
         JPEG, PNG or WebP up to {PORTRAIT_MAX_BYTES / (1024 * 1024)} MB, cropped square. Only people who can
         visit your profile see it; location details are removed.
       </p>
-    </ClayCard>
+    </Shell>
   );
 }

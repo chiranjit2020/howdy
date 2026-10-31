@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import type { ReactNode } from 'react';
 import type { RelationshipState } from '@/shared/relationship';
 import type { PortraitTint } from '@/shared/validation/profile';
@@ -25,6 +26,13 @@ export interface RanchHeaderProps {
   verified?: boolean;
   /** Has earned the Trusted tick (shown only when not the team account). */
   trusted?: boolean;
+  /**
+   * How many friends, after the username, linking to the friends list. Only ever passed on your own profile: nobody
+   * else's friends are shown on a profile, their number included (nobody competes for numbers).
+   */
+  friendCount?: number;
+  /** Something on the picture's lower right edge: on your own profile, the camera that changes it. */
+  portraitAction?: ReactNode;
 }
 
 /** Top of a Ranch (profile): portrait, name, handle, relationship, actions (and the Signal, when shown here). */
@@ -42,24 +50,32 @@ export function RanchHeader({
   overlap,
   verified,
   trusted,
+  friendCount,
+  portraitAction,
 }: RanchHeaderProps) {
   return (
     <header className="flex flex-col gap-3">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:gap-5">
-        <Avatar
-          name={displayName}
-          src={portraitUrl}
-          tint={portraitTint}
-          size="xl"
-          online={online}
-          className={overlap ? '-mt-14 self-start' : 'self-start'}
-        />
+        <div className={`relative flex self-start ${overlap ? '-mt-14' : ''}`}>
+          <Avatar name={displayName} src={portraitUrl} tint={portraitTint} size="xl" online={online} />
+          {portraitAction && <div className="absolute right-0 bottom-0">{portraitAction}</div>}
+        </div>
         <div className="min-w-0 flex-1">
           <h1 className="font-display text-heading break-words text-brand-ink">
             {displayName}
             <NameBadge verified={verified} trusted={trusted} className="ml-1.5" />
           </h1>
-          <p className="text-caption text-text-secondary">@{handle}</p>
+          <p className="text-caption text-text-secondary">
+            @{handle}
+            {friendCount !== undefined && (
+              <>
+                {' · '}
+                <Link href="/friends" className="font-semibold text-text-secondary">
+                  {friendCount} {friendCount === 1 ? 'friend' : 'friends'}
+                </Link>
+              </>
+            )}
+          </p>
           {bio && <p className="mt-1.5 text-body break-words text-text-primary">{bio}</p>}
           {relationship && (
             <div className="mt-2">

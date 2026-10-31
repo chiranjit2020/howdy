@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import { DetailsCard } from '@/app/profile/[handle]/details-card';
 import { PORTRAIT_TINTS } from '@/shared/validation/profile';
 import { RanchHeader } from '@/ui/howdy';
 import { Avatar } from '@/ui/primitives';
@@ -11,6 +12,27 @@ import { axeViolations } from './setup';
 vi.mock('next/navigation', () => ({ usePathname: () => '/settings', useRouter: () => ({ push: () => {} }) }));
 
 const XSS = '<img src=x onerror=alert(1)><script>alert(2)</script>';
+
+describe('profile header extras', () => {
+  it('the friend count shows only when given (your own profile), and links to the friends list', () => {
+    const { rerender } = render(<RanchHeader displayName="Asha" handle="asha" friendCount={1} />);
+    expect(screen.getByRole('link', { name: '1 friend' })).toHaveAttribute('href', '/friends');
+    rerender(<RanchHeader displayName="Asha" handle="asha" friendCount={24} />);
+    expect(screen.getByRole('link', { name: '24 friends' })).toBeInTheDocument();
+    rerender(<RanchHeader displayName="Asha" handle="asha" />);
+    expect(screen.queryByRole('link', { name: /friends?$/ })).not.toBeInTheDocument();
+  });
+
+  it('the Details card says what the tick means, team first; no tick, no card', () => {
+    const { rerender, container } = render(<DetailsCard verified trusted />);
+    expect(screen.getByText('Howdy team')).toBeInTheDocument();
+    expect(screen.queryByText('Trusted member')).not.toBeInTheDocument();
+    rerender(<DetailsCard verified={false} trusted />);
+    expect(screen.getByText('Trusted member')).toBeInTheDocument();
+    rerender(<DetailsCard verified={false} trusted={false} />);
+    expect(container).toBeEmptyDOMElement();
+  });
+});
 
 describe('Ranch rendering treats user text as text', () => {
   it('a hostile display name, handle-like text and Signal are never interpreted as markup', () => {

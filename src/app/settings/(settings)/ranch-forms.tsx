@@ -37,11 +37,17 @@ export function TendForm({
   bio: initialBio,
   portraitTint: initialTint,
   handle,
+  bare = false,
+  onSaved,
 }: {
   displayName: string;
   bio: string;
   portraitTint: PortraitTint;
   handle: string;
+  /** Inside the profile's "Edit your profile" dialog: no card of its own, and a section heading under the dialog's. */
+  bare?: boolean;
+  /** Called after a successful save (the dialog closes). */
+  onSaved?: () => void;
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -73,78 +79,82 @@ export function TendForm({
       setBio(about.data);
       toast({ title: 'Profile swept and looking sharp.', tone: 'success' });
       router.refresh();
+      onSaved?.();
     } else if (res.error?.fields?.displayName) setNameError(res.error.fields.displayName);
     else if (res.error?.fields?.bio) setBioError(res.error.fields.bio);
     else setFormError(res.error?.message);
   }
 
-  return (
-    <ClayCard>
-      <form onSubmit={save} noValidate className="flex flex-col gap-4">
+  const form = (
+    <form onSubmit={save} noValidate className="flex flex-col gap-4">
+      {bare ? (
+        <h3 className="text-body font-semibold text-text-primary">Name and bio</h3>
+      ) : (
         <h2 className="text-title text-text-primary">Edit your profile</h2>
-        {formError && <FormMessage tone="error">{formError}</FormMessage>}
-        <Input
-          label="Display name"
-          name="displayName"
-          value={displayName}
-          onChange={(e) => setDisplayName(e.target.value)}
-          maxLength={60}
-          error={nameError}
-          hint={`Your username @${handle} stays the same.`}
-          autoComplete="name"
-        />
-        <Textarea
-          label="Bio"
-          name="bio"
-          value={bio}
-          onChange={(e) => setBio(e.target.value)}
-          maxLength={LIMITS.BIO_MAX}
-          showCount
-          rows={2}
-          error={bioError}
-          placeholder="A line about you: what you love, what you are up to…"
-        />
-        <fieldset className="flex flex-col gap-2">
-          <legend className="mb-1 text-caption font-semibold text-text-primary">
-            Profile photo colour{' '}
-            <span aria-hidden="true" className="font-normal text-text-secondary">
-              · {TINT_LABEL[tint]}
-            </span>
-          </legend>
-          {/* One row of colour circles (each a real radio, named for screen readers); fits a 320 px phone. */}
-          <div className="flex gap-2 sm:gap-3">
-            {PORTRAIT_TINTS.map((t) => (
-              <label
-                key={t}
-                className="grid size-12 cursor-pointer place-items-center rounded-full has-focus-visible:outline-2 has-focus-visible:outline-focus"
+      )}
+      {formError && <FormMessage tone="error">{formError}</FormMessage>}
+      <Input
+        label="Display name"
+        name="displayName"
+        value={displayName}
+        onChange={(e) => setDisplayName(e.target.value)}
+        maxLength={60}
+        error={nameError}
+        hint={`Your username @${handle} stays the same.`}
+        autoComplete="name"
+      />
+      <Textarea
+        label="Bio"
+        name="bio"
+        value={bio}
+        onChange={(e) => setBio(e.target.value)}
+        maxLength={LIMITS.BIO_MAX}
+        showCount
+        rows={2}
+        error={bioError}
+        placeholder="A line about you: what you love, what you are up to…"
+      />
+      <fieldset className="flex flex-col gap-2">
+        <legend className="mb-1 text-caption font-semibold text-text-primary">
+          Profile photo colour{' '}
+          <span aria-hidden="true" className="font-normal text-text-secondary">
+            · {TINT_LABEL[tint]}
+          </span>
+        </legend>
+        {/* One row of colour circles (each a real radio, named for screen readers); fits a 320 px phone. */}
+        <div className="flex gap-2 sm:gap-3">
+          {PORTRAIT_TINTS.map((t) => (
+            <label
+              key={t}
+              className="grid size-12 cursor-pointer place-items-center rounded-full has-focus-visible:outline-2 has-focus-visible:outline-focus"
+            >
+              <input
+                type="radio"
+                name="portraitTint"
+                value={t}
+                checked={tint === t}
+                onChange={() => setTint(t)}
+                className="peer sr-only"
+              />
+              {/* The circle shows the colour on your initials; the option's name is for screen readers. */}
+              <span
+                aria-hidden="true"
+                className="inline-flex rounded-full ring-offset-2 ring-offset-surface peer-checked:ring-2 peer-checked:ring-text-primary"
               >
-                <input
-                  type="radio"
-                  name="portraitTint"
-                  value={t}
-                  checked={tint === t}
-                  onChange={() => setTint(t)}
-                  className="peer sr-only"
-                />
-                {/* The circle shows the colour on your initials; the option's name is for screen readers. */}
-                <span
-                  aria-hidden="true"
-                  className="inline-flex rounded-full ring-offset-2 ring-offset-surface peer-checked:ring-2 peer-checked:ring-text-primary"
-                >
-                  <Avatar name={displayName || handle} tint={t} size="sm" />
-                </span>
-                <span className="sr-only">{TINT_LABEL[t]}</span>
-              </label>
-            ))}
-          </div>
-          <p className="text-metadata text-text-muted">Shown whenever you have no photo.</p>
-        </fieldset>
-        <Button type="submit" loading={busy}>
-          Save
-        </Button>
-      </form>
-    </ClayCard>
+                <Avatar name={displayName || handle} tint={t} size="sm" />
+              </span>
+              <span className="sr-only">{TINT_LABEL[t]}</span>
+            </label>
+          ))}
+        </div>
+        <p className="text-metadata text-text-muted">Shown whenever you have no photo.</p>
+      </fieldset>
+      <Button type="submit" loading={busy}>
+        Save
+      </Button>
+    </form>
   );
+  return bare ? form : <ClayCard>{form}</ClayCard>;
 }
 
 /** Boundary Lines: who may open the Ranch and read the Signal. */

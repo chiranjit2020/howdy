@@ -19,6 +19,8 @@ import { clockOf } from '@/shared/calendar';
 import { portraitUrl } from '@/shared/portrait';
 import { RanchCover, RanchHeader } from '@/ui/howdy';
 import { buttonClasses, ClayCard, EmptyState } from '@/ui/primitives';
+import { DetailsCard } from './details-card';
+import { EditPhotoButton, EditProfile, EditProfileButton } from './edit-profile';
 import { RelationshipBar } from './relationship-bar';
 import { FenceSection } from './fence-section';
 import { SignalEditor } from './signal-editor';
@@ -168,30 +170,48 @@ export default async function RanchPage({ params }: { params: Promise<{ handle: 
   return (
     <div className="flex w-full flex-col gap-4 py-4 xl:grid xl:grid-cols-[minmax(0,1fr)_18rem] xl:items-start xl:gap-6">
       <main id="main" className="mx-auto flex w-full max-w-2xl min-w-0 flex-col gap-4">
-        <div className="clay overflow-hidden">
-          <RanchCover />
-          <div className="px-5 pb-6 sm:px-7">
-            <RanchHeader
-              overlap
-              verified={ranch.verified}
-              // The owner's own check just ran, so their header follows it rather than the decision stored before it.
-              trusted={trust ? trust.earned : ranch.trusted}
+        {(() => {
+          const header = (
+            <div className="clay overflow-hidden">
+              <RanchCover />
+              <div className="px-5 pb-6 sm:px-7">
+                <RanchHeader
+                  overlap
+                  verified={ranch.verified}
+                  // The owner's own check just ran, so their header follows it rather than the decision stored before it.
+                  trusted={trust ? trust.earned : ranch.trusted}
+                  displayName={ranch.displayName}
+                  handle={ranch.handle}
+                  bio={ranch.bio}
+                  portraitTint={ranch.portraitTint}
+                  {...(photo ? { portraitUrl: portraitUrl(ranch.handle, photo) } : {})}
+                  {...(badge ? { relationship: badge } : {})}
+                  // Only on your own profile (posse is loaded for the owner only): nobody else's friends are shown.
+                  {...(posse ? { friendCount: posse.length } : {})}
+                  // Your own profile is edited where you see it (photo, name, bio); Settings keeps the rest.
+                  {...(isOwner
+                    ? { actions: <EditProfileButton />, portraitAction: <EditPhotoButton /> }
+                    : {})}
+                />
+              </div>
+            </div>
+          );
+          return isOwner ? (
+            <EditProfile
               displayName={ranch.displayName}
-              handle={ranch.handle}
-              bio={ranch.bio}
+              bio={ranch.bio ?? ''}
               portraitTint={ranch.portraitTint}
-              {...(photo ? { portraitUrl: portraitUrl(ranch.handle, photo) } : {})}
-              {...(badge ? { relationship: badge } : {})}
-              actions={
-                ranch.isOwner ? (
-                  <Link href="/settings" className={buttonClasses({ variant: 'secondary' })}>
-                    Edit your profile
-                  </Link>
-                ) : undefined
-              }
-            />
-          </div>
-        </div>
+              handle={ranch.handle}
+              portraitSrc={photo ? portraitUrl(ranch.handle, photo) : null}
+            >
+              {header}
+            </EditProfile>
+          ) : (
+            header
+          );
+        })()}
+
+        <DetailsCard verified={ranch.verified} trusted={trust ? trust.earned : ranch.trusted} />
 
         {rel && (
           <RelationshipBar
