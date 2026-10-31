@@ -52,6 +52,15 @@ test('one line until clicked; opens, posts, closes again; a photo from the one-l
   await expect(page.locator('label').filter({ hasText: 'Add a photo' })).toBeVisible();
   await expect(post).toHaveCount(0);
 
+  // No friend has a Story, so there is no row for one lonely circle: my Story button leads the line, on its level.
+  const story = page.getByRole('button', { name: 'Add to your Story' });
+  await expect(story).toBeVisible();
+  await expect(page.getByText('Your Story', { exact: true })).toHaveCount(0);
+  const [s, b] = [(await story.boundingBox())!, (await box.boundingBox())!];
+  expect(s.x + s.width).toBeLessThan(b.x);
+  expect(Math.abs(s.y + s.height / 2 - (b.y + b.height / 2))).toBeLessThanOrEqual(2);
+  expect(s.height).toBeGreaterThanOrEqual(43.5); // still a full touch target
+
   // Clicking in opens it; leaving it empty closes it again.
   await box.click();
   await expect(post).toBeVisible();

@@ -62,6 +62,21 @@ export default async function HomePage() {
   const today =
     memories && memories.cards.length + memories.pals.length + memories.tributes.length > 0 ? memories : null;
   const free = lit.map((l) => ({ ...l.pal, note: l.note, untilLabel: clockOf(l.until) }));
+  // With friends' Stories: the row of rings. Without: no row for one lonely circle; your Story button leads the
+  // "What's on your mind?" line instead (unless the feed, and so that line, could not load).
+  const storiesRow = ring.some((r) => !r.mine) || !feed;
+  const stories = (variant: 'row' | 'lead') => (
+    <StoriesStrip
+      variant={variant}
+      initial={ring}
+      me={{
+        handle: user.handle,
+        displayName: ranch.displayName,
+        portraitTint: ranch.portraitTint,
+        ...(photo ? { portraitUrl: portraitUrl(user.handle, photo) } : {}),
+      }}
+    />
+  );
 
   return (
     // The chat window (wide screens) opens from the right panel's Message buttons; it needs the same live settings as
@@ -73,15 +88,7 @@ export default async function HomePage() {
         <main id="main" className="mx-auto flex w-full max-w-2xl min-w-0 flex-col gap-4">
           {/* The page's name for screen readers and the outline; on screen the sidebar already says where you are. */}
           <h1 className="sr-only">Home</h1>
-          <StoriesStrip
-            initial={ring}
-            me={{
-              handle: user.handle,
-              displayName: ranch.displayName,
-              portraitTint: ranch.portraitTint,
-              ...(photo ? { portraitUrl: portraitUrl(user.handle, photo) } : {}),
-            }}
-          />
+          {storiesRow && stories('row')}
           {/* Below xl there is no right panel: the team's note and On this day come before the feed instead. */}
           {announcement && (
             <div className="xl:hidden">
@@ -97,6 +104,7 @@ export default async function HomePage() {
             <FenceSection
               feed
               myHandle={user.handle}
+              {...(storiesRow ? {} : { composerLead: stories('lead') })}
               signedIn
               initial={{
                 ...feed,

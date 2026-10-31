@@ -171,6 +171,7 @@ export function PostCardComposer({
   onSubmit,
   onPhoto,
   disabled,
+  lead,
 }: {
   kind: keyof typeof COMPOSER;
   /** Return `false` to keep what was typed (e.g. the server refused it); anything else clears the box. */
@@ -178,6 +179,8 @@ export function PostCardComposer({
   /** Upload a chosen photo; only offered when given (the server decides who may add one). */
   onPhoto?: (file: File) => Promise<PhotoUpload>;
   disabled?: boolean;
+  /** Something before the box, outside the form (Home: your Story button when no friend has a Story). */
+  lead?: ReactNode;
 }) {
   const { max, label, placeholder, rows, submit: submitLabel } = COMPOSER[kind];
   // A reply box opened by "Reply" under someone's reply starts with "@them " (it is remounted for each one).
@@ -278,14 +281,14 @@ export function PostCardComposer({
     </label>
   );
 
-  return (
+  const form = (
     // The box stays the first child in both states, so opening it never remounts it (focus and caret stay put).
     <form
       onSubmit={submit}
       onBlur={(e) => {
         if (!e.currentTarget.contains(e.relatedTarget)) setFocused(false);
       }}
-      className={cn('flex gap-2', open ? 'flex-col' : 'items-center')}
+      className={cn('flex gap-2', open ? 'flex-col' : 'items-center', lead !== undefined && 'min-w-0 flex-1')}
     >
       <Textarea
         ref={box}
@@ -357,6 +360,15 @@ export function PostCardComposer({
         </div>
       )}
     </form>
+  );
+  // The lead sits beside the form, not in it: what it opens (the Story composer) has a form of its own.
+  return lead === undefined ? (
+    form
+  ) : (
+    <div className={cn('flex gap-3', open ? 'items-start' : 'items-center')}>
+      {lead}
+      {form}
+    </div>
   );
 }
 

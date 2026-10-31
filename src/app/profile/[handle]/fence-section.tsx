@@ -1,7 +1,7 @@
 'use client';
 
 import { useSearchParams } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { AuthorRef, CardView, FencePage, ReplyView } from '@/modules/fence';
 import type { ReactionKind } from '@/shared/validation/fence';
 import { apiRequest, postJson } from '@/ui/auth/api';
@@ -29,7 +29,13 @@ type Removal = { kind: 'card' | 'reply'; id: string };
  * One person's wall (their profile), or Home's feed of the walls of your friends. The feed's composer ("What's on your
  * mind?") posts to your own wall, `myHandle`.
  */
-type Source = { handle: string; ownerName: string } | { feed: true; myHandle: string };
+type Source =
+  | { handle: string; ownerName: string }
+  | {
+      feed: true;
+      myHandle: string;
+      /** Shown before "What's on your mind?" (Home: your Story). */ composerLead?: ReactNode;
+    };
 
 /**
  * The cards of a Fence on a Ranch, or of Home's feed. Everything here is a request for the server to decide: the buttons
@@ -201,6 +207,7 @@ export function FenceSection({
       <PostCardComposer
         kind={feed ? 'home' : 'card'}
         onSubmit={nail}
+        {...('feed' in source && source.composerLead ? { lead: source.composerLead } : {})}
         {...(initial.canAddPhoto ? { onPhoto: (file: File) => uploadPhoto('/api/me/card-photo', file) } : {})}
       />
     </div>

@@ -15,12 +15,15 @@ const AUDIENCE_LABEL: Record<StoryAudience, string> = { pals: 'Friends', close: 
 
 /**
  * Stories on Home (ADR-047): a row of rings — mine first, then Pals with Stories for me (a pink ring = not seen yet).
- * Tapping opens the viewer; "Your Story" adds one. Each Story lasts 12 hours.
+ * Tapping opens the viewer; "Your Story" adds one. Each Story lasts 12 hours. `lead`: only my button, smaller and without
+ * its caption, for the start of the "What's on your mind?" line when no friend has a Story (one circle is no row).
  */
 export function StoriesStrip({
   initial,
   me,
+  variant = 'row',
 }: {
+  variant?: 'row' | 'lead';
   initial: StoryRingItem[];
   me: {
     handle: string;
@@ -42,62 +45,76 @@ export function StoriesStrip({
     router.refresh(); // rings turn from "unseen" to seen
   };
 
+  const lead = variant === 'lead';
+  const myButton = (
+    <div className="relative shrink-0">
+      <button
+        type="button"
+        onClick={() => (mine ? setOpen(mine) : startAdding())}
+        aria-label={mine ? 'Your Story' : 'Add to your Story'}
+        className={cn('block rounded-pill p-0.5', mine ? 'bg-border-strong' : 'bg-transparent')}
+      >
+        <Avatar name={me.displayName} tint={me.portraitTint} src={me.portraitUrl} size={lead ? 'md' : 'lg'} />
+      </button>
+      {!mine && (
+        // Decoration only: the whole picture is the button (the badge alone would be too small to tap).
+        <span
+          aria-hidden="true"
+          className={cn(
+            'pointer-events-none absolute flex items-center justify-center rounded-pill border-2 border-surface bg-accent-strong leading-none font-bold text-on-accent shadow-clay-sm',
+            lead ? '-right-0.5 -bottom-0.5 size-5 text-caption' : '-right-1 -bottom-1 size-7 text-title',
+          )}
+        >
+          +
+        </span>
+      )}
+    </div>
+  );
+
   return (
-    <section aria-label="Stories" className="flex flex-col gap-2">
-      <ul className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-1">
-        <li className="shrink-0">
-          <div className="flex w-20 flex-col items-center gap-1">
-            <div className="relative">
+    <section aria-label="Stories" className={lead ? 'shrink-0' : 'flex flex-col gap-2'}>
+      {lead ? (
+        myButton
+      ) : (
+        <ul className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-1">
+          <li className="shrink-0">
+            <div className="flex w-20 flex-col items-center gap-1">
+              {myButton}
+              <span className="w-full truncate text-center text-metadata text-text-secondary">
+                Your Story
+              </span>
+            </div>
+          </li>
+          {pals.map((r) => (
+            <li key={r.person.handle} className="shrink-0">
               <button
                 type="button"
-                onClick={() => (mine ? setOpen(mine) : startAdding())}
-                aria-label={mine ? 'Your Story' : 'Add to your Story'}
-                className={cn('rounded-pill p-0.5', mine ? 'bg-border-strong' : 'bg-transparent')}
+                onClick={() => setOpen(r)}
+                aria-label={`${r.person.displayName}’s Story${r.unseen ? ', new' : ''}`}
+                className="flex w-20 flex-col items-center gap-1"
               >
-                <Avatar name={me.displayName} tint={me.portraitTint} src={me.portraitUrl} size="lg" />
-              </button>
-              {!mine && (
-                // Decoration only: the whole picture is the button (a 28 px badge would be too small to tap).
+                {/* Unseen: violet into sunflower, like the rays on the icon (the violet half keeps it visible on white). */}
                 <span
-                  aria-hidden="true"
-                  className="pointer-events-none absolute -right-1 -bottom-1 flex size-7 items-center justify-center rounded-pill border-2 border-surface bg-accent-strong text-title leading-none font-bold text-on-accent shadow-clay-sm"
+                  className={cn(
+                    'rounded-pill',
+                    r.unseen ? 'bg-linear-to-tr from-accent to-highlight p-[3px]' : 'bg-border p-0.5',
+                  )}
                 >
-                  +
+                  <Avatar
+                    name={r.person.displayName}
+                    tint={r.person.portraitTint}
+                    src={r.person.portraitUrl}
+                    size="lg"
+                  />
                 </span>
-              )}
-            </div>
-            <span className="w-full truncate text-center text-metadata text-text-secondary">Your Story</span>
-          </div>
-        </li>
-        {pals.map((r) => (
-          <li key={r.person.handle} className="shrink-0">
-            <button
-              type="button"
-              onClick={() => setOpen(r)}
-              aria-label={`${r.person.displayName}’s Story${r.unseen ? ', new' : ''}`}
-              className="flex w-20 flex-col items-center gap-1"
-            >
-              {/* Unseen: violet into sunflower, like the rays on the icon (the violet half keeps it visible on white). */}
-              <span
-                className={cn(
-                  'rounded-pill',
-                  r.unseen ? 'bg-linear-to-tr from-accent to-highlight p-[3px]' : 'bg-border p-0.5',
-                )}
-              >
-                <Avatar
-                  name={r.person.displayName}
-                  tint={r.person.portraitTint}
-                  src={r.person.portraitUrl}
-                  size="lg"
-                />
-              </span>
-              <span className="w-full truncate text-center text-metadata text-text-secondary">
-                {r.person.displayName}
-              </span>
-            </button>
-          </li>
-        ))}
-      </ul>
+                <span className="w-full truncate text-center text-metadata text-text-secondary">
+                  {r.person.displayName}
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
       {open && (
         <StoryViewer
           ring={open}
