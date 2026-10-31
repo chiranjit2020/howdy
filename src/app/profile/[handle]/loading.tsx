@@ -1,41 +1,50 @@
-import { SkeletonListCard } from '@/ui/howdy';
+import { ComposerSkeleton, PostSkeleton } from '@/ui/howdy';
 import { Skeleton } from '@/ui/primitives';
 
 /**
- * A Porch's outline, in the page's own two-column grid: the cover with picture and name, the Fence below it, and the
- * Signal and Pals cards on the right (stacked underneath on a phone).
+ * A profile's outline, in the page's own frame (Home's: the same column and, from xl, the same right panel), so nothing
+ * moves when the real page arrives: the cover with picture and name, "The wall", its post box and two posts.
  */
 export default function Loading() {
   return (
-    <main
-      id="main"
+    <div
       aria-busy="true"
-      className="grid items-start gap-6 py-6 lg:grid-cols-[minmax(0,1fr)_20rem]"
+      className="flex w-full flex-col gap-4 py-4 xl:grid xl:grid-cols-[minmax(0,1fr)_18rem] xl:items-start xl:gap-6"
     >
-      <p role="status" className="sr-only">
-        Loading…
-      </p>
-      <div className="flex flex-col gap-6 lg:col-start-1">
+      <main id="main" className="mx-auto flex w-full max-w-2xl min-w-0 flex-col gap-4">
+        <p role="status" className="sr-only">
+          Loading…
+        </p>
+        {/* The same shapes as RanchCover and RanchHeader: the cover, the 112 px picture over its edge, name and @username
+            beside it from sm up (under it on a phone), each as tall as its line of text. */}
         <div className="clay overflow-hidden">
-          <Skeleton className="h-28 w-full rounded-none sm:h-36" />
-          <div className="flex flex-col gap-3 px-5 pb-6 sm:px-7">
-            <Skeleton className="-mt-10 size-20 rounded-full border-4 border-surface" />
-            <Skeleton className="h-6 w-1/2" />
-            <Skeleton className="h-4 w-1/3" />
+          <Skeleton className="h-40 w-full rounded-none sm:h-52" />
+          <div className="flex flex-col gap-3 px-5 pb-6 sm:flex-row sm:items-end sm:gap-5 sm:px-7">
+            <Skeleton className="-mt-14 size-28 shrink-0 self-start rounded-pill border-4 border-surface" />
+            <div className="flex min-w-0 flex-1 flex-col">
+              <div className="flex h-7 items-center sm:h-8">
+                <Skeleton className="h-5 w-40 sm:h-6" />
+              </div>
+              <div className="flex h-5 items-center">
+                <Skeleton className="h-3.5 w-28" />
+              </div>
+            </div>
           </div>
         </div>
-        <div className="clay flex flex-col gap-3 p-5">
-          <Skeleton className="h-6 w-28" />
-          <Skeleton className="h-24 w-full rounded-md" />
+        {/* "The wall", as tall as its heading line. */}
+        <div className="flex h-7 items-center sm:h-8">
+          <Skeleton className="h-5 w-28 sm:h-6" />
         </div>
-      </div>
-      <div className="flex flex-col gap-6 lg:col-start-2 lg:row-span-2 lg:row-start-1">
-        <div className="clay flex flex-col gap-3 p-5">
-          <Skeleton className="h-5 w-24" />
-          <Skeleton className="h-4 w-4/5" />
+        <ComposerSkeleton />
+        <div className="flex flex-col gap-2.5">
+          <PostSkeleton />
+          <PostSkeleton photo />
         </div>
-        <SkeletonListCard rows={2} />
-      </div>
-    </main>
+      </main>
+      <aside aria-hidden="true" className="hidden flex-col gap-4 xl:flex">
+        <Skeleton className="h-36 w-full rounded-lg" />
+        <Skeleton className="h-48 w-full rounded-lg" />
+      </aside>
+    </div>
   );
 }

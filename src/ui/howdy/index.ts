@@ -31,3 +31,4 @@ export {
   SkeletonListCard,
   SkeletonFormCard,
 } from './page-skeleton';
+export { PostSkeleton, ComposerSkeleton } from './post-skeleton';

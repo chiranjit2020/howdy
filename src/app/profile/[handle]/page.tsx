@@ -162,37 +162,38 @@ export default async function RanchPage({ params }: { params: Promise<{ handle: 
           ? 'SCOUTING'
           : undefined;
 
-  // Two columns from `lg` up: the profile, relationship controls and Fence on the left, the Signal and owner cards on the
-  // right (which spans the left column's rows). On a phone everything stacks in reading order.
+  // Home's frame: the profile, relationship controls, wall and testimonials in Home's column (672 px, centred, 16 px
+  // apart), and from xl (1280 px) up the status and owner cards in an 18rem panel beside it. Narrower, the panel's cards
+  // follow the wall in the same column, so the wall is never pushed down a phone screen.
   return (
-    <main id="main" className="grid items-start gap-6 py-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
-      <div className="clay overflow-hidden lg:col-start-1">
-        <RanchCover />
-        <div className="px-5 pb-6 sm:px-7">
-          <RanchHeader
-            overlap
-            verified={ranch.verified}
-            // The owner's own check just ran, so their header follows it rather than the decision stored before it.
-            trusted={trust ? trust.earned : ranch.trusted}
-            displayName={ranch.displayName}
-            handle={ranch.handle}
-            bio={ranch.bio}
-            portraitTint={ranch.portraitTint}
-            {...(photo ? { portraitUrl: portraitUrl(ranch.handle, photo) } : {})}
-            {...(badge ? { relationship: badge } : {})}
-            actions={
-              ranch.isOwner ? (
-                <Link href="/settings" className={buttonClasses({ variant: 'secondary' })}>
-                  Edit your profile
-                </Link>
-              ) : undefined
-            }
-          />
+    <div className="flex w-full flex-col gap-4 py-4 xl:grid xl:grid-cols-[minmax(0,1fr)_18rem] xl:items-start xl:gap-6">
+      <main id="main" className="mx-auto flex w-full max-w-2xl min-w-0 flex-col gap-4">
+        <div className="clay overflow-hidden">
+          <RanchCover />
+          <div className="px-5 pb-6 sm:px-7">
+            <RanchHeader
+              overlap
+              verified={ranch.verified}
+              // The owner's own check just ran, so their header follows it rather than the decision stored before it.
+              trusted={trust ? trust.earned : ranch.trusted}
+              displayName={ranch.displayName}
+              handle={ranch.handle}
+              bio={ranch.bio}
+              portraitTint={ranch.portraitTint}
+              {...(photo ? { portraitUrl: portraitUrl(ranch.handle, photo) } : {})}
+              {...(badge ? { relationship: badge } : {})}
+              actions={
+                ranch.isOwner ? (
+                  <Link href="/settings" className={buttonClasses({ variant: 'secondary' })}>
+                    Edit your profile
+                  </Link>
+                ) : undefined
+              }
+            />
+          </div>
         </div>
-      </div>
 
-      {rel && (
-        <div className="lg:col-start-1">
+        {rel && (
           <RelationshipBar
             handle={ranch.handle}
             displayName={ranch.displayName}
@@ -200,12 +201,42 @@ export default async function RanchPage({ params }: { params: Promise<{ handle: 
             official={ranch.verified}
             hasPhoto={Boolean(photo)}
           />
+        )}
+
+        <div className="min-w-0">
+          {fence ? (
+            <FenceSection
+              // Server data changed (e.g. the owner approved a card): start from it instead of the old client copy.
+              key={fence.cards.map((c) => `${c.id}:${c.waiting}`).join(',')}
+              handle={ranch.handle}
+              ownerName={ranch.displayName}
+              initial={fence}
+              signedIn={Boolean(user)}
+            />
+          ) : (
+            <ClayCard>
+              <EmptyState
+                as="h2"
+                icon="🪵"
+                title={fenceBusy ? 'Slow down a little' : 'This wall is private'}
+                description={
+                  fenceBusy ? 'Give it a minute and try again.' : 'Only people the owner chose can read it.'
+                }
+              />
+            </ClayCard>
+          )}
         </div>
-      )}
+
+        {tributes && (
+          <div className="min-w-0">
+            <TributesSection handle={ranch.handle} ownerName={ranch.displayName} initial={tributes} />
+          </div>
+        )}
+      </main>
 
       <aside
         aria-label="Status, friends and visitors"
-        className="flex flex-col gap-6 lg:col-start-2 lg:row-span-3 lg:row-start-1"
+        className="mx-auto flex w-full max-w-2xl min-w-0 flex-col gap-4 xl:max-w-none"
       >
         {light && (
           <PorchLightNotice
@@ -227,36 +258,6 @@ export default async function RanchPage({ params }: { params: Promise<{ handle: 
         {posse && <PosseCard members={posse} />}
         {ranch.isOwner && <TracksCard />}
       </aside>
-
-      <div className="min-w-0 lg:col-start-1">
-        {fence ? (
-          <FenceSection
-            // Server data changed (e.g. the owner approved a card): start from it instead of the old client copy.
-            key={fence.cards.map((c) => `${c.id}:${c.waiting}`).join(',')}
-            handle={ranch.handle}
-            ownerName={ranch.displayName}
-            initial={fence}
-            signedIn={Boolean(user)}
-          />
-        ) : (
-          <ClayCard>
-            <EmptyState
-              as="h2"
-              icon="🪵"
-              title={fenceBusy ? 'Slow down a little' : 'This wall is private'}
-              description={
-                fenceBusy ? 'Give it a minute and try again.' : 'Only people the owner chose can read it.'
-              }
-            />
-          </ClayCard>
-        )}
-      </div>
-
-      {tributes && (
-        <div className="min-w-0 lg:col-start-1">
-          <TributesSection handle={ranch.handle} ownerName={ranch.displayName} initial={tributes} />
-        </div>
-      )}
-    </main>
+    </div>
   );
 }

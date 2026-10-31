@@ -1,25 +1,5 @@
+import { ComposerSkeleton, PostSkeleton } from '@/ui/howdy';
 import { Skeleton } from '@/ui/primitives';
-
-/** A post card's outline: who, a line or two of words, and the row of reactions. */
-function PostSkeleton({ photo = false }: { photo?: boolean }) {
-  return (
-    <div className="clay flex flex-col gap-3 p-4">
-      <div className="flex items-center gap-3">
-        <Skeleton className="size-10 shrink-0 rounded-pill" />
-        <div className="flex flex-1 flex-col gap-1.5">
-          <Skeleton className="h-4 w-32" />
-          <Skeleton className="h-3 w-24" />
-        </div>
-      </div>
-      <Skeleton className="h-4 w-4/5" />
-      {photo && <Skeleton className="aspect-[3/2] w-full rounded-md" />}
-      <div className="flex items-center justify-between border-t border-border pt-3">
-        <Skeleton className="h-6 w-24 rounded-pill" />
-        <Skeleton className="h-6 w-16 rounded-pill" />
-      </div>
-    </div>
-  );
-}
 
 /**
  * Home's outline, in Home's own layout (the same grid, column width and right panel as page.tsx), so nothing moves when
@@ -40,10 +20,7 @@ export default function Loading() {
           <Skeleton className="h-3 w-14" />
         </div>
         {/* "What's on your mind?" is one line with a camera button until you click in. */}
-        <div className="clay flex items-center gap-2 p-4">
-          <Skeleton className="h-11 flex-1 pointer-fine:h-9" />
-          <Skeleton className="size-11 shrink-0 rounded-pill pointer-fine:size-9" />
-        </div>
+        <ComposerSkeleton />
         <Skeleton className="h-6 w-32" />
         <div className="flex flex-col gap-2.5">
           <PostSkeleton />

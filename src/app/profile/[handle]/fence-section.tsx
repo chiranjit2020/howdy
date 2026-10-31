@@ -6,7 +6,6 @@ import type { AuthorRef, CardView, FencePage, ReplyView } from '@/modules/fence'
 import type { ReactionKind } from '@/shared/validation/fence';
 import { apiRequest, postJson } from '@/ui/auth/api';
 import { FormMessage } from '@/ui/auth/form-parts';
-import { cn } from '@/ui/cn';
 import { Fence, PostCard, PostCardComposer, PostCardReply } from '@/ui/howdy';
 import { Button, ConfirmationDialog, Dropdown, IconButton, useToast } from '@/ui/primitives';
 import { ReportDialog } from '@/ui/howdy/report-dialog';
@@ -196,8 +195,8 @@ export function FenceSection({
     <div
       ref={composerRef}
       id="nail"
-      // In the feed it stands on the page on its own, so it gets a card of its own.
-      className={cn('flex scroll-mt-24 flex-col gap-2', feed && 'clay p-4')}
+      // A card of its own, the same on Home and on a wall, like the posts under it.
+      className="clay flex scroll-mt-24 flex-col gap-2 p-4"
     >
       {initial.review && (
         <p className="text-caption text-text-secondary">
