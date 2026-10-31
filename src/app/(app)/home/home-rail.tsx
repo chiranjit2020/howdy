@@ -105,7 +105,7 @@ function RailCard({
 /** The team's current "what's new" note: in the right panel on wide screens, above the feed on narrower ones. */
 export function WhatsNew({ news, id }: { news: Announcement; id: string }) {
   return (
-    <RailCard id={id} title="What’s new on Howdy">
+    <RailCard id={id} title="What’s new">
       <p className="text-caption break-words text-text-primary">{news.text}</p>
       <p className="text-metadata text-text-secondary">
         <Link href={`/profile/${news.author.handle}`} className="font-semibold">
@@ -147,9 +147,7 @@ export function HomeRail({
     <>
       {friends.length === 0 ? (
         <RailCard id="rail-find" title="Find your friends">
-          <p className="text-caption text-text-secondary">
-            Howdy is better with the people you know. Look them up, or send them your profile link.
-          </p>
+          <p className="text-caption text-text-secondary">Look people up, or send them your link.</p>
           <FindFriendsActions handle={handle} />
         </RailCard>
       ) : (
@@ -158,14 +156,12 @@ export function HomeRail({
             myLight ? (
               <p className="text-caption text-text-secondary">
                 You’re free until{' '}
-                <strong className="font-semibold text-text-primary">{myLight.untilLabel}</strong>. No friend
-                is free yet.
+                <strong className="font-semibold text-text-primary">{myLight.untilLabel}</strong>. No one else
+                yet.
               </p>
             ) : (
               <>
-                <p className="text-caption text-text-secondary">
-                  No friend is free right now. Let them know when you are.
-                </p>
+                <p className="text-caption text-text-secondary">No one’s free right now.</p>
                 <SwitchYoursOn />
               </>
             )
@@ -188,7 +184,7 @@ export function HomeRail({
         <RailCard id="rail-messages" title="Messages" more={{ href: '/messages', label: 'See all' }}>
           {threads.length === 0 ? (
             <>
-              <p className="text-caption text-text-secondary">No messages yet. Say hi to a friend.</p>
+              <p className="text-caption text-text-secondary">Say hi to a friend.</p>
               <ul aria-label="Friends to message" className="-my-1 flex flex-col">
                 {friends.slice(0, SHOW.sayHi).map((p) => (
                   <FriendLine key={p.handle} person={p} line={`@${p.handle}`} />
