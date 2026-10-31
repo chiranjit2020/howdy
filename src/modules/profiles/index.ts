@@ -24,3 +24,5 @@ export {
   viewableRanches,
 } from './service';
 export type { OwnRanch, PersonCard, RanchPatch, RanchView } from './service';
+export { detailsForViewer, myDetails, updateMyDetails } from './details';
+export type { DetailLine, MyDetails } from './details';

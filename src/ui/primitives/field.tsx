@@ -224,10 +224,15 @@ export function Select({
   className,
   id,
   children,
+  hideLabel,
   ...rest
-}: FieldProps & ComponentProps<'select'>) {
+}: FieldProps &
+  ComponentProps<'select'> & {
+    /** The label is for screen readers only (the row it sits in already says what it is for). */
+    hideLabel?: boolean;
+  }) {
   return (
-    <FieldShell id={id} label={label} hint={hint} error={error} className={className}>
+    <FieldShell id={id} label={label} hint={hint} error={error} className={className} hideLabel={hideLabel}>
       {(c) => (
         <select className={cn(CONTROL, 'min-h-11 pointer-fine:min-h-9')} {...c} {...rest}>
           {children}

@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { boolean, check, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { boolean, check, pgTable, smallint, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { users } from './auth';
 
 const tstz = (name: string) => timestamp(name, { withTimezone: true, mode: 'date' });
@@ -70,5 +70,68 @@ export const profiles = pgTable(
     check('profiles_signal_len', sql`${t.signal} is null or char_length(${t.signal}) between 1 and 80`),
     check('profiles_bio_len', sql`${t.bio} is null or char_length(${t.bio}) between 1 and 150`),
     check('profiles_signal_pair', sql`(${t.signal} is null) = (${t.signalExpiresAt} is null)`),
+  ],
+);
+
+const AUDIENCE_CHECK = (col: unknown) => sql`${col} in ('members', 'posse', 'only_me')`;
+
+/**
+ * Personal details under a profile (all optional), each with its own audience (members / posse = friends / only_me),
+ * which the server applies every time the profile is read. One row per user, made on first save; gone with the account.
+ * Birthday is day and month only (never a year, so it can never reveal an age).
+ */
+export const profileDetails = pgTable(
+  'profile_details',
+  {
+    userId: uuid('user_id')
+      .primaryKey()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    livesIn: text('lives_in'),
+    hometown: text('hometown'),
+    work: text('work'),
+    education: text('education'),
+    languages: text('languages'),
+    birthdayDay: smallint('birthday_day'),
+    birthdayMonth: smallint('birthday_month'),
+    relationship: text('relationship'),
+    livesInAudience: text('lives_in_audience').notNull().default('posse'),
+    hometownAudience: text('hometown_audience').notNull().default('posse'),
+    workAudience: text('work_audience').notNull().default('posse'),
+    educationAudience: text('education_audience').notNull().default('posse'),
+    languagesAudience: text('languages_audience').notNull().default('posse'),
+    birthdayAudience: text('birthday_audience').notNull().default('posse'),
+    relationshipAudience: text('relationship_audience').notNull().default('posse'),
+    updatedAt: tstz('updated_at').notNull().defaultNow(),
+  },
+  (t) => [
+    ...(['livesIn', 'hometown', 'work', 'education', 'languages'] as const).map((k) =>
+      check(
+        `profile_details_${t[k].name}_len`,
+        sql`${t[k]} is null or char_length(${t[k]}) between 1 and 60`,
+      ),
+    ),
+    ...(['livesIn', 'hometown', 'work', 'education', 'languages'] as const).map((k) =>
+      check(`profile_details_${t[k].name}_clean`, sql`${t[k]} is null or ${t[k]} !~ '[\\x00-\\x1f\\x7f]'`),
+    ),
+    check('profile_details_birthday_pair', sql`(${t.birthdayDay} is null) = (${t.birthdayMonth} is null)`),
+    check(
+      'profile_details_birthday_range',
+      sql`${t.birthdayDay} is null or (${t.birthdayMonth} between 1 and 12 and ${t.birthdayDay} between 1 and 31)`,
+    ),
+    check(
+      'profile_details_relationship_check',
+      sql`${t.relationship} is null or ${t.relationship} in ('single', 'in_relationship', 'engaged', 'married', 'complicated')`,
+    ),
+    ...(
+      [
+        'livesInAudience',
+        'hometownAudience',
+        'workAudience',
+        'educationAudience',
+        'languagesAudience',
+        'birthdayAudience',
+        'relationshipAudience',
+      ] as const
+    ).map((k) => check(`profile_details_${t[k].name}_check`, AUDIENCE_CHECK(t[k]))),
   ],
 );

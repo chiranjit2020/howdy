@@ -23,14 +23,40 @@ describe('profile header extras', () => {
     expect(screen.queryByRole('link', { name: /friends?$/ })).not.toBeInTheDocument();
   });
 
-  it('the Details card says what the tick means, team first; no tick, no card', () => {
-    const { rerender, container } = render(<DetailsCard verified trusted />);
+  it('the Details card says what the tick means, team first; no tick and nothing to show, no card', () => {
+    const { rerender, container } = render(<DetailsCard verified trusted lines={[]} />);
     expect(screen.getByText('Howdy team')).toBeInTheDocument();
     expect(screen.queryByText('Trusted member')).not.toBeInTheDocument();
-    rerender(<DetailsCard verified={false} trusted />);
+    rerender(<DetailsCard verified={false} trusted lines={[]} />);
     expect(screen.getByText('Trusted member')).toBeInTheDocument();
-    rerender(<DetailsCard verified={false} trusted={false} />);
+    rerender(<DetailsCard verified={false} trusted={false} lines={[]} />);
     expect(container).toBeEmptyDOMElement();
+  });
+
+  it('details show as label and value; only the owner’s lines say who sees them', () => {
+    const { rerender } = render(
+      <DetailsCard
+        verified={false}
+        trusted={false}
+        lines={[
+          { key: 'livesIn', text: 'Kolkata' },
+          { key: 'birthday', text: '12 March' },
+        ]}
+      />,
+    );
+    const list = document.querySelector('dl') as HTMLElement;
+    expect(within(list).getByText('Lives in')).toBeInTheDocument();
+    expect(within(list).getByText('12 March')).toBeInTheDocument();
+    expect(screen.queryByText(/Friends|Only me|Everyone on Howdy/)).not.toBeInTheDocument();
+    rerender(
+      <DetailsCard
+        verified={false}
+        trusted={false}
+        lines={[{ key: 'work', text: XSS, audience: 'only_me' }]}
+      />,
+    );
+    expect(screen.getByText(/Only me/)).toBeInTheDocument();
+    expect(document.querySelector('img[src="x"]')).toBeNull(); // a detail is text, never markup
   });
 });
 

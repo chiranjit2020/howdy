@@ -6,7 +6,7 @@ import { marksExport } from '@/modules/marks';
 import { readCardPhoto, readPortrait } from '@/modules/media';
 import { moderationExport } from '@/modules/moderation';
 import { getPrefs } from '@/modules/notifications';
-import { getCards, getOwnRanch, type PersonCard } from '@/modules/profiles';
+import { getCards, getOwnRanch, myDetails, type PersonCard } from '@/modules/profiles';
 import { hiddenAuthors, listMyRelationships, type PersonRef } from '@/modules/relationships';
 import { townHallsExport } from '@/modules/town-halls';
 import { listTracks } from '@/modules/tracks';
@@ -57,8 +57,8 @@ export async function buildDataExport(userId: string, now: Date = new Date()): P
       townHallsExport(userId),
       moderationExport(userId),
     ]);
-  // My Stories that are still up (ADR-047): they last 12 hours, so that is all there is.
-  const myStories = await storiesExport(userId, now);
+  // My Stories that are still up (ADR-047): they last 12 hours, so that is all there is. And my personal details.
+  const [myStories, details] = await Promise.all([storiesExport(userId, now), myDetails(userId)]);
 
   // Everyone this file could name, checked once: active accounts only, and nobody hidden from me.
   const ids = new Set<string>([
@@ -142,6 +142,8 @@ export async function buildDataExport(userId: string, now: Date = new Date()): P
       bio: ranch.bio,
       portraitColour: ranch.portraitTint,
       portrait: portraitPath,
+      // Each detail (null = not set), and who sees it: members, posse (friends) or only_me.
+      details,
       signal: ranch.signal ? { words: ranch.signal.text, until: iso(ranch.signal.expiresAt) } : null,
       settings: {
         whoCanOpenMyPorch: ranch.ranchVisibility,
@@ -311,7 +313,7 @@ export async function buildDataExport(userId: string, now: Date = new Date()): P
 function readmeText(callSign: string, at: string): string {
   return `Howdy — your data (@${callSign}), exported ${at}
 
-data.json    Everything in one file: your account and settings, friends, posts, messages,
+data.json    Everything in one file: your account and settings, profile details, friends, posts, messages,
              testimonials, badges, Time Capsules, profile visits, groups and moderation history.
 photos/      Your profile photo, and the photos on the posts and group posts in data.json.
 
