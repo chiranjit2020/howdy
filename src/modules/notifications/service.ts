@@ -268,11 +268,19 @@ export async function handleEvent(event: DomainEvent): Promise<void> {
     case 'capsule.opened':
       // The words are never in the Chime (or the push): only that one opened, and from whom.
       return deliver(event.recipientId, event.authorId, 'capsule_opened', null, { bump: true });
-    case 'hall.reply_created':
+    case 'hall.reply_created': {
       // Only the post's writer hears it (ADR-033): a busy Town Hall must not ring every member for every reply.
-      return deliver(event.postAuthorId, event.authorId, 'hall_reply_created', null, {
+      await deliver(event.postAuthorId, event.authorId, 'hall_reply_created', null, {
         hallPostId: event.postId,
       });
+      // "@ravi …": Ravi, who already replied there, hears it too (as on walls). Same Chime type, so the same read-time
+      // rules apply (still a member, post still up, no block or mute); the wording says it was a reply to him.
+      const m = event.mentionedId;
+      if (m && m !== event.authorId && m !== event.postAuthorId) {
+        await deliver(m, event.authorId, 'hall_reply_created', null, { hallPostId: event.postId });
+      }
+      return;
+    }
     case 'hall.reaction_given':
       return deliver(event.postAuthorId, event.actorId, 'hall_reaction_given', null, {
         hallPostId: event.postId,
@@ -298,6 +306,7 @@ interface Row {
   hallPostId: string | null;
   townHallId: string | null;
   hallPostStatus: string | null;
+  hallPostAuthorId: string | null;
 }
 
 export interface ChimeView {
@@ -332,6 +341,7 @@ const SELECT = {
   hallPostId: notifications.hallPostId,
   townHallId: townHallPosts.townHallId,
   hallPostStatus: townHallPosts.status,
+  hallPostAuthorId: townHallPosts.authorId,
 } as const;
 
 /**
@@ -475,7 +485,11 @@ function describe(userId: string, s: Shown, myHandle: string): { text: string; h
       };
     case 'hall_reply_created':
       return {
-        text: `${name} replied to your post in a group.`,
+        text:
+          s.row.hallPostAuthorId === userId
+            ? `${name} replied to your post in a group.`
+            : // Not their post: they were @mentioned in a reply.
+              `${name} replied to you in a group.`,
         href: `/groups/${s.row.townHallId}`,
       };
     case 'hall_reaction_given':

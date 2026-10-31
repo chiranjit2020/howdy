@@ -22,6 +22,7 @@ import {
   idParamSchema,
   type ReactionKind,
 } from '@/shared/validation/fence';
+import { leadingMention } from '@/shared/mentions';
 import type { PortraitTint } from '@/shared/validation/profile';
 import { decodeCursor, encodeCursor, type Cursor } from '@/platform/cursor';
 
@@ -632,16 +633,12 @@ export async function postCard(
   return view;
 }
 
-/** Write a reply on the back of a published card. Restricted writers' replies are held, without being told. */
-/** "@handle" at the very start of a reply (the Reply link under a reply writes it there). */
-const LEADING_MENTION = /^@([a-z0-9_]{3,24})(?![a-z0-9_])/i;
-
 /**
  * Who a reply answers: the person whose "@handle" it starts with, but only if they already replied on this card. Typing
  * anyone else's handle tells nobody, so a reply cannot be used to ping strangers.
  */
 async function mentionedReplier(cardId: string, body: string): Promise<string | undefined> {
-  const handle = LEADING_MENTION.exec(body)?.[1]?.toLowerCase();
+  const handle = leadingMention(body);
   if (!handle) return undefined;
   const [row] = await getDb()
     .select({ id: cardReplies.authorId })
@@ -652,6 +649,7 @@ async function mentionedReplier(cardId: string, body: string): Promise<string | 
   return row?.id;
 }
 
+/** Write a reply on the back of a published card. Restricted writers' replies are held, without being told. */
 export async function postReply(userId: string, cardId: string, body: string): Promise<ReplyView> {
   await enforceRateLimit(`fence:reply:${userId}`, RATE.replyUser);
   await enforceNewAccountLimit(userId, 'reply');

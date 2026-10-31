@@ -16,6 +16,7 @@ import {
   type ReactNode,
 } from 'react';
 import { LIMITS } from '@/shared/limits';
+import { LEADING_MENTION } from '@/shared/mentions';
 import type { ReactionKind } from '@/shared/validation/fence';
 import type { PortraitTint } from '@/shared/validation/profile';
 import { Img } from '../art/img';
@@ -51,9 +52,6 @@ export interface PostCardAuthor {
  * that person ("@ravi "), and the card's reply box picks the words up. Absent where nobody may reply.
  */
 const ReplyTo = createContext<{ replyTo: (handle: string) => void; draft: string } | null>(null);
-
-/** "@handle" at the very start of a reply, shown as a link to that person (the server reads the same pattern). */
-const LEADING_MENTION = /^@([a-z0-9_]{3,24})(?![a-z0-9_])/i;
 
 function ReplyBody({ body }: { body: string }) {
   const m = LEADING_MENTION.exec(body);

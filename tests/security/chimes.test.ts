@@ -144,6 +144,24 @@ describe('Wall notifications', () => {
     expect(await bell(as(owner))).toBe(2);
   });
 
+  it('@mention: a reply starting with the @handle of someone who already replied tells them; anyone else, nobody', async () => {
+    const { owner, friend } = await wall();
+    const third = await person('third');
+    const stranger = await person('stranger');
+    const cardId = (await nail(owner.handle, { body: 'owner card' }, as(owner))).data.card!.id;
+    await replyTo(cardId, { body: 'first!' }, as(friend));
+    await flushBackground();
+    await q('delete from notifications');
+    await replyTo(cardId, { body: `@${friend.handle} me too` }, as(third));
+    await replyTo(cardId, { body: `@${stranger.handle} look at this` }, as(third)); // never replied here: not told
+    await replyTo(cardId, { body: `@${friend.handle} me again` }, as(friend)); // not about your own reply
+    await flushBackground();
+    expect(await texts(as(friend))).toEqual([`${third.handle} replied to you on a post.`]);
+    expect(await texts(as(stranger))).toEqual([]);
+    // The owner (the card's writer) is told as the writer, not as someone mentioned.
+    expect((await texts(as(owner))).every((t) => t.endsWith('replied to your post.'))).toBe(true);
+  });
+
   it('a Yo rings the card’s writer once — switching it off and on again cannot ring the bell again', async () => {
     const { owner, friend } = await wall();
     const id = (await nail(owner.handle, { body: 'a card' }, as(owner))).data.card!.id;

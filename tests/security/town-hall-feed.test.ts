@@ -380,6 +380,35 @@ describe('Notifications (ADR-033)', () => {
     expect((await chimesOf(as(owner))).data.chimes).toEqual([]);
   });
 
+  it('@mention: only someone who already replied on the post is told, "replied to you", until they leave', async () => {
+    const owner = await person('owner');
+    const ann = await person('ann');
+    const bob = await person('bob');
+    const cat = await person('cat');
+    const dan = await person('dan');
+    const id = await hall(owner, [ann, bob, cat, dan]);
+    const p = (await post(id, { body: 'Sunday?' }, as(ann))).data.post!;
+    await reply(p.id, { body: 'Yes' }, as(bob));
+    await reply(p.id, { body: `@${bob.handle.toUpperCase()} same here` }, as(cat));
+    await reply(p.id, { body: `@${dan.handle} are you coming?` }, as(cat)); // Dan never replied: nobody is told
+    await reply(p.id, { body: `@${ann.handle} thanks for asking` }, as(cat)); // the writer is told once, as the writer
+    await reply(p.id, { body: `@${bob.handle} talking to myself` }, as(bob)); // never about your own reply
+
+    const bobs = (await chimesOf(as(bob))).data.chimes!;
+    expect(bobs.map((c) => [c.type, c.text, c.href])).toEqual([
+      ['hall_reply_created', `${cat.handle} replied to you in a group.`, `/groups/${id}`],
+    ]);
+    expect((await chimesOf(as(dan))).data.chimes).toEqual([]);
+    const anns = (await chimesOf(as(ann))).data.chimes!.map((c) => c.text);
+    expect(anns.length).toBeGreaterThan(0);
+    expect(anns.every((t) => t.endsWith('replied to your post in a group.'))).toBe(true);
+    expect((await chimesOf(as(owner))).data.chimes).toEqual([]);
+
+    // The same read-time rule as every group Chime: gone once Bob leaves.
+    await act(id, 'leave', as(bob));
+    expect((await chimesOf(as(bob))).data.chimes).toEqual([]);
+  });
+
   it('vanish once I leave the group, or the post is taken down', async () => {
     const owner = await person('owner');
     const ann = await person('ann');

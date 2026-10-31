@@ -24,7 +24,7 @@ const FEATURES: { art: ArtName; name: string; text: string }[] = [
   {
     art: 'nav-nail',
     name: 'Posts',
-    text: 'Write a short post (and add a photo) on a friend’s wall, and see your friends’ posts on Home, newest first. React with a Wave, Laugh, Fire, Popcorn or Love.',
+    text: 'Write a short post (and add a photo) on a friend’s wall, and see your friends’ posts on Home, newest first. React with a Wave, Laugh, Fire, Popcorn or Love. Reply to someone with @name and they’re told — on walls and in groups.',
   },
   {
     art: 'camera',

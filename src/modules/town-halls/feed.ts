@@ -5,6 +5,7 @@ import {
   townHallReactions,
   townHallReplies,
   townHalls,
+  users,
 } from '@db/schema';
 import { and, asc, count, desc, eq, gt, inArray, isNull, lt, or, sql } from 'drizzle-orm';
 import { enforceNewAccountLimit, shouldHoldForOthers } from '@/modules/moderation';
@@ -21,6 +22,7 @@ import {
   idParamSchema,
   type ReactionKind,
 } from '@/shared/validation/fence';
+import { leadingMention } from '@/shared/mentions';
 import type { PortraitTint } from '@/shared/validation/profile';
 import { HALL_FEED_MAX_PAGE_SIZE, HALL_FEED_PAGE_SIZE } from '@/shared/validation/town-halls';
 import { openHallCapsules } from './capsules';
@@ -448,6 +450,28 @@ export async function createPost(
   return view;
 }
 
+/**
+ * Who a reply answers: the person whose "@handle" it starts with, but only if they already replied on this post (the same
+ * rule as on walls). Typing anyone else's handle tells nobody, so a reply cannot ping strangers or non-members.
+ */
+async function mentionedReplier(postId: string, body: string): Promise<string | undefined> {
+  const handle = leadingMention(body);
+  if (!handle) return undefined;
+  const [row] = await getDb()
+    .select({ id: townHallReplies.authorId })
+    .from(townHallReplies)
+    .innerJoin(users, eq(users.id, townHallReplies.authorId))
+    .where(
+      and(
+        eq(townHallReplies.postId, postId),
+        eq(townHallReplies.status, 'published'),
+        eq(users.handle, handle),
+      ),
+    )
+    .limit(1);
+  return row?.id;
+}
+
 /** Reply to a published post. Held writers' replies wait for the owner, without being told. */
 export async function createReply(userId: string, postId: string, body: string): Promise<HallReplyView> {
   await enforceRateLimit(`townhalls:reply:${userId}`, FEED_RATE.reply);
@@ -471,7 +495,13 @@ export async function createReply(userId: string, postId: string, body: string):
     return inserted!;
   });
   if (status === 'published') {
-    emit({ type: 'hall.reply_created', postId: post.id, postAuthorId: post.authorId, authorId: userId });
+    emit({
+      type: 'hall.reply_created',
+      postId: post.id,
+      postAuthorId: post.authorId,
+      authorId: userId,
+      mentionedId: await mentionedReplier(post.id, body),
+    });
   }
   const me = (await getCards([userId])).get(userId);
   if (!me) throw new AppError('INTERNAL');

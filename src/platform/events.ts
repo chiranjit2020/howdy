@@ -51,7 +51,14 @@ export type DomainEvent =
   | { type: 'townhall.made_deputy'; townHallId: string; ownerId: string; deputyId: string }
   | { type: 'townhall.made_owner'; townHallId: string; fromId: string; toId: string }
   /** A published reply on a Town Hall post (ADR-033). Held replies emit nothing: only the owner sees them, in the feed. */
-  | { type: 'hall.reply_created'; postId: string; postAuthorId: string; authorId: string }
+  | {
+      type: 'hall.reply_created';
+      postId: string;
+      postAuthorId: string;
+      authorId: string;
+      /** The reply starts with "@handle" of someone who already replied on this post: they are told too. */
+      mentionedId?: string | undefined;
+    }
   | { type: 'hall.reaction_given'; postId: string; postAuthorId: string; actorId: string }
   /** The photo check held an uploaded photo for a moderator (ADR-039); only its owner sees it meanwhile. */
   | {
