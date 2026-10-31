@@ -292,7 +292,9 @@ test.describe('authentication journey (production build, real CSP, real cookies)
     await stepInsideVia(page, a.email, a.password);
     // The account menu under the avatar says how many devices, and leads to Settings, where they are managed.
     await page.getByRole('button', { name: 'Your account' }).click();
-    const devicesLink = page.getByRole('region', { name: 'Your account' }).getByRole('link', { name: /^Devices/ });
+    const devicesLink = page
+      .getByRole('region', { name: 'Your account' })
+      .getByRole('link', { name: /^Devices/ });
     await expect(devicesLink).toHaveAccessibleName('Devices 1 signed in');
     await devicesLink.click();
     await expect(page).toHaveURL(/\/settings#devices$/);
