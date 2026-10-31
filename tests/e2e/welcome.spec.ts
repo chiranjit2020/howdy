@@ -27,7 +27,8 @@ test.describe('Welcome page (production build, real CSP)', () => {
       await expect(page.getByRole('heading', { name: /built and working right now/ })).toBeVisible();
       await expect(page.getByRole('heading', { name: /what comes next/ })).toBeVisible();
       expect(await axeViolations(page)).toEqual([]);
-      expect(await smallTargets(page)).toEqual([]);
+      // 44 px targets are for fingers; with a mouse, controls are desktop-sized (the density pass).
+      if (label !== 'desktop') expect(await smallTargets(page)).toEqual([]);
       expect(await horizontalOverflow(page)).toBe(0);
       // "Take the tour" scrolls to what is built.
       await page.getByRole('link', { name: 'Take the tour' }).click();

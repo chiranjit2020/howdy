@@ -132,7 +132,7 @@ test.describe('Posse, Block and Flag trouble (production build, real CSP)', () =
 
     // Alice's Workshop lists Bob as an Outlaw, with an undo; her Posse is empty.
     await a.page.goto('/settings');
-    await expect(a.page.getByRole('heading', { name: 'Blocked' })).toBeVisible();
+    await expect(a.page.getByRole('heading', { name: 'Blocked', exact: true })).toBeVisible();
     await a.page.goto('/friends');
     await expect(a.page.getByText('No friends yet')).toBeVisible();
     await a.page.goto('/settings');

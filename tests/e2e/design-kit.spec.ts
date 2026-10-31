@@ -57,7 +57,7 @@ test.describe('design kit (production build, real CSP)', () => {
     const light = await browser.newContext({ colorScheme: 'light' });
     const lp = await light.newPage();
     await lp.goto(KIT);
-    expect(await bg(lp)).toBe('rgb(248, 245, 238)'); // Canvas Cream
+    expect(await bg(lp)).toBe('rgb(248, 247, 255)'); // the light background (#f8f7ff)
     await light.close();
 
     const dark = await browser.newContext({ colorScheme: 'dark' });
@@ -66,10 +66,10 @@ test.describe('design kit (production build, real CSP)', () => {
     expect(await bg(dp)).toBe('rgb(30, 27, 46)'); // Dusk
     // Force Daylight while the system is dark.
     await dp.getByRole('button', { name: 'Light' }).click();
-    expect(await bg(dp)).toBe('rgb(248, 245, 238)');
+    expect(await bg(dp)).toBe('rgb(248, 247, 255)');
     await dp.reload();
     await expect(dp.locator('html')).toHaveAttribute('data-theme', 'daylight'); // server-rendered from the cookie
-    expect(await bg(dp)).toBe('rgb(248, 245, 238)');
+    expect(await bg(dp)).toBe('rgb(248, 247, 255)');
     await dp.getByRole('button', { name: 'System' }).click();
     await expect(dp.locator('html')).not.toHaveAttribute('data-theme', /.+/);
     expect(await bg(dp)).toBe('rgb(30, 27, 46)');
@@ -147,6 +147,8 @@ test.describe('design kit (production build, real CSP)', () => {
         const r = el.getBoundingClientRect();
         if (r.width === 0 || r.height === 0) continue; // hidden
         if (el.closest('[inert]')) continue;
+        // In-sentence text links are exempt (WCAG 2.5.8 inline exception), e.g. a post's author name.
+        if (el.tagName === 'A' && getComputedStyle(el).display === 'inline') continue;
         if (r.height < 43.5 && !(el.getAttribute('role') === 'switch' && r.height >= 32)) {
           out.push(
             `${el.tagName} "${(el.textContent || el.getAttribute('aria-label') || '').trim().slice(0, 30)}" ${Math.round(r.width)}x${Math.round(r.height)}`,

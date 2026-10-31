@@ -1,13 +1,27 @@
 import { NextRequest } from 'next/server';
 import { describe, expect, it } from 'vitest';
-import { buildCsp, proxy } from '@/proxy';
+import { createHash } from 'node:crypto';
+import { buildCsp, proxy, STREAMED_SVG_STYLE_HASH } from '@/proxy';
 
 describe('Content-Security-Policy', () => {
   it('production policy is nonce-based with no unsafe script/style', () => {
     const csp = buildCsp('abc123', false);
     expect(csp).toContain("script-src 'self' 'nonce-abc123' 'strict-dynamic'");
     expect(csp).not.toMatch(/script-src[^;]*unsafe/);
-    expect(csp).not.toMatch(/style-src[^;]*unsafe/);
+    expect(csp).not.toMatch(/style-src [^;]*unsafe/);
+  });
+
+  it('style attributes: only React’s streamed `display:none`, by hash, and nothing else', () => {
+    const csp = buildCsp('abc123', false);
+    expect(STREAMED_SVG_STYLE_HASH).toBe(
+      `sha256-${createHash('sha256').update('display:none').digest('base64')}`,
+    );
+    const attr = csp.split('; ').filter((d) => d.startsWith('style-src-attr'));
+    expect(attr).toEqual([`style-src-attr 'unsafe-hashes' '${STREAMED_SVG_STYLE_HASH}'`]);
+  });
+
+  it('production policy keeps the other hardening directives', () => {
+    const csp = buildCsp('abc123', false);
     for (const d of [
       "object-src 'none'",
       "base-uri 'self'",

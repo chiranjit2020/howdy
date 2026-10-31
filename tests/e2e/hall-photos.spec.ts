@@ -72,14 +72,14 @@ test('a photo in a group post: chosen on a phone, seen by another member, no hid
   await expect(owner.page.getByText('Uploading…')).toHaveCount(0, { timeout: 15_000 });
   await owner.page.getByLabel('Post to this group').fill('The garden this morning');
   await owner.page.getByRole('button', { name: 'Post', exact: true }).click();
-  const mine = owner.page.getByRole('img', { name: /Photo on this post from/ });
+  const mine = owner.page.getByRole('button', { name: /^Photo on this post from/ }).locator('img');
   await expect(mine).toBeVisible();
   await expect.poll(() => mine.evaluate((el) => (el as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
 
   // Another member sees it; the file is a clean WebP.
   await ann.page.reload();
   await pageReady(ann.page);
-  const theirs = ann.page.getByRole('img', { name: /Photo on this post from/ });
+  const theirs = ann.page.getByRole('button', { name: /^Photo on this post from/ }).locator('img');
   await expect(theirs).toBeVisible();
   await expect.poll(() => theirs.evaluate((el) => (el as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
   const got = await ann.page.request.get((await theirs.getAttribute('src'))!);

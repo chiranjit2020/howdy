@@ -23,15 +23,22 @@ function ChoiceRow({
 }) {
   return (
     // One line: the box centred on it. With a hint below: the box beside the first line. 44 px rows for fingers; with a
-    // mouse only as tall as the text, so stacked boxes sit close together.
+    // mouse only as tall as the text, so stacked boxes sit close together. The label holds the padding and fills the row,
+    // so the whole 44 px row is the tap target, not just the line of text.
     <div
       className={cn(
-        'flex min-h-11 gap-3 py-1.5 pointer-fine:min-h-0 pointer-fine:py-1',
-        hint ? 'items-start [&>input]:mt-0.5' : 'items-center',
+        'flex min-h-11 gap-3 pointer-fine:min-h-0',
+        hint ? 'items-start [&>input]:mt-2 pointer-fine:[&>input]:mt-1.5' : 'items-center',
       )}
     >
       {children}
-      <label htmlFor={id} className="flex flex-col text-body text-text-primary">
+      <label
+        htmlFor={id}
+        className={cn(
+          'flex flex-col self-stretch py-1.5 text-body text-text-primary pointer-fine:py-1',
+          !hint && 'justify-center',
+        )}
+      >
         {label}
         {hint && <span className="text-metadata text-text-muted">{hint}</span>}
       </label>

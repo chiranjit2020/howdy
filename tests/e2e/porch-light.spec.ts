@@ -76,7 +76,9 @@ test.describe('Free to talk (production build, real CSP)', () => {
     await expect(lightSwitch).toHaveAttribute('aria-checked', 'false');
     // Options first (a note), then switch it on from there.
     await card.getByRole('button', { name: 'Options' }).tap();
-    await card.getByLabel('2 hours').check();
+    // Tap the chip itself, as a person does (its radio is visually hidden inside it).
+    await card.getByText('2 hours', { exact: true }).tap();
+    await expect(card.getByLabel('2 hours')).toBeChecked();
     await expect(card.getByLabel('All friends')).toBeChecked();
     await card.getByLabel('Note (optional)').fill(note);
     expect(await axeViolations(owner.page)).toEqual([]);

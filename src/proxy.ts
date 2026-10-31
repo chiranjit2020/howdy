@@ -12,6 +12,9 @@ export const ABLY_ORIGINS =
 /** Cloudflare Turnstile, the sign-up bot check: its script and the frame it draws the challenge in. */
 export const TURNSTILE_ORIGIN = 'https://challenges.cloudflare.com';
 
+/** sha256 of `display:none`: the one style attribute React's streamed HTML writes (see buildCsp). */
+export const STREAMED_SVG_STYLE_HASH = 'sha256-aqNNdDLnnrDOnTNdkJpYlAxKVJtLt9CtFLklmInuUAE=';
+
 export function buildCsp(
   nonce: string,
   isDev: boolean,
@@ -28,6 +31,9 @@ export function buildCsp(
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${turnstile ? ` ${TURNSTILE_ORIGIN}` : ''}${isDev ? " 'unsafe-eval'" : ''}`,
     // Dev injects inline <style> for HMR.
     `style-src 'self' ${isDev ? "'unsafe-inline'" : `'nonce-${nonce}'`}`,
+    // One style attribute, exactly: React's streaming wraps late SVG content in <svg style="display:none" id="S:…"> (a
+    // nonce cannot cover attributes). The hash is of `display:none` alone; every other style="" stays blocked.
+    ...(isDev ? [] : [`style-src-attr 'unsafe-hashes' '${STREAMED_SVG_STYLE_HASH}'`]),
     "img-src 'self' blob: data:",
     "font-src 'self'",
     // The service worker (/sw.js). Named explicitly: under 'strict-dynamic' script-src ignores 'self'.

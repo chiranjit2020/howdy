@@ -96,7 +96,7 @@ export const uniqueAccount = (tag: string) => {
   return {
     handle: `${tag}_${n}`.slice(0, 24),
     email: `${tag}.${n}@example.com`,
-    password: 'correct horse battery staple',
+    password: 'sunflower porch lantern 7319',
   };
 };
 
@@ -165,7 +165,7 @@ export async function signUpVia(page: Page, a: { handle: string; email: string; 
 }
 
 export async function confirmEmailVia(page: Page, email: string) {
-  const mail = await waitForMail(email, /confirm/i);
+  const mail = await waitForMail(email, /is your Howdy code$/);
   await page.goto(pathOf(linkFrom(mail.text)));
   await page.getByRole('button', { name: 'Confirm my email' }).click();
   await page.getByRole('heading', { name: 'Account created' }).waitFor();
@@ -220,7 +220,7 @@ export async function axeViolations(page: Page): Promise<string[]> {
       window as unknown as {
         axe: {
           run: (
-            context?: { exclude: string[][] },
+            context: Document | { exclude: string[][] },
             options?: { runOnly?: string[]; rules?: Record<string, { enabled: boolean }> },
           ) => Promise<{
             violations: {
@@ -234,7 +234,8 @@ export async function axeViolations(page: Page): Promise<string[]> {
     ).axe;
     // Buttons filled with the brand green carry white labels at 3.8:1 by the user's choice (tokens.css, and pinned
     // at 3:1 in design-tokens.test.ts), so colour contrast skips only those; every other rule still covers them.
-    const all = await axe.run(undefined, { rules: { 'color-contrast': { enabled: false } } });
+    // `document`, not undefined: axe 4.13 refuses an undefined context ("axe.run arguments are invalid").
+    const all = await axe.run(document, { rules: { 'color-contrast': { enabled: false } } });
     const contrast = await axe.run({ exclude: [['.bg-accent']] }, { runOnly: ['color-contrast'] });
     return [...all.violations, ...contrast.violations].map(
       (v) =>

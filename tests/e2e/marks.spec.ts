@@ -57,8 +57,8 @@ test.describe('Marks and the Vibe Matrix (production build, real CSP)', () => {
 
     // He gives a Sharp Mark: it is counted at once, and every pick is closed for 30 days.
     await picks(b.page).getByRole('button', { name: 'Sharp' }).click();
-    await expect(b.page.getByText('You gave a Sharp Mark.')).toBeVisible();
-    await expect(box.getByText('1 Mark total. The percentages show up after 20 — 19 to go.')).toBeVisible();
+    await expect(b.page.getByText('You gave a Sharp badge.')).toBeVisible();
+    await expect(box.getByText('1 badge total. The percentages show up after 20 — 19 to go.')).toBeVisible();
     await expect(box.getByText('You can give them a badge again in 30 days.')).toBeVisible();
     for (const kind of ['Gem', 'Pure', 'Chill', 'Sharp', 'Bold'])
       await expect(picks(b.page).getByRole('button', { name: kind })).toBeDisabled();

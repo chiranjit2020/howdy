@@ -113,9 +113,9 @@ test.describe('authentication journey (production build, real CSP, real cookies)
     const page = await ctx.newPage();
     await page.goto('/signup');
     await page.getByRole('button', { name: /^Create account/ }).click();
-    // Email comes first on the form, so it is where you land.
-    await expect(page.getByLabel('Email address')).toBeFocused();
-    await expect(page.getByLabel('Username')).toHaveAttribute('aria-invalid', 'true');
+    // Username comes first on the form, so it is where you land.
+    await expect(page.getByLabel('Username')).toBeFocused();
+    await expect(page.getByLabel('Email address')).toHaveAttribute('aria-invalid', 'true');
     await page.getByLabel('Email address').fill('x@example.com');
     // The username is suggested from the email until you type your own.
     await expect(page.getByLabel('Username')).toHaveValue('x_howdy');
@@ -156,7 +156,7 @@ test.describe('authentication journey (production build, real CSP, real cookies)
 
     // Submitting with it still wrong sends nothing and puts you back in the email box.
     await page.getByLabel('Username').fill('mail_check');
-    await page.getByLabel('Password', { exact: true }).fill('correct horse battery staple');
+    await page.getByLabel('Password', { exact: true }).fill('sunflower porch lantern 7319');
     await page.getByRole('checkbox', { name: /I am 18 or older/ }).check();
     await page.getByRole('checkbox', { name: /I agree to the Terms/ }).check();
     await page.getByRole('button', { name: /^Create account/ }).click();
@@ -173,7 +173,7 @@ test.describe('authentication journey (production build, real CSP, real cookies)
       data: {
         email: 'user@localhost',
         handle: 'mail_check2',
-        password: 'correct horse battery staple',
+        password: 'sunflower porch lantern 7319',
         acceptTerms: true,
       },
       headers: { origin: 'http://localhost:3300' },

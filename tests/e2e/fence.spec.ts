@@ -37,8 +37,8 @@ async function makePosse(asker: Person, asked: Person) {
 const cardWith = (page: Page, text: string): Locator => page.getByRole('article').filter({ hasText: text });
 
 async function nailVia(page: Page, text: string) {
-  await page.getByLabel('Write a post').fill(text);
-  await page.getByRole('button', { name: 'Post' }).click();
+  await page.getByLabel('Write a post', { exact: true }).fill(text);
+  await page.getByRole('button', { name: 'Post', exact: true }).click();
   await expect(cardWith(page, text)).toBeVisible();
 }
 
@@ -57,7 +57,7 @@ test.describe('The wall in a real browser (production build, real CSP)', () => {
     await expect(a.page.getByRole('heading', { name: 'The wall' })).toBeVisible();
     await expect(a.page.getByText('No posts yet')).toBeVisible();
     await nailVia(a.page, 'Howdy from the ranch');
-    await expect(a.page.getByLabel('Write a post')).toHaveValue(''); // cleared after posting
+    await expect(a.page.getByLabel('Write a post', { exact: true })).toHaveValue(''); // cleared after posting
 
     // A Posse friend sees it, writes on the Fence, gives a Yo and scribbles a reply.
     await b.page.goto(`/profile/${a.handle}`);
@@ -93,7 +93,7 @@ test.describe('The wall in a real browser (production build, real CSP)', () => {
     // A stranger reads the wall (members can) but the composer is not offered: only the Posse may write.
     await c.page.goto(`/profile/${a.handle}`);
     await expect(cardWith(c.page, 'Hi from Bob')).toBeVisible();
-    await expect(c.page.getByLabel('Write a post')).toHaveCount(0);
+    await expect(c.page.getByLabel('Write a post', { exact: true })).toHaveCount(0);
     expect((await api(c, `/api/porch/${a.handle}/fence`, { body: 'let me in' })).status()).toBe(403);
 
     // Restrict: Bob's next card looks posted to Bob, is invisible to others, and waits for Alice.
