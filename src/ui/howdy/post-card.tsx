@@ -132,7 +132,8 @@ const COMPOSER = {
   card: {
     max: LIMITS.POST_CARD_MAX,
     label: 'Write a post',
-    placeholder: 'Short and sweet…',
+    // The label is for screen readers only (one-line box), so the placeholder says what the box is for.
+    placeholder: 'Write a post…',
     rows: 3,
     submit: 'Post',
   },
@@ -144,7 +145,7 @@ const COMPOSER = {
     // Not "Reply": the card's own Reply button (which opens this box) is right above it.
     submit: 'Send',
   },
-  /** Home: a card on your own wall, which your friends see in their feed. One line until you click in (see below). */
+  /** Home: a card on your own wall, which your friends see in their feed. */
   home: {
     max: LIMITS.POST_CARD_MAX,
     label: 'What’s on your mind?',
@@ -191,12 +192,13 @@ export function PostCardComposer({
   const [photoError, setPhotoError] = useState<string | undefined>();
   const uploading = photo !== undefined && photo.id === undefined;
   const trimmed = body.trim();
-  // Home's box is one line (with a camera button) until you click in; it stays open while it holds words, a photo or
-  // a photo error, and closes again when you leave it empty. Only the box opens it: the one-line camera button must stay
-  // put while its file picker is open. Focus moving on to the form's own buttons keeps it open.
+  // Every post box (Home, a wall, a group) is one line (with a camera button) until you click in; it stays open while it
+  // holds words, a photo or a photo error, and closes again when you leave it empty. Only the box opens it: the one-line
+  // camera button must stay put while its file picker is open. Focus moving on to the form's own buttons keeps it open.
+  // (A reply box is its own one-line design, above.)
   const [focused, setFocused] = useState(false);
   const box = useRef<HTMLTextAreaElement>(null);
-  const collapsible = kind === 'home';
+  const collapsible = kind !== 'reply';
   const open = !collapsible || focused || body !== '' || photo !== undefined || photoError !== undefined;
 
   // Free the temporary preview address when it is replaced or the composer goes away.
