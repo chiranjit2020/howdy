@@ -3,7 +3,7 @@ import { myCapsules } from '@/modules/capsules';
 import { storiesExport } from '@/modules/stories';
 import { fenceExport, type ExportState } from '@/modules/fence';
 import { marksExport } from '@/modules/marks';
-import { readCardPhoto, readPortrait } from '@/modules/media';
+import { readCardPhoto, readCover, readPortrait } from '@/modules/media';
 import { moderationExport } from '@/modules/moderation';
 import { getPrefs } from '@/modules/notifications';
 import { getCards, getOwnRanch, myDetails, type PersonCard } from '@/modules/profiles';
@@ -98,6 +98,13 @@ export async function buildDataExport(userId: string, now: Date = new Date()): P
     portraitPath = 'photos/portrait.webp';
     photoEntries.push({ name: portraitPath, read: async () => portrait.bytes });
   }
+  // And my cover photo (ADR-051), the same way.
+  let coverPath: string | null = null;
+  const cover = await readCover(userId, { userId }).catch(() => null);
+  if (cover) {
+    coverPath = 'photos/cover.webp';
+    photoEntries.push({ name: coverPath, read: async () => cover.bytes });
+  }
   let n = 0;
   const cardPhoto = (photoId: string | null): string | null => {
     if (!photoId) return null;
@@ -142,6 +149,7 @@ export async function buildDataExport(userId: string, now: Date = new Date()): P
       bio: ranch.bio,
       portraitColour: ranch.portraitTint,
       portrait: portraitPath,
+      cover: { photo: coverPath, howdyCover: ranch.coverPreset },
       // Each detail (null = not set), and who sees it: members, posse (friends) or only_me.
       details,
       signal: ranch.signal ? { words: ranch.signal.text, until: iso(ranch.signal.expiresAt) } : null,
@@ -315,7 +323,7 @@ function readmeText(callSign: string, at: string): string {
 
 data.json    Everything in one file: your account and settings, profile details, friends, posts, messages,
              testimonials, badges, Time Capsules, profile visits, groups and moderation history.
-photos/      Your profile photo, and the photos on the posts and group posts in data.json.
+photos/      Your profile photo and cover photo, and the photos on the posts and group posts in data.json.
 
 What is in it: everything you gave Howdy, plus what Howdy already shows you (cards on your
 wall, messages in your threads, testimonials on your profile). Other people appear by username

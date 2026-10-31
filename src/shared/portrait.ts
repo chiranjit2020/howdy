@@ -4,3 +4,7 @@
  */
 export const portraitUrl = (handle: string, version: string): string =>
   `/api/portraits/${encodeURIComponent(handle)}?v=${encodeURIComponent(version)}`;
+
+/** Where someone's cover photo is served from (ADR-051), named by version in the same way. */
+export const coverUrl = (handle: string, version: string): string =>
+  `/api/covers/${encodeURIComponent(handle)}?v=${encodeURIComponent(version)}`;

@@ -127,6 +127,7 @@ describe('what a viewer receives', () => {
     const r = await viewRanch(b.handle, { cookie: a.cookie });
     expect(Object.keys(r.data.ranch!).sort()).toEqual([
       'bio', // the short line the owner chose to show on their Porch
+      'coverPreset', // which Howdy cover they picked (ADR-051): presentation, like portraitTint
       'displayName',
       'handle',
       'isOwner',

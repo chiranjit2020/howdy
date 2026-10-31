@@ -295,6 +295,13 @@
       "when": 1793476424594,
       "tag": "0041_profile_details",
       "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1793478733673,
+      "tag": "0042_covers",
+      "breakpoints": true
     }
   ]
 }

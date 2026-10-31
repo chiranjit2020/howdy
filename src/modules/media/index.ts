@@ -4,7 +4,12 @@
  */
 export {
   completeCardPhoto,
+  completeCover,
   completePortrait,
+  getCoverVersion,
+  readCover,
+  removeCover,
+  startCoverUpload,
   purgeDetachedCardPhotos,
   readCardPhoto,
   startCardPhotoUpload,
@@ -22,4 +27,4 @@ export {
   type PhotoViewer,
   type StartedUpload,
 } from './service';
-export { processPortrait, MAX_INPUT_PIXELS, type ProcessedPortrait } from './image';
+export { processCover, processPortrait, MAX_INPUT_PIXELS, type ProcessedPortrait } from './image';

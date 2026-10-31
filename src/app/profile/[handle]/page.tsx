@@ -6,7 +6,7 @@ import type { Actor } from '@/modules/authz';
 import { listFence, listWaiting } from '@/modules/fence';
 import { lightFor, myLight, type LightView, type MyLight } from '@/modules/lights';
 import { getVibeMatrix } from '@/modules/marks';
-import { getPortraitVersion } from '@/modules/media';
+import { getCoverVersion, getPortraitVersion } from '@/modules/media';
 import {
   detailsForViewer,
   getRanchForViewer,
@@ -22,10 +22,11 @@ import { getEnv } from '@/platform/config/env';
 import { AppError } from '@/platform/errors';
 import { clientIp } from '@/platform/http/client-ip';
 import { clockOf } from '@/shared/calendar';
-import { portraitUrl } from '@/shared/portrait';
+import { coverUrl, portraitUrl } from '@/shared/portrait';
 import { RanchCover, RanchHeader } from '@/ui/howdy';
 import { buttonClasses, ClayCard, EmptyState } from '@/ui/primitives';
 import { DetailsCard } from './details-card';
+import { EditCover } from './edit-cover';
 import { EditPhotoButton, EditProfile, EditProfileButton } from './edit-profile';
 import { RelationshipBar } from './relationship-bar';
 import { FenceSection } from './fence-section';
@@ -108,7 +109,7 @@ export default async function RanchPage({ params }: { params: Promise<{ handle: 
   const r = ranch;
   const isOwner = Boolean(user && r.isOwner);
   const [
-    { rel, photo, light, details },
+    { rel, photo, light, details, cover },
     { value: fence, limited: fenceBusy },
     waiting,
     waitingTributes,
@@ -125,7 +126,7 @@ export default async function RanchPage({ params }: { params: Promise<{ handle: 
     (async () => {
       const person = user && !r.isOwner ? await resolveHandle(r.handle) : null;
       const ownerId = r.isOwner ? user?.id : person?.userId;
-      const [rel, photo, light, details] = await Promise.all([
+      const [rel, photo, light, details, cover] = await Promise.all([
         user && person ? getRelationshipView(user.id, person.userId) : null,
         user && ownerId ? getPortraitVersion(ownerId, { userId: user.id }).catch(() => null) : null,
         // Best-effort: without it the Porch simply shows no light.
@@ -137,8 +138,11 @@ export default async function RanchPage({ params }: { params: Promise<{ handle: 
         ).catch((): MyLight | LightView | null => null),
         // Personal details this viewer may see, each by its own audience (none for signed-out visitors).
         user && ownerId ? detailsForViewer(user.id, ownerId) : Promise.resolve([]),
+        // The cover photo, under the Portrait's rule (signed in, on a profile this viewer may open). Best-effort: without
+        // it their Howdy cover shows.
+        user && ownerId ? getCoverVersion(ownerId, { userId: user.id }).catch(() => null) : null,
       ]);
-      return { rel, photo, light, details };
+      return { rel, photo, light, details, cover };
     })(),
     // The Fence is judged separately: it can be narrower than the Porch (e.g. Pals only), and then it is not shown.
     unlessRateLimited(listFence(viewer, r.handle, { rateKey })),
@@ -184,7 +188,20 @@ export default async function RanchPage({ params }: { params: Promise<{ handle: 
         {(() => {
           const header = (
             <div className="clay overflow-hidden">
-              <RanchCover />
+              <RanchCover
+                preset={ranch.coverPreset}
+                photoUrl={cover ? coverUrl(ranch.handle, cover) : null}
+                {...(isOwner
+                  ? {
+                      action: (
+                        <EditCover
+                          preset={ranch.coverPreset}
+                          photoUrl={cover ? coverUrl(ranch.handle, cover) : null}
+                        />
+                      ),
+                    }
+                  : {})}
+              />
               <div className="px-5 pb-6 sm:px-7">
                 <RanchHeader
                   overlap

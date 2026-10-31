@@ -11,6 +11,21 @@ import './zod-setup'; // jitless Zod (no eval probe under our CSP)
 export const PORTRAIT_TINTS = ['peach', 'mint', 'gold', 'lavender', 'sky'] as const;
 export type PortraitTint = (typeof PORTRAIT_TINTS)[number];
 
+/**
+ * Howdy's own covers (ADR-051), shown when a profile has no cover photo. `porch` is the illustration everyone started
+ * with (and still gets by default); the rest are palette gradients.
+ */
+export const COVER_PRESETS = ['porch', 'sunflower', 'dusk', 'meadow', 'lilac', 'sunrise'] as const;
+export type CoverPreset = (typeof COVER_PRESETS)[number];
+export const COVER_PRESET_LABEL: Record<CoverPreset, string> = {
+  porch: 'Porch',
+  sunflower: 'Sunflower',
+  dusk: 'Dusk',
+  meadow: 'Meadow',
+  lilac: 'Lilac',
+  sunrise: 'Sunrise',
+};
+
 /** Who may open a Ranch / read a Signal. Ordered from most to least open. */
 export const VISIBILITIES = ['everyone', 'members', 'posse'] as const;
 export type Visibility = (typeof VISIBILITIES)[number];
@@ -105,6 +120,7 @@ export const updateRanchSchema = z
     displayName: displayNameSchema.optional(),
     bio: bioSchema.optional(),
     portraitTint: portraitTintSchema.optional(),
+    coverPreset: z.enum(COVER_PRESETS).optional(),
     ranchVisibility: visibilitySchema.optional(),
     signalVisibility: visibilitySchema.optional(),
     fenceVisibility: visibilitySchema.optional(),

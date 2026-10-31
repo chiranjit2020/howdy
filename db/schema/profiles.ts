@@ -17,6 +17,8 @@ export const profiles = pgTable(
     displayName: text('display_name').notNull(),
     /** Stand-in Portrait until the Media module exists: a palette tint on the initials avatar. */
     portraitTint: text('portrait_tint').notNull().default('peach'),
+    /** Which Howdy cover shows when there is no cover photo (ADR-051). Null = the default illustration ("porch"). */
+    coverPreset: text('cover_preset'),
     /** A short line about yourself under your name on the Porch (null = none). Seen by whoever may open the Porch. */
     bio: text('bio'),
     /** The Signal: a short status line that expires. Both columns are null together. */
@@ -62,6 +64,10 @@ export const profiles = pgTable(
     check(
       'profiles_portrait_tint_check',
       sql`${t.portraitTint} in ('peach', 'mint', 'gold', 'lavender', 'sky')`,
+    ),
+    check(
+      'profiles_cover_preset_check',
+      sql`${t.coverPreset} is null or ${t.coverPreset} in ('porch', 'sunflower', 'dusk', 'meadow', 'lilac', 'sunrise')`,
     ),
     check('profiles_ranch_visibility_check', sql`${t.ranchVisibility} in ('everyone', 'members', 'posse')`),
     check('profiles_signal_visibility_check', sql`${t.signalVisibility} in ('everyone', 'members', 'posse')`),

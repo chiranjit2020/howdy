@@ -9,6 +9,7 @@ import { enforceRateLimit, type RateLimitRule } from '@/platform/rate-limit';
 import {
   handleParamSchema,
   SIGNAL_TTL_MS,
+  type CoverPreset,
   type FencePosting,
   type PortraitTint,
   type Visibility,
@@ -35,6 +36,8 @@ export interface RanchView {
   /** A short line about them, or null. */
   bio: string | null;
   portraitTint: PortraitTint;
+  /** Which Howdy cover to show when there is no cover photo (ADR-051); "porch" when none was chosen. */
+  coverPreset: CoverPreset;
   signal: { text: string; expiresAt: Date } | null;
   isOwner: boolean;
   /** The Howdy team account: shown with the Verified badge. */
@@ -96,6 +99,7 @@ export interface RanchPatch {
   /** Empty clears it. */
   bio?: string | undefined;
   portraitTint?: PortraitTint | undefined;
+  coverPreset?: CoverPreset | undefined;
   ranchVisibility?: Visibility | undefined;
   signalVisibility?: Visibility | undefined;
   fenceVisibility?: Visibility | undefined;
@@ -124,6 +128,7 @@ interface Row {
   displayName: string;
   bio: string | null;
   portraitTint: string;
+  coverPreset: string | null;
   signal: string | null;
   signalExpiresAt: Date | null;
   ranchVisibility: string;
@@ -145,6 +150,7 @@ const SELECT = {
   displayName: profiles.displayName,
   bio: profiles.bio,
   portraitTint: profiles.portraitTint,
+  coverPreset: profiles.coverPreset,
   signal: profiles.signal,
   signalExpiresAt: profiles.signalExpiresAt,
   ranchVisibility: profiles.ranchVisibility,
@@ -167,6 +173,7 @@ function toView(row: Row, isOwner: boolean, now: Date, showSignal: boolean): Ran
     displayName: row.displayName,
     bio: row.bio,
     portraitTint: row.portraitTint as PortraitTint,
+    coverPreset: (row.coverPreset as CoverPreset | null) ?? 'porch',
     // An expired Signal is gone even before the retention job clears it.
     signal: live ? { text: row.signal!, expiresAt: row.signalExpiresAt! } : null,
     isOwner,
@@ -456,6 +463,7 @@ export async function updateRanch(userId: string, patch: RanchPatch): Promise<Ow
   if (patch.displayName !== undefined) set.displayName = patch.displayName;
   if (patch.bio !== undefined) set.bio = patch.bio === '' ? null : patch.bio;
   if (patch.portraitTint !== undefined) set.portraitTint = patch.portraitTint;
+  if (patch.coverPreset !== undefined) set.coverPreset = patch.coverPreset;
   if (patch.ranchVisibility !== undefined) set.ranchVisibility = patch.ranchVisibility;
   if (patch.signalVisibility !== undefined) set.signalVisibility = patch.signalVisibility;
   if (patch.fenceVisibility !== undefined) set.fenceVisibility = patch.fenceVisibility;

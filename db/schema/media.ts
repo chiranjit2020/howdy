@@ -35,7 +35,10 @@ export const media = pgTable(
     ownerId: uuid('owner_id')
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
-    /** portrait (a Porch photo) | card_photo (one photo on a Post Card, Phase 13+ / ADR-031). */
+    /**
+     * portrait (a Porch photo) | card_photo (one photo on a Post Card, Phase 13+ / ADR-031) | cover (a profile's cover
+     * photo, ADR-051).
+     */
     kind: text('kind').notNull().default('portrait'),
     /**
      * The Post Card a `card_photo` belongs to. Null while it waits to be nailed (thrown away after an hour), and again
@@ -66,17 +69,17 @@ export const media = pgTable(
     updatedAt: tstz('updated_at').notNull().defaultNow(),
   },
   (t) => [
-    check('media_kind_check', sql`${t.kind} in ('portrait', 'card_photo')`),
+    check('media_kind_check', sql`${t.kind} in ('portrait', 'card_photo', 'cover')`),
     check('media_card_only_for_card_photos', sql`${t.cardId} is null or ${t.kind} = 'card_photo'`),
     check('media_hall_post_only_for_card_photos', sql`${t.hallPostId} is null or ${t.kind} = 'card_photo'`),
     check('media_story_only_for_card_photos', sql`${t.storyId} is null or ${t.kind} = 'card_photo'`),
     // One photo, one place: a card, a Town Hall post or a Story — never two of them.
     check('media_one_home', sql`num_nonnulls(${t.cardId}, ${t.hallPostId}, ${t.storyId}) <= 1`),
     check('media_status_check', sql`${t.status} in ('pending', 'ready', 'retired')`),
-    // One live Portrait per person, enforced by the database, not just by the code.
+    // One live Portrait and one live cover per person, enforced by the database, not just by the code.
     uniqueIndex('media_one_ready_per_owner_idx')
       .on(t.ownerId, t.kind)
-      .where(sql`${t.status} = 'ready' and ${t.kind} = 'portrait'`),
+      .where(sql`${t.status} = 'ready' and ${t.kind} in ('portrait', 'cover')`),
     // One photo per card.
     uniqueIndex('media_one_per_card_idx')
       .on(t.cardId)

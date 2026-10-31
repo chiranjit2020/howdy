@@ -9,7 +9,7 @@ import { photoChecker } from '@/platform/photo-check';
 import { enforceRateLimit } from '@/platform/rate-limit';
 import { getObjectStore, type UploadTarget } from '@/platform/storage';
 import { PORTRAIT_MAX_BYTES, type PortraitType } from '@/shared/validation/media';
-import { previewForCheck, processCardPhoto, processPortrait } from './image';
+import { previewForCheck, processCardPhoto, processCover, processPortrait } from './image';
 
 const rule = (limit: number, windowSec: number) => ({ limit, windowSec });
 export const RATE = {
@@ -96,10 +96,22 @@ export interface StartedUpload {
 }
 
 /**
- * Step 1 of a new Portrait: reserve an id and hand back a signed URL for exactly this type and size. Nothing is trusted yet.
- * A person has at most one unfinished upload: asking again discards the previous one.
+ * A person's own photos: the Portrait and the cover (ADR-051). The same upload, decode and storage steps; each has its own
+ * crop, its own folder, and one live at a time. A cover the photo check would hold is refused instead: covers are
+ * optional (Howdy's own covers are always there), and moderation reviews held Portraits and card photos only.
  */
-export async function startPortraitUpload(
+export type ProfilePhotoKind = 'portrait' | 'cover';
+const PROFILE_PHOTO = {
+  portrait: { process: processPortrait, folder: 'portraits' },
+  cover: { process: processCover, folder: 'covers' },
+} as const;
+
+/**
+ * Step 1 of a new Portrait or cover: reserve an id and hand back a signed URL for exactly this type and size. Nothing is
+ * trusted yet. A person has at most one unfinished upload of each: asking again discards the previous one.
+ */
+async function startProfilePhotoUpload(
+  kind: ProfilePhotoKind,
   userId: string,
   file: { contentType: PortraitType; size: number },
 ): Promise<StartedUpload> {
@@ -110,24 +122,33 @@ export async function startPortraitUpload(
   const stale = await db
     .select({ id: media.id, objectKey: media.objectKey })
     .from(media)
-    .where(and(eq(media.ownerId, userId), eq(media.status, 'pending'), eq(media.kind, 'portrait')));
+    .where(and(eq(media.ownerId, userId), eq(media.status, 'pending'), eq(media.kind, kind)));
   await destroy(stale);
 
   // A random key: it says nothing about who owns the file.
   const objectKey = `incoming/${randomUUID()}`;
   const [row] = await db
     .insert(media)
-    .values({ ownerId: userId, kind: 'portrait', status: 'pending', objectKey })
+    .values({ ownerId: userId, kind, status: 'pending', objectKey })
     .returning({ id: media.id });
   const upload = await store().createUpload(objectKey, file);
   return { mediaId: row!.id, upload };
 }
 
+export const startPortraitUpload = (userId: string, file: { contentType: PortraitType; size: number }) =>
+  startProfilePhotoUpload('portrait', userId, file);
+export const startCoverUpload = (userId: string, file: { contentType: PortraitType; size: number }) =>
+  startProfilePhotoUpload('cover', userId, file);
+
 /**
  * Step 2: the browser says it has sent the file. Read it back, decode it, crop it, re-encode it, and only then make it the
- * person's Portrait (replacing any earlier one). The uploaded original is deleted either way.
+ * person's Portrait or cover (replacing any earlier one). The uploaded original is deleted either way.
  */
-export async function completePortrait(userId: string, mediaId: string): Promise<{ version: string }> {
+async function completeProfilePhoto(
+  kind: ProfilePhotoKind,
+  userId: string,
+  mediaId: string,
+): Promise<{ version: string }> {
   await enforceRateLimit(`media:complete:${userId}`, RATE.complete);
 
   const db = getDb();
@@ -139,7 +160,7 @@ export async function completePortrait(userId: string, mediaId: string): Promise
       and(
         eq(media.id, mediaId),
         eq(media.ownerId, userId),
-        eq(media.kind, 'portrait'),
+        eq(media.kind, kind),
         eq(media.status, 'pending'),
       ),
     )
@@ -167,26 +188,28 @@ export async function completePortrait(userId: string, mediaId: string): Promise
 
   let processed;
   try {
-    processed = await processPortrait(original);
+    processed = await PROFILE_PHOTO[kind].process(original);
   } catch (err) {
     await destroy([pending]);
     throw err;
   }
   const check = await checkPhoto(processed.data);
   if (check?.verdict === 'refuse') return reject(REFUSED);
+  // A cover is never held for review: it is refused instead (see PROFILE_PHOTO).
+  if (check?.verdict === 'hold' && kind === 'cover') return reject(REFUSED);
   const held = check?.verdict === 'hold';
 
-  const finalKey = `portraits/${randomUUID()}.webp`;
+  const finalKey = `${PROFILE_PHOTO[kind].folder}/${randomUUID()}.webp`;
   await store().put(finalKey, processed.data, 'image/webp');
 
   let retired: { id: string; objectKey: string }[] = [];
   try {
     retired = await db.transaction(async (tx) => {
-      // The old Portrait steps aside and the new one becomes the only live one, in one step.
+      // The old one steps aside and the new one becomes the only live one, in one step.
       const old = await tx
         .update(media)
         .set({ status: 'retired', updatedAt: sql`now()` })
-        .where(and(eq(media.ownerId, userId), eq(media.kind, 'portrait'), eq(media.status, 'ready')))
+        .where(and(eq(media.ownerId, userId), eq(media.kind, kind), eq(media.status, 'ready')))
         .returning({ id: media.id, objectKey: media.objectKey });
       const promoted = await tx
         .update(media)
@@ -207,7 +230,7 @@ export async function completePortrait(userId: string, mediaId: string): Promise
       // fails below, the retention job still knows about it (a file with no row could never be found again).
       const [raw] = await tx
         .insert(media)
-        .values({ ownerId: userId, kind: 'portrait', status: 'retired', objectKey: pending.objectKey })
+        .values({ ownerId: userId, kind, status: 'retired', objectKey: pending.objectKey })
         .returning({ id: media.id, objectKey: media.objectKey });
       return [...old, raw!];
     });
@@ -219,9 +242,9 @@ export async function completePortrait(userId: string, mediaId: string): Promise
     throw err;
   }
 
-  // Clean up after the fact: the raw upload and the Portrait that was replaced (each: object first, then its row).
+  // Clean up after the fact: the raw upload and the photo that was replaced (each: object first, then its row).
   await destroy(retired);
-  if (check?.verdict === 'hold') {
+  if (check?.verdict === 'hold' && kind === 'portrait') {
     emit({
       type: 'photo.held',
       mediaId: pending.id,
@@ -232,6 +255,11 @@ export async function completePortrait(userId: string, mediaId: string): Promise
   }
   return { version: pending.id };
 }
+
+export const completePortrait = (userId: string, mediaId: string) =>
+  completeProfilePhoto('portrait', userId, mediaId);
+export const completeCover = (userId: string, mediaId: string) =>
+  completeProfilePhoto('cover', userId, mediaId);
 
 // --- Post Card photos (ADR-031) ---------------------------------------------------------------------------------------
 
@@ -392,16 +420,19 @@ export async function purgeDetachedCardPhotos(
   return { cardPhotosRemoved: await destroy(rows, ['ready']) };
 }
 
-/** Remove my Portrait (the initials avatar comes back). Returns whether there was one. */
-export async function removePortrait(userId: string): Promise<boolean> {
+/** Remove my Portrait (the initials avatar comes back) or my cover photo (my Howdy cover shows). Whether there was one. */
+async function removeProfilePhoto(kind: ProfilePhotoKind, userId: string): Promise<boolean> {
   const retired = await getDb()
     .update(media)
     .set({ status: 'retired', updatedAt: sql`now()` })
-    .where(and(eq(media.ownerId, userId), eq(media.kind, 'portrait'), eq(media.status, 'ready')))
+    .where(and(eq(media.ownerId, userId), eq(media.kind, kind), eq(media.status, 'ready')))
     .returning({ id: media.id, objectKey: media.objectKey });
   await destroy(retired);
   return retired.length > 0;
 }
+
+export const removePortrait = (userId: string) => removeProfilePhoto('portrait', userId);
+export const removeCover = (userId: string) => removeProfilePhoto('cover', userId);
 
 /**
  * Retire one exact Portrait (a moderator removing a reported photo, ADR-025). Only that version, only while it is live:
@@ -452,17 +483,27 @@ export async function releaseHeldPhoto(mediaId: string): Promise<boolean> {
   return rows.length > 0;
 }
 
-/** The id of someone's live Portrait (used to name the picture in a URL and to bust caches), or null when they have none. */
-export async function getPortraitVersion(userId: string, viewer: PhotoViewer): Promise<string | null> {
+/**
+ * The id of someone's live Portrait or cover (used to name the picture in a URL and to bust caches), or null when they
+ * have none.
+ */
+async function getProfilePhotoVersion(
+  kind: ProfilePhotoKind,
+  userId: string,
+  viewer: PhotoViewer,
+): Promise<string | null> {
   const [row] = await getDb()
     .select({ id: media.id })
     .from(media)
-    .where(
-      and(eq(media.ownerId, userId), eq(media.kind, 'portrait'), eq(media.status, 'ready'), shownTo(viewer)),
-    )
+    .where(and(eq(media.ownerId, userId), eq(media.kind, kind), eq(media.status, 'ready'), shownTo(viewer)))
     .limit(1);
   return row?.id ?? null;
 }
+
+export const getPortraitVersion = (userId: string, viewer: PhotoViewer) =>
+  getProfilePhotoVersion('portrait', userId, viewer);
+export const getCoverVersion = (userId: string, viewer: PhotoViewer) =>
+  getProfilePhotoVersion('cover', userId, viewer);
 
 /** `getPortraitVersion` for many people in one query: only those with a live Portrait appear in the map. */
 export async function getPortraitVersions(
@@ -485,24 +526,27 @@ export async function getPortraitVersions(
 }
 
 /**
- * The bytes of someone's live Portrait. This does NOT decide who may look: the caller (the route) has already applied the
- * visibility rules. A row whose file has gone missing reads as "no Portrait".
+ * The bytes of someone's live Portrait or cover. This does NOT decide who may look: the caller (the route) has already
+ * applied the visibility rules. A row whose file has gone missing reads as "none".
  */
-export async function readPortrait(
+async function readProfilePhoto(
+  kind: ProfilePhotoKind,
   ownerId: string,
   viewer: PhotoViewer,
 ): Promise<{ bytes: Buffer; version: string } | null> {
   const [row] = await getDb()
     .select({ id: media.id, objectKey: media.objectKey })
     .from(media)
-    .where(
-      and(eq(media.ownerId, ownerId), eq(media.kind, 'portrait'), eq(media.status, 'ready'), shownTo(viewer)),
-    )
+    .where(and(eq(media.ownerId, ownerId), eq(media.kind, kind), eq(media.status, 'ready'), shownTo(viewer)))
     .limit(1);
   if (!row) return null;
   const bytes = await store().get(row.objectKey, SERVE_MAX_BYTES);
   return bytes ? { bytes, version: row.id } : null;
 }
+
+export const readPortrait = (ownerId: string, viewer: PhotoViewer) =>
+  readProfilePhoto('portrait', ownerId, viewer);
+export const readCover = (ownerId: string, viewer: PhotoViewer) => readProfilePhoto('cover', ownerId, viewer);
 
 /** How many file rows a person still has (account deletion must see 0 before it deletes the account, ADR-027). */
 export async function mediaLeftFor(userId: string): Promise<number> {

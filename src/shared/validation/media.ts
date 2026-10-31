@@ -27,6 +27,15 @@ export const portraitUploadSchema = z.object({
 
 export const portraitCompleteSchema = z.object({ mediaId: z.uuid() });
 
+/**
+ * A cover photo (ADR-051): the same accepted types and size as a Portrait, cropped from the centre to this wide banner
+ * (about 3:1, a little taller than the profile's own cover box so phones and desktops both crop well), as WebP.
+ */
+export const COVER_WIDTH_PX = 1600;
+export const COVER_HEIGHT_PX = 560;
+export const coverUploadSchema = portraitUploadSchema;
+export const coverCompleteSchema = portraitCompleteSchema;
+
 /** A photo on a Post Card (ADR-031): the same accepted types and size as a Portrait, kept within this box, never enlarged. */
 export const CARD_PHOTO_MAX_PX = 1280;
 export const cardPhotoUploadSchema = portraitUploadSchema;
