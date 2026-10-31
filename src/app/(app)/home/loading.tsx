@@ -39,13 +39,10 @@ export default function Loading() {
           <Skeleton className="size-14 rounded-pill" />
           <Skeleton className="h-3 w-14" />
         </div>
-        <div className="clay flex flex-col gap-2 p-4">
-          <Skeleton className="h-4 w-36" />
-          <Skeleton className="h-16 w-full" />
-          <div className="flex justify-between">
-            <Skeleton className="h-8 w-28" />
-            <Skeleton className="h-8 w-20" />
-          </div>
+        {/* "What's on your mind?" is one line with a camera button until you click in. */}
+        <div className="clay flex items-center gap-2 p-4">
+          <Skeleton className="h-11 flex-1 pointer-fine:h-9" />
+          <Skeleton className="size-11 shrink-0 rounded-pill pointer-fine:size-9" />
         </div>
         <Skeleton className="h-6 w-32" />
         <div className="flex flex-col gap-2.5">

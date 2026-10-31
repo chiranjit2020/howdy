@@ -240,6 +240,10 @@ export function Select({
 export interface TextareaProps extends FieldProps, ComponentProps<'textarea'> {
   /** Show a live "used/max" counter (requires maxLength). */
   showCount?: boolean;
+  /** The label is for screen readers only (the placeholder asks the question on screen). */
+  hideLabel?: boolean;
+  /** May be one line tall (`rows={1}`), as tall as an Input; otherwise never less than two lines. */
+  oneLine?: boolean;
 }
 
 export function Textarea({
@@ -247,6 +251,8 @@ export function Textarea({
   hint,
   error,
   showCount,
+  hideLabel,
+  oneLine,
   className,
   id,
   maxLength,
@@ -273,13 +279,14 @@ export function Textarea({
       hint={hint}
       error={error}
       extraDescribedBy={counting ? counterId : undefined}
+      hideLabel={hideLabel}
       className={className}
     >
       {(c) => (
         <>
           <textarea
-            // As tall as its `rows`, never less than two lines (no fixed 96 px box).
-            className={cn(CONTROL, 'min-h-16 resize-none')}
+            // As tall as its `rows`, never less than two lines (no fixed 96 px box) unless it may be one.
+            className={cn(CONTROL, 'resize-none', oneLine ? 'min-h-11 pointer-fine:min-h-9' : 'min-h-16')}
             maxLength={maxLength}
             onChange={handleChange}
             {...(value !== undefined ? { value } : { defaultValue })}

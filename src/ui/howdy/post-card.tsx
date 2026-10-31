@@ -144,11 +144,11 @@ const COMPOSER = {
     // Not "Reply": the card's own Reply button (which opens this box) is right above it.
     submit: 'Send',
   },
-  /** Home: a card on your own wall, which your friends see in their feed. */
+  /** Home: a card on your own wall, which your friends see in their feed. One line until you click in (see below). */
   home: {
     max: LIMITS.POST_CARD_MAX,
     label: 'What’s on your mind?',
-    placeholder: 'Share something with your friends…',
+    placeholder: 'What’s on your mind?',
     rows: 2,
     submit: 'Post',
   },
@@ -188,6 +188,13 @@ export function PostCardComposer({
   const [photoError, setPhotoError] = useState<string | undefined>();
   const uploading = photo !== undefined && photo.id === undefined;
   const trimmed = body.trim();
+  // Home's box is one line (with a camera button) until you click in; it stays open while it holds words, a photo or
+  // a photo error, and closes again when you leave it empty. Only the box opens it: the one-line camera button must stay
+  // put while its file picker is open. Focus moving on to the form's own buttons keeps it open.
+  const [focused, setFocused] = useState(false);
+  const box = useRef<HTMLTextAreaElement>(null);
+  const collapsible = kind === 'home';
+  const open = !collapsible || focused || body !== '' || photo !== undefined || photoError !== undefined;
 
   // Free the temporary preview address when it is replaced or the composer goes away.
   const previewUrl = photo?.preview;
@@ -200,6 +207,7 @@ export function PostCardComposer({
     setPhotoError(undefined);
     const preview = URL.createObjectURL(file);
     setPhoto({ preview });
+    if (collapsible) box.current?.focus(); // from the one-line camera: straight on to the words
     const res = await onPhoto(file);
     if (res.ok) setPhoto((p) => (p?.preview === preview ? { preview, id: res.mediaId } : p));
     else {
@@ -262,17 +270,46 @@ export function PostCardComposer({
     );
   }
 
+  // A file input can only be opened by its label, so the label wears a button's look.
+  const photoPicker = (look: string, children: ReactNode) => (
+    <label className={cn(look, 'cursor-pointer focus-within:outline-2 focus-within:outline-focus')}>
+      <input type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" onChange={choose} />
+      {children}
+    </label>
+  );
+
   return (
-    <form onSubmit={submit} className="flex flex-col gap-2">
+    // The box stays the first child in both states, so opening it never remounts it (focus and caret stay put).
+    <form
+      onSubmit={submit}
+      onBlur={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget)) setFocused(false);
+      }}
+      className={cn('flex gap-2', open ? 'flex-col' : 'items-center')}
+    >
       <Textarea
+        ref={box}
+        onFocus={() => setFocused(true)}
         label={label}
+        hideLabel={collapsible}
+        oneLine={collapsible}
         value={body}
         onChange={(e) => setBody(e.target.value)}
         maxLength={max}
-        showCount
-        rows={rows}
+        showCount={open}
+        rows={open ? rows : 1}
         placeholder={placeholder}
+        className={open ? undefined : 'min-w-0 flex-1'}
       />
+      {!open &&
+        onPhoto &&
+        photoPicker(
+          'inline-flex size-11 shrink-0 items-center justify-center rounded-pill text-text-primary hover:bg-surface-sunken pointer-fine:size-9',
+          <>
+            <CameraIcon className="size-5" />
+            <span className="sr-only">Add a photo</span>
+          </>,
+        )}
       {photoError && <FormMessage tone="error">{photoError}</FormMessage>}
       {photo && (
         <div className="relative self-start">
@@ -295,37 +332,30 @@ export function PostCardComposer({
           </Button>
         </div>
       )}
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        {onPhoto && !photo ? (
-          // A file input can only be opened by its label, so the label wears the secondary button's look.
-          <label
-            className={cn(
+      {open && (
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          {onPhoto && !photo ? (
+            photoPicker(
               buttonClasses({ variant: 'secondary', size: 'sm' }),
-              'cursor-pointer focus-within:outline-2 focus-within:outline-focus',
-            )}
+              <>
+                <CameraIcon className="size-4" /> Add a photo
+              </>,
+            )
+          ) : (
+            <span />
+          )}
+          <Button
+            type="submit"
+            size="sm"
+            loading={busy}
+            disabled={disabled || !trimmed || uploading}
+            className="self-end"
           >
-            <input
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              className="sr-only"
-              onChange={choose}
-            />
-            <CameraIcon className="size-4" /> Add a photo
-          </label>
-        ) : (
-          <span />
-        )}
-        <Button
-          type="submit"
-          size="sm"
-          loading={busy}
-          disabled={disabled || !trimmed || uploading}
-          className="self-end"
-        >
-          <SendIcon className="size-4" />
-          {submitLabel}
-        </Button>
-      </div>
+            <SendIcon className="size-4" />
+            {submitLabel}
+          </Button>
+        </div>
+      )}
     </form>
   );
 }
