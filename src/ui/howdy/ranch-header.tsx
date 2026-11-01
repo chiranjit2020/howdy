@@ -30,6 +30,8 @@ export interface RanchHeaderProps {
   friendCount?: number;
   /** Something on the picture's lower right edge: on your own profile, the camera that changes it. */
   portraitAction?: ReactNode;
+  /** The words friends picked most (ADR-052), already worded ("Chill · Sharp"): "Friends say: …" under the username. */
+  describedAs?: string;
 }
 
 /** Top of a Ranch (profile): portrait, name, handle, bio, relationship and actions. */
@@ -47,6 +49,7 @@ export function RanchHeader({
   trusted,
   friendCount,
   portraitAction,
+  describedAs,
 }: RanchHeaderProps) {
   return (
     <header className="flex flex-col gap-3">
@@ -71,6 +74,11 @@ export function RanchHeader({
               </>
             )}
           </p>
+          {describedAs && (
+            <p className="text-caption text-text-secondary">
+              Friends say: <span className="font-semibold text-text-primary">{describedAs}</span>
+            </p>
+          )}
           {bio && <p className="mt-1.5 text-body break-words text-text-primary">{bio}</p>}
           {relationship && (
             <div className="mt-2">

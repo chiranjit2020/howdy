@@ -48,7 +48,6 @@ test.describe('Posse, Block and Flag trouble (production build, real CSP)', () =
     // Alice makes her Ranch posse-only. Bob (a stranger for now) cannot see it.
     await a.page.goto('/settings');
     await a.page.getByLabel('Who can visit your profile?').selectOption('posse');
-    await a.page.getByLabel('Who can read your status?').selectOption('posse');
     await a.page.getByRole('button', { name: 'Save Privacy' }).click();
     await expect(a.page.getByRole('status').filter({ hasText: 'Privacy updated' })).toBeVisible();
     const before = await b.page.goto(`/profile/${a.handle}`);

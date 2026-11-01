@@ -1,4 +1,4 @@
-import { expect, test, type Browser, type Page } from '@playwright/test';
+import { expect, test, type Browser } from '@playwright/test';
 import {
   axeViolations,
   confirmEmailVia,
@@ -11,6 +11,11 @@ import {
   uniqueAccount,
   watchProblems,
 } from './helpers';
+
+/**
+ * ADR-052: friends describe someone with one word (changeable, take-back-able) from the "You and …" card; the profile
+ * shows the top words — "Friends say: Chill · Sharp" — once three people have picked, never a number.
+ */
 
 const ORIGIN = 'http://localhost:3300';
 
@@ -34,68 +39,70 @@ async function makePals(asker: Person, asked: Person) {
   expect((await api(asked, `/api/relationships/${asker.handle}`, { action: 'accept' })).ok()).toBe(true);
 }
 
-/** The Badges card; for someone who may give one, each line is the button. */
-const card = (page: Page) => page.getByRole('region', { name: 'Badges' });
-const give = (page: Page, kind: string) =>
-  card(page).getByRole('button', { name: new RegExp(`^Give a ${kind} badge`) });
-/** The Sharp line (the badge Bob gives), to read its count. */
-const sharpLine = (page: Page) => card(page).getByRole('listitem').filter({ hasText: 'Sharp' });
-
-test.describe('Marks and the Vibe Matrix (production build, real CSP)', () => {
-  test('a friend awards one Mark, sees it counted, then waits 30 days; the owner and a stranger cannot award', async ({
+test.describe('Describing friends (production build, real CSP)', () => {
+  test('a friend picks, changes and takes back a word; three picks show as words a stranger sees', async ({
     browser,
   }) => {
-    const a = await person(browser, 'markowner');
-    const b = await person(browser, 'markpal');
-    const c = await person(browser, 'markstranger');
+    test.slow(); // five people sign up
+    const a = await person(browser, 'described');
+    const b = await person(browser, 'describer');
+    const c = await person(browser, 'describec');
+    const d = await person(browser, 'described2');
+    const e = await person(browser, 'dstranger');
+    for (const p of [b, c, d]) await makePals(p, a);
     const problems = await watchProblems(b.page);
-    await makePals(b, a);
 
-    // Bob opens Alice's Porch: one line per kind, each one a button he can give.
+    // Bob opens Alice's profile: "Describe …" sits in the "You and …" card. He picks Chill.
     await b.page.goto(`/profile/${a.handle}`);
     await pageReady(b.page);
-    const box = b.page;
-    for (const kind of ['Gem', 'Pure', 'Chill', 'Sharp', 'Bold'])
-      await expect(give(b.page, kind)).toBeEnabled();
-
-    // He gives a Sharp Mark: it is counted at once, and every pick is closed for 30 days.
-    await give(b.page, 'Sharp').click();
-    await expect(b.page.getByText('You gave a Sharp badge.')).toBeVisible();
-    await expect(box.getByText('You can give them a badge again in 30 days.')).toBeVisible();
-    await expect(card(b.page).getByRole('button', { name: /^Give a / })).toHaveCount(0);
-
-    // It really was saved: a reload keeps the count and the wait.
-    await b.page.reload();
+    const picker = b.page.getByRole('group', { name: new RegExp(`^Describe `) });
+    const word = (name: string) => picker.getByRole('button', { name: new RegExp(`^${name} `) });
+    await word('Chill').click();
+    await expect(word('Chill')).toHaveAttribute('aria-pressed', 'true');
+    await b.page.reload(); // saved, not just on his screen
     await pageReady(b.page);
-    await expect(sharpLine(b.page)).toContainText('1 badge');
-    await expect(card(b.page).getByRole('button', { name: /^Give a / })).toHaveCount(0);
-    await expect(b.page.getByText('You can give them a badge again in 30 days.')).toBeVisible();
+    await expect(word('Chill')).toHaveAttribute('aria-pressed', 'true');
 
-    // Alice is told someone gave her a Mark, never which kind; her own Porch shows the count and no picks.
+    // He changes his mind (one word, replaced), then taps it again to take it back, then picks Chill once more.
+    await word('Sharp').click();
+    await expect(word('Sharp')).toHaveAttribute('aria-pressed', 'true');
+    await expect(word('Chill')).toHaveAttribute('aria-pressed', 'false');
+    await word('Sharp').click();
+    await expect(word('Sharp')).toHaveAttribute('aria-pressed', 'false');
+    await word('Chill').click();
+    await expect(word('Chill')).toHaveAttribute('aria-pressed', 'true');
+
+    // With only one person, the profile says nothing yet.
+    await e.page.goto(`/profile/${a.handle}`);
+    await pageReady(e.page);
+    await expect(e.page.getByText(/Friends say/)).toHaveCount(0);
+
+    // Two more friends pick: now the top words show, and never a number.
+    expect((await api(c, `/api/porch/${a.handle}/marks`, { kind: 'chill' })).status()).toBe(201);
+    expect((await api(d, `/api/porch/${a.handle}/marks`, { kind: 'sharp' })).status()).toBe(201);
+    await e.page.reload();
+    await pageReady(e.page);
+    await expect(e.page.getByText(/Friends say/)).toHaveText('Friends say: Chill · Sharp');
+    // A stranger cannot describe her; nor can she describe herself.
+    await expect(e.page.getByRole('group', { name: /^Describe / })).toHaveCount(0);
+    await a.page.goto(`/profile/${a.handle}`);
+    await pageReady(a.page);
+    await expect(a.page.getByText(/Friends say/)).toHaveText('Friends say: Chill · Sharp');
+    await expect(a.page.getByRole('group', { name: /^Describe / })).toHaveCount(0);
+
+    // Alice was told someone described her, never which word.
     await expect
       .poll(
         async () =>
           (
             (await (await a.page.request.get('/api/me/chimes')).json()) as { chimes: { text: string }[] }
-          ).chimes.map((x) => x.text),
+          ).chimes.some((x) => x.text.endsWith(' described you on Howdy.')),
         { timeout: 10_000 },
       )
-      .toContain(`${b.handle} gave you a badge.`);
-    await a.page.goto(`/profile/${a.handle}`);
-    await pageReady(a.page);
-    await expect(sharpLine(a.page)).toContainText('1 badge');
-    await expect(card(a.page).getByRole('button', { name: /^Give a / })).toHaveCount(0);
-
-    // Carol is not Alice's Pal: she sees the tally, but the picks are closed (and nothing says why).
-    await c.page.goto(`/profile/${a.handle}`);
-    await pageReady(c.page);
-    await expect(sharpLine(c.page)).toContainText('1 badge');
-    await expect(card(c.page).getByRole('button', { name: /^Give a / })).toHaveCount(0);
-    await expect(c.page.getByText(/give them a badge again/)).toHaveCount(0);
-    expect((await api(c, `/api/porch/${a.handle}/marks`, { kind: 'gem' })).status()).toBe(403);
+      .toBe(true);
 
     expect(problems).toEqual([]);
-    await Promise.all([a.ctx.close(), b.ctx.close(), c.ctx.close()]);
+    await Promise.all([a, b, c, d, e].map((p) => p.ctx.close()));
   });
 
   async function seed(browser: Browser, opts: Parameters<typeof newContext>[1]) {
@@ -107,18 +114,18 @@ test.describe('Marks and the Vibe Matrix (production build, real CSP)', () => {
   }
 
   for (const scheme of ['light', 'dark'] as const) {
-    test(`axe finds no violations on a profile with Marks (${scheme})`, async ({ browser }) => {
+    test(`axe finds no violations with the describe picker (${scheme})`, async ({ browser }) => {
       const { a, b } = await seed(browser, { colorScheme: scheme, bypassCSP: true, reducedMotion: 'reduce' });
       for (const p of [a, b]) {
         await p.page.goto(`/profile/${a.handle}`);
         await pageReady(p.page);
-        expect(await axeViolations(p.page), `${p === a ? 'owner' : 'pal'} (${scheme})`).toEqual([]);
+        expect(await axeViolations(p.page), `${p === a ? 'owner' : 'friend'} (${scheme})`).toEqual([]);
       }
       await Promise.all([a.ctx.close(), b.ctx.close()]);
     });
   }
 
-  test('no horizontal scroll at 320px and every Mark control is at least 44px on touch', async ({
+  test('no horizontal scroll at 320px and every describe control is at least 44px on touch', async ({
     browser,
   }) => {
     const { a, b } = await seed(browser, {

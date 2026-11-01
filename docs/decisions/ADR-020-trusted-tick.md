@@ -4,6 +4,9 @@ Status: accepted (2026-09-28). Source: `blue-tick-feature-philosophy.md` (the pr
 the master prompt and ADR-016. Decisions taken with the product owner the same day: a separate earned tick (the team keeps
 blue Verified), a checklist where every item must pass (not the proposal's weighted score), small-group thresholds.
 
+**Partly superseded by ADR-052 (2026-11-01):** the tick is a safety signal. Marks play no part, friends count only when
+their accounts are 14+ days old, and the checklist lives in Settings.
+
 ## Context
 
 The proposal: don't hand out a blue tick for Vibe Matrix popularity — friend groups would farm it. Instead, several

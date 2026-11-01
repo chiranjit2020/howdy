@@ -1,9 +1,12 @@
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
+import { flushBackground } from '@/platform/background';
 import { getPool } from '@/platform/db';
 import { freshAuthState, signedInUser, uniqueUser, type TestKit } from '../helpers/auth';
 import { patchRanch } from '../helpers/ranch';
 import { doAct, insertUser, q, userId } from '../helpers/social';
-import { giveMarkTo, marksOf } from '../helpers/marks';
+import { giveMarkTo, marksOf, takeBackMark } from '../helpers/marks';
+
+/** ADR-052: the one word a friend picks to describe someone, and how a profile shows them (words, never counts). */
 
 let kit: TestKit;
 beforeEach(async () => {
@@ -25,13 +28,8 @@ async function posse(a: P, b: P) {
 async function open(p: P) {
   await patchRanch({ ranchVisibility: 'everyone' }, as(p));
 }
-const backdate = (rater: string, target: string, days: number) =>
-  q(
-    "update marks set created_at = now() - ($3 || ' days')::interval where rater_id = $1 and target_id = $2",
-    [rater, target, days],
-  );
 
-describe('who may award a Mark', () => {
+describe('who may pick a word for someone', () => {
   it('needs a mutual Posse — a stranger is refused, a Posse member succeeds', async () => {
     const owner = await person('owner');
     const stranger = await person('stranger');
@@ -44,14 +42,15 @@ describe('who may award a Mark', () => {
     expect(ok.data.kind).toBe('chill');
   });
 
-  it('refuses a Mark for yourself, and needs a session', async () => {
+  it('refuses a word for yourself, and needs a session', async () => {
     const owner = await person('owner');
     await open(owner);
     expect((await giveMarkTo(owner.handle, 'gem', as(owner))).status).toBe(403);
     expect((await giveMarkTo(owner.handle, 'gem', {})).status).toBe(401);
+    expect((await takeBackMark(owner.handle, {})).status).toBe(401);
   });
 
-  it('a block either way makes the Ranch look not-found (a block hides the Ranch itself, not just the Mark)', async () => {
+  it('a block either way makes the Ranch look not-found (a block hides the Ranch itself, not just the word)', async () => {
     const owner = await person('owner');
     const friend = await person('friend');
     await open(owner);
@@ -60,7 +59,7 @@ describe('who may award a Mark', () => {
     expect((await giveMarkTo(owner.handle, 'pure', as(friend))).status).toBe(404);
   });
 
-  it('rejects a kind that is not one of the five', async () => {
+  it('rejects a word that is not one of the five', async () => {
     const owner = await person('owner');
     const friend = await person('friend');
     await open(owner);
@@ -69,32 +68,23 @@ describe('who may award a Mark', () => {
   });
 });
 
-describe('the 30-day cooldown, per pair', () => {
-  it('a second Mark to the same person before 30 days is refused; after, it is allowed', async () => {
+describe('one current word per person, changeable', () => {
+  it('picking again replaces the word (still one row); taking it back deletes it', async () => {
     const owner = await person('owner');
     const friend = await person('friend');
     await open(owner);
     await posse(owner, friend);
     expect((await giveMarkTo(owner.handle, 'chill', as(friend))).status).toBe(201);
-    expect((await giveMarkTo(owner.handle, 'pure', as(friend))).status).toBe(409); // any kind, same cooldown
-    await backdate(await userId(friend.handle), await userId(owner.handle), 31);
-    expect((await giveMarkTo(owner.handle, 'pure', as(friend))).status).toBe(201);
-    expect(await count()).toBe(2);
+    expect((await giveMarkTo(owner.handle, 'pure', as(friend))).status).toBe(201); // a change, not a second word
+    expect(await count()).toBe(1);
+    expect((await marksOf(owner.handle, as(friend))).data.mine).toBe('pure');
+    expect((await takeBackMark(owner.handle, as(friend))).data).toEqual({ removed: true });
+    expect(await count()).toBe(0);
+    expect((await marksOf(owner.handle, as(friend))).data.mine).toBeNull();
+    expect((await takeBackMark(owner.handle, as(friend))).data).toEqual({ removed: false });
   });
 
-  it('the cooldown is per pair: marking a different person is unaffected', async () => {
-    const a = await person('a');
-    const b = await person('b');
-    const c = await person('c');
-    await open(a);
-    await open(b);
-    await posse(a, c);
-    await posse(b, c);
-    expect((await giveMarkTo(a.handle, 'chill', as(c))).status).toBe(201);
-    expect((await giveMarkTo(b.handle, 'chill', as(c))).status).toBe(201);
-  });
-
-  it('two racing requests cannot both slip past the cooldown', async () => {
+  it('two racing picks leave exactly one row (the database allows one per pair)', async () => {
     const owner = await person('owner');
     const friend = await person('friend');
     await open(owner);
@@ -103,51 +93,60 @@ describe('the 30-day cooldown, per pair', () => {
       giveMarkTo(owner.handle, 'chill', as(friend)),
       giveMarkTo(owner.handle, 'pure', as(friend)),
     ]);
-    expect(results.filter((r) => r.status === 201)).toHaveLength(1);
-    expect(results.filter((r) => r.status === 409)).toHaveLength(1);
+    expect(results.map((r) => r.status)).toEqual([201, 201]);
     expect(await count()).toBe(1);
   });
-});
 
-describe('the Vibe Matrix — aggregate only, never who or which kind by whom', () => {
-  it('counts and percentages are correct, scoped to the right target, and nobody’s identity appears in the response', async () => {
-    const owner = await person('owner');
-    const other = await person('other'); // a second target: their Marks must never leak into owner's count
-    const a = await person('a');
-    const b = await person('b');
-    const stranger = await person('stranger');
-    await open(owner);
-    await open(other);
-    await posse(owner, a);
-    await posse(owner, b);
-    await posse(other, a);
-    await giveMarkTo(owner.handle, 'chill', as(a));
-    await giveMarkTo(owner.handle, 'chill', as(b));
-    await giveMarkTo(other.handle, 'gem', as(a));
-
-    const seen = await marksOf(owner.handle, as(stranger));
-    expect(seen.data.counts).toEqual({ gem: 0, pure: 0, chill: 2, sharp: 0, bold: 0 });
-    expect(seen.data.total).toBe(2);
-    expect(seen.text).not.toContain(a.handle);
-    expect(seen.text).not.toContain(b.handle);
-    expect(seen.text).not.toMatch(/raterId|rater_id/);
-
-    const seenOther = await marksOf(other.handle, as(stranger));
-    expect(seenOther.data.counts).toEqual({ gem: 1, pure: 0, chill: 0, sharp: 0, bold: 0 });
-    expect(seenOther.data.total).toBe(1);
-  });
-
-  it('the owner cannot Mark themself, and canGive reflects the viewer, not the Ranch', async () => {
+  it('only a first pick rings their bell, and never says which word; changing it rings nothing', async () => {
     const owner = await person('owner');
     const friend = await person('friend');
     await open(owner);
     await posse(owner, friend);
+    await giveMarkTo(owner.handle, 'chill', as(friend));
+    await giveMarkTo(owner.handle, 'bold', as(friend));
+    await flushBackground();
+    const rows = (
+      await q("select count(*)::int n from notifications where type = 'mark_given' and recipient_id = $1", [
+        await userId(owner.handle),
+      ])
+    ).rows[0].n as number;
+    expect(rows).toBe(1);
+  });
+});
+
+describe('how a profile is described: words only, never counts or who', () => {
+  it('nothing until three people have picked; then the top two words, most first, with no numbers or names', async () => {
+    const owner = await person('owner');
+    const a = await person('alpha');
+    const b = await person('bravo');
+    const c = await person('charlie');
+    const stranger = await person('stranger');
+    await open(owner);
+    for (const p of [a, b, c]) await posse(owner, p);
+    await giveMarkTo(owner.handle, 'chill', as(a));
+    await giveMarkTo(owner.handle, 'chill', as(b));
+    expect((await marksOf(owner.handle, as(stranger))).data.words).toEqual([]); // two people are not enough
+    await giveMarkTo(owner.handle, 'sharp', as(c));
+    const seen = await marksOf(owner.handle, as(stranger));
+    expect(seen.data.words).toEqual(['chill', 'sharp']);
+    expect(Object.keys(seen.data).sort()).toEqual(['canGive', 'isOwner', 'mine', 'words']); // no counts at all
+    for (const p of [a, b, c]) expect(seen.text).not.toContain(p.handle);
+    expect(seen.text).not.toMatch(/raterId|rater_id|count|total/);
+  });
+
+  it('my own pick is shown only to me, and canGive reflects the viewer (never the owner)', async () => {
+    const owner = await person('owner');
+    const friend = await person('friend');
+    const other = await person('other');
+    await open(owner);
+    await posse(owner, friend);
+    await posse(owner, other);
     expect((await marksOf(owner.handle, as(owner))).data.canGive).toBe(false);
     expect((await marksOf(owner.handle, as(friend))).data.canGive).toBe(true);
-    await giveMarkTo(owner.handle, 'chill', as(friend));
-    const after = await marksOf(owner.handle, as(friend));
-    expect(after.data.canGive).toBe(false);
-    expect(after.data.cooldownEndsAt).not.toBeNull();
+    await giveMarkTo(owner.handle, 'gem', as(friend));
+    expect((await marksOf(owner.handle, as(friend))).data).toMatchObject({ mine: 'gem', canGive: true });
+    expect((await marksOf(owner.handle, as(other))).data.mine).toBeNull();
+    expect((await marksOf(owner.handle, as(owner))).data.mine).toBeNull();
   });
 
   it('follows the Ranch’s own visibility: a private Ranch is the same 404 as a missing one', async () => {
@@ -160,7 +159,7 @@ describe('the Vibe Matrix — aggregate only, never who or which kind by whom', 
 });
 
 describe('rate limits', () => {
-  it('giving Marks is capped per person, across targets', async () => {
+  it('picking words is capped per person, across people', async () => {
     const friend = await person('friend');
     const f = await userId(friend.handle);
     let status = 0;
@@ -178,7 +177,7 @@ describe('rate limits', () => {
 });
 
 describe('database invariants', () => {
-  it('refuses a self-Mark and an unknown kind', async () => {
+  it('refuses a self-pick, an unknown word, and a second row for the same pair', async () => {
     const owner = await person('owner');
     const friend = await person('friend');
     const o = await userId(owner.handle);
@@ -189,14 +188,13 @@ describe('database invariants', () => {
     await expect(
       q("insert into marks (rater_id, target_id, kind, from_pal) values ($1, $2, 'legendary', true)", [f, o]),
     ).rejects.toThrow(/marks_kind_check/);
-    // Cinema and Sigma were retired for Sharp and Bold (migration 0014).
-    await expect(
-      q("insert into marks (rater_id, target_id, kind, from_pal) values ($1, $2, 'cinema', true)", [f, o]),
-    ).rejects.toThrow(/marks_kind_check/);
     await q("insert into marks (rater_id, target_id, kind, from_pal) values ($1, $2, 'sharp', true)", [f, o]);
+    await expect(
+      q("insert into marks (rater_id, target_id, kind, from_pal) values ($1, $2, 'gem', true)", [f, o]),
+    ).rejects.toThrow(/marks_one_per_pair_idx/);
   });
 
-  it('deleting either person removes their Marks', async () => {
+  it('deleting either person removes their words', async () => {
     const owner = await person('owner');
     const friend = await person('friend');
     await open(owner);

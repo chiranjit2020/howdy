@@ -5,7 +5,7 @@ import { getCurrentUser } from '@/modules/auth';
 import type { Actor } from '@/modules/authz';
 import { listFence, listWaiting } from '@/modules/fence';
 import { lightFor, myLight, type LightView, type MyLight } from '@/modules/lights';
-import { getVibeMatrix } from '@/modules/marks';
+import { getDescription } from '@/modules/marks';
 import { getCoverVersion, getPortraitVersion } from '@/modules/media';
 import {
   detailsForViewer,
@@ -23,8 +23,9 @@ import { AppError } from '@/platform/errors';
 import { clientIp } from '@/platform/http/client-ip';
 import { clockOf } from '@/shared/calendar';
 import { coverUrl, portraitUrl } from '@/shared/portrait';
-import { RanchCover, RanchHeader } from '@/ui/howdy';
+import { MARK_LABEL, RanchCover, RanchHeader } from '@/ui/howdy';
 import { buttonClasses, ClayCard, EmptyState } from '@/ui/primitives';
+import { DescribePicker } from './describe-picker';
 import { DetailsCard } from './details-card';
 import { EditCover } from './edit-cover';
 import { EditPhotoButton, EditProfile, EditProfileButton } from './edit-profile';
@@ -33,8 +34,6 @@ import { FenceSection } from './fence-section';
 import { SignalEditor } from './signal-editor';
 import { PorchLightNotice, PosseCard, TracksCard } from './side-cards';
 import { TributesSection } from './tributes-section';
-import { TrustCard } from './trust-card';
-import { VibeMatrixSection } from './vibe-matrix-section';
 import { WaitingQueue } from './waiting-queue';
 
 // Ranches are private by default and never belong in a search index.
@@ -110,7 +109,7 @@ export default async function RanchPage({ params }: { params: Promise<{ handle: 
     waitingTributes,
     posse,
     { value: tributes },
-    { value: vibe },
+    { value: description },
     trust,
     mine,
   ] = await Promise.all([
@@ -149,9 +148,10 @@ export default async function RanchPage({ params }: { params: Promise<{ handle: 
           .then((r) => withCards(r, user.id))
           .then((l) => l.posse)
       : null,
-    // Tributes and the Vibe Matrix follow the Porch's own visibility (the same rule as the Fence), separately from it.
+    // Tributes and how friends describe them follow the Porch's own visibility (the same rule as the Fence), separately from it.
     unlessRateLimited(listTributes(viewer, r.handle, { rateKey })),
-    unlessRateLimited(getVibeMatrix(viewer, r.handle, { rateKey })),
+    // How friends describe them (ADR-052): the top words, the same visibility as the Ranch, plus my own pick.
+    unlessRateLimited(getDescription(viewer, r.handle, { rateKey })),
     // Only the owner sees their own Trusted-tick checklist. Checking also brings the stored tick up to date.
     isOwner && user ? recheckTrust(user.id) : null,
     // Your own details with their audiences, for editing them here.
@@ -211,6 +211,9 @@ export default async function RanchPage({ params }: { params: Promise<{ handle: 
                   {...(badge ? { relationship: badge } : {})}
                   // Only on your own profile (posse is loaded for the owner only): nobody else's friends are shown.
                   {...(posse ? { friendCount: posse.length } : {})}
+                  {...(description && description.words.length > 0
+                    ? { describedAs: description.words.map((w) => MARK_LABEL[w]).join(' · ') }
+                    : {})}
                   // Your own profile is edited where you see it (photo, name, bio); Settings keeps the rest.
                   {...(isOwner
                     ? { actions: <EditProfileButton />, portraitAction: <EditPhotoButton /> }
@@ -248,6 +251,17 @@ export default async function RanchPage({ params }: { params: Promise<{ handle: 
             initial={rel}
             official={ranch.verified}
             hasPhoto={Boolean(photo)}
+            {...(description?.canGive
+              ? {
+                  describe: (
+                    <DescribePicker
+                      handle={ranch.handle}
+                      displayName={ranch.displayName}
+                      initial={description.mine}
+                    />
+                  ),
+                }
+              : {})}
           />
         )}
 
@@ -297,8 +311,6 @@ export default async function RanchPage({ params }: { params: Promise<{ handle: 
         {/* Status is retired for members (2026-11-01). The team account keeps its "What's new" note editor here. */}
         {ranch.isOwner && ranch.verified && <SignalEditor current={ranch.signal?.text} />}
         {waiting && <WaitingQueue waiting={waiting} tributes={waitingTributes} />}
-        {vibe && <VibeMatrixSection handle={ranch.handle} initial={vibe} />}
-        {trust && !trust.team && <TrustCard status={trust} />}
         {posse && <PosseCard members={posse} />}
         {ranch.isOwner && <TracksCard />}
       </aside>

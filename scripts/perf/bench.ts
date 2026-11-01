@@ -120,8 +120,8 @@ async function main() {
       fence.listFence(palActor, me.handle, { rateKey: pal.id }),
     );
     await time('porch: tributes', who, () => tributes.listTributes(palActor, me.handle, { rateKey: pal.id }));
-    await time('porch: vibe matrix', who, () =>
-      marks.getVibeMatrix(palActor, me.handle, { rateKey: pal.id }),
+    await time('porch: described as', who, () =>
+      marks.getDescription(palActor, me.handle, { rateKey: pal.id }),
     );
     await time('porch: waiting cards', who, () => fence.listWaiting(me.id));
     await time('chimes: page 1', who, () => notifications.listChimes(me.id, {}));

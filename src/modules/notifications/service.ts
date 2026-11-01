@@ -247,7 +247,7 @@ export async function handleEvent(event: DomainEvent): Promise<void> {
     case 'tribute.approved':
       return deliver(event.authorId, event.ownerId, 'tribute_approved', null, { bump: true });
     case 'mark.given':
-      // Which kind is never in the Chime text: the Ranch's aggregate breakdown is the only place a kind is shown.
+      // Fires on a first pick only (a changed word is not news), and never says which word (ADR-052).
       return deliver(event.targetId, event.raterId, 'mark_given', null, { bump: true });
     case 'townhall.invited':
       return deliver(event.inviteeId, event.inviterId, 'townhall_invited', null, { bump: true });
@@ -461,7 +461,8 @@ function describe(userId: string, s: Shown, myHandle: string): { text: string; h
         href: `/profile/${s.actor.handle}`,
       };
     case 'mark_given':
-      return { text: `${name} gave you a badge.`, href: `/profile/${myHandle}` };
+      // Never which word: only that they described you (ADR-052).
+      return { text: `${name} described you on Howdy.`, href: `/profile/${myHandle}` };
     case 'townhall_invited':
       return { text: `${name} invited you to a group.`, href: '/groups' };
     case 'townhall_invite_accepted':

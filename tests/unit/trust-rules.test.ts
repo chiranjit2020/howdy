@@ -13,8 +13,6 @@ const passing = (): Facts => ({
   createdAt: daysAgo(TRUST_RULES.accountAgeDays),
   portrait: true,
   pals: TRUST_RULES.minPals,
-  markGivers: TRUST_RULES.minMarkGivers,
-  giversByKind: { gem: TRUST_RULES.giversPerKind, pure: TRUST_RULES.giversPerKind, chill: 1 },
   lastSeenAt: daysAgo(TRUST_RULES.activeWithinDays),
   upheldReports: 0,
 });
@@ -24,7 +22,7 @@ const failing = (f: Facts) =>
     .filter((c) => !c.met)
     .map((c) => c.key);
 
-describe('the Trusted-tick checklist', () => {
+describe('the Trusted-tick checklist (a safety signal, ADR-052)', () => {
   it('passes when every check is met exactly at its threshold', () => {
     expect(failing(passing())).toEqual([]);
   });
@@ -34,7 +32,6 @@ describe('the Trusted-tick checklist', () => {
     ['age', { createdAt: daysAgo(TRUST_RULES.accountAgeDays - 1) }],
     ['portrait', { portrait: false }],
     ['pals', { pals: TRUST_RULES.minPals - 1 }],
-    ['markGivers', { markGivers: TRUST_RULES.minMarkGivers - 1 }],
     ['active', { lastSeenAt: daysAgo(TRUST_RULES.activeWithinDays + 1) }],
     ['active', { lastSeenAt: null }],
     ['standing', { upheldReports: 1 }],
@@ -43,35 +40,31 @@ describe('the Trusted-tick checklist', () => {
     expect(failing({ ...passing(), ...patch })).toEqual([key]);
   });
 
-  it('needs a spread of kinds: many people all giving one kind is not enough', () => {
-    const oneKind = { ...passing(), giversByKind: { gem: 10 } };
-    expect(failing(oneKind)).toEqual(['markKinds']);
-    // A kind only counts once enough different people chose it.
-    const thin = { ...passing(), giversByKind: { gem: 5, pure: TRUST_RULES.giversPerKind - 1 } };
-    expect(failing(thin)).toEqual(['markKinds']);
+  it('the words friends pick play no part: there is no check for them', () => {
+    expect(judge(passing(), NOW).map((c) => c.key)).toEqual([
+      'email',
+      'age',
+      'portrait',
+      'pals',
+      'active',
+      'standing',
+    ]);
   });
 
   it('reports progress for countable checks, capped at what is needed', () => {
-    const checks = judge({ ...passing(), pals: 1, markGivers: 40 }, NOW);
+    const checks = judge({ ...passing(), pals: 1 }, NOW);
     expect(checks.find((c) => c.key === 'pals')).toMatchObject({
       met: false,
       have: 1,
       need: TRUST_RULES.minPals,
     });
-    expect(checks.find((c) => c.key === 'markGivers')).toMatchObject({
+    expect(judge({ ...passing(), pals: 40 }, NOW).find((c) => c.key === 'pals')).toMatchObject({
       met: true,
-      have: TRUST_RULES.minMarkGivers,
+      have: TRUST_RULES.minPals,
     });
   });
 
   it('is a checklist, not a score: no amount of one signal makes up for another', () => {
-    const lopsided = {
-      ...passing(),
-      pals: 500,
-      markGivers: 500,
-      giversByKind: { gem: 500, pure: 500 },
-      portrait: false,
-    };
-    expect(failing(lopsided)).toEqual(['portrait']);
+    expect(failing({ ...passing(), pals: 500, portrait: false })).toEqual(['portrait']);
   });
 });

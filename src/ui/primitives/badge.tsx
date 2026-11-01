@@ -64,7 +64,7 @@ export function Chip({
         aria-pressed={toggle ? Boolean(selected) : undefined}
         onClick={onSelect}
         className={cn(
-          'min-h-11 rounded-pill px-3.5 pointer-fine:min-h-9',
+          'inline-flex min-h-11 items-center gap-1.5 rounded-pill px-3.5 pointer-fine:min-h-9',
           !toggle && 'cursor-default',
           onRemove && 'pr-1',
         )}

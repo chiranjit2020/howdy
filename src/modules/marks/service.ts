@@ -1,5 +1,5 @@
 import { marks } from '@db/schema';
-import { and, desc, eq, sql } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import {
   can,
   inPosse,
@@ -20,15 +20,12 @@ import { MARK_KINDS, type MarkKind } from '@/shared/validation/marks';
 
 const rule = (limit: number, windowSec: number): RateLimitRule => ({ limit, windowSec });
 
-/** Every limit fails closed. The 30-day cooldown per pair does the real work; these just stop abuse of the endpoint itself. */
+/** Every limit fails closed. One pick per pair does the real work; these just stop abuse of the endpoint itself. */
 export const RATE = {
   readUser: rule(240, 60),
   readAnonymous: rule(60, 60),
   give: rule(30, 3600),
 } as const;
-
-/** A rater may give one target only one Mark — any kind — this often. */
-export const COOLDOWN_MS = 30 * 24 * 60 * 60 * 1000;
 
 const actorOf = (userId: string): Actor => ({ kind: 'user', id: userId, status: 'active' });
 
@@ -61,41 +58,31 @@ async function access(
     : null;
 }
 
-/** The most recent Mark `raterId` gave `targetId`, or null if there is none — the only thing the cooldown needs. */
-async function lastGivenAt(raterId: string, targetId: string): Promise<Date | null> {
-  const [row] = await getDb()
-    .select({ createdAt: marks.createdAt })
-    .from(marks)
-    .where(and(eq(marks.raterId, raterId), eq(marks.targetId, targetId)))
-    .orderBy(desc(marks.createdAt))
-    .limit(1);
-  return row?.createdAt ?? null;
-}
+/** How many different people must have picked before a profile shows any words (one person cannot label someone). */
+export const MIN_DESCRIBERS = 3;
+/** How many words a profile shows: the most-picked ones. */
+export const TOP_WORDS = 2;
 
-export interface VibeMatrix {
-  /** Count per kind, always present even at zero. */
-  counts: Record<MarkKind, number>;
-  total: number;
+/** How a profile is described (ADR-052): words only, never counts, never who picked what. */
+export interface Description {
+  /** The most-picked words, most first (ties in catalogue order); empty until MIN_DESCRIBERS people have picked. */
+  words: MarkKind[];
   isOwner: boolean;
-  /** May the viewer award a Mark right now (Pals or Town Hall neighbours, AND not on cooldown)? */
+  /** May the viewer pick a word for this person (friends or group neighbours, not the owner)? */
   canGive: boolean;
-  /** Set only when the viewer is blocked by the cooldown, not by the Posse gate. */
-  cooldownEndsAt: Date | null;
+  /** The viewer's own current pick for this person, if any. */
+  mine: MarkKind | null;
 }
-
-const EMPTY_COUNTS = (): Record<MarkKind, number> =>
-  Object.fromEntries(MARK_KINDS.map((k) => [k, 0])) as Record<MarkKind, number>;
 
 /**
- * A Ranch's Vibe Matrix: how many Marks of each kind the owner has ever received, and nothing else — no names, no dates,
- * no per-Mark rows. Visible wherever the Ranch itself is (the same rule as a Tribute or the Fence). Giving one needs a
- * mutual Posse and to be off cooldown with this particular owner.
+ * How a Ranch is described: its top words, visible wherever the Ranch itself is (the same rule as a Tribute or the
+ * Fence), plus the viewer's own pick. The counts behind the words never leave the server.
  */
-export async function getVibeMatrix(
+export async function getDescription(
   viewer: Actor,
   handle: string,
   opts: { rateKey: string },
-): Promise<VibeMatrix | null> {
+): Promise<Description | null> {
   await enforceRateLimit(
     `marks:read:${opts.rateKey}`,
     viewer.kind === 'user' ? RATE.readUser : RATE.readAnonymous,
@@ -108,49 +95,50 @@ export async function getVibeMatrix(
   if (!acc) return null;
 
   const viewerId = viewer.kind === 'user' ? viewer.id : null;
-  const posseAllowed = can(
-    viewer,
-    'mark:give',
-    acc.ranch,
-    await giveContext(viewerId, ownerId, acc.relationship.relationship),
-  ).allow;
-  // The counts and my cooldown are independent: one round trip for both.
-  const [rows, last] = await Promise.all([
+  const canGive =
+    viewerId !== ownerId &&
+    can(viewer, 'mark:give', acc.ranch, await giveContext(viewerId, ownerId, acc.relationship.relationship))
+      .allow;
+  const [rows, [own]] = await Promise.all([
     getDb()
       .select({ kind: marks.kind, n: sql<number>`count(*)::int` })
       .from(marks)
       .where(eq(marks.targetId, ownerId))
       .groupBy(marks.kind),
-    posseAllowed && viewerId ? lastGivenAt(viewerId, ownerId) : Promise.resolve(null),
+    viewerId
+      ? getDb()
+          .select({ kind: marks.kind })
+          .from(marks)
+          .where(and(eq(marks.raterId, viewerId), eq(marks.targetId, ownerId)))
+          .limit(1)
+      : Promise.resolve([]),
   ]);
-  const counts = EMPTY_COUNTS();
-  let total = 0;
+  const counts = new Map<MarkKind, number>();
+  let describers = 0;
   for (const r of rows) {
-    if (!(r.kind in counts)) continue; // a retired kind, should one ever outlive its migration
-    counts[r.kind as MarkKind] = r.n;
-    total += r.n;
+    if (!(MARK_KINDS as readonly string[]).includes(r.kind)) continue; // a retired kind outliving its migration
+    counts.set(r.kind as MarkKind, r.n);
+    describers += r.n; // one pick per person, so picks are people
   }
-
-  let cooldownEndsAt: Date | null = null;
-  if (last) {
-    const ends = new Date(last.getTime() + COOLDOWN_MS);
-    if (ends > new Date()) cooldownEndsAt = ends;
-  }
-
+  const words =
+    describers >= MIN_DESCRIBERS
+      ? [...MARK_KINDS]
+          .filter((k) => (counts.get(k) ?? 0) > 0)
+          .sort((a, b) => (counts.get(b) ?? 0) - (counts.get(a) ?? 0))
+          .slice(0, TOP_WORDS)
+      : [];
   return {
-    counts,
-    total,
+    words,
     isOwner: viewerId === ownerId,
-    canGive: posseAllowed && cooldownEndsAt === null,
-    cooldownEndsAt,
+    canGive,
+    mine: (own?.kind as MarkKind | undefined) ?? null,
   };
 }
 
 /**
- * Award a Mark to the person with call sign `handle`. Needs to be Pals or Town Hall neighbours (same gate as a
- * Tribute, ADR-044) and to be off
- * cooldown with them — one Mark total per rater→target pair every 30 days, whichever kind. The kind is never announced
- * beyond the target: the Chime just says a Mark arrived, and the Ranch shows only the aggregate breakdown.
+ * Pick (or change) the one word that describes the person with call sign `handle`. Needs to be Pals or Town Hall
+ * neighbours (same gate as a Tribute, ADR-044). One current pick per pair, enforced by the database: picking again
+ * replaces it. Only a first pick rings their bell, and it never says which word.
  */
 export async function giveMark(raterId: string, handle: string, kind: MarkKind): Promise<{ kind: MarkKind }> {
   await enforceRateLimit(`marks:give:${raterId}`, RATE.give);
@@ -162,31 +150,30 @@ export async function giveMark(raterId: string, handle: string, kind: MarkKind):
   if (!acc) throw new AppError('NOT_FOUND');
   const relationship = acc.relationship.relationship;
   if (!can(actor, 'mark:give', acc.ranch, await giveContext(raterId, targetId, relationship)).allow) {
-    throw new AppError('FORBIDDEN', { message: 'Only friends and group neighbours can give a badge.' });
+    throw new AppError('FORBIDDEN', { message: 'Only friends and group neighbours can describe someone.' });
   }
-  // Recorded so the Trusted tick can count Pals' Marks only (ADR-044).
   const fromPal = inPosse(relationship);
-  // A single `insert … where not exists` is NOT enough: under read committed, two racing requests can both see "no
-  // recent Mark" and both insert (the marks race test caught it about 1 run in 4). So the pair is locked for the
-  // length of the transaction: the second request waits, then sees the first one's row.
-  const cutoff = new Date(Date.now() - COOLDOWN_MS);
-  const inserted = await getDb().transaction(async (tx) => {
-    await tx.execute(
-      sql`select pg_advisory_xact_lock(hashtextextended(${`mark:${raterId}:${targetId}`}, 0))`,
-    );
-    return tx.execute(sql`
-      insert into marks (rater_id, target_id, kind, from_pal, created_at)
-      select ${raterId}, ${targetId}, ${kind}, ${fromPal}, ${new Date()}
-      where not exists (
-        select 1 from marks where rater_id = ${raterId} and target_id = ${targetId} and created_at > ${cutoff}
-      )
-      returning id`);
-  });
-  if (inserted.rows.length === 0) {
-    throw new AppError('CONFLICT', {
-      message: 'You can give this person a badge again once the cooldown is over.',
-    });
+  // `xmax = 0` is true only for a row this statement inserted (not one it updated): a first pick.
+  const result = await getDb().execute(sql`
+    insert into marks (rater_id, target_id, kind, from_pal, created_at)
+    values (${raterId}, ${targetId}, ${kind}, ${fromPal}, ${new Date()})
+    on conflict (rater_id, target_id)
+      do update set kind = excluded.kind, from_pal = excluded.from_pal, created_at = excluded.created_at
+    returning (xmax = 0) as inserted`);
+  if ((result.rows[0] as { inserted?: boolean } | undefined)?.inserted) {
+    emit({ type: 'mark.given', raterId, targetId });
   }
-  emit({ type: 'mark.given', raterId, targetId });
   return { kind };
+}
+
+/** Take back your pick for this person. Always allowed (it is your own); a missing person or no pick is just false. */
+export async function takeBackMark(raterId: string, handle: string): Promise<{ removed: boolean }> {
+  await enforceRateLimit(`marks:give:${raterId}`, RATE.give);
+  const owner = await resolveHandle(handle);
+  if (!owner) return { removed: false };
+  const gone = await getDb()
+    .delete(marks)
+    .where(and(eq(marks.raterId, raterId), eq(marks.targetId, owner.userId)))
+    .returning({ id: marks.id });
+  return { removed: gone.length > 0 };
 }

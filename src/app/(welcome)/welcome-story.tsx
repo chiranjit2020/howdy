@@ -43,8 +43,8 @@ const FEATURES: { art: ArtName; name: string; text: string }[] = [
   },
   {
     art: 'mark-gem',
-    name: 'Testimonials & badges',
-    text: 'Kind words you approve before they show, and five badges — Gem, Pure, Chill, Sharp, Bold — from friends and group neighbours.',
+    name: 'Testimonials & how friends see you',
+    text: 'Kind words you approve before they show, and the one word each friend picks for you — Gem, Pure, Chill, Sharp or Bold. Your profile shows the top words, never a number.',
   },
   {
     art: 'nav-town-halls',
@@ -122,7 +122,7 @@ function PhonePeek() {
   return (
     <div
       role="img"
-      aria-label="A peek at Howdy: a post with reactions, a private message, and a notification saying a friend gave you a badge."
+      aria-label="A peek at Howdy: a post with reactions, a private message, and a notification saying a friend described you."
       className="relative mx-auto w-full max-w-[22rem] lg:max-w-[25rem]"
     >
       <Art
@@ -188,7 +188,7 @@ function PhonePeek() {
         {/* Chime */}
         <div className="flex items-center gap-3 rounded-pill bg-island px-4 py-2.5 text-on-island shadow-float">
           <Art name="mark-gem" size="free" className="size-7" loading="eager" />
-          <p className="text-caption font-medium">Kavya gave you a Gem badge</p>
+          <p className="text-caption font-medium">Kavya described you on Howdy</p>
         </div>
       </div>
     </div>
@@ -275,7 +275,7 @@ export function WelcomeStory({ invite }: { invite?: { code: string; invitedBy: s
                   [
                     'friends',
                     'No follower counts',
-                    'Friends are friends both ways. Nobody competes for numbers, and badges are kind words, not a leaderboard.',
+                    'Friends are friends both ways. Nobody competes for numbers: friends describe you in words, never a score.',
                   ],
                   [
                     'chat',

@@ -156,13 +156,14 @@ describe('what being neighbours does not change', () => {
     expect(r.status).toBeGreaterThanOrEqual(400);
   });
 
-  it('the 30-day Mark cooldown still applies', async () => {
+  it('a neighbour also holds one current word: picking again replaces it (ADR-052)', async () => {
     const ann = await person('ann');
     const bob = await person('bob');
     await open(ann);
     await hallWith(ann, [bob]);
     expect((await giveMarkTo(ann.handle, 'gem', as(bob))).status).toBe(201);
-    expect((await giveMarkTo(ann.handle, 'pure', as(bob))).status).toBe(409);
+    expect((await giveMarkTo(ann.handle, 'pure', as(bob))).status).toBe(201);
+    expect((await q('select kind from marks')).rows).toEqual([{ kind: 'pure' }]);
   });
 });
 

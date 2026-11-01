@@ -1,5 +1,5 @@
 import { TRUST_RULES, type TrustCheck, type TrustCheckKey, type TrustStatus } from '@/modules/trust';
-import { GlossaryHint, TrustedBadge } from '@/ui/howdy';
+import { TrustedBadge } from '@/ui/howdy';
 import { ClayCard } from '@/ui/primitives';
 
 const R = TRUST_RULES;
@@ -9,9 +9,7 @@ const LABEL: Record<TrustCheckKey, string> = {
   email: 'Your email is confirmed',
   age: `Your account is at least ${R.accountAgeDays} days old`,
   portrait: 'A profile photo',
-  pals: `At least ${R.minPals} friends`,
-  markGivers: `Badges from ${R.minMarkGivers} different friends in the last year`,
-  markKinds: `${R.minMarkKinds} kinds of badge, each from ${R.giversPerKind} or more friends`,
+  pals: `At least ${R.minPals} friends whose accounts are ${R.friendMinAgeDays} days old or more`,
   active: `Stopped by Howdy in the last ${R.activeWithinDays} days`,
   standing: 'No report against you upheld in the last 6 months',
 };
@@ -24,25 +22,22 @@ function progress(c: TrustCheck): string | null {
 }
 
 /**
- * Owner only: the Trusted tick and what is left to earn it. Nobody else ever sees this list or any of its numbers —
- * visitors see only the tick itself, once it is earned.
+ * In Settings (ADR-052), never on the profile: the Trusted tick and what is left to earn it. Nobody else ever sees this
+ * list or its numbers; visitors see only the tick, and what it means, once it is earned. It is a quiet safety signal for
+ * people who do not know you yet, so it is not something to chase.
  */
 export function TrustCard({ status }: { status: TrustStatus }) {
   const left = status.checks.filter((c) => !c.met).length;
   return (
-    <ClayCard className="flex flex-col gap-3 bg-warning/25">
-      <div className="flex items-center">
-        <h2 className="flex items-center gap-3 font-display text-title text-brand-ink">
-          <span
-            aria-hidden="true"
-            className="grid size-9 place-items-center rounded-pill bg-warning text-heading"
-          >
-            <TrustedBadge />
-          </span>
-          Trusted tick
-        </h2>
-        <GlossaryHint term="trusted" />
-      </div>
+    <ClayCard className="flex flex-col gap-3">
+      <h2 className="flex items-center gap-2 text-title text-text-primary">
+        <TrustedBadge />
+        Trusted tick
+      </h2>
+      <p className="text-caption text-text-secondary">
+        A gold tick beside your name that tells people who don’t know you yet that you are a real, settled
+        member. It is earned over time and can’t be asked for or bought.
+      </p>
       <p className="text-caption text-text-secondary">
         {status.earned
           ? 'You have it. It shows beside your name while all of these stay true.'

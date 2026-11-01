@@ -15,7 +15,6 @@ import {
   TownHallCard,
   TrackItem,
   TributeCard,
-  VibeMatrix,
   WhisperBubble,
   YoButton,
   formatRelative,
@@ -80,41 +79,17 @@ describe('YoButton', () => {
   });
 });
 
-describe('VibeMatrix', () => {
-  const counts = (gem: number, pure: number) => ({ gem, pure, chill: 0, sharp: 0, bold: 0 });
-
-  it('one line per kind: the count below 20 badges, a percentage bar from 20', () => {
-    const { rerender } = render(<VibeMatrix counts={counts(12, 7)} total={19} />);
-    expect(screen.getByText((_, el) => el?.textContent === '12 badges')).toBeInTheDocument(); // count + hidden word
-    expect(screen.queryByText('Rare, genuinely valuable')).not.toBeInTheDocument(); // meanings live in the card's "?"
-    expect(screen.queryByRole('img', { name: /%$/ })).not.toBeInTheDocument();
-
-    rerender(<VibeMatrix counts={counts(13, 7)} total={20} />);
-    expect(screen.getByRole('img', { name: 'Gem: 13 badges, 65%' })).toBeInTheDocument();
-    expect(screen.getByRole('img', { name: 'Bold: 0 badges, 0%' })).toBeInTheDocument();
-    expect(screen.getByText('From 20 badges.')).toBeInTheDocument();
-  });
-
-  it('each line is the button when a badge may be given; plain lines with the reason when not', async () => {
-    const user = userEvent.setup();
-    const given: string[] = [];
-    const { rerender } = render(<VibeMatrix counts={counts(0, 0)} total={0} />);
-    expect(screen.queryByRole('button')).not.toBeInTheDocument();
-    rerender(<VibeMatrix counts={counts(3, 0)} total={3} canGive onGive={(k) => given.push(k)} />);
-    expect(screen.getAllByRole('button')).toHaveLength(5); // no second row of picks
-    await user.click(screen.getByRole('button', { name: /^Give a Gem badge/ }));
-    expect(given).toEqual(['gem']);
-    rerender(
-      <VibeMatrix
-        counts={counts(3, 0)}
-        total={3}
-        canGive={false}
-        onGive={() => undefined}
-        disabledHint="You can give them a badge again in 3 days."
-      />,
+describe('Friends say (ADR-052)', () => {
+  it('the header shows the top words only when given, and never a number', () => {
+    const { rerender, container } = render(
+      <RanchHeader displayName="Meera" handle="meera" describedAs="Chill · Sharp" />,
     );
-    expect(screen.queryByRole('button')).not.toBeInTheDocument(); // not greyed-out buttons: plain lines
-    expect(screen.getByText('You can give them a badge again in 3 days.')).toBeInTheDocument();
+    expect(screen.getByText('Friends say:', { exact: false })).toHaveTextContent(
+      'Friends say: Chill · Sharp',
+    );
+    expect(container.textContent).not.toMatch(/[0-9]/);
+    rerender(<RanchHeader displayName="Meera" handle="meera" />);
+    expect(screen.queryByText(/Friends say/)).not.toBeInTheDocument();
   });
 });
 

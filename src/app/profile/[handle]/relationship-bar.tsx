@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { apiRequest } from '@/ui/auth/api';
 import { FormMessage } from '@/ui/auth/form-parts';
 import { MoreIcon, WhisperIcon } from '@/ui/icons';
@@ -35,10 +35,13 @@ export function RelationshipBar({
   initial,
   official = false,
   hasPhoto = false,
+  describe,
 }: {
   handle: string;
   displayName: string;
   initial: RelationshipState;
+  /** "Describe them" (ADR-052), when this viewer may pick a word for them. */
+  describe?: ReactNode;
   /** The Howdy team account: it cannot be blocked (the server refuses too), so Block is not offered. */
   official?: boolean;
   /** They have a photo I can see: offer to flag the photo itself (ADR-025). */
@@ -160,6 +163,7 @@ export function RelationshipBar({
         Only you can see following, close friend, Mute{official ? ' and Restrict' : ', Restrict and Block'}.{' '}
         {displayName} is never told about them.
       </p>
+      {describe}
 
       <ConfirmationDialog
         open={confirm === 'block'}

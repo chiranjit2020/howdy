@@ -1,16 +1,15 @@
 import { sql } from 'drizzle-orm';
-import { boolean, check, index, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { boolean, check, index, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
 import { users } from './auth';
 
 const tstz = (name: string) => timestamp(name, { withTimezone: true, mode: 'date' });
 
 /**
- * A Mark: one Posse member's "deep vibe" award to another (Gem / Pure / Chill / Sharp / Bold — personality traits, not reactions to a post).
- * An append-only log, so a Ranch's Vibe Matrix reflects everything ever given, but a rater may give one target only ONE
- * Mark — any kind — per 30 days; that cooldown is checked at write time from the most recent row for the pair (a database
- * constraint cannot express a rolling window). Nobody but the target ever sees who gave a Mark or which kind: the Ranch
- * shows only the aggregate breakdown (no cross-person leaderboard — see PRODUCT_DISCOVERY.md C11). Deleting either person
- * removes their Marks.
+ * A Mark (ADR-052): the one word a friend (or group neighbour) picks to describe someone — Gem / Pure / Chill / Sharp /
+ * Bold, personality traits, not reactions to a post. ONE current pick per rater -> target, changeable any time (the
+ * database enforces one row per pair); taking it back deletes it. A profile shows only the top words ("Friends say:
+ * Chill · Sharp"), never counts and never who picked what (no leaderboard — see PRODUCT_DISCOVERY.md C11). Deleting
+ * either person removes their Marks.
  */
 export const marks = pgTable(
   'marks',
@@ -33,9 +32,9 @@ export const marks = pgTable(
   (t) => [
     check('marks_not_self', sql`${t.raterId} <> ${t.targetId}`),
     check('marks_kind_check', sql`${t.kind} in ('gem', 'pure', 'chill', 'sharp', 'bold')`),
-    // The cooldown check reads the rater's most recent Mark to this target.
-    index('marks_pair_recent_idx').on(t.raterId, t.targetId, t.createdAt.desc()),
-    // The Vibe Matrix breakdown counts a target's Marks per kind.
+    // One current pick per rater -> target: changing it updates the row.
+    uniqueIndex('marks_one_per_pair_idx').on(t.raterId, t.targetId),
+    // The top words count a target's picks per kind.
     index('marks_target_kind_idx').on(t.targetId, t.kind),
   ],
 );

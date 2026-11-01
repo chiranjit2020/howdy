@@ -46,24 +46,22 @@ const portrait = (id: string) =>
   ]);
 
 /**
- * A person who passes every check with nothing to spare: old enough, a Portrait, exactly enough Pals, Marks from exactly
- * enough (old enough) people across exactly enough kinds, seen recently. Returns their id and the givers' ids.
+ * A person who passes every check with nothing to spare (ADR-052): old enough, a Portrait, exactly enough settled friends
+ * (active accounts old enough to count), seen recently. No Marks: they play no part. Returns their id and the friends'.
  */
 async function qualified(owner?: { id: string; handle: string }) {
   const me = owner ?? (await insertUser('trust'));
   await olderBy(me.id, R.accountAgeDays + 1);
   await portrait(me.id);
   await seen(me.id);
-  const givers: string[] = [];
-  const kinds = ['gem', 'pure', 'gem', 'pure', 'chill'];
-  for (let i = 0; i < R.minMarkGivers; i += 1) {
-    const g = await insertUser('giver');
-    await olderBy(g.id, R.giverMinAgeDays + 1);
-    if (i < R.minPals) await pal(me.id, g.id);
-    await mark(g.id, me.id, kinds[i]!);
-    givers.push(g.id);
+  const friends: string[] = [];
+  for (let i = 0; i < R.minPals; i += 1) {
+    const f = await insertUser('friend');
+    await olderBy(f.id, R.friendMinAgeDays + 1);
+    await pal(me.id, f.id);
+    friends.push(f.id);
   }
-  return { ...me, givers };
+  return { ...me, friends };
 }
 
 const failing = async (id: string) =>
@@ -94,60 +92,28 @@ describe('earning the Trusted tick', () => {
   });
 });
 
-describe('Marks that do not count', () => {
-  it('many Marks from ONE person count as one giver', async () => {
+describe('friends that count, and words that do not (ADR-052)', () => {
+  it('a friend whose account is younger than the minimum does not count yet', async () => {
     const p = await qualified();
-    // Swap the last giver's Mark for a pile of Marks from someone who already gave one.
-    await q('delete from marks where rater_id = $1', [p.givers.at(-1)]);
-    for (let i = 0; i < 6; i += 1) await mark(p.givers[0]!, p.id, 'chill', 40 * i);
-    expect(await failing(p.id)).toEqual(['markGivers']);
-  });
-
-  it('a Mark from an account younger than the giver minimum does not count yet', async () => {
-    const p = await qualified();
-    await olderBy(p.givers[0]!, R.giverMinAgeDays - 1);
-    expect(await failing(p.id)).toContain('markGivers');
-    await olderBy(p.givers[0]!, R.giverMinAgeDays + 1);
+    await olderBy(p.friends[0]!, R.friendMinAgeDays - 1);
+    expect(await failing(p.id)).toEqual(['pals']);
+    await olderBy(p.friends[0]!, R.friendMinAgeDays + 1);
     expect(await failing(p.id)).toEqual([]);
   });
 
-  it('a Mark from a suspended account does not count', async () => {
+  it('the words friends pick change nothing: none needed, and a pile of them does not make up for a missing check', async () => {
     const p = await qualified();
-    await q("update users set status = 'suspended' where id = $1", [p.givers.at(-1)]);
-    expect(await failing(p.id)).toContain('markGivers');
-  });
-
-  it('a Mark older than the window stops counting', async () => {
-    const p = await qualified();
-    await q("update marks set created_at = now() - ($2 || ' days')::interval where rater_id = $1", [
-      p.givers.at(-1),
-      R.markWindowDays + 1,
-    ]);
-    expect(await failing(p.id)).toContain('markGivers');
-  });
-
-  it('a Mark from a group neighbour (not a friend) does not count (ADR-044)', async () => {
-    const p = await qualified();
-    await q('update marks set from_pal = false where rater_id = $1', [p.givers.at(-1)]);
-    expect(await failing(p.id)).toEqual(['markGivers']);
-    // A fresh Mark from a neighbour, given now, does not make up for it either.
-    const neighbour = await insertUser('neighbour');
-    await olderBy(neighbour.id, R.giverMinAgeDays + 1);
-    await mark(neighbour.id, p.id, 'chill', 0, false);
-    expect(await failing(p.id)).toEqual(['markGivers']);
-  });
-
-  it('five people all giving the same kind is not a spread', async () => {
-    const p = await qualified();
-    await q("update marks set kind = 'gem' where target_id = $1", [p.id]);
-    expect(await failing(p.id)).toEqual(['markKinds']);
+    expect(await failing(p.id)).toEqual([]); // earned with no Marks at all
+    await q('delete from media where owner_id = $1', [p.id]);
+    for (const f of p.friends) await mark(f, p.id, 'gem');
+    expect(await failing(p.id)).toEqual(['portrait']);
   });
 });
 
 describe('standing and activity', () => {
   it('an OPEN report changes nothing (anyone can file one); an UPHELD one takes the tick away', async () => {
     const p = await qualified();
-    const reporter = p.givers[0]!;
+    const reporter = p.friends[0]!;
     await q("insert into reports (reporter_id, target_user_id, reason) values ($1, $2, 'spam')", [
       reporter,
       p.id,
@@ -171,13 +137,13 @@ describe('standing and activity', () => {
     ]);
     expect(await failing(p.id)).toEqual(['active']);
     await seen(p.id);
-    await q('delete from posse_links where user_low = $1 or user_high = $1', [p.givers[0]]);
+    await q('delete from posse_links where user_low = $1 or user_high = $1', [p.friends[0]]);
     expect(await failing(p.id)).toEqual(['pals']);
   });
 
   it('a friend whose account is no longer active does not count as a friend', async () => {
     const p = await qualified();
-    await q("update users set status = 'suspended' where id = $1", [p.givers[0]]);
+    await q("update users set status = 'suspended' where id = $1", [p.friends[0]]);
     expect(await failing(p.id)).toContain('pals');
   });
 });
@@ -234,18 +200,20 @@ describe('what other people see', () => {
     expect((await viewRanch(owner.handle)).data.ranch?.trusted).toBe(false);
   });
 
-  it('a new Mark re-checks the person who received it', async () => {
+  it('a new friendship re-checks both people; a picked word re-checks nobody (words do not count)', async () => {
     const owner = await signedInUser(kit, uniqueUser('owner'));
     const friend = await signedInUser(kit, uniqueUser('friend'));
     await patchRanch({ ranchVisibility: 'everyone' }, { cookie: owner.cookie });
+    const id = await userId(owner.handle);
+    const friendId = await userId(friend.handle);
     await doAct(owner.handle, 'request', { cookie: friend.cookie });
     await doAct(friend.handle, 'accept', { cookie: owner.cookie });
-    const id = await userId(owner.handle);
     await flushBackground();
+    expect((await q('select 1 from trust_ticks where user_id in ($1, $2)', [id, friendId])).rowCount).toBe(2);
     await q('delete from trust_ticks where user_id = $1', [id]);
     expect((await giveMarkTo(owner.handle, 'gem', { cookie: friend.cookie })).status).toBe(201);
     await flushBackground();
-    expect((await q('select 1 from trust_ticks where user_id = $1', [id])).rowCount).toBe(1);
+    expect((await q('select 1 from trust_ticks where user_id = $1', [id])).rowCount).toBe(0);
   });
 
   it('the daily job re-checks decisions more than a day old', async () => {

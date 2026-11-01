@@ -13,7 +13,7 @@ export { REACTION_LABEL, ReactionArt, ReactionBar, ReactionSummary } from './rea
 export { TipHatButton, type TipHatButtonProps } from './tip-hat-button';
 export { TrackItem, type TrackVisitor } from './track-item';
 export { TributeCard, type TributeCardProps } from './tribute-card';
-export { VibeMatrix, MARK_LABEL, MARK_MEANING, PERCENT_AFTER } from './vibe-matrix';
+export { MARK_LABEL, MARK_MEANING, MARK_ORDER, MarkIcon } from './marks';
 export { Fence } from './fence';
 export { WhisperBubble, type WhisperStatus } from './whisper-bubble';
 export { PosseBadge } from './posse-badge';

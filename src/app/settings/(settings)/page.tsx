@@ -5,12 +5,14 @@ import { getPortraitVersion } from '@/modules/media';
 import { getPrefs } from '@/modules/notifications';
 import { getOwnRanch } from '@/modules/profiles';
 import { listMyRelationships } from '@/modules/relationships';
+import { recheckTrust } from '@/modules/trust';
 import { portraitUrl } from '@/shared/portrait';
 import { DeleteAccount } from './delete-account';
 import { ExportData } from './export-data';
 import { PeopleControls } from './people-controls';
 import { PortraitForm } from './portrait-form';
 import { SignInSecurity } from './sign-in-security';
+import { TrustCard } from './trust-card';
 import { BoundaryForm, ChimePrefsForm, FenceRulesForm, StoryViewsForm, TendForm } from './ranch-forms';
 
 export const metadata = { title: 'Settings' };
@@ -18,13 +20,15 @@ export const metadata = { title: 'Settings' };
 /** The Workshop (settings). Protected: the session is checked on the server before any of this renders. */
 export default async function WorkshopPage() {
   const user = await requireUser();
-  const [ranch, prefs, lists, photo, security, sessions] = await Promise.all([
+  const [ranch, prefs, lists, photo, security, sessions, trust] = await Promise.all([
     getOwnRanch(user.id),
     getPrefs(user.id),
     listMyRelationships(user.id).then((r) => withCards(r, user.id)),
     getPortraitVersion(user.id, { userId: user.id }).catch(() => null),
     twoStepSummary(user.id),
     listMySessions(),
+    // The Trusted tick's checklist lives here, not on the profile (ADR-052). Checking also refreshes the stored tick.
+    recheckTrust(user.id),
   ]);
   return (
     <main id="main" className="mx-auto flex max-w-xl flex-col gap-4 py-4 sm:gap-6 sm:py-8">
@@ -46,6 +50,7 @@ export default async function WorkshopPage() {
         searchable={ranch.searchable}
         official={ranch.verified}
       />
+      {trust && !trust.team && <TrustCard status={trust} />}
       <StoryViewsForm initial={ranch.storyViews} />
       <FenceRulesForm
         fenceVisibility={ranch.fenceVisibility}

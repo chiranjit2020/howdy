@@ -3,9 +3,9 @@ import { asc, eq, sql } from 'drizzle-orm';
 import { getDb } from '@/platform/db';
 
 /**
- * The Marks part of "Download my data" (ADR-037). Marks I gave are mine (to whom, which kind, when). Marks I received
- * are exported exactly as my Vibe Matrix shows them — counts per kind, never who gave which: not even the person who
- * received them is ever told that.
+ * The Marks part of "Download my data" (ADR-037). The words I picked for people are mine (for whom, which word, when).
+ * The words picked for me are my own data too, so I get how many of each (ADR-052) — but never who picked which: not
+ * even the person described is ever told that.
  */
 
 const EXPORT_CAP = 2000;

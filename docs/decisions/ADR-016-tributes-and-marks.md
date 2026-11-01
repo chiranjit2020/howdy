@@ -4,6 +4,9 @@ Status: accepted (Phase 9, the master prompt's own "Phase 9": Tributes + Marks +
 Ranch phase). Decisions taken with you: Posse-only for both, one Mark total per pair every 30 days, exactly one pinned
 Tribute at a time (2026-09-22).
 
+**Partly superseded by ADR-052 (2026-11-01):** a Mark is now one changeable word per pair (no 30-day wait), shown as
+words and never as counts.
+
 ## Context
 
 Master prompt §61 groups Tributes and Marks with Signals as peer-validation features — "no follower counts", "no popularity
