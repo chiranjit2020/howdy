@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState, type ReactNode } from 'react';
+import { useId, useState, type ReactNode } from 'react';
 import { apiRequest } from '@/ui/auth/api';
 import { FormMessage } from '@/ui/auth/form-parts';
 import { MoreIcon, WhisperIcon } from '@/ui/icons';
@@ -17,6 +17,7 @@ import {
   useToast,
 } from '@/ui/primitives';
 import { ReportDialog } from '@/ui/howdy/report-dialog';
+import { SwitchButton } from '@/ui/primitives/controls';
 import type { RelationshipAction } from '@/shared/validation/relationships';
 
 export interface RelationshipState {
@@ -54,6 +55,8 @@ export function RelationshipBar({
   const toast = useToast();
   const [rel, setRel] = useState(initial);
   const [busy, setBusy] = useState<RelationshipAction | undefined>();
+  const closeLabel = useId();
+  const closeHint = useId();
   const [error, setError] = useState<string | undefined>();
   const [confirm, setConfirm] = useState<'block' | 'leave' | undefined>();
   const [reporting, setReporting] = useState<'person' | 'photo' | false>(false);
@@ -153,26 +156,42 @@ export function RelationshipBar({
         </Link>
       )}
 
-      {/* Friends: Close friend. Everyone else: Follow, where it brings something (ADR-053). Always there to undo a follow. */}
-      {(friend || showFollow) && (
-        <div className="flex flex-wrap gap-2">
-          {friend && (
-            <Chip selected={rel.closeByMe} onSelect={() => run(rel.closeByMe ? 'unclose' : 'close')}>
+      {/* Friends: Close friend, a switch that says what it does. */}
+      {friend && (
+        <div className="flex items-center justify-between gap-3 border-t border-border pt-3">
+          <div className="flex min-w-0 flex-col gap-0.5">
+            <p id={closeLabel} className="text-body font-semibold text-text-primary">
               Close friend
-            </Chip>
-          )}
-          {showFollow && (
-            <Chip selected={rel.scouting} onSelect={() => run(rel.scouting ? 'unscout' : 'scout')}>
-              {rel.scouting ? 'Following' : 'Follow'}
-            </Chip>
-          )}
+            </p>
+            <p id={closeHint} className="text-caption text-text-secondary">
+              Share Stories and Free to talk with close friends only. {displayName} isn’t told.
+            </p>
+          </div>
+          <SwitchButton
+            checked={rel.closeByMe}
+            onCheckedChange={(on) => run(on ? 'close' : 'unclose')}
+            disabled={busy !== undefined}
+            aria-labelledby={closeLabel}
+            aria-describedby={closeHint}
+          />
         </div>
       )}
-      <p className="text-metadata text-text-muted">
-        {showFollow && !friend && `Follow to see ${displayName}'s posts on your Home. `}
-        Only you can see {friend ? 'close friend' : 'who you follow'}, Mute
-        {official ? ' and Restrict' : ', Restrict and Block'}. {displayName} is never told about them.
-      </p>
+      {/* Everyone else: Follow, where it brings something (ADR-053). Always there to undo a follow. */}
+      {showFollow && !friend && (
+        <div className="flex flex-col gap-2">
+          <Chip
+            selected={rel.scouting}
+            onSelect={() => run(rel.scouting ? 'unscout' : 'scout')}
+            className="self-start"
+          >
+            {rel.scouting ? 'Following' : 'Follow'}
+          </Chip>
+          <p className="text-metadata text-text-muted">
+            Follow to see {displayName}’s posts on your Home. Only you can see who you follow, Mute
+            {official ? ' and Restrict' : ', Restrict and Block'}. {displayName} is never told about them.
+          </p>
+        </div>
+      )}
       {describe}
 
       <ConfirmationDialog

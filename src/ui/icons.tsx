@@ -5,6 +5,7 @@ import {
   GoArrowLeft,
   GoArrowRight,
   GoBell,
+  GoCheck,
   GoCheckCircle,
   GoChevronDown,
   GoCommentDiscussion,
@@ -93,6 +94,8 @@ export const CameraIcon = go(GoImage);
 // Post, Reply, Send.
 export const SendIcon = go(GoPaperAirplane);
 // Your signed-in devices, and signing out (the phone's You sheet).
+// The chosen one in a set (a Describe word).
+export const CheckIcon = go(GoCheck);
 export const DevicesIcon = go(GoDeviceMobile);
 export const SignOutIcon = go(GoSignOut);
 

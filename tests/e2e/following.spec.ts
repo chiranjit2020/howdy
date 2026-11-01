@@ -71,7 +71,7 @@ test('follow someone from their profile: their own posts reach Home, and only th
   // A friend gets Close friend, not Follow.
   await pal.page.goto(`/profile/${star.handle}`);
   await pageReady(pal.page);
-  await expect(pal.page.getByRole('button', { name: 'Close friend' })).toBeVisible();
+  await expect(pal.page.getByRole('switch', { name: 'Close friend' })).toBeVisible();
   await expect(pal.page.getByRole('button', { name: /^Follow/ })).toHaveCount(0);
 
   // The count is the owner's alone.

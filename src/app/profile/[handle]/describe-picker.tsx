@@ -5,7 +5,7 @@ import type { MarkKind } from '@/shared/validation/marks';
 import { apiRequest, postJson } from '@/ui/auth/api';
 import { FormMessage } from '@/ui/auth/form-parts';
 import { MARK_LABEL, MARK_MEANING, MARK_ORDER, MarkIcon } from '@/ui/howdy';
-import { Chip, HelpTip } from '@/ui/primitives';
+import { cn } from '@/ui/cn';
 
 /**
  * "Describe Meera" (ADR-052), in the "You and Meera" card: pick the one word that fits them, change it any time, or tap
@@ -39,41 +39,44 @@ export function DescribePicker({
 
   return (
     <div className="flex flex-col gap-2 border-t border-border pt-3">
-      <div className="flex items-center">
-        <p id="describe-label" className="text-caption font-semibold text-text-primary">
-          Describe {displayName}
-        </p>
-        <HelpTip label="How does describing work?">
-          <p className="mb-1.5">
-            Pick the one word that fits them. You can change it any time, or tap it again to take it back.
-          </p>
-          <ul className="mb-1.5 flex flex-col gap-0.5">
-            {MARK_ORDER.map((k) => (
-              <li key={k}>
-                <strong className="font-semibold">{MARK_LABEL[k]}</strong> · {MARK_MEANING[k]}
-              </li>
-            ))}
-          </ul>
-          <p>
-            Their profile shows only the top words, once three people have picked. Never who picked which.
-          </p>
-        </HelpTip>
-      </div>
+      <p id="describe-label" className="text-body font-semibold text-text-primary">
+        Describe {displayName}
+      </p>
       {error && <FormMessage tone="error">{error}</FormMessage>}
-      <div role="group" aria-labelledby="describe-label" className="flex flex-wrap gap-2">
+      {/* Five equal tiles in one row (emoji over the word), so they never wrap, even at 320 px. */}
+      <div role="group" aria-labelledby="describe-label" className="grid grid-cols-5 gap-1.5">
         {MARK_ORDER.map((k) => (
-          <Chip
+          <button
             key={k}
-            selected={mine === k}
+            type="button"
+            aria-pressed={mine === k}
             disabled={busy}
-            onSelect={() => void choose(k)}
+            onClick={() => void choose(k)}
             aria-label={`${MARK_LABEL[k]} (${MARK_MEANING[k].toLowerCase()})`}
+            className={cn(
+              'flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-lg text-metadata transition-colors disabled:opacity-60',
+              mine === k
+                ? 'bg-primary font-bold text-on-primary'
+                : 'bg-surface-sunken font-medium text-text-primary hover:bg-border',
+            )}
           >
-            <MarkIcon kind={k} />
+            <MarkIcon kind={k} className="text-title" />
             {MARK_LABEL[k]}
-          </Chip>
+          </button>
         ))}
       </div>
+      {/* What the pick means, and how private it is: said here, so no "?" is needed. */}
+      <p className="text-caption text-text-secondary" aria-live="polite">
+        {mine ? (
+          <>
+            You picked <strong className="font-semibold text-text-primary">{MARK_LABEL[mine]}</strong>:{' '}
+            {MARK_MEANING[mine].toLowerCase()}. Tap it again to take it back.{' '}
+          </>
+        ) : (
+          'Pick the one word that fits them. '
+        )}
+        Only you know what you picked. Their profile shows the top words once three friends pick.
+      </p>
     </div>
   );
 }

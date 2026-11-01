@@ -57,8 +57,11 @@ export function Chip({
   return (
     <span
       className={cn(
-        'inline-flex items-center rounded-pill border border-border-strong text-caption font-medium',
-        selected ? 'border-accent bg-accent-soft' : 'bg-surface',
+        // Flat: a soft fill, no outline. Selected is the app's "chosen" mark: sunflower with violet text.
+        'inline-flex items-center rounded-pill text-caption font-medium transition-colors',
+        selected
+          ? 'bg-primary font-semibold text-on-primary'
+          : 'bg-surface-sunken text-text-primary hover:bg-border',
         className,
       )}
     >

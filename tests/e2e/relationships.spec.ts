@@ -91,9 +91,9 @@ test.describe('Posse, Block and Flag trouble (production build, real CSP)', () =
     await expect(c.page.getByRole('heading', { name: 'Nothing out here' })).toBeVisible();
 
     // Bob marks Alice close (private) and then leaves the Posse; the Ranch closes to him again.
-    await b.page.getByRole('button', { name: 'Close friend' }).click();
-    await expect(b.page.getByRole('button', { name: 'Close friend' })).toHaveAttribute(
-      'aria-pressed',
+    await b.page.getByRole('switch', { name: 'Close friend' }).click();
+    await expect(b.page.getByRole('switch', { name: 'Close friend' })).toHaveAttribute(
+      'aria-checked',
       'true',
     );
     await openMore(b.page);
