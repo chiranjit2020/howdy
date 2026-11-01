@@ -1,6 +1,7 @@
 import { attachPortraits, withCards } from '@/app/_lib/social';
 import { FenceSection } from '@/app/profile/[handle]/fence-section';
 import { requireUser } from '@/modules/auth';
+import { myCapsules } from '@/modules/capsules';
 import { listFriendsFeed } from '@/modules/fence';
 import { getPortraitVersion } from '@/modules/media';
 import { litPals, myLight } from '@/modules/lights';
@@ -30,7 +31,7 @@ export default async function HomePage() {
   const user = await requireUser();
   // Independent lookups, asked for together rather than one after another. Everything but your own profile is
   // best-effort: Home never fails because one part could not be read.
-  const [ranch, photo, lists, news, memories, ring, feed, lit, mine, threads] = await Promise.all([
+  const [ranch, photo, lists, news, memories, ring, feed, lit, mine, threads, capsules] = await Promise.all([
     getOwnRanch(user.id),
     getPortraitVersion(user.id, { userId: user.id }).catch(() => null),
     // For the announcement below: whether this person has muted the Howdy team.
@@ -45,6 +46,10 @@ export default async function HomePage() {
     myLight(user.id).catch(() => null),
     listThreads(user.id)
       .then((t) => t.slice(0, 5))
+      .catch(() => null),
+    // Time Capsules coming to me (never their words), with the page's own rules for whose still count.
+    myCapsules(user.id)
+      .then((c) => c.coming)
       .catch(() => null),
   ]);
   // One look-up for every photo on the page, whoever it belongs to.
@@ -133,6 +138,7 @@ export default async function HomePage() {
             friends={[...lists.posse].sort((a, b) => b.at.localeCompare(a.at))}
             myLight={mine ? { untilLabel: clockOf(mine.until) } : null}
             memories={today}
+            capsules={capsules}
             news={announcement}
             handle={user.handle}
           />

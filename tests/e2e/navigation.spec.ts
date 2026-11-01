@@ -87,8 +87,15 @@ test('on a desktop the sidebar has them, and there is no "More" button', async (
   for (const label of ['Visitors', 'Settings', 'Groups']) {
     await expect(sidebar.getByRole('link', { name: new RegExp(`^${label}`) })).toBeVisible();
   }
-  // Time Capsules is a now-and-then page: in the account menu, not the sidebar.
+  // Settings is always the last item.
+  await expect(sidebar.getByRole('link').last()).toHaveText(/^Settings/);
+  // Time Capsules is a now-and-then page: not in the sidebar, but on Home's right panel and in the account menu.
   await expect(sidebar.getByRole('link', { name: 'Time Capsules' })).toHaveCount(0);
+  await me.page
+    .getByRole('region', { name: 'Time Capsules' })
+    .getByRole('link', { name: 'Seal a Time Capsule' })
+    .click();
+  await expect(me.page).toHaveURL(/\/capsules$/);
   await me.page.getByRole('button', { name: 'Your account' }).click();
   await me.page
     .getByRole('region', { name: 'Your account' })

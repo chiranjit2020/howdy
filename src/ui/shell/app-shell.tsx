@@ -73,10 +73,11 @@ export function AppShell({
         { key: 'whispers', href: '/messages', label: 'Messages', badge: unreadWhispers },
         // Notifications have the bell in the top bar, with their count, so no menu item of their own.
         // Sidebar-only on wide screens; on a phone these are in the top bar's "More" menu (ShellMoreMenu).
-        { key: 'workshop', href: '/settings', label: 'Settings' },
         { key: 'town-halls', href: '/groups', label: 'Groups', badge: townHallInvites },
         ...(moderator ? [{ key: 'moderation', href: '/moderation', label: 'Moderation' } as const] : []),
         ...(admin ? [{ key: 'security', href: '/admin/security', label: 'Security Center' } as const] : []),
+        // Always last.
+        { key: 'workshop', href: '/settings', label: 'Settings' },
       ]
     : [];
 

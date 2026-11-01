@@ -1,13 +1,16 @@
 import Link from 'next/link';
 import type { PersonEntry } from '@/app/_lib/social';
+import type { ComingCapsule } from '@/modules/capsules';
 import type { MemoriesToday } from '@/modules/memories';
 import type { ThreadSummary } from '@/modules/whispers';
+import { longDay } from '@/shared/calendar';
 import type { PortraitTint } from '@/shared/validation/profile';
+import { cn } from '@/ui/cn';
 import { formatRelative, VerifiedBadge } from '@/ui/howdy';
 import type { LitPalRow } from '@/ui/howdy/free-to-talk';
 import { RAIL_CARD, RailCard } from '@/ui/howdy/rail-card';
 import { WhisperIcon } from '@/ui/icons';
-import { Avatar } from '@/ui/primitives';
+import { Avatar, buttonClasses } from '@/ui/primitives';
 import { ChatLink } from './chat-dock';
 import { MemoriesCard } from './memories-card';
 import { FindFriendsActions, SwitchYoursOn } from './rail-actions';
@@ -83,15 +86,48 @@ export function WhatsNew({ news, id }: { news: Announcement; id: string }) {
 }
 
 /**
+ * Time Capsules' way in from Home (the page itself is only in the account menu): the next one coming to you, or an
+ * invitation to seal one. Never any words: sealed ones are not even read for it.
+ */
+function CapsulesCard({ coming }: { coming: ComingCapsule[] }) {
+  const next = coming[0];
+  return (
+    <RailCard
+      id="rail-capsules"
+      title="Time Capsules"
+      {...(next ? { more: { href: '/capsules', label: 'See all' } } : {})}
+    >
+      {next ? (
+        <p className="text-caption text-text-secondary">
+          One {next.from ? `from ${next.from.displayName}` : 'from your past self'} opens on{' '}
+          <strong className="font-semibold text-text-primary">{longDay(next.openOn)}</strong>.
+          {coming.length > 1 && ` ${coming.length - 1} more after that.`}
+        </p>
+      ) : (
+        <>
+          <p className="text-caption text-text-secondary">
+            Seal a few words for your future self or a friend. Nobody can read them until the day they open.
+          </p>
+          <Link href="/capsules" className={cn(buttonClasses({ variant: 'link' }), 'self-start')}>
+            Seal a Time Capsule
+          </Link>
+        </>
+      )}
+    </RailCard>
+  );
+}
+
+/**
  * Home's right panel (wide screens only): your circle right now. The friends who switched Free to talk on (their own
  * choice; Howdy has no automatic "online" dot), your latest messages, friend requests waiting for you, then "On this
- * day" and the team's note. Everything in it is already filtered for this person by the server.
+ * day", Time Capsules and the team's note. Everything in it is already filtered for this person by the server.
  */
 export function HomeRail({
   free,
   threads,
   requests,
   memories,
+  capsules,
   news,
   handle,
   friends,
@@ -105,6 +141,8 @@ export function HomeRail({
   threads: ThreadSummary[] | null;
   requests: PersonEntry[];
   memories: MemoriesToday | null;
+  /** Time Capsules coming to me, soonest first; null when they could not be read (then no card). */
+  capsules: ComingCapsule[] | null;
   news: Announcement | null;
   handle: string;
 }) {
@@ -222,6 +260,7 @@ export function HomeRail({
       {memories && (
         <MemoriesCard memories={memories} handle={handle} className={RAIL_CARD} headingId="rail-memories" />
       )}
+      {capsules && <CapsulesCard coming={capsules} />}
       {news && <WhatsNew news={news} id="rail-whats-new" />}
     </>
   );
