@@ -115,9 +115,10 @@ export function Switch({ label, hint, checked, onCheckedChange, disabled, id }: 
 
 /**
  * The switch on its own, for when something else names it (a card's heading, through `aria-labelledby`). The button is
- * the 44px touch target; the visible track inside it is a compact 40x24.
- * Off: a white track with a firm outline and a grey knob (it stands out on a white card). On: sunflower, white knob.
- * The knob springs across with a little overshoot and stretches while pressed; none of that with reduced motion.
+ * the 44px touch target; the visible track inside it is 48x28. It is the app's one deliberately 3D control: the track is
+ * a groove (sunflower when on, soft grey when off) and the knob a raised white dome, with the same 3px gap all round in
+ * both positions, so it never touches the edge. The knob springs across with a little overshoot and stretches while
+ * pressed; none of that with reduced motion.
  */
 export function SwitchButton({
   checked,
@@ -142,29 +143,25 @@ export function SwitchButton({
       aria-checked={checked}
       disabled={disabled}
       onClick={() => onCheckedChange(!checked)}
-      className="group relative flex h-11 w-11 shrink-0 items-center justify-center disabled:opacity-60"
+      className="group relative flex h-11 w-14 shrink-0 items-center justify-center disabled:opacity-60"
       {...aria}
     >
       <span
         aria-hidden="true"
         className={cn(
-          'relative h-6 w-10 rounded-pill border transition-colors duration-300 motion-reduce:transition-none',
-          checked
-            ? // A faint violet edge: sunflower alone is pale against a white panel.
-              'border-on-highlight/40 bg-highlight'
-            : 'border-border-strong bg-surface',
+          'relative h-7 w-12 rounded-pill shadow-switch-track transition-colors duration-200 motion-reduce:transition-none',
+          checked ? 'bg-linear-to-b from-primary-hover to-primary' : 'bg-surface-sunken',
         )}
       >
         <span
           className={cn(
-            'absolute top-0.5 left-0.5 h-[18px] w-[18px] rounded-pill',
-            // `translate` (Tailwind 4 moves with the translate property, not transform): a half-second glide that
-            // overshoots a touch and settles.
-            'transition-[translate,width,background-color] duration-500 ease-[cubic-bezier(0.34,1.4,0.64,1)] motion-reduce:transition-none',
-            'group-active:w-[22px]',
-            checked
-              ? 'translate-x-[18px] bg-surface shadow-clay-sm group-active:translate-x-3.5'
-              : 'bg-border-strong',
+            'absolute top-[3px] left-[3px] size-[22px] rounded-pill bg-surface shadow-switch-knob',
+            // `translate` (Tailwind 4 moves with the translate property, not transform): a quick glide that
+            // overshoots a touch and settles. On: 48 - 3 - 22 - 3 = 20px across; pressed, the knob widens to 26px and
+            // moves 4px less, so its right edge keeps its 3px gap.
+            'transition-[translate,width] duration-300 ease-[cubic-bezier(0.34,1.4,0.64,1)] motion-reduce:transition-none',
+            'group-active:w-[26px]',
+            checked && 'translate-x-5 group-active:translate-x-4',
           )}
         />
       </span>

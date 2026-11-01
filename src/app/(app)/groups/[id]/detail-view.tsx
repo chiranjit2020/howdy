@@ -612,18 +612,20 @@ function RequestsCard({
 function JoinRuleCard({ townHall }: { townHall: TownHallDetail }) {
   const router = useRouter();
   const [approval, setApproval] = useState(townHall.joinRule === 'approval');
-  const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | undefined>();
 
+  // Flips at once and saves in the background; flips back (with the reason) if saving fails.
   async function set(next: boolean) {
-    setBusy(true);
+    const before = approval;
+    setApproval(next);
     setError(undefined);
     const res = await apiRequest('PATCH', `/api/town-halls/${townHall.id}`, {
       joinRule: next ? 'approval' : 'instant',
     });
-    setBusy(false);
-    if (!res.ok) return setError(res.error?.message ?? 'That did not save. Try again.');
-    setApproval(next);
+    if (!res.ok) {
+      setApproval(before);
+      return setError(res.error?.message ?? 'That did not save. Try again.');
+    }
     router.refresh();
   }
 
@@ -638,7 +640,6 @@ function JoinRuleCard({ townHall }: { townHall: TownHallDetail }) {
             : 'Anyone can join with one tap. Switch on to approve each new member.'
         }
         checked={approval}
-        disabled={busy}
         onCheckedChange={set}
       />
       {error && <FormMessage tone="error">{error}</FormMessage>}

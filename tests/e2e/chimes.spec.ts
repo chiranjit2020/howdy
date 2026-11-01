@@ -98,7 +98,7 @@ test.describe('Notifications in a real browser (production build, real CSP)', ()
     // Alice mutes Bob: what he rang earlier disappears from her Chimes, without a word to Bob.
     expect((await api(a, `/api/relationships/${b.handle}`, { action: 'mute' })).ok()).toBe(true);
     await a.page.reload();
-    await expect(a.page.getByText('All quiet on the range')).toBeVisible();
+    await expect(a.page.getByText('No notifications')).toBeVisible();
     expect((await api(a, `/api/relationships/${b.handle}`, { action: 'unmute' })).ok()).toBe(true);
 
     // Chime settings: switching Reactions off means a new Yo does not ring.

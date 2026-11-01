@@ -96,7 +96,12 @@ export function ChimeList({ initial, seenAt }: { initial: Page; seenAt: string }
         <div className="flex items-baseline gap-2">
           <h1 className="text-heading text-text-primary">Notifications</h1>
           <p role="status" className="text-caption text-text-secondary">
-            {fresh > 0 && chimes.length > 0 ? `${fresh > 99 ? '99+' : fresh} new` : ''}
+            {fresh > 0 && chimes.length > 0 ? (
+              `${fresh > 99 ? '99+' : fresh} new`
+            ) : (
+              // Nothing new: said to screen readers, not shown (the list itself makes it plain on screen).
+              <span className="sr-only">All caught up</span>
+            )}
           </p>
         </div>
         {chimes.length > 0 && (

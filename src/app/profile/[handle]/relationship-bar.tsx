@@ -79,6 +79,30 @@ export function RelationshipBar({
     } else setError(res.error?.message ?? 'That did not work. Try again.');
   }
 
+  /**
+   * Close friend flips the moment it is tapped (like a phone's own switches) and saves in the background; if saving
+   * fails it flips back and says so. Private and instant: nothing else on the page depends on waiting for it.
+   */
+  async function setClose(on: boolean) {
+    const before = rel;
+    setRel({ ...rel, closeByMe: on });
+    setError(undefined);
+    const res = await apiRequest<{ relationship: RelationshipState }>(
+      'POST',
+      `/api/relationships/${handle}`,
+      {
+        action: on ? 'close' : 'unclose',
+      },
+    );
+    if (res.ok && res.data) {
+      setRel(res.data.relationship);
+      router.refresh();
+    } else {
+      setRel(before);
+      setError(res.error?.message ?? 'That did not save. Try again.');
+    }
+  }
+
   return (
     <ClayCard className="flex flex-col gap-3">
       <div className="flex items-center gap-2">
@@ -169,8 +193,7 @@ export function RelationshipBar({
           </div>
           <SwitchButton
             checked={rel.closeByMe}
-            onCheckedChange={(on) => run(on ? 'close' : 'unclose')}
-            disabled={busy !== undefined}
+            onCheckedChange={(on) => void setClose(on)}
             aria-labelledby={closeLabel}
             aria-describedby={closeHint}
           />
