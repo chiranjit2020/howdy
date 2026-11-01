@@ -33,7 +33,7 @@ export const POST = route(async ({ req, params }) => {
   // who would rather not see it.
   if (action === 'block' && target.verified) {
     throw new AppError('FORBIDDEN', {
-      message: 'The Howdy team account can’t be blocked. You can turn down the noise instead.',
+      message: 'The Howdy team account can’t be blocked. You can mute it instead.',
     });
   }
   return json({ relationship: await act(user.id, target.userId, action) });

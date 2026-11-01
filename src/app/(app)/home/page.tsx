@@ -55,7 +55,7 @@ export default async function HomePage() {
     ...lit.map((l) => l.pal),
     ...(threads ?? []),
   ]);
-  // The Howdy team's current Signal ("what's new"), unless this person has turned the team's noise down.
+  // The Howdy team's current Signal ("what's new"), unless this person has muted the team.
   const announcement = news && !lists.muted.some((m) => m.handle === news.author.handle) ? news : null;
 
   // "On this day" only when there is something to show (an empty wrapper would still take a gap in the column).

@@ -25,12 +25,8 @@ const FILES = {
   sparkle: { w: 65, h: 69 },
   star: { w: 96, h: 101 },
   sun: { w: 120, h: 98 },
-  /** The five words friends pick (Marks, ADR-052). (Reactions are Fluent Emoji now: see ./emoji.tsx.) */
+  /** The gem on the welcome page. (The words friends pick are plain emoji, ADR-052; reactions are Fluent Emoji: ./emoji.tsx.) */
   'mark-gem': { w: 160, h: 160 },
-  'mark-pure': { w: 160, h: 160 },
-  'mark-chill': { w: 160, h: 160 },
-  'mark-sharp': { w: 160, h: 160 },
-  'mark-bold': { w: 160, h: 160 },
   /** The blue badge next to the Howdy team account's name. */
   verified: { w: 96, h: 96 },
   /** Navigation (cut from the user's icon sheet by .dev/cut-nav.mjs; 96 px = sharp at 32 px on a 3x phone). */

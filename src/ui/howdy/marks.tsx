@@ -1,5 +1,4 @@
 import type { MarkKind } from '@/shared/validation/marks';
-import { Art, type ArtName } from '../art/glyph';
 import { cn } from '../cn';
 
 /**
@@ -24,15 +23,19 @@ export const MARK_MEANING: Record<MarkKind, string> = {
 
 export const MARK_ORDER: MarkKind[] = ['gem', 'pure', 'chill', 'sharp', 'bold'];
 
-const MARK_ART: Record<MarkKind, ArtName> = {
-  gem: 'mark-gem',
-  pure: 'mark-pure',
-  chill: 'mark-chill',
-  sharp: 'mark-sharp',
-  bold: 'mark-bold',
+export const MARK_EMOJI: Record<MarkKind, string> = {
+  gem: '💎',
+  pure: '🤍',
+  chill: '😎',
+  sharp: '🧠',
+  bold: '🔥',
 };
 
-/** A word's picture. Decorative: its name is always written beside it. */
+/** A word's emoji (the device's own, as plain text). Decorative: its name is always written beside it. */
 export function MarkIcon({ kind, className }: { kind: MarkKind; className?: string }) {
-  return <Art name={MARK_ART[kind]} size="free" className={cn('size-5 shrink-0', className)} />;
+  return (
+    <span aria-hidden="true" className={cn('shrink-0 text-body leading-none', className)}>
+      {MARK_EMOJI[kind]}
+    </span>
+  );
 }

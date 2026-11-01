@@ -4,7 +4,7 @@ import { Badge, type Tone } from '../primitives/badge';
 const MAP: Partial<Record<RelationshipState, { label: string; tone: Tone }>> = {
   PASSERBY: { label: 'Passerby', tone: 'neutral' },
   REQUESTED: { label: 'Requested', tone: 'info' },
-  POSSE: { label: 'Friend', tone: 'success' },
+  POSSE: { label: 'Friend', tone: 'sunflower' },
   CLOSE_POSSE: { label: 'Close friend', tone: 'accent' },
   SCOUTING: { label: 'Following', tone: 'mystery' },
   MUTED: { label: 'Muted', tone: 'neutral' },

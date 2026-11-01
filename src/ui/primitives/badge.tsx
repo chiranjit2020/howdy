@@ -2,11 +2,14 @@ import type { ComponentProps, ReactNode } from 'react';
 import { cn } from '../cn';
 import { CloseIcon } from '../icons';
 
-export type Tone = 'neutral' | 'accent' | 'new' | 'success' | 'warning' | 'danger' | 'info' | 'mystery';
+export type Tone =
+  'neutral' | 'accent' | 'sunflower' | 'new' | 'success' | 'warning' | 'danger' | 'info' | 'mystery';
 
 export const TONE: Record<Tone, string> = {
   neutral: 'bg-surface-sunken text-text-primary',
   accent: 'bg-accent-strong text-on-accent',
+  /** Sunflower with violet text: the brand pair, for "Friend(s)". */
+  sunflower: 'bg-highlight text-on-highlight',
   /** Unread counts and "new" marks: sunflower, the same everywhere. */
   new: 'bg-highlight font-bold text-on-highlight',
   success: 'bg-success text-on-success',

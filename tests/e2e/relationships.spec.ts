@@ -172,7 +172,7 @@ test.describe('Posse, Block and Flag trouble (production build, real CSP)', () =
     const more = a.page.getByRole('button', { name: /^More/ });
     await more.focus();
     await a.page.keyboard.press('ArrowDown');
-    await expect(a.page.getByRole('menuitem', { name: 'Turn down the noise' })).toBeFocused();
+    await expect(a.page.getByRole('menuitem', { name: 'Mute' })).toBeFocused();
     await a.page.keyboard.press('Escape');
     await expect(more).toBeFocused();
     await a.page.keyboard.press('Enter');

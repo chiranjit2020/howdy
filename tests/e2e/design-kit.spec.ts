@@ -95,7 +95,7 @@ test.describe('design kit (production build, real CSP)', () => {
     await page.keyboard.press('ArrowDown');
     await expect(page.getByRole('menuitem', { name: 'Scrape clean' })).toBeFocused();
     await page.keyboard.press('ArrowDown');
-    await expect(page.getByRole('menuitem', { name: 'Turn down the noise' })).toBeFocused();
+    await expect(page.getByRole('menuitem', { name: 'Mute' })).toBeFocused();
     await page.keyboard.press('Escape');
     await expect(page.getByRole('menu')).toBeHidden();
     await expect(trigger).toBeFocused();

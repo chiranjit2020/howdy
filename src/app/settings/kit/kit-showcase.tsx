@@ -211,6 +211,7 @@ export function KitShowcase({ initialTheme }: { initialTheme: Theme | undefined 
         <div className="flex flex-wrap items-center gap-2">
           <Badge>Neutral</Badge>
           <Badge tone="accent">Accent</Badge>
+          <Badge tone="sunflower">Friend</Badge>
           <Badge tone="new">3 new</Badge>
           <Badge tone="success">Success</Badge>
           <Badge tone="warning">Warning</Badge>
@@ -284,7 +285,7 @@ export function KitShowcase({ initialTheme }: { initialTheme: Theme | undefined 
                 label: 'Scrape clean',
                 onSelect: () => toast({ title: 'Post removed', tone: 'success' }),
               },
-              { id: 'mute', label: 'Turn down the noise', onSelect: () => toast({ title: 'Muted' }) },
+              { id: 'mute', label: 'Mute', onSelect: () => toast({ title: 'Muted' }) },
               {
                 id: 'flag',
                 label: 'Flag trouble',

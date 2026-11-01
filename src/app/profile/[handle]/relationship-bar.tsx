@@ -77,7 +77,7 @@ export function RelationshipBar({
         <h2 className="min-w-0 flex-1 text-title [overflow-wrap:anywhere] text-text-primary">
           You and {displayName}
         </h2>
-        {rel.posse === 'member' && <Badge tone="success">Friends</Badge>}
+        {rel.posse === 'member' && <Badge tone="sunflower">Friends</Badge>}
         {rel.posse === 'sent' && <Badge tone="info">Requested</Badge>}
         <Dropdown
           label={`More about ${displayName}`}
@@ -98,7 +98,7 @@ export function RelationshipBar({
               : []),
             {
               id: 'mute',
-              label: rel.muted ? 'Turn the noise back up' : 'Turn down the noise',
+              label: rel.muted ? 'Unmute' : 'Mute',
               onSelect: () => run(rel.muted ? 'unmute' : 'mute'),
             },
             {
