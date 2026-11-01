@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useState, type ReactNode } from 'react';
 import { postJson } from '../auth/api';
 import { cn } from '../cn';
-import { CameraIcon, CapsuleIcon, DevicesIcon, PencilIcon, SignOutIcon } from '../icons';
+import { CameraIcon, CapsuleIcon, DevicesIcon, FeedbackIcon, PencilIcon, SignOutIcon } from '../icons';
 import { Avatar } from '../primitives/avatar';
 import { Drawer } from '../primitives/dialog';
 import type { ShellMe } from './app-shell';
@@ -135,6 +135,7 @@ export function YouSheet({
   freeToTalk?: FreeToTalkState | undefined;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [talkOpen, setTalkOpen] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const talk = freeToTalk ? freeToTalkSummary(freeToTalk) : null;
@@ -188,6 +189,12 @@ export function YouSheet({
                 <DevicesIcon />
               </RowIcon>
               <RowText title="Devices" />
+            </Link>
+            <Link href={`/feedback?from=${encodeURIComponent(pathname)}`} onClick={onClose} className={ROW}>
+              <RowIcon>
+                <FeedbackIcon />
+              </RowIcon>
+              <RowText title="Send feedback" />
             </Link>
           </nav>
           <div className="border-t border-border pt-1">

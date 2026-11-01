@@ -22,7 +22,7 @@ Howdy is run by {{operator}}, an individual based in {{country}} ("Howdy", "we",
 
 **Photos.** When you add a profile photo, or a photo to a post, a group post or a Story, we re-make the picture ourselves (a small square for a profile photo; for anything else, the whole picture at most 1280 pixels across). Anything hidden inside the original file, such as the location where it was taken or the camera used, is thrown away and never stored. A post's photo is shown only to the people who can see that post, and a Story only to the friends it is for. Before anyone else sees a new photo, an automatic check looks at a small copy of it for sexual content, violence and self-harm (see OpenAI under [Service providers](#service-providers)). A photo that is almost certainly explicit or graphic is turned down; one the check is unsure about is shown only to you until a moderator has looked at it.
 
-**What you post and do.** Posts and replies, waves and other reactions, testimonials you write or receive, the words you pick to describe friends, messages you send, Time Capsules you seal, Stories you share and the Stories you view or react to, groups you start or join, posts, replies and reactions in groups, events and polls in groups and your answers and votes, and reports you file.
+**What you post and do.** Posts and replies, waves and other reactions, testimonials you write or receive, the words you pick to describe friends, messages you send, Time Capsules you seal, Stories you share and the Stories you view or react to, groups you start or join, posts, replies and reactions in groups, events and polls in groups and your answers and votes, reports you file, and feedback you send about Howdy (what kind, your words, and the page you sent it from). Feedback is read only by Howdy's admins, who are also emailed a copy.
 
 **Your connections.** Who is in your friends, and requests between you. Also the private choices you make about others: Close friends, following, Mute, Restrict and Block. Those are visible only to you, and the other person is never told who made them. Following someone shows their own posts on your Home; the person you follow sees only how many people follow them, never who.
 
@@ -116,6 +116,7 @@ Signed-in people can search for others by name or @username. You are found only 
 - **Time Capsules:** until the day they open (or until you take one back); after that, until the person it was for deletes it.
 - **Messages:** 7 days after they are sent (or sooner, if a thread is burned). The words of a message someone reported are kept with the report (see below).
 - **Profile visits:** 7 days.
+- **Feedback you send:** 1 year, then deleted (sooner if you delete your account).
 - **Notifications:** 30 days after you read them, or 90 days if you never do.
 - **Posts waiting for approval, waiting testimonials, and group posts waiting for the owner:** 30 days, if they are not approved.
 - **Requests to join a group:** 30 days, if nobody lets you in (whether or not they said no).

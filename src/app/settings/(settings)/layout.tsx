@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { AppFrame } from '@/app/_lib/app-shell';
 import { PageFrame } from '@/ui/howdy/page-frame';
@@ -16,6 +17,13 @@ export default function WorkshopLayout({ children }: { children: ReactNode }) {
         <h1 className="text-heading text-text-primary">Settings</h1>
         <SettingsTabs />
         {children}
+        {/* The way to tell us what to fix or add, at the end of every Settings page (ADR-059). */}
+        <p className="text-caption text-text-secondary">
+          Something missing or not working?{' '}
+          <Link href="/feedback?from=/settings" className="font-semibold">
+            Send feedback
+          </Link>
+        </p>
       </PageFrame>
     </AppFrame>
   );

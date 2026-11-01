@@ -1,5 +1,6 @@
 import { accountExport } from '@/modules/auth';
 import { myCapsules } from '@/modules/capsules';
+import { myFeedback } from '@/modules/feedback';
 import { storiesExport } from '@/modules/stories';
 import { fenceExport, type ExportState } from '@/modules/fence';
 import { marksExport } from '@/modules/marks';
@@ -58,7 +59,11 @@ export async function buildDataExport(userId: string, now: Date = new Date()): P
       moderationExport(userId),
     ]);
   // My Stories that are still up (ADR-047): they last 12 hours, so that is all there is. And my personal details.
-  const [myStories, details] = await Promise.all([storiesExport(userId, now), myDetails(userId)]);
+  const [myStories, details, feedbackSent] = await Promise.all([
+    storiesExport(userId, now),
+    myDetails(userId),
+    myFeedback(userId),
+  ]);
 
   // Everyone this file could name, checked once: active accounts only, and nobody hidden from me.
   const ids = new Set<string>([
@@ -287,6 +292,13 @@ export async function buildDataExport(userId: string, now: Date = new Date()): P
       myPosts: h.posts.map((p) => ({ words: p.body, at: iso(p.postedAt), photo: cardPhoto(p.photoId) })),
       myReplies: h.replies.map((r) => ({ words: r.body, at: iso(r.postedAt) })),
       myReactions: h.reactions.map((r) => ({ reaction: r.kind, at: iso(r.givenAt) })),
+    })),
+    // Feedback I sent about Howdy (ADR-059).
+    feedbackISent: feedbackSent.map((f) => ({
+      kind: f.kind,
+      words: f.body,
+      page: f.page,
+      at: iso(f.createdAt),
     })),
     moderation: {
       suspensionsOfMyAccount: moderation.suspensions.map((s) => ({

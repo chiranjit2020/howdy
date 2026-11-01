@@ -194,6 +194,9 @@ function Sidebar({ data }: { data: ConsoleData }) {
           Moderation queue
           <OpenBadge n={data.queue.open} />
         </a>
+        <a href="/admin/feedback" className={navLink + ' text-on-island-muted'}>
+          Feedback
+        </a>
       </nav>
       <p className="mt-auto flex items-center gap-2 border-t border-on-island/10 px-4 py-3 text-tab font-semibold tracking-wider uppercase">
         <span

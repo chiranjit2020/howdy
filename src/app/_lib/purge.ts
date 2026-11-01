@@ -6,6 +6,7 @@ import {
 } from '@/modules/auth';
 import { openDue } from '@/modules/capsules';
 import { purgeDeletedAccounts } from './account-deletion';
+import { purgeOldFeedback } from '@/modules/feedback';
 import { purgeStaleWaiting } from '@/modules/fence';
 import { purgeOldInvitations } from '@/modules/invites';
 import { purgeExpiredStories } from '@/modules/stories';
@@ -55,6 +56,8 @@ export async function runAllPurges() {
   // Timed suspensions that ran out: lifted here too, so the person reappears without having to sign in first.
   const suspensionsDone = await liftExpiredSuspensions();
   const reportsDone = await purgeClosedReports();
+  // Feedback a year after it was sent (ADR-059).
+  const feedbackRows = await purgeOldFeedback();
   // Accounts whose 14-day grace period is over (ADR-027): files first, then the account.
   const accounts = await purgeDeletedAccounts();
   const handles = await purgeFreedHandles();
@@ -82,6 +85,7 @@ export async function runAllPurges() {
     ...trust,
     ...suspensionsDone,
     ...reportsDone,
+    ...feedbackRows,
     ...accounts,
     ...handles,
     ...audit,

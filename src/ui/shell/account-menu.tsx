@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { apiRequest, postJson } from '../auth/api';
 import { Avatar } from '../primitives/avatar';
@@ -19,6 +19,7 @@ const ROW =
  */
 export function AccountMenu({ me }: { me: ShellMe }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [devices, setDevices] = useState<number | undefined>();
   const [leaving, setLeaving] = useState(false);
@@ -100,6 +101,13 @@ export function AccountMenu({ me }: { me: ShellMe }) {
                   <span className="sr-only"> signed in</span>
                 </span>
               )}
+            </Link>
+            <Link
+              href={`/feedback?from=${encodeURIComponent(pathname)}`}
+              onClick={() => setOpen(false)}
+              className={ROW}
+            >
+              Send feedback
             </Link>
           </nav>
           <div className="border-t border-border pt-2">
