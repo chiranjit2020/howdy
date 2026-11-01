@@ -25,7 +25,9 @@ async function art(file: string): Promise<string> {
   return `data:image/${file.endsWith('.svg') ? 'svg+xml' : 'png'};base64,${bytes.toString('base64')}`;
 }
 
-export async function shareCard(kicker: string = 'A small-circle social world'): Promise<ImageResponse> {
+export async function shareCard(
+  kicker: string = 'Social media for people you actually know',
+): Promise<ImageResponse> {
   const [logo, yo] = await Promise.all(['brand/howdy-wordmark.png', 'emoji/fluent/yo.svg'].map(art));
   const [fraunces, googleSans] = await Promise.all([font('fraunces-600.ttf'), font('google-sans-500.ttf')]);
   return new ImageResponse(

@@ -199,7 +199,9 @@ export function WelcomeStory({ invite }: { invite?: { code: string; invitedBy: s
         <section className="mx-auto grid w-full max-w-6xl items-center gap-8 px-4 pt-4 pb-10 sm:px-6 lg:grid-cols-[1.1fr_1fr] lg:gap-10 lg:pt-6 lg:pb-12">
           <div className="flex flex-col items-start gap-6 motion-safe:animate-rise">
             <p className="flex items-center gap-2 rounded-pill bg-surface px-3 py-1.5 text-caption font-semibold text-text-secondary shadow-clay-sm">
-              {invite ? `${invite.invitedBy} invited you to Howdy` : 'A small-circle social world'}
+              {invite
+                ? `${invite.invitedBy} invited you to Howdy`
+                : 'Social media for people you actually know'}
             </p>
             <h1 className="font-display text-[clamp(2.6rem,1.6rem+4.6vw,4.75rem)] leading-[1.02] font-semibold tracking-tight text-text-primary">
               Your people.
@@ -209,20 +211,18 @@ export function WelcomeStory({ invite }: { invite?: { code: string; invitedBy: s
               </span>
             </h1>
             <p className="max-w-xl text-title font-normal text-text-secondary">
-              Posts on your wall, quiet visits to your profile and private messages with your friends. No
-              endless feed. No public follower counts. Just the people who matter.
+              Share posts, Stories and messages with your friends, family and batch — without the endless
+              feed, follower counts or strangers.
             </p>
             <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
               <Link href={join} className={cn(buttonClasses({ size: 'lg' }), 'nav-action-gloss relative')}>
                 Sign up — it’s free
               </Link>
               <a href="#tour" className={buttonClasses({ variant: 'secondary', size: 'lg' })}>
-                Take the tour
+                See how it works
               </a>
             </div>
-            <p className="text-caption text-text-muted">
-              Works on any phone — add it to your home screen. Made in India, small on purpose.
-            </p>
+            <p className="text-caption text-text-muted">Free · No ads · Made in India</p>
           </div>
           <div className="motion-safe:animate-rise">
             <HeroArt />

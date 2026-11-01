@@ -9,7 +9,7 @@ export default function manifest(): MetadataRoute.Manifest {
     id: '/',
     name: 'Howdy',
     short_name: 'Howdy',
-    description: 'A small-circle social world.',
+    description: 'Social media for people you actually know.',
     start_url: '/',
     scope: '/',
     display: 'standalone',

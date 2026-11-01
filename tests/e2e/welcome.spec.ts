@@ -30,8 +30,8 @@ test.describe('Welcome page (production build, real CSP)', () => {
       // 44 px targets are for fingers; with a mouse, controls are desktop-sized (the density pass).
       if (label !== 'desktop') expect(await smallTargets(page)).toEqual([]);
       expect(await horizontalOverflow(page)).toBe(0);
-      // "Take the tour" scrolls to what is built.
-      await page.getByRole('link', { name: 'Take the tour' }).click();
+      // "See how it works" scrolls to what is built.
+      await page.getByRole('link', { name: 'See how it works' }).click();
       await expect(page).toHaveURL(/#tour$/);
       expect(problems).toEqual([]);
       await ctx.close();

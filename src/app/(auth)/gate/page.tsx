@@ -12,7 +12,8 @@ export default async function GatePage() {
   return (
     <EntryCard>
       <EntryHeading title="Welcome to Howdy">
-        A small-circle social world. Posts, quiet visits and private messages — no endless feed.
+        Social media for people you actually know. Posts, Stories and messages with your friends — no endless
+        feed.
       </EntryHeading>
       <div className="flex flex-col gap-3">
         <Link href="/signup" className={buttonClasses({ fullWidth: true })}>

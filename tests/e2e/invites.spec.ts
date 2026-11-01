@@ -95,7 +95,7 @@ test.describe('Invite links (production build, real CSP)', () => {
     const page = await ctx.newPage();
     await page.goto('/i/AAAAAAAAAA');
     await pageReady(page);
-    await expect(page.getByText('A small-circle social world')).toBeVisible();
+    await expect(page.getByText('Social media for people you actually know')).toBeVisible();
     await expect(page.getByText(/invited you/)).toHaveCount(0);
     await page
       .locator('#main')

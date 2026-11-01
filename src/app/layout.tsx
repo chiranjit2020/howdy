@@ -10,7 +10,7 @@ const googleSans = Google_Sans({ subsets: ['latin'], variable: '--font-google-sa
 const jetbrains = JetBrains_Mono({ subsets: ['latin'], variable: '--font-jetbrains', display: 'swap' });
 export const metadata: Metadata = {
   title: { default: 'Howdy', template: '%s · Howdy' },
-  description: 'A small-circle social world.',
+  description: 'Social media for people you actually know.',
 };
 
 export const viewport: Viewport = {
