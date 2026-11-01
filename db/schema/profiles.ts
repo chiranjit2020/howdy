@@ -107,6 +107,19 @@ export const profileDetails = pgTable(
     languagesAudience: text('languages_audience').notNull().default('posse'),
     birthdayAudience: text('birthday_audience').notNull().default('posse'),
     relationshipAudience: text('relationship_audience').notNull().default('posse'),
+    // Ways to reach you (ADR-058). The social sites are handles only: the app builds each link to the real site.
+    website: text('website'),
+    email: text('email'),
+    phone: text('phone'),
+    instagram: text('instagram'),
+    linkedin: text('linkedin'),
+    xHandle: text('x_handle'),
+    youtube: text('youtube'),
+    facebook: text('facebook'),
+    websiteAudience: text('website_audience').notNull().default('posse'),
+    emailAudience: text('email_audience').notNull().default('posse'),
+    phoneAudience: text('phone_audience').notNull().default('posse'),
+    socialsAudience: text('socials_audience').notNull().default('posse'),
     updatedAt: tstz('updated_at').notNull().defaultNow(),
   },
   (t) => [
@@ -137,7 +150,46 @@ export const profileDetails = pgTable(
         'languagesAudience',
         'birthdayAudience',
         'relationshipAudience',
+        'websiteAudience',
+        'socialsAudience',
       ] as const
     ).map((k) => check(`profile_details_${t[k].name}_check`, AUDIENCE_CHECK(t[k]))),
+    // A phone number or contact email is never for everyone (ADR-058).
+    ...(['emailAudience', 'phoneAudience'] as const).map((k) =>
+      check(`profile_details_${t[k].name}_check`, sql`${t[k]} in ('posse', 'only_me')`),
+    ),
+    check(
+      'profile_details_website_check',
+      sql`${t.website} is null or (${t.website} like 'https://%' and char_length(${t.website}) <= 200 and ${t.website} !~ '\\s')`,
+    ),
+    check(
+      'profile_details_email_check',
+      sql`${t.email} is null or (char_length(${t.email}) <= 254 and ${t.email} ~ '^[^@\\s]+@[^@\\s]+$')`,
+    ),
+    check(
+      'profile_details_phone_check',
+      sql`${t.phone} is null or (char_length(${t.phone}) <= 20 and ${t.phone} ~ '^\\+?[0-9 ()-]+$')`,
+    ),
+    // The same patterns as SOCIAL_PATTERN in src/shared/validation/details.ts (a test checks they agree).
+    check(
+      'profile_details_instagram_check',
+      sql`${t.instagram} is null or ${t.instagram} ~ '^[A-Za-z0-9._]{1,30}$'`,
+    ),
+    check(
+      'profile_details_linkedin_check',
+      sql`${t.linkedin} is null or ${t.linkedin} ~ '^[A-Za-z0-9-]{3,100}$'`,
+    ),
+    check(
+      'profile_details_x_handle_check',
+      sql`${t.xHandle} is null or ${t.xHandle} ~ '^[A-Za-z0-9_]{1,15}$'`,
+    ),
+    check(
+      'profile_details_youtube_check',
+      sql`${t.youtube} is null or ${t.youtube} ~ '^[A-Za-z0-9._-]{3,30}$'`,
+    ),
+    check(
+      'profile_details_facebook_check',
+      sql`${t.facebook} is null or ${t.facebook} ~ '^[A-Za-z0-9.]{5,50}$'`,
+    ),
   ],
 );

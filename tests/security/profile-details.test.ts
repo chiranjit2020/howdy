@@ -1,6 +1,7 @@
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { GET as getMine, PATCH as patchMine } from '@/app/api/me/details/route';
 import { detailsForViewer } from '@/modules/profiles';
+import { SOCIAL_PATTERN } from '@/shared/validation/details';
 import { getPool } from '@/platform/db';
 import { call, freshAuthState, signedInUser, uniqueUser, type TestKit } from '../helpers/auth';
 import { doAct, q, userId } from '../helpers/social';
@@ -100,6 +101,146 @@ describe('saving details', () => {
     await expect(
       q('insert into profile_details (user_id, birthday_day) values ($1, 5)', [id]),
     ).rejects.toThrow(/birthday_pair/);
+  });
+});
+
+describe('ways to reach you (ADR-058)', () => {
+  it('tidies what is typed: https added, email lower-cased, a pasted profile link becomes its handle', async () => {
+    const a = await person('reach');
+    const res = await patch(
+      {
+        website: 'Example.com/Portfolio',
+        email: '  Me@Example.COM ',
+        phone: '+91  98765 43210',
+        socials: {
+          instagram: '@asha.rao',
+          linkedin: 'https://www.linkedin.com/in/asha-rao/',
+          x: 'twitter.com/asha_r',
+          youtube: 'youtube.com/@ashamakes',
+          facebook: 'm.facebook.com/asha.rao.9',
+        },
+      },
+      a,
+    );
+    expect(res.status).toBe(200);
+    expect(res.data.details).toMatchObject({
+      website: 'https://example.com/Portfolio',
+      email: 'me@example.com',
+      phone: '+91 98765 43210',
+      socials: {
+        instagram: 'asha.rao',
+        linkedin: 'asha-rao',
+        x: 'asha_r',
+        youtube: 'ashamakes',
+        facebook: 'asha.rao.9',
+      },
+    });
+    // Each social link is built by Howdy, to the real site only.
+    const id = await userId(a.handle);
+    const hrefs = Object.fromEntries((await detailsForViewer(id, id)).map((l) => [l.key, l.href]));
+    expect(hrefs).toMatchObject({
+      website: 'https://example.com/Portfolio',
+      email: 'mailto:me@example.com',
+      phone: 'tel:+919876543210',
+      instagram: 'https://www.instagram.com/asha.rao/',
+      linkedin: 'https://www.linkedin.com/in/asha-rao/',
+      x: 'https://x.com/asha_r',
+      youtube: 'https://www.youtube.com/@ashamakes',
+      facebook: 'https://www.facebook.com/asha.rao.9',
+    });
+    await patch({ website: '', socials: { x: null } }, a);
+    expect((await mine(a)).data.details).toMatchObject({
+      website: null,
+      socials: { x: null, instagram: 'asha.rao' },
+    });
+  });
+
+  it('refuses unsafe links, other sites passed off as a social profile, and bad emails or numbers', async () => {
+    const a = await person('unsafe');
+    for (const body of [
+      { website: 'http://example.com' },
+      { website: 'javascript:alert(1)' },
+      { website: 'data:text/html,hi' },
+      { website: 'https://user:pass@example.com' },
+      { website: 'https://192.168.1.1/admin' },
+      { website: 'https://localhost' },
+      { website: 'https://exa mple.com' },
+      { website: `https://example.com/${'a'.repeat(200)}` },
+      { website: 'https://example.com/\u202Egpj.exe' },
+      { email: 'not-an-email' },
+      { email: 'a@b@c.com' },
+      { phone: 'call me maybe' },
+      { phone: '12345' },
+      { phone: '+1 234 567 890 123 456 78' },
+      { socials: { instagram: 'https://evil.example/asha' } },
+      { socials: { instagram: 'instagram.com.evil.example/asha' } },
+      { socials: { x: 'this_handle_is_too_long' } },
+      { socials: { linkedin: 'javascript:alert(1)' } },
+      { socials: { facebook: '<script>' } },
+    ])
+      expect((await patch(body, a)).status, JSON.stringify(body)).toBe(422);
+  });
+
+  it('a phone number or email can never be for everyone, not even through the API or the database', async () => {
+    const a = await person('private');
+    for (const audience of [{ email: 'members' }, { phone: 'members' }])
+      expect((await patch({ audience }, a)).status, JSON.stringify(audience)).toBe(422);
+    const id = await userId(a.handle);
+    for (const col of ['email_audience', 'phone_audience'])
+      await expect(
+        q(`insert into profile_details (user_id, ${col}) values ($1, 'members')`, [id]),
+        col,
+      ).rejects.toThrow(/profile_details_/);
+    for (const [col, value] of [
+      ['website', 'javascript:alert(1)'],
+      ['website', 'http://example.com'],
+      ['email', 'nobody'],
+      ['phone', 'call me'],
+      ['instagram', 'bad/handle'],
+      ['x_handle', 'x'.repeat(16)],
+    ] as const)
+      await expect(
+        q(`insert into profile_details (user_id, ${col}) values ($1, $2)`, [id, value]),
+        col,
+      ).rejects.toThrow(/profile_details_/);
+  });
+
+  it('the database checks social handles with the same patterns as the app', async () => {
+    const { rows } = await q(
+      "select conname, pg_get_constraintdef(oid) def from pg_constraint where conname ~ '^profile_details_(instagram|linkedin|x_handle|youtube|facebook)_check$'",
+    );
+    const def = Object.fromEntries(rows.map((r: { conname: string; def: string }) => [r.conname, r.def]));
+    for (const [site, col] of [
+      ['instagram', 'instagram'],
+      ['linkedin', 'linkedin'],
+      ['x', 'x_handle'],
+      ['youtube', 'youtube'],
+      ['facebook', 'facebook'],
+    ] as const)
+      expect(def[`profile_details_${col}_check`], site).toContain(SOCIAL_PATTERN[site]);
+  });
+
+  it('strangers see public ones; friends also see email and phone; links never carry an audience', async () => {
+    const o = await person('contact');
+    await patch(
+      {
+        website: 'example.com',
+        email: 'o@example.com',
+        phone: '+91 98765 43210',
+        socials: { instagram: 'owner.page' },
+        audience: { website: 'members', socials: 'members', email: 'posse', phone: 'only_me' },
+      },
+      o,
+    );
+    const id = await userId(o.handle);
+    const stranger = await person('passerby');
+    expect(keys(await detailsForViewer(await userId(stranger.handle), id))).toEqual(['website', 'instagram']);
+    const f = await person('pal');
+    await friends(o, f);
+    const seen = await detailsForViewer(await userId(f.handle), id);
+    expect(keys(seen)).toEqual(['website', 'email', 'instagram']);
+    expect(seen.every((l) => l.audience === undefined)).toBe(true);
+    expect(await detailsForViewer(null, id)).toEqual([]);
   });
 });
 

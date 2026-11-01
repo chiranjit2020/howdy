@@ -14,7 +14,7 @@ const FEATURES: { art: ArtName; name: string; text: string }[] = [
   {
     art: 'nav-porch',
     name: 'Your profile',
-    text: 'Your corner of Howdy: your photo and cover, a few words about you, and the details you choose to share — each with its own who-can-see.',
+    text: 'Your corner of Howdy: your photo and cover, a few words about you, and the details you choose to share — your website, socials, even a number for friends — each with its own who-can-see.',
   },
   {
     art: 'nav-pals',

@@ -7,18 +7,31 @@ import {
   birthdayLabel,
   DEFAULT_DETAIL_AUDIENCE,
   DETAIL_KEYS,
+  phoneHref,
   RELATIONSHIP_LABEL,
+  SOCIALS,
+  socialUrl,
+  websiteLabel,
   type DetailAudience,
   type DetailKey,
   type Relationship,
+  type Social,
   type UpdateDetails,
 } from '@/shared/validation/details';
 import { RATE } from './service';
 
-/** One detail as a profile shows it: already worded ("12 March", "In a relationship"). The owner also gets its audience. */
+/** What a profile shows a line for: each detail, except that every social site gets a line of its own. */
+export type LineKey = Exclude<DetailKey, 'socials'> | Social;
+
+/**
+ * One detail as a profile shows it: already worded ("12 March", "In a relationship", "example.com"). A way to reach you
+ * also has its link, built here (https only, mailto:, tel:, or the social site's own address). The owner also gets its
+ * audience.
+ */
 export interface DetailLine {
-  key: DetailKey;
+  key: LineKey;
   text: string;
+  href?: string;
   audience?: DetailAudience;
 }
 
@@ -31,6 +44,10 @@ export interface MyDetails {
   languages: string | null;
   birthday: { day: number; month: number } | null;
   relationship: Relationship | null;
+  website: string | null;
+  email: string | null;
+  phone: string | null;
+  socials: Record<Social, string | null>;
   audience: Record<DetailKey, DetailAudience>;
 }
 
@@ -44,7 +61,19 @@ const AUDIENCE_COLUMN = {
   birthday: 'birthdayAudience',
   languages: 'languagesAudience',
   relationship: 'relationshipAudience',
+  website: 'websiteAudience',
+  email: 'emailAudience',
+  phone: 'phoneAudience',
+  socials: 'socialsAudience',
 } as const satisfies Record<DetailKey, keyof Row>;
+
+const SOCIAL_COLUMN = {
+  instagram: 'instagram',
+  linkedin: 'linkedin',
+  x: 'xHandle',
+  youtube: 'youtube',
+  facebook: 'facebook',
+} as const satisfies Record<Social, keyof Row>;
 
 function toMine(row: Row | undefined): MyDetails {
   const audience = Object.fromEntries(
@@ -61,13 +90,20 @@ function toMine(row: Row | undefined): MyDetails {
         ? { day: row.birthdayDay, month: row.birthdayMonth }
         : null,
     relationship: (row?.relationship as Relationship | null) ?? null,
+    website: row?.website ?? null,
+    email: row?.email ?? null,
+    phone: row?.phone ?? null,
+    socials: Object.fromEntries(SOCIALS.map((s) => [s, row?.[SOCIAL_COLUMN[s]] ?? null])) as Record<
+      Social,
+      string | null
+    >,
     audience,
   };
 }
 
-/** Each set detail, worded for showing, in the card's order. */
+/** Each set detail, worded for showing (with its link, for a way to reach you), in the card's order. */
 function lines(d: MyDetails): DetailLine[] {
-  const text: Record<DetailKey, string | null> = {
+  const text: Record<Exclude<DetailKey, 'socials'>, string | null> = {
     livesIn: d.livesIn,
     hometown: d.hometown,
     work: d.work,
@@ -75,10 +111,26 @@ function lines(d: MyDetails): DetailLine[] {
     birthday: d.birthday ? birthdayLabel(d.birthday) : null,
     languages: d.languages,
     relationship: d.relationship ? RELATIONSHIP_LABEL[d.relationship] : null,
+    website: d.website ? websiteLabel(d.website) : null,
+    email: d.email,
+    phone: d.phone,
   };
-  return DETAIL_KEYS.flatMap((key) =>
-    text[key] ? [{ key, text: text[key], audience: d.audience[key] }] : [],
-  );
+  const href: Partial<Record<LineKey, string>> = {
+    ...(d.website ? { website: d.website } : {}),
+    ...(d.email ? { email: `mailto:${d.email}` } : {}),
+    ...(d.phone ? { phone: phoneHref(d.phone) } : {}),
+  };
+  return DETAIL_KEYS.flatMap((key): DetailLine[] => {
+    if (key === 'socials')
+      return SOCIALS.flatMap((site) => {
+        const handle = d.socials[site];
+        return handle
+          ? [{ key: site, text: handle, href: socialUrl(site, handle), audience: d.audience.socials }]
+          : [];
+      });
+    const t = text[key];
+    return t ? [{ key, text: t, ...(href[key] ? { href: href[key] } : {}), audience: d.audience[key] }] : [];
+  });
 }
 
 async function readRow(userId: string): Promise<Row | undefined> {
@@ -107,7 +159,7 @@ export async function detailsForViewer(viewerId: string | null, ownerId: string)
   const friend = relationship === 'POSSE' || relationship === 'CLOSE_POSSE';
   return all
     .filter((l) => l.audience === 'members' || (l.audience === 'posse' && friend))
-    .map(({ key, text }) => ({ key, text }));
+    .map(({ key, text, href }) => ({ key, text, ...(href ? { href } : {}) }));
 }
 
 /** Change your own details and their audiences (only what is given; null clears a detail). Returns them all. */
@@ -122,6 +174,13 @@ export async function updateMyDetails(userId: string, input: UpdateDetails): Pro
     set.birthdayMonth = input.birthday?.month ?? null;
   }
   if (input.relationship !== undefined) set.relationship = input.relationship;
+  for (const k of ['website', 'email', 'phone'] as const) {
+    if (input[k] !== undefined) set[k] = input[k];
+  }
+  for (const site of SOCIALS) {
+    const h = input.socials?.[site];
+    if (h !== undefined) set[SOCIAL_COLUMN[site]] = h;
+  }
   for (const k of DETAIL_KEYS) {
     const a = input.audience?.[k];
     if (a) set[AUDIENCE_COLUMN[k]] = a;

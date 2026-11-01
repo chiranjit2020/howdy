@@ -1,7 +1,7 @@
 import { Children, isValidElement, useId, type ReactNode } from 'react';
 import { Button } from '../primitives/button';
-import { Art } from '../art/glyph';
 import { EmptyState } from '../primitives/feedback';
+import { FenceIcon } from '../icons';
 import { GlossaryHint } from './glossary-hint';
 import { POST_LIST } from './post-card';
 
@@ -40,8 +40,8 @@ export function Fence({
       {composer}
       {cards.length === 0 ? (
         <EmptyState
-          // Someone who can nail the first card gets the invitation itself; a visitor who cannot, the quiet log.
-          icon={composer ? <Art name="nail-postcard" size="free" className="h-auto w-44" /> : '🪵'}
+          // The same muted line icon as every other empty list (the clay picture and the log emoji predate the flat look).
+          icon={<FenceIcon className="text-text-muted" />}
           title="No posts yet"
           description={emptyHint}
         />

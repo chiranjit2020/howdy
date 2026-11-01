@@ -18,6 +18,8 @@ Howdy is run by {{operator}}, an individual based in {{country}} ("Howdy", "we",
 
 **Your profile.** Your display name, your bio if you write one (a short line shown under your name), the colour of your profile photo, your profile photo if you add one, your status (a short line that fades), whether you are free to talk while that is on, and your settings: who can see your profile and status, who can write on your wall, and which notifications you want.
 
+**Your details (only the ones you add).** Where you live and are from, your work and education, your birthday (day and month, never the year), the languages you speak, your relationship status, and ways to reach you: a website, a contact email, a phone number, and your usernames on Instagram, LinkedIn, X, YouTube and Facebook. All of these are optional, and each has its own setting for who sees it. A contact email or phone number can only ever be seen by your friends or by you, never by everyone. The contact email is just shown on your profile; it is not the email you sign in with, and we never use it to contact you.
+
 **Photos.** When you add a profile photo, or a photo to a post, a group post or a Story, we re-make the picture ourselves (a small square for a profile photo; for anything else, the whole picture at most 1280 pixels across). Anything hidden inside the original file, such as the location where it was taken or the camera used, is thrown away and never stored. A post's photo is shown only to the people who can see that post, and a Story only to the friends it is for. Before anyone else sees a new photo, an automatic check looks at a small copy of it for sexual content, violence and self-harm (see OpenAI under [Service providers](#service-providers)). A photo that is almost certainly explicit or graphic is turned down; one the check is unsure about is shown only to you until a moderator has looked at it.
 
 **What you post and do.** Posts and replies, waves and other reactions, testimonials you write or receive, the words you pick to describe friends, messages you send, Time Capsules you seal, Stories you share and the Stories you view or react to, groups you start or join, posts, replies and reactions in groups, events and polls in groups and your answers and votes, and reports you file.
@@ -34,7 +36,7 @@ Howdy is run by {{operator}}, an individual based in {{country}} ("Howdy", "we",
 
 **Security records.** A record of important account events, such as signing up, signing in, a failed sign-in or a password reset. These records do not contain your password, IP address or anything you wrote.
 
-**What we do not collect.** We do not use advertising or analytics tools, we do not track you on other websites, and we do not ask for your location, contacts, phone number or payment details.
+**What we do not collect.** We do not use advertising or analytics tools, we do not track you on other websites, and we do not ask for your location, contacts, phone number or payment details. (You may choose to show a phone number on your profile; see Your details above.)
 
 ## How we use it
 
@@ -52,6 +54,7 @@ We do not sell your information, share it with advertisers, or use it to build a
 Your settings decide most of it.
 
 - **Your profile and status** can be visible to everyone, to signed-in members (the default), or to your friends only.
+- **Your details** each have their own setting: Everyone on Howdy, Friends (the default) or Only me. People who are not signed in never see them, and a block hides them all. A phone number or contact email is for friends or only you. Links to your website and social profiles open the other site in a new tab without telling it which profile the visitor came from.
 - **Your wall** follows your settings for who may read it and who may write on it. You can review posts before they appear, and remove anything on your own wall.
 - **Messages** are only ever between the two people in the conversation.
 - **Groups:** a group is either private (only people invited can see it) or findable by friends of its members, who see how many of their friends are in it, never who. The list of who is in a group, and its posts, replies and reactions, are visible only to its members. An event in a group shows its members how many are going, maybe or can't go; only the member who posted it sees who answered what. A poll shows its members how many chose each option, and nobody, not even the person who asked, sees who voted for what. Its owner can remove any post in it, and Deputies the owner appoints can remove posts by ordinary members. If you ask to join a group that needs approval, its owner and Deputies see your name, username and profile photo, and when you asked. If they say no, you are not told; the request simply runs out. Its owner and Deputies can also ban someone from it: they keep a list of who is banned, when and by whom, and a banned person is not told — to them the group simply never answers a request to join.
