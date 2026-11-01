@@ -1,6 +1,6 @@
 import { attachPortraits } from '@/app/_lib/social';
 import { requireSession } from '@/modules/auth';
-import { createPost, listFeed } from '@/modules/town-halls';
+import { createPost, listFeed, peopleOn } from '@/modules/town-halls';
 import { AppError } from '@/platform/errors';
 import { readJson } from '@/platform/http/body';
 import { json, route } from '@/platform/http/route';
@@ -21,10 +21,7 @@ export const GET = route(async ({ req, params }) => {
     limit: query.data.limit,
   });
   if (!page) throw new AppError('NOT_FOUND');
-  await attachPortraits(
-    user.id,
-    page.posts.flatMap((p) => [p.author, ...p.replies.map((r) => r.author)]),
-  );
+  await attachPortraits(user.id, peopleOn([...(page.pinned ? [page.pinned] : []), ...page.posts]));
   return json(page);
 });
 

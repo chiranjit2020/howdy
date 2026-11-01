@@ -8,6 +8,9 @@ import { apiRequest, postJson } from '@/ui/auth/api';
 import { FormMessage } from '@/ui/auth/form-parts';
 import { POST_LIST, PostCard, PostCardComposer, PostCardReply, type PostCardAuthor } from '@/ui/howdy';
 import { ReportDialog } from '@/ui/howdy/report-dialog';
+import type { RsvpAnswer } from '@/shared/validation/town-halls';
+import { EventBlock, type WireEvent } from './event-block';
+import { NewEvent } from './new-event';
 import { RelativeTime } from '@/ui/howdy/time';
 import { MoreIcon } from '@/ui/icons';
 import { Img } from '@/ui/art/img';
@@ -24,9 +27,10 @@ import {
 
 /** Dates arrive as Date objects (first paint) or ISO strings (later pages). */
 type WireReply = Omit<HallReplyView, 'createdAt'> & { createdAt: Date | string };
-type WirePost = Omit<HallPostView, 'createdAt' | 'replies'> & {
+type WirePost = Omit<HallPostView, 'createdAt' | 'replies' | 'event'> & {
   createdAt: Date | string;
   replies: WireReply[];
+  event: WireEvent | null;
 };
 export type InitialFeed = Omit<HallFeedPage, 'posts' | 'pinned'> & {
   pinned: WirePost | null;
@@ -75,6 +79,7 @@ export function FeedSection({
   const [removal, setRemoval] = useState<Removal | undefined>();
   const [removing, setRemoving] = useState(false);
   const [reporting, setReporting] = useState<string | undefined>();
+  const [answering, setAnswering] = useState<string | undefined>();
 
   const patchPost = (id: string, fn: (p: WirePost) => WirePost) => {
     setPosts((all) => all.map((p) => (p.id === id ? fn(p) : p)));
@@ -155,6 +160,24 @@ export function FeedSection({
     if (!res.ok) {
       set(before.myReaction, before.reactions);
       setError(res.error?.message ?? 'That reaction did not go through.');
+    }
+  }
+
+  /** Answer an event (or take the answer back): shown at once, put back if the server says no. */
+  async function answer(p: WirePost, next: RsvpAnswer | null) {
+    if (!p.event) return;
+    const before = p.event;
+    const counts = { ...before.counts };
+    if (before.mine) counts[before.mine] = Math.max(0, counts[before.mine] - 1);
+    if (next) counts[next] += 1;
+    setError(undefined);
+    setAnswering(p.id);
+    patchPost(p.id, (x) => (x.event ? { ...x, event: { ...x.event, mine: next, counts } } : x));
+    const res = await postJson(`/api/hall-posts/${p.id}/rsvp`, { answer: next });
+    setAnswering(undefined);
+    if (!res.ok) {
+      patchPost(p.id, (x) => ({ ...x, event: before }));
+      setError(res.error?.message ?? 'Your answer did not go through.');
     }
   }
 
@@ -247,9 +270,18 @@ export function FeedSection({
       {isOwner && initialHeld && <HeldTray initial={initialHeld} onApproved={refreshNewest} />}
 
       <section aria-labelledby={headingId} className="flex flex-col gap-4">
-        <h2 id={headingId} className="font-display text-heading text-text-primary">
-          The feed
-        </h2>
+        <div className="flex items-center gap-3">
+          <h2 id={headingId} className="min-w-0 flex-1 font-display text-heading text-text-primary">
+            The feed
+          </h2>
+          <NewEvent<WirePost>
+            townHallId={townHallId}
+            onPosted={(made) => {
+              setPosts((all) => [made, ...all]);
+              toast({ title: 'Event posted.', tone: 'success' });
+            }}
+          />
+        </div>
         {/* One photo per post (ADR-046): the same upload and check as a Post Card's. */}
         <PostCardComposer
           kind="post"
@@ -271,9 +303,21 @@ export function FeedSection({
                 <PostCard
                   noun="Post"
                   author={authorOf(p.author)}
-                  body={p.body}
+                  // An event's name is its words when it has no details: shown once, in the event.
+                  body={p.event && p.body === p.event.title ? '' : p.body}
                   createdAt={p.createdAt}
                   photo={p.photo}
+                  {...(p.event
+                    ? {
+                        attachment: (
+                          <EventBlock
+                            event={p.event}
+                            busy={answering === p.id}
+                            onAnswer={(a) => answer(p, a)}
+                          />
+                        ),
+                      }
+                    : {})}
                   {...(p.id === pinned?.id
                     ? { pinned: true }
                     : p.capsuleSealedAt

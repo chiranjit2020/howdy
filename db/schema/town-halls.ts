@@ -209,3 +209,47 @@ export const townHallReactions = pgTable(
     check('town_hall_reactions_kind_check', sql`${t.kind} in ('yo', 'laugh', 'fire', 'popcorn', 'love')`),
   ],
 );
+
+/**
+ * An event (ADR-056): a group post that is also an invitation, with a name, a start (stored as an instant; shown in
+ * Howdy's calendar, Asia/Kolkata) and an optional place. The post carries any details and its replies and reactions;
+ * deleting the post deletes the event and every answer to it.
+ */
+export const townHallEvents = pgTable(
+  'town_hall_events',
+  {
+    postId: uuid('post_id')
+      .primaryKey()
+      .references(() => townHallPosts.id, { onDelete: 'cascade' }),
+    title: text('title').notNull(),
+    startsAt: tstz('starts_at').notNull(),
+    place: text('place'),
+  },
+  (t) => [
+    check('town_hall_events_title_len', sql`char_length(${t.title}) between 3 and 80`),
+    check('town_hall_events_place_len', sql`${t.place} is null or char_length(${t.place}) between 1 and 80`),
+  ],
+);
+
+/**
+ * One member's answer to an event: going, maybe or can't go (`no`). One per person per event, changeable or taken back.
+ * Read-time rules decide what counts: only answers from current active members.
+ */
+export const townHallRsvps = pgTable(
+  'town_hall_rsvps',
+  {
+    postId: uuid('post_id')
+      .notNull()
+      .references(() => townHallEvents.postId, { onDelete: 'cascade' }),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    answer: text('answer').notNull(),
+    answeredAt: tstz('answered_at').notNull().defaultNow(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.postId, t.userId] }),
+    index('town_hall_rsvps_user_idx').on(t.userId),
+    check('town_hall_rsvps_answer_check', sql`${t.answer} in ('going', 'maybe', 'no')`),
+  ],
+);

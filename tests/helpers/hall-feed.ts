@@ -5,6 +5,8 @@ import { POST as replyRoute } from '@/app/api/hall-posts/[id]/replies/route';
 import { POST as reactRoute } from '@/app/api/hall-posts/[id]/react/route';
 import { POST as approvePostRoute } from '@/app/api/hall-posts/[id]/approve/route';
 import { DELETE as unpinRoute, POST as pinRoute } from '@/app/api/hall-posts/[id]/pin/route';
+import { POST as rsvpRoute } from '@/app/api/hall-posts/[id]/rsvp/route';
+import { POST as eventRoute } from '@/app/api/town-halls/[id]/events/route';
 import { DELETE as removeReplyRoute } from '@/app/api/hall-replies/[id]/route';
 import { POST as approveReplyRoute } from '@/app/api/hall-replies/[id]/approve/route';
 import { POST as reportPostRoute } from '@/app/api/reports/hall-post/[id]/route';
@@ -29,6 +31,16 @@ export interface HallPost {
   canReply: boolean;
   /** The owner or a Deputy, on a published post. */
   canPin?: boolean;
+  /** ADR-056: when the post is an event. */
+  event?: {
+    title: string;
+    startsAt: string;
+    place: string | null;
+    counts: Record<'going' | 'maybe' | 'no', number>;
+    mine: 'going' | 'maybe' | 'no' | null;
+    closed: boolean;
+    answers: Record<'going' | 'maybe' | 'no', { handle: string }[]> | null;
+  } | null;
   reactions: Record<string, number>;
   myReaction: string | null;
   replies: HallReply[];
@@ -76,6 +88,10 @@ export const reply = (postId: string, body: unknown, opts: Opts = {}) =>
   send(replyRoute, 'POST', `/api/hall-posts/${enc(postId)}/replies`, postId, body, opts);
 export const react = (postId: string, body: unknown, opts: Opts = {}) =>
   send(reactRoute, 'POST', `/api/hall-posts/${enc(postId)}/react`, postId, body, opts);
+export const createEvent = (hallId: string, body: unknown, opts: Opts = {}) =>
+  send(eventRoute, 'POST', `/api/town-halls/${enc(hallId)}/events`, hallId, body, opts);
+export const rsvp = (postId: string, answer: unknown, opts: Opts = {}) =>
+  send(rsvpRoute, 'POST', `/api/hall-posts/${enc(postId)}/rsvp`, postId, { answer }, opts);
 export const pin = (id: string, opts: Opts = {}) =>
   send(pinRoute, 'POST', `/api/hall-posts/${enc(id)}/pin`, id, {}, opts);
 export const unpin = (id: string, opts: Opts = {}) =>

@@ -36,6 +36,7 @@ export type {
   TownHallSummary,
 } from './service';
 export {
+  answerEvent,
   approvePost,
   approveReply,
   createPost,
@@ -44,6 +45,7 @@ export {
   hallPostPhotoFor,
   listFeed,
   listHeld,
+  peopleOn,
   pinPost,
   purgeStaleHeld,
   removePost,
@@ -54,6 +56,7 @@ export {
 } from './feed';
 export type {
   HallAuthor,
+  HallEventView,
   HallFeedPage,
   HallPhoto,
   HallPostView,

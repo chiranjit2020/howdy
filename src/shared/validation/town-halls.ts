@@ -102,6 +102,40 @@ export const hallPostBodySchema = clean(LIMITS.TOWNHALL_POST_MAX, 'Write somethi
 /** A post, and optionally one finished photo of mine to go with it (ADR-046). */
 export const hallPostSchema = z.object({ body: hallPostBodySchema, photoId: z.uuid().optional() });
 
+/** An answer to a group event (ADR-056): going, maybe or can't go (`no`). */
+export const RSVP_ANSWERS = ['going', 'maybe', 'no'] as const;
+export type RsvpAnswer = (typeof RSVP_ANSWERS)[number];
+export const rsvpSchema = z.object({ answer: z.enum(RSVP_ANSWERS).nullable() });
+
+/** How far ahead an event may be set. */
+export const EVENT_MAX_AHEAD_MS = 366 * 24 * 60 * 60 * 1000;
+
+const blankToUndefined = (v: unknown) => (typeof v === 'string' && v.trim() === '' ? undefined : v);
+
+/**
+ * A new group event (ADR-056): a name, when it starts (an ISO time with its offset; the form sends Howdy's calendar,
+ * +05:30), an optional place and optional details. It must start in the future and within a year. The name, place
+ * and details get the same screening as a post (no links, no disguising characters).
+ */
+export const createEventSchema = z.object({
+  title: clean(LIMITS.EVENT_TITLE_MAX, 'Say what the event is.', 'An event name').pipe(
+    z.string().min(3, 'At least 3 characters.'),
+  ),
+  startsAt: z
+    .string()
+    .refine(
+      (s) => /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d{1,3})?)?([+-]\d{2}:\d{2}|Z)$/.test(s),
+      'Pick a date and a time.',
+    )
+    .transform((s) => new Date(s))
+    .refine((d) => !Number.isNaN(d.getTime()), 'Pick a date and a time.')
+    .refine((d) => d.getTime() > Date.now(), 'Pick a time that is still to come.')
+    .refine((d) => d.getTime() < Date.now() + EVENT_MAX_AHEAD_MS, 'Pick a date within the next year.'),
+  place: z.preprocess(blankToUndefined, clean(LIMITS.EVENT_PLACE_MAX, 'Say where.', 'A place').optional()),
+  details: z.preprocess(blankToUndefined, hallPostBodySchema.optional()),
+});
+export type CreateEventInput = z.infer<typeof createEventSchema>;
+
 export const hallReplySchema = postReplySchema;
 export const hallReactionSchema = yoSchema;
 export const hallActionSchema = z.object({ action: z.enum(['approve']) });

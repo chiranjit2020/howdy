@@ -13,6 +13,9 @@ export const LIMITS = {
   TOWNHALL_NAME_MAX: 50,
   TOWNHALL_DESCRIPTION_MAX: 280,
   TOWNHALL_POST_MAX: 280,
+  /** A group event's name and place (ADR-056). */
+  EVENT_TITLE_MAX: 80,
+  EVENT_PLACE_MAX: 80,
   HANDLE_MIN: 3,
   HANDLE_MAX: 24,
 } as const;

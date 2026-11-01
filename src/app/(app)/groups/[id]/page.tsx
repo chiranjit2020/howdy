@@ -1,7 +1,15 @@
 import { notFound } from 'next/navigation';
 import { attachPortraits } from '@/app/_lib/social';
 import { requireUser } from '@/modules/auth';
-import { getTownHall, listBans, listFeed, listHeld, listMembers, listRequests } from '@/modules/town-halls';
+import {
+  getTownHall,
+  listBans,
+  listFeed,
+  listHeld,
+  listMembers,
+  listRequests,
+  peopleOn,
+} from '@/modules/town-halls';
 import { TownHallDetailView } from './detail-view';
 
 export const metadata = { title: 'Group', robots: { index: false, follow: false } };
@@ -30,10 +38,7 @@ export default async function TownHallPage({ params }: { params: Promise<{ id: s
     ...(requests ?? []),
     ...(bans ?? []),
     ...(members?.members ?? []),
-    ...[...(feed?.pinned ? [feed.pinned] : []), ...(feed?.posts ?? [])].flatMap((p) => [
-      p.author,
-      ...p.replies.map((r) => r.author),
-    ]),
+    ...peopleOn([...(feed?.pinned ? [feed.pinned] : []), ...(feed?.posts ?? [])]),
     ...[...(held?.posts ?? []), ...(held?.replies ?? [])].map((h) => h.author),
   ]);
 

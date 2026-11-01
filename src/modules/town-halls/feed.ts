@@ -1,9 +1,11 @@
 import {
   media,
+  townHallEvents,
   townHallMembers,
   townHallPosts,
   townHallReactions,
   townHallReplies,
+  townHallRsvps,
   townHalls,
   users,
 } from '@db/schema';
@@ -24,7 +26,12 @@ import {
 } from '@/shared/validation/fence';
 import { leadingMention } from '@/shared/mentions';
 import type { PortraitTint } from '@/shared/validation/profile';
-import { HALL_FEED_MAX_PAGE_SIZE, HALL_FEED_PAGE_SIZE } from '@/shared/validation/town-halls';
+import {
+  HALL_FEED_MAX_PAGE_SIZE,
+  HALL_FEED_PAGE_SIZE,
+  RSVP_ANSWERS,
+  type RsvpAnswer,
+} from '@/shared/validation/town-halls';
 import { activeRole, isStaff, outranks, rolesIn, type HallRole } from './roles';
 
 /**
@@ -107,6 +114,21 @@ export interface HallReplyView {
   canRemove: boolean;
 }
 
+/** A group event as one member sees it (ADR-056). */
+export interface HallEventView {
+  title: string;
+  startsAt: Date;
+  place: string | null;
+  /** How many current members answered each way. Numbers for everyone. */
+  counts: Record<RsvpAnswer, number>;
+  /** My own answer, if any. */
+  mine: RsvpAnswer | null;
+  /** It has started: answers are closed. */
+  closed: boolean;
+  /** Who answered what: for the organiser (the post's writer) alone; null for everyone else. */
+  answers: Record<RsvpAnswer, HallAuthor[]> | null;
+}
+
 export interface HallPostView {
   id: string;
   body: string;
@@ -118,6 +140,8 @@ export interface HallPostView {
   canReply: boolean;
   /** May this viewer pin it to the top of the feed (the owner or a Deputy, a published post)? */
   canPin: boolean;
+  /** When this post is an event (ADR-056): its details and answers. */
+  event: HallEventView | null;
   /** Its photo (ADR-046), when it has one this viewer may see. */
   photo: HallPhoto | null;
   /** Set when this post is a Time Capsule that opened (ADR-043): when its words were sealed. */
@@ -234,7 +258,7 @@ async function hydrate(
   if (rows.length === 0) return [];
   const db = getDb();
   const ids = rows.map((r) => r.id);
-  const [counts, mine, replyRows, photos] = await Promise.all([
+  const [counts, mine, replyRows, photos, events] = await Promise.all([
     db
       .select({ postId: townHallReactions.postId, kind: townHallReactions.kind, n: count() })
       .from(townHallReactions)
@@ -257,6 +281,7 @@ async function hydrate(
       // Replies per post are capped at write time; this only bounds the read.
       .limit(ids.length * (REPLIES_PER_CARD + 5)),
     photosOn(viewerId, ids),
+    eventsOn(viewerId, hall.id, rows),
   ]);
 
   const replyAuthorIds = replyRows.map((r) => r.authorId);
@@ -312,6 +337,7 @@ async function hydrate(
         canReact: published && row.authorId !== viewerId,
         canReply: published,
         canPin: published && isStaff(hall.myRole),
+        event: events.get(row.id) ?? null,
         photo: photos.get(row.id) ?? null,
         capsuleSealedAt: row.capsuleSealedAt,
         reactions: reactionsByPost.get(row.id) ?? emptyReactions(),
@@ -472,6 +498,8 @@ export async function createPost(
   townHallId: string,
   body: string,
   photoId?: string,
+  /** Makes the post an event (ADR-056): written with it, in the same transaction, or not at all. */
+  event?: { title: string; startsAt: Date; place?: string | undefined },
 ): Promise<HallPostView> {
   // Spent before the Town Hall is looked up: the same limit trips whether it exists, is hidden or is made up.
   await enforceRateLimit(`townhalls:post:${userId}`, FEED_RATE.post);
@@ -486,6 +514,14 @@ export async function createPost(
       .insert(townHallPosts)
       .values({ townHallId: hall.id, authorId: userId, body, status, createdAt: new Date() })
       .returning();
+    if (event) {
+      await tx.insert(townHallEvents).values({
+        postId: post!.id,
+        title: event.title,
+        startsAt: event.startsAt,
+        place: event.place ?? null,
+      });
+    }
     if (photoId) {
       // Only MY finished photo, on no card and no other post yet, and young enough that the clean-up cannot take it.
       const attached = await tx
@@ -820,3 +856,112 @@ export async function purgeStaleHeld(now: Date = new Date()): Promise<{ posts: n
     .returning({ id: townHallPosts.id });
   return { posts: posts.length, replies: replies.length };
 }
+
+const emptyAnswers = <T>(make: () => T): Record<RsvpAnswer, T> =>
+  Object.fromEntries(RSVP_ANSWERS.map((a) => [a, make()])) as Record<RsvpAnswer, T>;
+const isAnswer = (a: string): a is RsvpAnswer => (RSVP_ANSWERS as readonly string[]).includes(a);
+
+/**
+ * The events among these posts, as this viewer sees them (ADR-056). Only answers from people who are still active
+ * members count (decided now, not when they answered). The names go to the organiser alone, without anyone they have
+ * hidden or any account that is no longer active.
+ */
+async function eventsOn(
+  viewerId: string,
+  hallId: string,
+  rows: PostRow[],
+): Promise<Map<string, HallEventView>> {
+  const ids = rows.map((r) => r.id);
+  const out = new Map<string, HallEventView>();
+  if (ids.length === 0) return out;
+  const db = getDb();
+  const events = await db.select().from(townHallEvents).where(inArray(townHallEvents.postId, ids));
+  if (events.length === 0) return out;
+  const answers = await db
+    .select({ postId: townHallRsvps.postId, userId: townHallRsvps.userId, answer: townHallRsvps.answer })
+    .from(townHallRsvps)
+    .innerJoin(
+      townHallMembers,
+      and(
+        eq(townHallMembers.townHallId, hallId),
+        eq(townHallMembers.userId, townHallRsvps.userId),
+        eq(townHallMembers.status, 'active'),
+      ),
+    )
+    .where(
+      inArray(
+        townHallRsvps.postId,
+        events.map((e) => e.postId),
+      ),
+    )
+    .orderBy(asc(townHallRsvps.answeredAt));
+  const writerOf = new Map(rows.map((r) => [r.id, r.authorId]));
+  const organised = events.filter((e) => writerOf.get(e.postId) === viewerId).map((e) => e.postId);
+  const nameIds = [...new Set(answers.filter((a) => organised.includes(a.postId)).map((a) => a.userId))];
+  const [cards, hidden] = nameIds.length
+    ? await Promise.all([getCards(nameIds), hiddenAuthors(viewerId, nameIds)])
+    : [new Map<string, PersonCard>(), new Set<string>()];
+  const now = Date.now();
+  for (const e of events) {
+    const mineHere = organised.includes(e.postId);
+    const view: HallEventView = {
+      title: e.title,
+      startsAt: e.startsAt,
+      place: e.place,
+      counts: emptyAnswers(() => 0),
+      mine: null,
+      closed: e.startsAt.getTime() <= now,
+      answers: mineHere ? emptyAnswers<HallAuthor[]>(() => []) : null,
+    };
+    for (const a of answers) {
+      if (a.postId !== e.postId || !isAnswer(a.answer)) continue;
+      view.counts[a.answer] += 1;
+      if (a.userId === viewerId) view.mine = a.answer;
+      const card = cards.get(a.userId);
+      if (view.answers && card && !hidden.has(a.userId)) view.answers[a.answer].push(toAuthor(card));
+    }
+    out.set(e.postId, view);
+  }
+  return out;
+}
+
+/**
+ * Answer a group event (ADR-056): going, maybe or can't go, or `null` to take the answer back. Active members who may
+ * see the post only (anyone else, or a post that is not an event, gets the same 404), on a published event that has not
+ * started yet. Nobody is told; the organiser sees the names next time they look.
+ */
+export async function answerEvent(userId: string, postId: string, answer: RsvpAnswer | null): Promise<void> {
+  await enforceRateLimit(`townhalls:rsvp:${userId}`, FEED_RATE.react);
+  const found = await loadPost(userId, postId);
+  if (!found || found.post.status !== 'published') throw new AppError('NOT_FOUND');
+  const [event] = await getDb()
+    .select({ startsAt: townHallEvents.startsAt })
+    .from(townHallEvents)
+    .where(eq(townHallEvents.postId, postId))
+    .limit(1);
+  if (!event) throw new AppError('NOT_FOUND');
+  if (event.startsAt.getTime() <= Date.now()) {
+    throw new AppError('BAD_REQUEST', { message: 'This event has started, so answers are closed.' });
+  }
+  if (answer === null) {
+    await getDb()
+      .delete(townHallRsvps)
+      .where(and(eq(townHallRsvps.postId, postId), eq(townHallRsvps.userId, userId)));
+    return;
+  }
+  await getDb()
+    .insert(townHallRsvps)
+    .values({ postId, userId, answer, answeredAt: new Date() })
+    .onConflictDoUpdate({
+      target: [townHallRsvps.postId, townHallRsvps.userId],
+      set: { answer, answeredAt: new Date() },
+    });
+}
+
+/** Everyone a page of posts shows: writers, repliers and (for an organiser) who answered their events. For photos. */
+export const peopleOn = (posts: HallPostView[]): HallAuthor[] =>
+  posts.flatMap((p) => [
+    p.author,
+    ...p.replies.map((r) => r.author),
+    ...(p.event?.answers ? RSVP_ANSWERS.flatMap((a) => p.event!.answers![a]) : []),
+  ]);

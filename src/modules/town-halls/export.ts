@@ -1,9 +1,11 @@
 import {
   media,
   townHallMembers,
+  townHallEvents,
   townHallPosts,
   townHallReactions,
   townHallReplies,
+  townHallRsvps,
   townHalls,
 } from '@db/schema';
 import { and, asc, eq, inArray } from 'drizzle-orm';
@@ -24,10 +26,17 @@ export interface HallExport {
   visibility: string;
   role: 'owner' | 'deputy' | 'member';
   joinedAt: Date;
-  /** `photoId`: my own photo on the post (ADR-046), when it has one. */
-  posts: { body: string; postedAt: Date; photoId: string | null }[];
+  /** `photoId`: my own photo on the post (ADR-046), when it has one. `event`: when the post is an event (ADR-056). */
+  posts: {
+    body: string;
+    postedAt: Date;
+    photoId: string | null;
+    event: { title: string; startsAt: Date; place: string | null } | null;
+  }[];
   replies: { body: string; postedAt: Date }[];
   reactions: { kind: string; givenAt: Date }[];
+  /** My answers to events (going, maybe, no). */
+  eventAnswers: { event: string; answer: string; answeredAt: Date }[];
 }
 
 export async function townHallsExport(userId: string): Promise<HallExport[]> {
@@ -49,19 +58,23 @@ export async function townHallsExport(userId: string): Promise<HallExport[]> {
   if (halls.length === 0) return [];
   const ids = halls.map((h) => h.id);
 
-  const [posts, replies, reactions] = await Promise.all([
+  const [posts, replies, reactions, answers] = await Promise.all([
     db
       .select({
         hallId: townHallPosts.townHallId,
         body: townHallPosts.body,
         createdAt: townHallPosts.createdAt,
         photoId: media.id,
+        eventTitle: townHallEvents.title,
+        eventStartsAt: townHallEvents.startsAt,
+        eventPlace: townHallEvents.place,
       })
       .from(townHallPosts)
       .leftJoin(
         media,
         and(eq(media.hallPostId, townHallPosts.id), eq(media.kind, 'card_photo'), eq(media.status, 'ready')),
       )
+      .leftJoin(townHallEvents, eq(townHallEvents.postId, townHallPosts.id))
       .where(and(eq(townHallPosts.authorId, userId), inArray(townHallPosts.townHallId, ids)))
       .orderBy(asc(townHallPosts.createdAt))
       .limit(EXPORT_CAP),
@@ -87,6 +100,19 @@ export async function townHallsExport(userId: string): Promise<HallExport[]> {
       .where(and(eq(townHallReactions.userId, userId), inArray(townHallPosts.townHallId, ids)))
       .orderBy(asc(townHallReactions.createdAt))
       .limit(EXPORT_CAP),
+    db
+      .select({
+        hallId: townHallPosts.townHallId,
+        event: townHallEvents.title,
+        answer: townHallRsvps.answer,
+        answeredAt: townHallRsvps.answeredAt,
+      })
+      .from(townHallRsvps)
+      .innerJoin(townHallEvents, eq(townHallEvents.postId, townHallRsvps.postId))
+      .innerJoin(townHallPosts, eq(townHallPosts.id, townHallRsvps.postId))
+      .where(and(eq(townHallRsvps.userId, userId), inArray(townHallPosts.townHallId, ids)))
+      .orderBy(asc(townHallRsvps.answeredAt))
+      .limit(EXPORT_CAP),
   ]);
 
   return halls.map((h) => ({
@@ -97,10 +123,21 @@ export async function townHallsExport(userId: string): Promise<HallExport[]> {
     joinedAt: h.joinedAt,
     posts: posts
       .filter((p) => p.hallId === h.id)
-      .map((p) => ({ body: p.body, postedAt: p.createdAt, photoId: p.photoId })),
+      .map((p) => ({
+        body: p.body,
+        postedAt: p.createdAt,
+        photoId: p.photoId,
+        event:
+          p.eventTitle && p.eventStartsAt
+            ? { title: p.eventTitle, startsAt: p.eventStartsAt, place: p.eventPlace }
+            : null,
+      })),
     replies: replies.filter((r) => r.hallId === h.id).map((r) => ({ body: r.body, postedAt: r.createdAt })),
     reactions: reactions
       .filter((r) => r.hallId === h.id)
       .map((r) => ({ kind: r.kind, givenAt: r.createdAt })),
+    eventAnswers: answers
+      .filter((a) => a.hallId === h.id)
+      .map((a) => ({ event: a.event, answer: a.answer, answeredAt: a.answeredAt })),
   }));
 }

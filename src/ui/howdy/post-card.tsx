@@ -382,6 +382,8 @@ export interface PostCardProps {
   stamp?: string;
   /** A group's pinned notice (ADR-055): a sunflower "Pinned" badge in the header, instead of a stamp. */
   pinned?: boolean;
+  /** Something the post carries above its words: a group event's details and answers (ADR-056). */
+  attachment?: ReactNode;
   /** Reactions per kind (counts only). */
   reactions: Record<ReactionKind, number>;
   /** The viewer's own reaction, if any. */
@@ -470,6 +472,7 @@ export function PostCard({
   createdAt,
   stamp,
   pinned,
+  attachment,
   reactions,
   myReaction,
   onReact,
@@ -572,7 +575,8 @@ export function PostCard({
             )}
             {actions}
           </header>
-          <p className="text-body break-words whitespace-pre-wrap text-text-primary">{body}</p>
+          {attachment}
+          {body && <p className="text-body break-words whitespace-pre-wrap text-text-primary">{body}</p>}
           {photo && (
             <PostPhoto
               photo={photo}
