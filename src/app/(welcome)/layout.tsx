@@ -5,5 +5,5 @@ import type { ReactNode } from 'react';
  * Always Daylight, like the app itself, so it looks exactly like what they will step into.
  */
 export default function WelcomeLayout({ children }: { children: ReactNode }) {
-  return <div className="daylight-only min-h-dvh overflow-x-clip bg-background">{children}</div>;
+  return <div className="daylight-only min-h-dvh overflow-x-clip bg-surface">{children}</div>;
 }

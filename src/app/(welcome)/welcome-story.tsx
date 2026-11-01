@@ -21,14 +21,13 @@ import {
   GoQuote,
   GoShieldCheck,
 } from 'react-icons/go';
-import { ReactionEmoji } from '@/ui/art/emoji';
 import { Img } from '@/ui/art/img';
 import { cn } from '@/ui/cn';
 import { buttonClasses } from '@/ui/primitives';
 import { ShareButton } from './welcome/share-button';
 
-/** The soft tints the app uses for its tiles, in turn; each holds a line icon (Octicons, like the app). */
-const TINTS = ['bg-accent-soft', 'bg-success', 'bg-warning', 'bg-info', 'bg-mystery'] as const;
+/** Every icon tile: sunflower with a violet line icon (Octicons, like the app). The page is white and light sunflower. */
+const TILE = 'bg-primary text-on-primary';
 
 type Icon = ComponentType<IconBaseProps>;
 
@@ -125,7 +124,7 @@ function Section({
     <section
       id={id}
       aria-labelledby={`${id ?? kicker}-title`}
-      className="mx-auto w-full max-w-6xl scroll-mt-6 px-4 py-14 sm:px-6 sm:py-20"
+      className="mx-auto w-full max-w-6xl scroll-mt-6 px-4 py-10 sm:px-6 sm:py-14"
     >
       <p className="tabular-nums text-metadata tracking-widest text-text-muted uppercase">{kicker}</p>
       <h2
@@ -134,75 +133,33 @@ function Section({
       >
         {title}
       </h2>
-      <div className="mt-8 sm:mt-10">{children}</div>
+      <div className="mt-6 sm:mt-8">{children}</div>
     </section>
   );
 }
 
-/** A peek at the app, built from the same clay pieces it uses: a Post Card, a Whisper and a Chime. */
-function PhonePeek() {
+/** Where the illustrations come from (Magnific, free licence: the credit must stay on the page while they are used). */
+const ILLUSTRATIONS = [
+  'https://www.magnific.com/free-vector/hand-drawn-iranian-women-illustration_33179751.htm',
+  'https://www.magnific.com/free-vector/hand-drawn-iranian-women-illustration_33179743.htm',
+];
+
+/** The hero's picture: someone at their desk, with a soft sunflower sun behind her. Decorative. */
+function HeroArt() {
   return (
     <div
-      role="img"
-      aria-label="A peek at Howdy: a post with reactions, a private message, and a notification saying a friend described you."
-      className="relative mx-auto w-full max-w-[22rem] lg:max-w-[25rem]"
+      aria-hidden="true"
+      className="relative mx-auto w-full max-w-[17rem] sm:max-w-[26rem] lg:max-w-[30rem]"
     >
-      <div
-        aria-hidden="true"
-        className="relative flex flex-col gap-3 rounded-xl border-[6px] border-surface bg-surface-sunken p-3 shadow-float"
-      >
-        {/* Post Card */}
-        <div className="clay flex flex-col gap-3 p-4">
-          <div className="flex items-center gap-3">
-            <span className="flex size-10 items-center justify-center rounded-pill bg-accent-soft text-caption font-bold text-text-primary">
-              ME
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="text-caption font-semibold text-text-primary">Meera</p>
-              <p className="text-metadata text-text-muted">@meera · just now</p>
-            </div>
-            <span className="rounded-sm border-2 border-dashed border-border-strong px-2 py-0.5 tabular-nums text-metadata text-text-secondary">
-              Wall
-            </span>
-          </div>
-          <p className="text-body text-text-primary">
-            Chai on the porch at 6? Bring the guitar, I’ll bring the samosas.
-          </p>
-          <div className="flex items-center gap-2">
-            {(['yo', 'fire', 'love', 'laugh'] as const).map((r, i) => (
-              <span
-                key={r}
-                className="flex items-center gap-1 rounded-pill bg-surface-sunken px-2 py-1 text-metadata font-semibold text-text-secondary"
-              >
-                <ReactionEmoji kind={r} loading="eager" />
-                {[4, 3, 6, 2][i]}
-              </span>
-            ))}
-          </div>
-        </div>
-
-        {/* Whisper */}
-        <div className="clay flex flex-col gap-2 p-4">
-          <p className="flex items-center gap-2 text-caption font-semibold text-text-primary">
-            <GoCommentDiscussion aria-hidden="true" className="size-4 text-text-secondary" /> Messages · Arjun
-          </p>
-          <p className="max-w-[85%] self-start rounded-lg rounded-bl-sm bg-surface-sunken px-3 py-2 text-caption text-text-primary">
-            Saw you’re free to talk. Still up?
-          </p>
-          <p className="max-w-[85%] self-end rounded-lg rounded-br-sm bg-accent-strong px-3 py-2 text-caption text-on-accent">
-            Always, for you 😄
-          </p>
-          <p className="self-end tabular-nums text-metadata text-text-muted">11:02 PM · Seen</p>
-        </div>
-
-        {/* Chime */}
-        <div className="flex items-center gap-3 rounded-pill bg-island px-4 py-2.5 text-on-island shadow-float">
-          <span aria-hidden="true" className="text-title leading-none">
-            💎
-          </span>
-          <p className="text-caption font-medium">Kavya described you on Howdy</p>
-        </div>
-      </div>
+      <div className="absolute inset-x-[8%] top-[6%] aspect-square rounded-pill bg-highlight/35" />
+      <Img
+        src="/illustrations/welcome-hero.webp"
+        width={947}
+        height={1100}
+        alt=""
+        loading="eager"
+        className="relative h-auto w-full"
+      />
     </div>
   );
 }
@@ -239,7 +196,7 @@ export function WelcomeStory({ invite }: { invite?: { code: string; invitedBy: s
 
       <main id="main">
         {/* The first screen: the promise, the way in, and a peek at the real thing. */}
-        <section className="mx-auto grid w-full max-w-6xl items-center gap-14 px-4 pt-6 pb-16 sm:px-6 lg:grid-cols-[1.1fr_1fr] lg:gap-10 lg:pt-12 lg:pb-24">
+        <section className="mx-auto grid w-full max-w-6xl items-center gap-8 px-4 pt-4 pb-10 sm:px-6 lg:grid-cols-[1.1fr_1fr] lg:gap-10 lg:pt-6 lg:pb-12">
           <div className="flex flex-col items-start gap-6 motion-safe:animate-rise">
             <p className="flex items-center gap-2 rounded-pill bg-surface px-3 py-1.5 text-caption font-semibold text-text-secondary shadow-clay-sm">
               {invite ? `${invite.invitedBy} invited you to Howdy` : 'A small-circle social world'}
@@ -268,12 +225,12 @@ export function WelcomeStory({ invite }: { invite?: { code: string; invitedBy: s
             </p>
           </div>
           <div className="motion-safe:animate-rise">
-            <PhonePeek />
+            <HeroArt />
           </div>
         </section>
 
         {/* Why it is different. */}
-        <div className="bg-parchment">
+        <div className="bg-primary-soft">
           <Section kicker="Why Howdy" title="Social media, minus everything that made you tired of it.">
             <ul className="grid gap-4 sm:grid-cols-3">
               {(
@@ -294,10 +251,10 @@ export function WelcomeStory({ invite }: { invite?: { code: string; invitedBy: s
                     'A “no” is never announced, blocks never show, and read receipts are a switch you control.',
                   ],
                 ] as const
-              ).map(([WhyIcon, name, text], i) => (
+              ).map(([WhyIcon, name, text]) => (
                 <li key={name} className="clay flex flex-col gap-3 p-6">
-                  <span className={cn('flex size-12 items-center justify-center rounded-lg', TINTS[i])}>
-                    <WhyIcon aria-hidden="true" className="size-6 text-text-primary" />
+                  <span className={cn('flex size-12 items-center justify-center rounded-lg', TILE)}>
+                    <WhyIcon aria-hidden="true" className="size-6" />
                   </span>
                   <h3 className="text-title text-text-primary">{name}</h3>
                   <p className="text-body text-text-secondary">{text}</p>
@@ -308,17 +265,12 @@ export function WelcomeStory({ invite }: { invite?: { code: string; invitedBy: s
         </div>
 
         {/* What is built. */}
-        <Section id="tour" kicker="Free to talk now" title="Everything here is built and working right now.">
+        <Section id="tour" kicker="What’s inside" title="Everything here is built and working right now.">
           <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {FEATURES.map((f, i) => (
+            {FEATURES.map((f) => (
               <li key={f.name} className="clay flex gap-4 p-5">
-                <span
-                  className={cn(
-                    'flex size-14 shrink-0 items-center justify-center rounded-lg',
-                    TINTS[i % TINTS.length],
-                  )}
-                >
-                  <f.icon aria-hidden="true" className="size-6 text-text-primary" />
+                <span className={cn('flex size-12 shrink-0 items-center justify-center rounded-lg', TILE)}>
+                  <f.icon aria-hidden="true" className="size-6" />
                 </span>
                 <div className="flex min-w-0 flex-col gap-1">
                   <h3 className="text-title text-text-primary">{f.name}</h3>
@@ -330,8 +282,8 @@ export function WelcomeStory({ invite }: { invite?: { code: string; invitedBy: s
         </Section>
 
         {/* Safety. */}
-        <div className="bg-surface-sunken">
-          <Section kicker="Around the campfire" title="Safe and private, from the first line of code.">
+        <div className="bg-primary-soft">
+          <Section kicker="Safety" title="Safe and private, from the first line of code.">
             <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {SAFETY.map((s) => (
                 <li key={s.text} className="flex items-center gap-4 rounded-lg bg-surface p-4 shadow-clay-sm">
@@ -346,7 +298,7 @@ export function WelcomeStory({ invite }: { invite?: { code: string; invitedBy: s
         </div>
 
         {/* What is next. */}
-        <Section kicker="Still on the trail" title="Howdy is young. Here is what comes next.">
+        <Section kicker="What’s next" title="Howdy is young. Here is what comes next.">
           <ol className="relative flex max-w-3xl flex-col gap-4 border-l-2 border-dashed border-border-strong pl-6 sm:pl-8">
             {AHEAD.map((a) => (
               <li key={a.name} className="relative">
@@ -371,7 +323,15 @@ export function WelcomeStory({ invite }: { invite?: { code: string; invitedBy: s
           aria-labelledby="join-title"
           className="mx-auto w-full max-w-6xl px-4 pb-16 sm:px-6 sm:pb-24"
         >
-          <div className="clay relative flex flex-col items-center gap-5 overflow-hidden bg-accent-soft px-6 py-12 text-center sm:py-16">
+          <div className="clay relative flex flex-col items-center gap-5 overflow-hidden bg-primary-soft px-6 py-12 text-center sm:py-16">
+            <Img
+              src="/illustrations/welcome-skate.webp"
+              width={837}
+              height={1000}
+              alt=""
+              aria-hidden="true"
+              className="-mt-4 h-auto w-36 sm:-mt-6 sm:w-48"
+            />
             <h2
               id="join-title"
               className="font-display text-[clamp(2rem,1.4rem+2.6vw,3.25rem)] leading-tight font-semibold text-text-primary"
@@ -394,7 +354,19 @@ export function WelcomeStory({ invite }: { invite?: { code: string; invitedBy: s
 
       <footer className="border-t border-border">
         <div className="mx-auto flex w-full max-w-6xl flex-col items-center justify-between gap-3 px-4 py-6 text-caption text-text-muted sm:flex-row sm:px-6">
-          <p>© 2026 Howdy · Made in India by Chiranjit Karmakar</p>
+          <p className="text-center sm:text-left">
+            © 2026 Howdy · Made in India by Chiranjit Karmakar
+            <span className="block text-metadata">
+              Illustrations from Magnific:{' '}
+              <a href={ILLUSTRATIONS[0]} target="_blank" rel="noopener noreferrer" className="underline">
+                at the desk
+              </a>
+              ,{' '}
+              <a href={ILLUSTRATIONS[1]} target="_blank" rel="noopener noreferrer" className="underline">
+                on the skateboard
+              </a>
+            </span>
+          </p>
           <nav
             aria-label="Legal"
             className="flex flex-wrap justify-center gap-x-4 [&>a]:inline-flex [&>a]:min-h-11 [&>a]:items-center"
