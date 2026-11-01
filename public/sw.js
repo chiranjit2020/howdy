@@ -29,7 +29,7 @@ self.addEventListener('push', (event) => {
         body,
         tag,
         renotify: true,
-        icon: '/icons/icon-192.png',
+        icon: '/icons/howdy-h-192.png',
         data: { url: safePath(data.url) },
       }),
       // The number on the app icon, where the platform shows one (Android shows a dot for any notification).
