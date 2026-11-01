@@ -248,6 +248,29 @@ export async function friendIdsOf(userId: string, max = 500): Promise<string[]> 
 }
 
 /**
+ * The people this person follows (Scouting; ADR-053), newest first. Following lets nothing new through: Home's feed
+ * still checks each of their walls by its own read rule, so a wall the follower may not read adds nothing.
+ */
+export async function followedIdsOf(userId: string, max = 500): Promise<string[]> {
+  const rows = await getDb()
+    .select({ id: scouts.scouteeId })
+    .from(scouts)
+    .where(eq(scouts.scoutId, userId))
+    .orderBy(desc(scouts.createdAt))
+    .limit(max);
+  return rows.map((r) => r.id);
+}
+
+/**
+ * How many people follow this person: shown to them alone, never to visitors (ADR-053). A number, never who. Deleted
+ * accounts take their follows with them and a block removes any follow either way, so the rows are the count.
+ */
+export async function followerCountOf(userId: string): Promise<number> {
+  const [row] = await getDb().select({ n: count() }).from(scouts).where(eq(scouts.scouteeId, userId));
+  return row?.n ?? 0;
+}
+
+/**
  * Who has asked to be `userId`'s friend and is still waiting for an answer (at most `max`): the same requests the Friends
  * page lists under "Requests for you". The caller drops accounts that are no longer active, as that page does.
  */

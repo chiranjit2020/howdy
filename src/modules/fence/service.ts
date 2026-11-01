@@ -9,7 +9,13 @@ import {
   resolveHandle,
   type PersonCard,
 } from '@/modules/profiles';
-import { fenceStanding, fenceStandings, friendIdsOf, hiddenAuthors } from '@/modules/relationships';
+import {
+  fenceStanding,
+  fenceStandings,
+  followedIdsOf,
+  friendIdsOf,
+  hiddenAuthors,
+} from '@/modules/relationships';
 import { getDb } from '@/platform/db';
 import { AppError } from '@/platform/errors';
 import { emit } from '@/platform/events';
@@ -416,7 +422,8 @@ export interface FeedPage {
 }
 
 /**
- * Home's feed: the newest published cards on the walls of the viewer's friends, and on the viewer's own wall. A wall is
+ * Home's feed: the newest published cards on the walls of the viewer's friends and on the viewer's own wall, plus what
+ * people the viewer follows (and is not friends with) wrote on their own walls (ADR-053). A wall is
  * included only if the viewer may read it by exactly the rule its own page uses (canFence 'fence:read', asked for each
  * wall; the wall settings and the viewer's standings come in two batched queries). Within those walls the same people
  * are left out as on a Fence page: anyone the viewer muted or is in a block with, and accounts no longer active.
@@ -435,8 +442,12 @@ export async function listFriendsFeed(
   const limit = Math.min(Math.max(opts.limit ?? FENCE_PAGE_SIZE, 1), FENCE_MAX_PAGE_SIZE);
   const viewer = actorOf(viewerId);
 
-  // Which walls the viewer may read: their friends' and their own, each checked like its own page checks it.
-  const owners = [viewerId, ...(await friendIdsOf(viewerId))];
+  // Which walls the viewer may read: their own, their friends' and the people they follow, each checked like its own
+  // page checks it. Following lets nothing through that the wall's page would not show.
+  const [friends, followed] = await Promise.all([friendIdsOf(viewerId), followedIdsOf(viewerId)]);
+  const whole = new Set([viewerId, ...friends]);
+  const followOnly = followed.filter((id) => !whole.has(id));
+  const owners = [...whole, ...followOnly];
   const [fences, standings] = await Promise.all([
     getFenceResources(owners),
     fenceStandings(owners, viewerId),
@@ -448,7 +459,16 @@ export async function listFriendsFeed(
     if (fence && ctx && canFence(viewer, 'fence:read', fence, ctx).allow) walls.set(id, { fence, ctx });
   }
   if (walls.size === 0) return { cards: [], nextCursor: null };
-  const readable = [...walls.keys()];
+  // A friend's wall (and your own) comes whole; from someone you only follow, just what they wrote themselves — you follow
+  // them, not everyone who writes on their wall.
+  const wholeWalls = [...walls.keys()].filter((id) => whole.has(id));
+  const ownPostsOnly = [...walls.keys()].filter((id) => !whole.has(id));
+  const wallFilter = or(
+    wholeWalls.length > 0 ? inArray(postCards.fenceOwnerId, wholeWalls) : undefined,
+    ownPostsOnly.length > 0
+      ? and(inArray(postCards.fenceOwnerId, ownPostsOnly), eq(postCards.authorId, postCards.fenceOwnerId))
+      : undefined,
+  );
 
   const kept: CardRow[] = [];
   const keptAuthors = new Map<string, PersonCard>();
@@ -460,7 +480,7 @@ export async function listFriendsFeed(
       .from(postCards)
       .where(
         and(
-          inArray(postCards.fenceOwnerId, readable),
+          wallFilter,
           eq(postCards.status, 'published'),
           position
             ? sql`(${postCards.createdAt}, ${postCards.id}) < (${position.at}, ${position.id})`

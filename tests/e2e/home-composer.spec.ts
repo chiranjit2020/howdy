@@ -66,20 +66,20 @@ test('one line until clicked; opens, posts, closes again; a photo from the one-l
   await expect(post).toBeVisible();
   expect(await height()).toBeGreaterThan(44);
   expect(await axeViolations(page)).toEqual([]);
-  await page.getByRole('heading', { name: 'Friends’ posts' }).click();
+  await page.getByRole('heading', { name: 'Posts', exact: true }).click();
   await expect(post).toHaveCount(0);
 
   // Words keep it open even after leaving it; posting puts the post in the feed.
   await box.click();
   await box.fill('Chai on the balcony');
-  await page.getByRole('heading', { name: 'Friends’ posts' }).click();
+  await page.getByRole('heading', { name: 'Posts', exact: true }).click();
   await expect(post).toBeVisible();
   await post.click();
   await expect(page.getByRole('article').filter({ hasText: 'Chai on the balcony' })).toBeVisible();
   await expect(box).toHaveValue('');
 
   // Back to one line; a photo chosen from the camera opens it, with the words box ready for a caption.
-  await page.getByRole('heading', { name: 'Friends’ posts' }).click();
+  await page.getByRole('heading', { name: 'Posts', exact: true }).click();
   await expect(post).toHaveCount(0);
   const preview = page.getByAltText('The photo you chose for this card');
   await expect(async () => {

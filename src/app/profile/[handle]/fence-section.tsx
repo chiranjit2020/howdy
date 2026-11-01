@@ -214,7 +214,7 @@ export function FenceSection({
 
   return (
     <>
-      {/* In the feed, "What's on your mind?" comes first and the "Friends' posts" heading sits over the posts it names;
+      {/* In the feed, "What's on your mind?" comes first and the "Posts" heading sits over the posts it names;
         on a wall, the composer belongs under "The wall". */}
       {feed && composer}
       <Fence
@@ -222,10 +222,10 @@ export function FenceSection({
         hasMore={next !== null}
         onLoadMore={loadMore}
         loadingMore={loadingMore}
-        {...(feed ? { title: 'Friends’ posts' } : {})}
+        {...(feed ? { title: 'Posts' } : {})}
         emptyHint={
           feed
-            ? 'Nothing from your friends yet. Write on a friend’s wall to get things going.'
+            ? 'Nothing from your friends or people you follow yet. Write on a friend’s wall to get things going.'
             : initial.canPost
               ? 'The wall is quiet. Write the first post.'
               : 'The wall is quiet for now.'

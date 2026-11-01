@@ -7,6 +7,8 @@ export {
   act,
   fenceStanding,
   fenceStandings,
+  followedIdsOf,
+  followerCountOf,
   friendIdsOf,
   getRelationshipView,
   hasLimited,

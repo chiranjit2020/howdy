@@ -28,6 +28,8 @@ export interface RanchHeaderProps {
    * else's friends are shown on a profile, their number included (nobody competes for numbers).
    */
   friendCount?: number;
+  /** How many people follow you (ADR-053): your own profile only, shown once there is anyone. Never who. */
+  followerCount?: number;
   /** Something on the picture's lower right edge: on your own profile, the camera that changes it. */
   portraitAction?: ReactNode;
   /** The words friends picked most (ADR-052), already worded ("Chill · Sharp"): "Friends say: …" under the username. */
@@ -48,6 +50,7 @@ export function RanchHeader({
   verified,
   trusted,
   friendCount,
+  followerCount,
   portraitAction,
   describedAs,
 }: RanchHeaderProps) {
@@ -71,6 +74,12 @@ export function RanchHeader({
                 <Link href="/friends" className="font-semibold text-text-secondary">
                   {friendCount} {friendCount === 1 ? 'friend' : 'friends'}
                 </Link>
+              </>
+            )}
+            {followerCount !== undefined && followerCount > 0 && (
+              <>
+                {' · '}
+                {followerCount.toLocaleString('en-IN')} {followerCount === 1 ? 'follower' : 'followers'}
               </>
             )}
           </p>

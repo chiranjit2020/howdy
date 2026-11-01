@@ -1,14 +1,15 @@
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { GET as feedRoute } from '@/app/api/feed/route';
+import { followerCountOf } from '@/modules/relationships';
 import { getPool } from '@/platform/db';
 import { call, freshAuthState, signedInUser, uniqueUser, type TestKit } from '../helpers/auth';
 import { fenceOf, nail } from '../helpers/fence';
 import { patchRanch } from '../helpers/ranch';
-import { doAct } from '../helpers/social';
+import { doAct, userId } from '../helpers/social';
 
 /**
- * Home's feed (the newest posts on your friends' walls and your own) must never show more than those walls' own pages
- * would: each wall is admitted by the same canFence rule, and within it the same people are hidden.
+ * Home's feed (the newest posts on your friends' walls and your own, and what people you follow wrote on theirs) must
+ * never show more than those walls' own pages would: each wall is admitted by the same canFence rule, and within it the same people are hidden.
  */
 let kit: TestKit;
 beforeEach(async () => {
@@ -128,5 +129,74 @@ describe("Home's feed", () => {
   it('is for signed-in people only', async () => {
     const r = await call(feedRoute, 'GET', '/api/feed');
     expect(r.status).toBe(401);
+  });
+});
+
+describe('people I follow (ADR-053)', () => {
+  /** Someone I follow but am not friends with, whose wall members may read, with a friend of theirs. */
+  async function followed() {
+    const me = await person('me');
+    const star = await person('star');
+    const pal = await person('starpal');
+    await friends(star, pal);
+    await doAct(star.handle, 'scout', as(me));
+    return { me, star, pal };
+  }
+
+  it('brings what they wrote on their own wall, not what others wrote there', async () => {
+    const { me, star, pal } = await followed();
+    await post(star, star, 'Star’s own words');
+    await post(pal, star, 'A friend on Star’s wall');
+    const shown = await bodies(me);
+    expect(shown).toContain('Star’s own words');
+    expect(shown).not.toContain('A friend on Star’s wall');
+    // Their friends still see the whole wall.
+    expect(await bodies(pal)).toContain('A friend on Star’s wall');
+  });
+
+  it('lets nothing through that their wall’s own page would refuse', async () => {
+    const { me, star } = await followed();
+    await post(star, star, 'Only for friends');
+    await patchRanch({ fenceVisibility: 'posse' }, as(star));
+    expect((await fenceOf(star.handle, as(me))).status).toBe(404);
+    expect(await bodies(me)).not.toContain('Only for friends');
+  });
+
+  it('a mute or a block wins, and unfollowing ends it', async () => {
+    const { me, star } = await followed();
+    await post(star, star, 'Star speaks');
+    expect(await bodies(me)).toContain('Star speaks');
+    await doAct(star.handle, 'mute', as(me));
+    expect(await bodies(me)).not.toContain('Star speaks');
+    await doAct(star.handle, 'unmute', as(me));
+    await doAct(star.handle, 'unscout', as(me));
+    expect(await bodies(me)).not.toContain('Star speaks');
+    await doAct(star.handle, 'scout', as(me));
+    await doAct(me.handle, 'block', as(star)); // they block me: the follow ends with it
+    expect(await bodies(me)).not.toContain('Star speaks');
+  });
+
+  it('following a friend changes nothing: their whole wall, once', async () => {
+    const me = await person('me');
+    const ann = await person('ann');
+    const bob = await person('bob');
+    await friends(me, ann);
+    await friends(ann, bob);
+    await doAct(ann.handle, 'scout', as(me));
+    await post(bob, ann, 'Bob on Ann’s wall');
+    await post(ann, ann, 'Ann’s own');
+    expect(await bodies(me)).toEqual(['Ann’s own', 'Bob on Ann’s wall']);
+  });
+
+  it('the follower count is a number of follows, and a block takes its follow away', async () => {
+    const { me, star } = await followed();
+    const fan = await person('fan');
+    await doAct(star.handle, 'scout', as(fan));
+    const id = await userId(star.handle);
+    expect(await followerCountOf(id)).toBe(2);
+    await doAct(fan.handle, 'block', as(star));
+    expect(await followerCountOf(id)).toBe(1);
+    await doAct(star.handle, 'unscout', as(me));
+    expect(await followerCountOf(id)).toBe(0);
   });
 });

@@ -35,6 +35,7 @@ export function RelationshipBar({
   initial,
   official = false,
   hasPhoto = false,
+  canFollow = false,
   describe,
 }: {
   handle: string;
@@ -46,6 +47,8 @@ export function RelationshipBar({
   official?: boolean;
   /** They have a photo I can see: offer to flag the photo itself (ADR-025). */
   hasPhoto?: boolean;
+  /** I may read their wall, so following them would bring their posts to my Home (ADR-053). */
+  canFollow?: boolean;
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -54,6 +57,8 @@ export function RelationshipBar({
   const [error, setError] = useState<string | undefined>();
   const [confirm, setConfirm] = useState<'block' | 'leave' | undefined>();
   const [reporting, setReporting] = useState<'person' | 'photo' | false>(false);
+  const friend = rel.posse === 'member';
+  const showFollow = rel.scouting || (!friend && canFollow);
 
   async function run(action: RelationshipAction, then?: () => void) {
     setBusy(action);
@@ -148,20 +153,25 @@ export function RelationshipBar({
         </Link>
       )}
 
-      {/* The private toggles: same shape, side by side. */}
-      <div className="flex flex-wrap gap-2">
-        {rel.posse === 'member' && (
-          <Chip selected={rel.closeByMe} onSelect={() => run(rel.closeByMe ? 'unclose' : 'close')}>
-            Close friend
-          </Chip>
-        )}
-        <Chip selected={rel.scouting} onSelect={() => run(rel.scouting ? 'unscout' : 'scout')}>
-          Following
-        </Chip>
-      </div>
+      {/* Friends: Close friend. Everyone else: Follow, where it brings something (ADR-053). Always there to undo a follow. */}
+      {(friend || showFollow) && (
+        <div className="flex flex-wrap gap-2">
+          {friend && (
+            <Chip selected={rel.closeByMe} onSelect={() => run(rel.closeByMe ? 'unclose' : 'close')}>
+              Close friend
+            </Chip>
+          )}
+          {showFollow && (
+            <Chip selected={rel.scouting} onSelect={() => run(rel.scouting ? 'unscout' : 'scout')}>
+              {rel.scouting ? 'Following' : 'Follow'}
+            </Chip>
+          )}
+        </div>
+      )}
       <p className="text-metadata text-text-muted">
-        Only you can see following, close friend, Mute{official ? ' and Restrict' : ', Restrict and Block'}.{' '}
-        {displayName} is never told about them.
+        {showFollow && !friend && `Follow to see ${displayName}'s posts on your Home. `}
+        Only you can see {friend ? 'close friend' : 'who you follow'}, Mute
+        {official ? ' and Restrict' : ', Restrict and Block'}. {displayName} is never told about them.
       </p>
       {describe}
 

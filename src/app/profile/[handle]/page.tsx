@@ -14,7 +14,7 @@ import {
   resolveHandle,
   type RanchView,
 } from '@/modules/profiles';
-import { getRelationshipView, listMyRelationships } from '@/modules/relationships';
+import { followerCountOf, getRelationshipView, listMyRelationships } from '@/modules/relationships';
 import { listTributes, listWaitingTributes } from '@/modules/tributes';
 import { recheckTrust } from '@/modules/trust';
 import { attachPortraits, withCards } from '@/app/_lib/social';
@@ -112,6 +112,7 @@ export default async function RanchPage({ params }: { params: Promise<{ handle: 
     { value: description },
     trust,
     mine,
+    followers,
   ] = await Promise.all([
     // A signed-in visitor also sees how they relate to this person (and can act on it). The photo is offered only to
     // signed-in viewers (the picture itself needs a session), and only on a Porch they may open, which this page has
@@ -156,6 +157,8 @@ export default async function RanchPage({ params }: { params: Promise<{ handle: 
     isOwner && user ? recheckTrust(user.id) : null,
     // Your own details with their audiences, for editing them here.
     isOwner && user ? myDetails(user.id) : null,
+    // How many follow you (ADR-053): yours alone to see. Best-effort: without it the number is simply not shown.
+    isOwner && user ? followerCountOf(user.id).catch(() => undefined) : undefined,
   ]);
   // Photos for everyone on the Fence whom this viewer may see (initials for the rest).
   await attachPortraits(
@@ -211,6 +214,7 @@ export default async function RanchPage({ params }: { params: Promise<{ handle: 
                   {...(badge ? { relationship: badge } : {})}
                   // Only on your own profile (posse is loaded for the owner only): nobody else's friends are shown.
                   {...(posse ? { friendCount: posse.length } : {})}
+                  {...(followers !== undefined ? { followerCount: followers } : {})}
                   {...(description && description.words.length > 0
                     ? { describedAs: description.words.map((w) => MARK_LABEL[w]).join(' · ') }
                     : {})}
@@ -251,6 +255,8 @@ export default async function RanchPage({ params }: { params: Promise<{ handle: 
             initial={rel}
             official={ranch.verified}
             hasPhoto={Boolean(photo)}
+            // Following brings their own posts to your Home, so it is offered only where you may read their wall.
+            canFollow={Boolean(fence) || fenceBusy}
             {...(description?.canGive
               ? {
                   describe: (

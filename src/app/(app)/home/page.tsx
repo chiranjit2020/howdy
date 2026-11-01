@@ -117,7 +117,7 @@ export default async function HomePage() {
               }}
             />
           ) : (
-            <p className="text-caption text-text-secondary">Friends’ posts could not be loaded just now.</p>
+            <p className="text-caption text-text-secondary">Posts could not be loaded just now.</p>
           )}
         </main>
 

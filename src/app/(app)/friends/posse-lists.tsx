@@ -150,8 +150,8 @@ export function PosseLists({ lists }: { lists: RelationshipLists }) {
               />
             ),
             <p className="mt-3 border-t border-border pt-3 text-metadata text-text-muted">
-              Close friend and following are private labels, just for you: nobody else sees them, and they
-              change nothing for the other person.
+              Close friend is a private label, just for you. Following someone shows their posts on your Home.
+              Nobody is told about either.
             </p>,
           )
         )}

@@ -19,7 +19,7 @@ const FEATURES: { art: ArtName; name: string; text: string }[] = [
   {
     art: 'nav-pals',
     name: 'Friends',
-    text: 'Friends both ways, never followers. Meet friends you may know, or bring friends in with your own invite link.',
+    text: 'Friends both ways. Follow people you look up to and see their posts on Home. Meet friends you may know, or bring friends in with your own invite link.',
   },
   {
     art: 'nav-nail',
@@ -242,7 +242,7 @@ export function WelcomeStory({ invite }: { invite?: { code: string; invitedBy: s
             </h1>
             <p className="max-w-xl text-title font-normal text-text-secondary">
               Posts on your wall, quiet visits to your profile and private messages with your friends. No
-              endless feed. No follower counts. Just the people who matter.
+              endless feed. No public follower counts. Just the people who matter.
             </p>
             <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
               <Link href={join} className={cn(buttonClasses({ size: 'lg' }), 'nav-action-gloss relative')}>
@@ -274,8 +274,8 @@ export function WelcomeStory({ invite }: { invite?: { code: string; invitedBy: s
                   ],
                   [
                     'friends',
-                    'No follower counts',
-                    'Friends are friends both ways. Nobody competes for numbers: friends describe you in words, never a score.',
+                    'No public follower counts',
+                    'Friends are friends both ways. Only you see how many follow you, so nobody competes for numbers: friends describe you in words, never a score.',
                   ],
                   [
                     'chat',
