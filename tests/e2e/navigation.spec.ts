@@ -84,9 +84,17 @@ test('on a desktop the sidebar has them, and there is no "More" button', async (
   await pageReady(me.page);
   await expect(me.page.getByRole('button', { name: /^More pages/ })).toBeHidden();
   const sidebar = me.page.getByRole('navigation', { name: 'Primary' }).first();
-  for (const label of ['Visitors', 'Settings', 'Groups', 'Time Capsules']) {
+  for (const label of ['Visitors', 'Settings', 'Groups']) {
     await expect(sidebar.getByRole('link', { name: new RegExp(`^${label}`) })).toBeVisible();
   }
+  // Time Capsules is a now-and-then page: in the account menu, not the sidebar.
+  await expect(sidebar.getByRole('link', { name: 'Time Capsules' })).toHaveCount(0);
+  await me.page.getByRole('button', { name: 'Your account' }).click();
+  await me.page
+    .getByRole('region', { name: 'Your account' })
+    .getByRole('link', { name: 'Time Capsules' })
+    .click();
+  await expect(me.page).toHaveURL(/\/capsules$/);
   await me.ctx.close();
 });
 
@@ -102,6 +110,7 @@ test('every loading outline streams inside the shell (top bar first), never on a
     '/visitors',
     '/messages',
     '/groups',
+    '/capsules',
     '/settings',
     `/profile/${me.handle}`,
   ]) {

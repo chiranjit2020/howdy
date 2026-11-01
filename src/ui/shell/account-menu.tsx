@@ -12,8 +12,9 @@ const ROW =
   'flex min-h-11 items-center rounded-md px-2 text-body text-text-primary no-underline hover:bg-surface-sunken hover:no-underline';
 
 /**
- * Your avatar in the top bar (wide screens): opens a short panel with who you are, My profile, Settings, Devices (how
- * many, linking to Settings, where devices are managed) and Sign out. A disclosure, not a menu: Tab moves through it as
+ * Your avatar in the top bar (wide screens): opens a short panel with who you are, My profile, Settings, Time Capsules
+ * (a now-and-then page, so here rather than in the sidebar), Devices (how many, linking to Settings, where devices are
+ * managed) and Sign out. A disclosure, not a menu: Tab moves through it as
  * usual. Escape or a click outside closes it, and focus goes back to the avatar.
  */
 export function AccountMenu({ me }: { me: ShellMe }) {
@@ -81,6 +82,7 @@ export function AccountMenu({ me }: { me: ShellMe }) {
             {[
               { href: `/profile/${me.handle}`, label: 'My profile' },
               { href: '/settings', label: 'Settings' },
+              { href: '/capsules', label: 'Time Capsules' },
             ].map((l) => (
               <Link key={l.href} href={l.href} onClick={() => setOpen(false)} className={ROW}>
                 {l.label}

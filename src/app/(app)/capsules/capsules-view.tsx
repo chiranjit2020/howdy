@@ -6,6 +6,9 @@ import { dayOf, longDay } from '@/shared/calendar';
 import { CAPSULE_MAX } from '@/shared/validation/capsules';
 import { apiRequest } from '@/ui/auth/api';
 import { FormMessage } from '@/ui/auth/form-parts';
+import { PageFrame } from '@/ui/howdy/page-frame';
+import { RailCard } from '@/ui/howdy/rail-card';
+import { CapsuleIcon } from '@/ui/icons';
 import {
   Avatar,
   Button,
@@ -56,8 +59,73 @@ export function CapsulesView({
     setRemoving(undefined);
   }
 
+  // The right panel: what is on its way to me, and what I sealed (which I can still take back).
+  const rail =
+    coming.length > 0 || sealed.length > 0 ? (
+      <>
+        {coming.length > 0 && (
+          <RailCard id="coming-heading" title="Coming to you">
+            <ul className="flex flex-col gap-3">
+              {coming.map((c, i) => (
+                <li key={`${c.from?.handle ?? 'me'}-${c.openOn}-${i}`} className="flex items-center gap-3">
+                  {c.from ? (
+                    <Avatar
+                      name={c.from.displayName}
+                      tint={c.from.portraitTint}
+                      src={c.from.portraitUrl}
+                      size="sm"
+                    />
+                  ) : (
+                    <span
+                      aria-hidden="true"
+                      className="grid size-8 shrink-0 place-items-center rounded-pill bg-surface-sunken text-text-secondary"
+                    >
+                      <CapsuleIcon />
+                    </span>
+                  )}
+                  <p className="min-w-0 text-caption [overflow-wrap:anywhere] text-text-primary">
+                    {c.from ? `From ${c.from.displayName}` : 'From your past self'}
+                    <span className="block text-text-secondary">Opens {longDay(c.openOn)}</span>
+                  </p>
+                </li>
+              ))}
+            </ul>
+          </RailCard>
+        )}
+        {sealed.length > 0 && (
+          <RailCard id="sealed-heading" title="Sealed by you">
+            <ul className="-my-1 flex flex-col divide-y divide-border">
+              {sealed.map((c) => (
+                <li key={c.id} className="flex items-center justify-between gap-2 py-1">
+                  <p className="min-w-0 text-caption [overflow-wrap:anywhere] text-text-primary">
+                    For {c.to ? c.to.displayName : 'your future self'}
+                    <span className="block text-text-secondary">Opens {longDay(c.openOn)}</span>
+                  </p>
+                  <Button
+                    size="sm"
+                    variant="link"
+                    className="shrink-0"
+                    onClick={() => setRemoving({ id: c.id, kind: 'take-back' })}
+                  >
+                    Take back
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          </RailCard>
+        )}
+      </>
+    ) : undefined;
+
   return (
-    <>
+    <PageFrame rail={rail} railLabel="Your Time Capsules">
+      <div className="flex flex-col gap-1">
+        <h1 className="text-heading text-text-primary">Time Capsules</h1>
+        <p className="text-caption text-text-secondary">
+          Seal a few words for your future self or one of your friends. Nobody can read them — not even you —
+          until the day they open.
+        </p>
+      </div>
       <SealForm pals={pals} earliest={earliest} latest={latest} onSealed={reload} />
       {error && <FormMessage tone="error">{error}</FormMessage>}
 
@@ -69,7 +137,7 @@ export function CapsulesView({
           <ClayCard>
             <EmptyState
               as="h3"
-              icon="💌"
+              icon={<CapsuleIcon className="text-text-muted" />}
               title="Nothing opened yet"
               description="When a Time Capsule for you opens, you can read it here."
             />
@@ -79,87 +147,29 @@ export function CapsulesView({
             {opened.map((c) => (
               <li key={c.id}>
                 <ClayCard className="flex flex-col gap-2">
-                  <p className="text-caption text-text-secondary">
-                    {c.from ? `From ${c.from.displayName}` : 'From your past self'}, sealed{' '}
-                    {longDay(dayOf(new Date(c.sealedAt)))}, opened {longDay(c.openOn)}
-                  </p>
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="text-caption text-text-secondary">
+                      {c.from ? `From ${c.from.displayName}` : 'From your past self'}, sealed{' '}
+                      {longDay(dayOf(new Date(c.sealedAt)))}, opened {longDay(c.openOn)}
+                    </p>
+                    <Button
+                      size="sm"
+                      variant="link"
+                      className="shrink-0"
+                      onClick={() => setRemoving({ id: c.id, kind: 'delete' })}
+                    >
+                      Delete
+                    </Button>
+                  </div>
                   <p className="text-body [overflow-wrap:anywhere] whitespace-pre-wrap text-text-primary">
                     {c.body}
                   </p>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="self-start"
-                    onClick={() => setRemoving({ id: c.id, kind: 'delete' })}
-                  >
-                    Delete
-                  </Button>
                 </ClayCard>
               </li>
             ))}
           </ul>
         )}
       </section>
-
-      {coming.length > 0 && (
-        <section aria-labelledby="coming-heading" className="flex flex-col gap-3">
-          <h2 id="coming-heading" className="text-title text-text-primary">
-            Coming to you
-          </h2>
-          <ul className="flex flex-col gap-2">
-            {coming.map((c, i) => (
-              <li key={`${c.from?.handle ?? 'me'}-${c.openOn}-${i}`}>
-                <ClayCard className="flex items-center gap-3">
-                  {c.from ? (
-                    <Avatar
-                      name={c.from.displayName}
-                      tint={c.from.portraitTint}
-                      src={c.from.portraitUrl}
-                      size="sm"
-                    />
-                  ) : (
-                    <span aria-hidden="true" className="text-title">
-                      💌
-                    </span>
-                  )}
-                  <p className="min-w-0 text-body [overflow-wrap:anywhere] text-text-primary">
-                    {c.from
-                      ? `A Time Capsule from ${c.from.displayName}`
-                      : 'A Time Capsule from your past self'}{' '}
-                    opens on {longDay(c.openOn)}.
-                  </p>
-                </ClayCard>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      {sealed.length > 0 && (
-        <section aria-labelledby="sealed-heading" className="flex flex-col gap-3">
-          <h2 id="sealed-heading" className="text-title text-text-primary">
-            Sealed by you
-          </h2>
-          <ul className="flex flex-col gap-2">
-            {sealed.map((c) => (
-              <li key={c.id}>
-                <ClayCard className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="min-w-0 text-body [overflow-wrap:anywhere] text-text-primary">
-                    For {c.to ? c.to.displayName : 'your future self'}, opens {longDay(c.openOn)}
-                  </p>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => setRemoving({ id: c.id, kind: 'take-back' })}
-                  >
-                    Take back
-                  </Button>
-                </ClayCard>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
 
       <ConfirmationDialog
         open={removing !== undefined}
@@ -175,7 +185,7 @@ export function CapsulesView({
         onCancel={() => setRemoving(undefined)}
         onConfirm={remove}
       />
-    </>
+    </PageFrame>
   );
 }
 

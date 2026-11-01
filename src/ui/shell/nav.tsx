@@ -7,7 +7,6 @@ import { postJson } from '../auth/api';
 import { cn } from '../cn';
 import {
   BellIcon,
-  CapsuleIcon,
   GroupIcon,
   HomeIcon,
   MoreIcon,
@@ -34,7 +33,6 @@ export type ShellNavKey =
   | 'chimes'
   | 'workshop'
   | 'town-halls'
-  | 'capsules'
   | 'moderation'
   | 'security';
 
@@ -58,7 +56,6 @@ const ICON: Record<ShellNavKey, ReactNode> = {
   chimes: <BellIcon />,
   workshop: <SettingsIcon />,
   'town-halls': <GroupIcon />,
-  capsules: <CapsuleIcon />,
   moderation: <ShieldIcon />,
   // No icon of its own yet: the Security Center shares Moderation's.
   security: <ShieldIcon />,
@@ -131,8 +128,8 @@ const PHONE_TABS: ShellNavKey[] = ['home', 'posse', 'whispers', 'ranch'];
 
 /**
  * Phones only (hidden from `md` up, where the sidebar lists everything): a "More" menu in the top bar for every page
- * that is neither a tab nor the bell — Tracks, Workshop, Town Halls, Time Capsules, Moderation for staff. Without it
- * those pages had no way in on a phone. It ends with Sign out.
+ * that is neither a tab nor the bell — Tracks, Workshop, Town Halls, Moderation for staff — then what the account menu
+ * holds on wide screens: Time Capsules, Devices and Sign out. Without it those pages had no way in on a phone.
  */
 export function ShellMoreMenu({
   items,
@@ -172,6 +169,8 @@ export function ShellMoreMenu({
             label: it.badge ? `${it.label} (${badgeText(it.badge)} new)` : it.label,
             onSelect: () => router.push(it.href),
           })),
+          // The account menu's, on wide screens: Time Capsules is a now-and-then page, not one for the sidebar.
+          { id: 'capsules', label: 'Time Capsules', onSelect: () => router.push('/capsules') },
           // Where people look for them on a phone. Devices (and "Sign out everywhere", which asks first) are in Settings.
           { id: 'devices', label: 'Devices', onSelect: () => router.push('/settings/account#devices') },
           {

@@ -75,7 +75,6 @@ export function AppShell({
         // Sidebar-only on wide screens; on a phone these are in the top bar's "More" menu (ShellMoreMenu).
         { key: 'workshop', href: '/settings', label: 'Settings' },
         { key: 'town-halls', href: '/groups', label: 'Groups', badge: townHallInvites },
-        { key: 'capsules', href: '/capsules', label: 'Time Capsules' },
         ...(moderator ? [{ key: 'moderation', href: '/moderation', label: 'Moderation' } as const] : []),
         ...(admin ? [{ key: 'security', href: '/admin/security', label: 'Security Center' } as const] : []),
       ]
