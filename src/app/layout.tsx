@@ -8,9 +8,18 @@ import './globals.css';
 
 const googleSans = Google_Sans({ subsets: ['latin'], variable: '--font-google-sans', display: 'swap' });
 const jetbrains = JetBrains_Mono({ subsets: ['latin'], variable: '--font-jetbrains', display: 'swap' });
+/**
+ * Every page's defaults. `metadataBase` makes share images and page addresses absolute (social apps ignore relative
+ * ones); it is read from the environment directly (not getEnv(): `next build` loads this file without the server's
+ * environment checks). Pages with a card of their own override `openGraph` and `twitter`.
+ */
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.APP_URL ?? 'http://localhost:3000'),
   title: { default: 'Howdy', template: '%s · Howdy' },
   description: 'Social media for people you actually know.',
+  applicationName: 'Howdy',
+  openGraph: { siteName: 'Howdy', type: 'website', locale: 'en_IN' },
+  twitter: { card: 'summary_large_image' },
 };
 
 export const viewport: Viewport = {

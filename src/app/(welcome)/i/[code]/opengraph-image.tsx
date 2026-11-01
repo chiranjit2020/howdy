@@ -2,7 +2,7 @@ import { inviterName } from '@/modules/invites';
 import { shareCard, SHARE_CARD_SIZE } from '../../share-card';
 
 /** The card an invite link shows: "<Name> invited you to Howdy" — the display name only (ADR-045). */
-export const alt = 'An invitation to Howdy — your people, not the whole internet.';
+export const alt = 'An invitation to Howdy — stay close to your people.';
 export const size = SHARE_CARD_SIZE;
 export const contentType = 'image/png';
 

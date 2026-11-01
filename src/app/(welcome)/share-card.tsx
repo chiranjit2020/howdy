@@ -10,10 +10,10 @@ import { ImageResponse } from 'next/og';
 export const SHARE_CARD_SIZE = { width: 1200, height: 630 };
 
 // The palette's own values (an image has no CSS tokens to read).
-const CREAM = '#f8f7ff';
+const SURFACE = '#ffffff';
 const INK = '#100b00';
 const SLATE = '#4a4540';
-const ACCENT_SOFT = '#ebe6f8';
+const PRIMARY_SOFT = '#fef6d8';
 // The primary button: Sunflower with Royal Violet on it, like every primary button in the app.
 const PRIMARY = '#f8cf35';
 const ON_PRIMARY = '#260959';
@@ -28,7 +28,9 @@ async function art(file: string): Promise<string> {
 export async function shareCard(
   kicker: string = 'Social media for people you actually know',
 ): Promise<ImageResponse> {
-  const [logo, yo] = await Promise.all(['brand/howdy-wordmark.png', 'emoji/fluent/yo.svg'].map(art));
+  const [logo, art_] = await Promise.all(
+    ['brand/howdy-wordmark.png', 'illustrations/welcome-hero-card.png'].map(art),
+  );
   const [fraunces, googleSans] = await Promise.all([font('fraunces-600.ttf'), font('google-sans-500.ttf')]);
   return new ImageResponse(
     <div
@@ -38,68 +40,58 @@ export async function shareCard(
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'center',
-        padding: '72px 80px',
-        background: CREAM,
+        padding: '64px 80px',
+        background: SURFACE,
         position: 'relative',
         fontFamily: 'Google Sans',
       }}
     >
-      {/* A flat sunflower sun (the clay artwork is gone, 2026-11-01). */}
+      {/* The welcome page's illustration (Magnific, credited on the page) over a light sunflower sun. */}
       <div
         style={{
           position: 'absolute',
-          top: 56,
-          right: 80,
-          width: 150,
-          height: 150,
+          right: 70,
+          top: 70,
+          width: 400,
+          height: 400,
           borderRadius: 999,
-          background: PRIMARY,
-          boxShadow: `0 0 0 26px ${ACCENT_SOFT}`,
+          background: PRIMARY_SOFT,
         }}
       />
-      <img src={yo} width={96} height={96} style={{ position: 'absolute', top: 64, right: 300 }} alt="" />
-      <img src={logo} width={300} height={92} alt="" />
-      <div
-        style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 28, color: SLATE, fontSize: 30 }}
-      >
-        {kicker}
-      </div>
+      <img
+        src={art_}
+        width={448}
+        height={520}
+        style={{ position: 'absolute', right: 40, bottom: 30 }}
+        alt=""
+      />
+      <img src={logo} width={260} height={80} alt="" />
+      <div style={{ display: 'flex', marginTop: 24, color: SLATE, fontSize: 28 }}>{kicker}</div>
       <div
         style={{
           display: 'flex',
           flexDirection: 'column',
-          marginTop: 18,
+          marginTop: 14,
           color: INK,
           fontFamily: 'Fraunces',
-          fontSize: 86,
+          fontSize: 76,
           fontWeight: 600,
-          lineHeight: 1.05,
+          lineHeight: 1.08,
         }}
       >
-        <span>Your people.</span>
-        <span
-          style={{
-            display: 'flex',
-            alignSelf: 'flex-start',
-            background: ACCENT_SOFT,
-            borderRadius: 24,
-            padding: '0 18px',
-            marginLeft: -18,
-          }}
-        >
-          Not the whole internet.
-        </span>
+        <span>Stay close</span>
+        <span style={{ display: 'flex', color: ON_PRIMARY }}>to your people.</span>
       </div>
       <div
         style={{
           display: 'flex',
-          marginTop: 36,
+          marginTop: 30,
           alignSelf: 'flex-start',
           background: PRIMARY,
           color: ON_PRIMARY,
-          fontSize: 30,
+          fontSize: 28,
           fontWeight: 500,
-          padding: '16px 34px',
+          padding: '14px 32px',
           borderRadius: 999,
         }}
       >

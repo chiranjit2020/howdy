@@ -164,10 +164,10 @@ describe('design-system discipline', () => {
   it('the welcome share image uses the Light palette', () => {
     const image = readFileSync('src/app/(welcome)/share-card.tsx', 'utf8');
     const pinned = {
-      CREAM: 'background',
+      SURFACE: 'surface',
       INK: 'text-primary',
       SLATE: 'text-secondary',
-      ACCENT_SOFT: 'accent-soft',
+      PRIMARY_SOFT: 'primary-soft',
       PRIMARY: 'primary',
       ON_PRIMARY: 'on-primary',
     };

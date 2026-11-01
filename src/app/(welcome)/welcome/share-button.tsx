@@ -9,7 +9,7 @@ export function ShareButton({ variant = 'secondary' }: { variant?: 'primary' | '
 
   async function share() {
     const url = `${window.location.origin}/welcome`;
-    const data = { title: 'Howdy', text: 'Your people. Not the whole internet. Come join us on Howdy.', url };
+    const data = { title: 'Howdy', text: 'Stay close to your people. Come join me on Howdy.', url };
     try {
       if (navigator.share) return await navigator.share(data);
       await navigator.clipboard.writeText(url);

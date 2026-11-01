@@ -1,14 +1,22 @@
 import type { Metadata } from 'next';
 import { WelcomeStory } from '../welcome-story';
 
-const TITLE = 'Howdy — your people, not the whole internet';
+const TITLE = 'Howdy — stay close to your people';
 const DESCRIPTION =
   'Social media for people you actually know: share posts, Stories and messages with your friends, family and batch. No endless feed, no follower counts, no strangers.';
 
 export const metadata: Metadata = {
   title: { absolute: TITLE },
   description: DESCRIPTION,
-  openGraph: { title: TITLE, description: DESCRIPTION, type: 'website', siteName: 'Howdy' },
+  alternates: { canonical: '/welcome' },
+  openGraph: {
+    title: TITLE,
+    description: DESCRIPTION,
+    url: '/welcome',
+    type: 'website',
+    siteName: 'Howdy',
+    locale: 'en_IN',
+  },
   twitter: { card: 'summary_large_image', title: TITLE, description: DESCRIPTION },
 };
 

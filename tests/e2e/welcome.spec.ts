@@ -23,8 +23,8 @@ test.describe('Welcome page (production build, real CSP)', () => {
       const problems = await watchProblems(page);
       await page.goto('/welcome');
       await pageReady(page);
-      await expect(page.getByRole('heading', { level: 1 })).toContainText('Your people.');
-      await expect(page.getByRole('heading', { name: /built and working right now/ })).toBeVisible();
+      await expect(page.getByRole('heading', { level: 1 })).toContainText('Stay close');
+      await expect(page.getByRole('heading', { name: /works today/ })).toBeVisible();
       await expect(page.getByRole('heading', { name: /what comes next/ })).toBeVisible();
       expect(await axeViolations(page)).toEqual([]);
       // 44 px targets are for fingers; with a mouse, controls are desktop-sized (the density pass).

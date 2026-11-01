@@ -9,13 +9,21 @@ const DESCRIPTION =
 
 /** Only the inviter's display name is ever shown (ADR-045); a link that does not work reads as the plain welcome. */
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const name = await inviterName((await params).code);
-  const title = name ? `${name} invited you to Howdy` : 'Howdy — your people, not the whole internet';
+  const { code } = await params;
+  const name = await inviterName(code);
+  const title = name ? `${name} invited you to Howdy` : 'Howdy — stay close to your people';
   return {
     title: { absolute: title },
     description: DESCRIPTION,
     robots: { index: false, follow: false },
-    openGraph: { title, description: DESCRIPTION, type: 'website', siteName: 'Howdy' },
+    openGraph: {
+      title,
+      description: DESCRIPTION,
+      url: `/i/${code}`,
+      type: 'website',
+      siteName: 'Howdy',
+      locale: 'en_IN',
+    },
     twitter: { card: 'summary_large_image', title, description: DESCRIPTION },
   };
 }
