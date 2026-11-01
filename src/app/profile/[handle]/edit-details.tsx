@@ -47,7 +47,11 @@ const SOCIAL_PLACEHOLDER: Record<Social, string> = {
  * The picker's own words: short, so it fits at the end of a label row in half a popup. "Everyone" stands for Everyone on
  * Howdy (signed-out visitors never see details), so it can only ever overstate who sees a detail, never understate it.
  */
-const PICKER_LABEL: Record<DetailAudience, string> = { members: 'Everyone', posse: 'Friends', only_me: 'Only me' };
+const PICKER_LABEL: Record<DetailAudience, string> = {
+  members: 'Everyone',
+  posse: 'Friends',
+  only_me: 'Only me',
+};
 
 /** What a screen reader hears for each detail's audience picker. */
 const WHO: Record<DetailKey, string> = {
