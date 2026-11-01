@@ -81,10 +81,20 @@ describe('banning', () => {
 
   it('is silent: the banned person sees exactly what a quietly declined asker sees', async () => {
     const owner = await person('owner');
-    const open = await hall(owner);
+    // Groups are found through friends (ADR-054): a friend of Eve's and Fred's is in the open one.
+    const pal = await person('pal');
+    const open = await hall(owner, [pal]);
     const gated = await hall(owner, [], { joinRule: 'approval' });
     const eve = await person('eve');
     const fred = await person('fred');
+    // Friends straight in the database: the usual request/accept would ring bells this test counts.
+    for (const p of [eve, fred])
+      await q(
+        `insert into posse_links (user_low, user_high, status, requested_by, responded_at)
+         select least(a.id, b.id), greatest(a.id, b.id), 'accepted', a.id, now()
+           from users a, users b where a.handle = $1 and b.handle = $2`,
+        [pal.handle, p.handle],
+      );
     expect((await ban(open, eve.handle, as(owner))).status).toBe(200);
     expect((await ban(gated, eve.handle, as(owner))).status).toBe(200);
 

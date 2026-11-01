@@ -1,20 +1,15 @@
 import { notFound } from 'next/navigation';
 import { attachPortraits } from '@/app/_lib/social';
 import { requireUser } from '@/modules/auth';
-import {
-  getTownHall,
-  listBans,
-  listFeed,
-  listHallCapsules,
-  listHeld,
-  listMembers,
-  listRequests,
-} from '@/modules/town-halls';
+import { getTownHall, listBans, listFeed, listHeld, listMembers, listRequests } from '@/modules/town-halls';
 import { TownHallDetailView } from './detail-view';
 
 export const metadata = { title: 'Group', robots: { index: false, follow: false } };
 
-/** One Town Hall: header, your membership state, and (members only) the feed and the roster; staff also get the held tray, join requests and the ban list; members see Time Capsules coming. */
+/**
+ * One circle (ADR-054): its header and your membership, then (members only) Posts and Members, and for the Owner and
+ * Deputies the held tray, join requests and a Manage tab. In Home's frame, with "About this group" in the right panel.
+ */
 export default async function TownHallPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const user = await requireUser();
@@ -22,8 +17,6 @@ export default async function TownHallPage({ params }: { params: Promise<{ id: s
   if (!townHall) notFound();
   const member = townHall.membership === 'active';
   const staff = townHall.myRole === 'owner' || townHall.myRole === 'deputy';
-  // Capsules first: any whose day has come become posts, so the feed read next includes them.
-  const capsules = member ? await listHallCapsules(user.id, id) : null;
   const [members, feed, held, requests, bans] = member
     ? await Promise.all([
         listMembers(user.id, id, {}),
@@ -36,23 +29,19 @@ export default async function TownHallPage({ params }: { params: Promise<{ id: s
   await attachPortraits(user.id, [
     ...(requests ?? []),
     ...(bans ?? []),
-    ...(capsules ?? []).flatMap((c) => (c.from ? [c.from] : [])),
     ...(members?.members ?? []),
     ...(feed?.posts.flatMap((p) => [p.author, ...p.replies.map((r) => r.author)]) ?? []),
     ...[...(held?.posts ?? []), ...(held?.replies ?? [])].map((h) => h.author),
   ]);
 
   return (
-    <main id="main" className="mx-auto flex max-w-2xl flex-col gap-4 py-4 sm:gap-6 sm:py-8">
-      <TownHallDetailView
-        townHall={townHall}
-        initialMembers={members}
-        initialFeed={feed}
-        initialHeld={held}
-        initialRequests={requests}
-        initialBans={bans}
-        initialCapsules={capsules}
-      />
-    </main>
+    <TownHallDetailView
+      townHall={townHall}
+      initialMembers={members}
+      initialFeed={feed}
+      initialHeld={held}
+      initialRequests={requests}
+      initialBans={bans}
+    />
   );
 }

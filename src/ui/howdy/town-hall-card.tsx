@@ -1,13 +1,13 @@
 import type { ReactNode } from 'react';
 import type { TownHallVisibility } from '@/shared/validation/town-halls';
-import { Badge, type Tone } from '../primitives/badge';
+import { Badge } from '../primitives/badge';
 
 export type { TownHallVisibility } from '@/shared/validation/town-halls';
 
-const VIS: Record<TownHallVisibility, { label: string; tone: Tone }> = {
-  open: { label: 'Open to all', tone: 'success' },
-  members: { label: 'Members only', tone: 'info' },
-  invite: { label: 'By invitation', tone: 'mystery' },
+/** Circles (ADR-054): findable by friends of members, or private. Quiet labels: they inform, they do not decorate. */
+export const GROUP_VISIBILITY_LABEL: Record<TownHallVisibility, string> = {
+  open: 'Friends can find it',
+  invite: 'Private',
 };
 
 /**
@@ -29,7 +29,6 @@ export function TownHallCard({
   action?: ReactNode;
   headingLevel?: 1 | 2 | 3;
 }) {
-  const v = VIS[visibility];
   const Heading = `h${headingLevel}` as const;
   return (
     <article className="clay flex flex-col gap-3 p-5">
@@ -39,8 +38,8 @@ export function TownHallCard({
         >
           {name}
         </Heading>
-        <Badge tone={v.tone}>{v.label}</Badge>
-        {joined && <Badge tone="accent">Joined</Badge>}
+        <Badge>{GROUP_VISIBILITY_LABEL[visibility]}</Badge>
+        {joined && <Badge tone="sunflower">Member</Badge>}
       </div>
       <p className="text-body text-text-secondary">{description}</p>
       {action && <div>{action}</div>}

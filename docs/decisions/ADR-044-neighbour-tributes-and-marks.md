@@ -5,6 +5,8 @@ Deputies, bans), people who share one see each other's words for weeks without b
 them had nowhere to go. BUILD_STATUS listed "revisit whether Tribute/Mark giving should widen beyond Pals"; the welcome
 page listed it as "Exploring".
 
+**Superseded by ADR-054 (2026-11-01):** neighbours are retired; testimonials and descriptions are between friends again.
+
 **Decisions (the user's, 2026-10-06).**
 1. **A neighbour** is someone who has been an **active member of the same Town Hall as you for 14+ days — both of
    you.** Joining a hall just to hand out or collect Marks does not work straight away.

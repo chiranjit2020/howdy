@@ -49,12 +49,12 @@ const FEATURES: { art: ArtName; name: string; text: string }[] = [
   {
     art: 'nav-town-halls',
     name: 'Groups',
-    text: 'Small communities with their own feed and photos, Deputies who keep order, and “ask to join” when you want it.',
+    text: 'Circles for people who know each other: your batch, family, society or team. Private or findable by friends, with their own posts and photos, Deputies who keep order, and “ask to join” when you want it.',
   },
   {
     art: 'nav-capsules',
     name: 'Time Capsules',
-    text: 'Seal words for future you, a friend or a whole group. Nobody can read them early — not even you.',
+    text: 'Seal words for future you or a friend. Nobody can read them early — not even you.',
   },
   {
     art: 'nav-chimes',

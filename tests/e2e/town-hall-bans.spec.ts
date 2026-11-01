@@ -31,6 +31,9 @@ async function person(browser: Browser, tag: string, opts: Parameters<typeof new
 
 const memberRow = (page: Page, handle: string) =>
   page.getByRole('listitem').filter({ hasText: `@${handle}` });
+/** The roster and the running of the group (bans among it) sit behind their own tabs (ADR-054). */
+const openTab = (page: Page, name: 'Members' | 'Manage') =>
+  page.getByRole('tab', { name, exact: true }).click();
 
 async function checkPhone(page: Page) {
   await pageReady(page);
@@ -56,12 +59,11 @@ test.describe('Group bans (production build, real CSP)', () => {
     await owner.page.getByRole('button', { name: 'Start a group' }).click();
     await owner.page.getByLabel('Name').fill(name);
     await owner.page.getByLabel('What is it about?').fill('Anyone welcome.');
+    await owner.page.getByLabel('Who can find it?').selectOption('open');
     await owner.page.getByRole('button', { name: 'Start it' }).click();
-    await owner.page.getByRole('tab', { name: /^Mine/ }).click();
-    const url = (await owner.page
-      .getByRole('link', { name: /^Manage/ })
-      .first()
-      .getAttribute('href'))!;
+    // Starting one lands on it (ADR-054); its address is the link others open.
+    await expect(owner.page).toHaveURL(/\/groups\/[0-9a-f-]{36}$/);
+    const url = new URL(owner.page.url()).pathname;
 
     for (const p of [dep, eve]) {
       await p.page.goto(url);
@@ -70,6 +72,7 @@ test.describe('Group bans (production build, real CSP)', () => {
       await expect(p.page.getByRole('button', { name: 'Leave' })).toBeVisible();
     }
     await owner.page.goto(url);
+    await openTab(owner.page, 'Members');
     await memberRow(owner.page, dep.handle)
       .getByRole('button', { name: `Options for @${dep.handle}` })
       .click();
@@ -79,14 +82,17 @@ test.describe('Group bans (production build, real CSP)', () => {
     // The Deputy, on a phone, bans Eve from the Members list.
     await dep.page.reload();
     await pageReady(dep.page);
+    await openTab(dep.page, 'Members');
     await memberRow(dep.page, eve.handle)
       .getByRole('button', { name: `Options for @${eve.handle}` })
       .click();
     await dep.page.getByRole('menuitem', { name: 'Ban…' }).click();
     await dep.page.getByRole('alertdialog').getByRole('button', { name: 'Ban' }).click();
+    await expect(memberRow(dep.page, eve.handle)).toHaveCount(0); // gone from the Members tab
+    await openTab(dep.page, 'Manage');
     await expect(dep.page.getByRole('heading', { name: 'Banned (1)' })).toBeVisible();
     await expect(dep.page.getByRole('heading', { name: /^Banned/ })).toHaveCount(1);
-    // She has left the Members list; the only row naming her is the ban.
+    // On the Manage tab the only row naming her is the ban.
     await expect(memberRow(dep.page, eve.handle)).toHaveCount(1);
     await expect(memberRow(dep.page, eve.handle).getByText(`by @${dep.handle}`)).toBeVisible();
     await checkPhone(dep.page);
@@ -106,6 +112,7 @@ test.describe('Group bans (production build, real CSP)', () => {
     await expect(dep.page.getByRole('heading', { name: /Asking to join/ })).toHaveCount(0);
 
     // Lifting the ban: Eve may join again with one tap.
+    await openTab(dep.page, 'Manage');
     await memberRow(dep.page, eve.handle).getByRole('button', { name: 'Lift ban' }).click();
     await expect(dep.page.getByRole('heading', { name: 'Banned', exact: true })).toBeVisible();
     await eve.page.reload();

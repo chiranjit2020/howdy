@@ -4,6 +4,8 @@
 in that slice. Town Halls now have a feed (ADR-033) and staff (ADR-041), which give such a capsule an obvious place to
 open and obvious people to send it.
 
+**Superseded by ADR-054 (2026-11-01):** group Time Capsules are retired; the table is dropped.
+
 **Decisions (the user's, 2026-10-06).**
 1. **Only the owner and Deputies seal one.** It is a message to the whole Town Hall, so the people who keep order send
    it; ordinary members cannot (fewer unscreenable future posts).

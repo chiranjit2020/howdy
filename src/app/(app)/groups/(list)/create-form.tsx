@@ -6,21 +6,23 @@ import { LIMITS } from '@/shared/limits';
 import type { TownHallVisibility } from '@/shared/validation/town-halls';
 import { postJson } from '@/ui/auth/api';
 import { FormMessage } from '@/ui/auth/form-parts';
-import { Button, ClayCard, Input, Select, Switch, Textarea } from '@/ui/primitives';
+import { Button, Input, Modal, Select, Switch, Textarea } from '@/ui/primitives';
 
 const VISIBILITY_HINT: Record<TownHallVisibility, string> = {
-  open: 'Anyone can find it in the directory.',
-  members: 'Anyone can find it in the directory (a different label for you, same rule).',
-  invite: 'Nobody can find it — you invite people by username.',
+  invite: 'Only people you invite can see it or join.',
+  open: 'Friends of its members can find it, and anyone with its link can join.',
 };
 
-/** Start a new Town Hall. You become its owner at once. */
+/**
+ * Start a circle (ADR-054): a batch, a family, a society, a team. You become its owner at once and land on its page.
+ * Private is the default: a circle is for people who know each other.
+ */
 export function CreateTownHallForm() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [visibility, setVisibility] = useState<TownHallVisibility>('open');
+  const [visibility, setVisibility] = useState<TownHallVisibility>('invite');
   const [approval, setApproval] = useState(false);
   const [error, setError] = useState<string | undefined>();
   const [busy, setBusy] = useState(false);
@@ -29,20 +31,16 @@ export function CreateTownHallForm() {
     e.preventDefault();
     setError(undefined);
     setBusy(true);
-    const res = await postJson('/api/town-halls', {
+    const res = await postJson<{ townHall: { id: string } }>('/api/town-halls', {
       name: name.trim(),
       description: description.trim(),
       visibility,
       joinRule: approval && visibility !== 'invite' ? 'approval' : 'instant',
     });
     setBusy(false);
-    if (res.ok) {
+    if (res.ok && res.data) {
       setOpen(false);
-      setName('');
-      setDescription('');
-      setVisibility('open');
-      setApproval(false);
-      router.refresh();
+      router.push(`/groups/${res.data.townHall.id}`);
     } else
       setError(
         res.error?.fields?.name ??
@@ -52,64 +50,58 @@ export function CreateTownHallForm() {
       );
   }
 
-  if (!open) {
-    return (
-      <Button variant="secondary" onClick={() => setOpen(true)} className="self-start">
+  return (
+    <>
+      <Button size="sm" onClick={() => setOpen(true)}>
         Start a group
       </Button>
-    );
-  }
-
-  return (
-    <ClayCard>
-      <form onSubmit={submit} noValidate className="flex flex-col gap-3">
-        <h2 className="text-title text-text-primary">Start a group</h2>
-        {error && <FormMessage tone="error">{error}</FormMessage>}
-        <Input
-          label="Name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          maxLength={LIMITS.TOWNHALL_NAME_MAX}
-        />
-        <Textarea
-          label="What is it about?"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          maxLength={LIMITS.TOWNHALL_DESCRIPTION_MAX}
-          showCount
-          rows={3}
-        />
-        <Select
-          label="Who can find and join it?"
-          value={visibility}
-          onChange={(e) => setVisibility(e.target.value as TownHallVisibility)}
-          hint={VISIBILITY_HINT[visibility]}
-        >
-          <option value="open">Open to all</option>
-          <option value="members">Members only</option>
-          <option value="invite">By invitation</option>
-        </Select>
-        {visibility !== 'invite' && (
-          <Switch
-            label="Ask to join"
-            hint={
-              approval
-                ? 'People ask; you (or a Deputy you appoint) let them in.'
-                : 'Off: anyone can join with one tap.'
-            }
-            checked={approval}
-            onCheckedChange={setApproval}
+      <Modal open={open} onClose={() => setOpen(false)} title="Start a group">
+        <form onSubmit={submit} noValidate className="flex flex-col gap-4">
+          <p className="text-caption text-text-secondary">
+            For people who know each other: your batch, family, society, team or class.
+          </p>
+          {error && <FormMessage tone="error">{error}</FormMessage>}
+          <Input
+            label="Name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            maxLength={LIMITS.TOWNHALL_NAME_MAX}
+            placeholder="e.g. Batch of 2019"
           />
-        )}
-        <div className="flex gap-2">
+          <Textarea
+            label="What is it about?"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            maxLength={LIMITS.TOWNHALL_DESCRIPTION_MAX}
+            showCount
+            rows={2}
+          />
+          <Select
+            label="Who can find it?"
+            value={visibility}
+            onChange={(e) => setVisibility(e.target.value as TownHallVisibility)}
+            hint={VISIBILITY_HINT[visibility]}
+          >
+            <option value="invite">Private</option>
+            <option value="open">Friends can find it</option>
+          </Select>
+          {visibility !== 'invite' && (
+            <Switch
+              label="Ask to join"
+              hint={
+                approval
+                  ? 'People ask; you (or a Deputy you appoint) let them in.'
+                  : 'Off: anyone who finds it can join with one tap.'
+              }
+              checked={approval}
+              onCheckedChange={setApproval}
+            />
+          )}
           <Button type="submit" loading={busy} disabled={!name.trim() || !description.trim()}>
             Start it
           </Button>
-          <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
-            Cancel
-          </Button>
-        </div>
-      </form>
-    </ClayCard>
+        </form>
+      </Modal>
+    </>
   );
 }

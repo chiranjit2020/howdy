@@ -26,8 +26,8 @@ export type Action =
   /** Exchange Whispers with the person who owns the resource: needs a mutual Posse and no block either way. */
   | 'whisper:exchange'
   /**
-   * Leave a Tribute (testimonial) for the resource owner: a mutual Posse OR Town Hall neighbours (ADR-044), and no
-   * block either way.
+   * Leave a Tribute (testimonial) for the resource owner: a mutual Posse and no block either way. (Town Hall neighbours
+   * could too, ADR-044, until groups became circles of people who know each other, ADR-054.)
    */
   | 'tribute:give'
   /** Award a Mark to the resource owner: same gate as a Tribute. */
@@ -43,11 +43,6 @@ export interface RanchResource {
 export interface PolicyContext {
   /** How the resource OWNER regards the actor. Ignored for anonymous actors. */
   relationship: RelationshipState;
-  /**
-   * The two have both been active members of one Town Hall for 14+ days (ADR-044; the caller works it out with
-   * `areNeighbours`). Only `tribute:give` and `mark:give` read it.
-   */
-  neighbour?: boolean;
 }
 
 export type DenyReason = 'unauthenticated' | 'account_status' | 'blocked' | 'not_visible' | 'not_owner';
@@ -70,17 +65,6 @@ function satisfies(level: Visibility, actor: Actor, relationship: RelationshipSt
 
 /** Are the two in each other's Posse (Pals)? */
 export const inPosse = (relationship: RelationshipState): boolean => IN_POSSE.has(relationship);
-
-/**
- * Could being Town Hall neighbours change whether `viewerId` may give the owner a Tribute or a Mark (ADR-044)? Only for
- * a signed-in viewer who is not the owner, not blocked, and not already a Pal — callers skip the lookup otherwise.
- */
-export const neighbourMatters = (
-  viewerId: string | null,
-  ownerId: string,
-  relationship: RelationshipState,
-): viewerId is string =>
-  viewerId !== null && viewerId !== ownerId && relationship !== 'BLOCKED' && !IN_POSSE.has(relationship);
 
 export function can(actor: Actor, action: Action, resource: RanchResource, ctx: PolicyContext): Decision {
   if (actor.kind === 'user' && actor.status !== 'active') return deny('account_status');
@@ -105,10 +89,8 @@ export function can(actor: Actor, action: Action, resource: RanchResource, ctx: 
       if (isOwner) return deny('not_visible'); // no Whispers, Tributes or Marks for yourself
       if (ctx.relationship === 'BLOCKED') return deny('blocked');
       // People in each other's Posse, for all three. Being muted or restricted does not remove the right (those change
-      // where the words/Tribute go, or ring no bell); scouting and pending requests grant nothing.
-      if (IN_POSSE.has(ctx.relationship)) return ALLOW;
-      // Tributes and Marks also from Town Hall neighbours (ADR-044); Whispers stay Pals-only.
-      return action !== 'whisper:exchange' && ctx.neighbour === true ? ALLOW : deny('not_visible');
+      // where the words/Tribute go, or ring no bell); following, pending requests and sharing a group grant nothing.
+      return IN_POSSE.has(ctx.relationship) ? ALLOW : deny('not_visible');
 
     case 'profile:view':
     case 'signal:view': {

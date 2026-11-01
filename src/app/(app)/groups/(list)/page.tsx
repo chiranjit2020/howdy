@@ -1,12 +1,15 @@
 import { requireUser } from '@/modules/auth';
 import { listDirectory, listMine, listMyInvites } from '@/modules/town-halls';
-import { GlossaryHint } from '@/ui/howdy';
+import { PageFrame } from '@/ui/howdy/page-frame';
 import { CreateTownHallForm } from './create-form';
-import { TownHallsView } from './town-halls-view';
+import { FriendsGroups, InvitesCard, MyGroups } from './town-halls-view';
 
 export const metadata = { title: 'Groups' };
 
-/** Directory, your own Town Halls and pending invites. Membership only this phase — no shared feed yet. */
+/**
+ * Your circles (ADR-054): invites waiting for an answer, the groups you are in, and — in the right panel — groups your
+ * friends are in. There is no public directory: a group is for people who know each other.
+ */
 export default async function TownHallsPage() {
   const user = await requireUser();
   const [directory, mine, invites] = await Promise.all([
@@ -15,13 +18,13 @@ export default async function TownHallsPage() {
     listMyInvites(user.id),
   ]);
   return (
-    <main id="main" className="mx-auto flex max-w-2xl flex-col gap-4 py-4 sm:gap-6 sm:py-8">
-      <div className="flex items-center">
-        <h1 className="text-heading text-text-primary">Groups</h1>
-        <GlossaryHint term="townHalls" />
+    <PageFrame rail={<FriendsGroups initial={directory} />} railLabel="Find groups">
+      <div className="flex items-center gap-3">
+        <h1 className="min-w-0 flex-1 text-heading text-text-primary">Groups</h1>
+        <CreateTownHallForm />
       </div>
-      <CreateTownHallForm />
-      <TownHallsView initialDirectory={directory} mine={mine} invites={invites} />
-    </main>
+      <InvitesCard initial={invites} />
+      <MyGroups mine={mine} />
+    </PageFrame>
   );
 }

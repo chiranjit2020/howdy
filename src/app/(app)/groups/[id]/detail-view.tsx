@@ -2,22 +2,15 @@
 
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
-import type {
-  BanEntry,
-  HallCapsule,
-  JoinRequest,
-  MemberPage,
-  MemberRef,
-  TownHallDetail,
-} from '@/modules/town-halls';
-import { addDays, addYears, dayOf, longDay } from '@/shared/calendar';
-import { CAPSULE_MAX_YEARS } from '@/shared/validation/capsules';
+import type { BanEntry, JoinRequest, MemberPage, MemberRef, TownHallDetail } from '@/modules/town-halls';
 import { LIMITS } from '@/shared/limits';
 import { handleParamSchema } from '@/shared/validation/profile';
 import type { MemberAction } from '@/shared/validation/town-halls';
 import { apiRequest, postJson } from '@/ui/auth/api';
 import { FormMessage } from '@/ui/auth/form-parts';
-import { TownHallCard } from '@/ui/howdy';
+import { GROUP_VISIBILITY_LABEL, TownHallCard } from '@/ui/howdy';
+import { PageFrame } from '@/ui/howdy/page-frame';
+import { RailCard } from '@/ui/howdy/rail-card';
 import { MoreIcon } from '@/ui/icons';
 import { FeedSection, type InitialFeed, type InitialHeld } from './feed-section';
 import { ReportDialog } from '@/ui/howdy/report-dialog';
@@ -30,7 +23,7 @@ import {
   EmptyState,
   Input,
   Switch,
-  Textarea,
+  Tabs,
   useToast,
 } from '@/ui/primitives';
 
@@ -47,7 +40,6 @@ export function TownHallDetailView({
   initialHeld,
   initialRequests,
   initialBans,
-  initialCapsules,
 }: {
   townHall: TownHallDetail;
   initialMembers: MemberPage | null;
@@ -57,8 +49,6 @@ export function TownHallDetailView({
   initialRequests: JoinRequest[] | null;
   /** Who is banned: only for the owner and Deputies (ADR-042). */
   initialBans: BanEntry[] | null;
-  /** Time Capsules coming to this Town Hall: members only (ADR-043). */
-  initialCapsules: HallCapsule[] | null;
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -145,14 +135,58 @@ export function TownHallDetailView({
       </Button>
     ) : undefined;
 
+  const member = townHall.membership === 'active';
+  const about = (
+    <RailCard id="about-group" title="About this group">
+      <ul className="flex flex-col gap-1.5 text-caption text-text-secondary">
+        <li>
+          <span className="font-semibold text-text-primary">
+            {GROUP_VISIBILITY_LABEL[townHall.visibility]}
+          </span>
+          {townHall.visibility === 'invite'
+            ? ': only people invited can see it or join.'
+            : ': friends of its members can find it, and anyone with its link can join.'}
+        </li>
+        {townHall.visibility !== 'invite' && (
+          <li>
+            {townHall.joinRule === 'approval'
+              ? 'New members ask, and the Owner or a Deputy lets them in.'
+              : 'New members join with one tap.'}
+          </li>
+        )}
+        {townHall.myRole && (
+          <li>
+            You are{' '}
+            {townHall.myRole === 'owner'
+              ? 'its Owner'
+              : townHall.myRole === 'deputy'
+                ? 'a Deputy'
+                : 'a member'}
+            .
+          </li>
+        )}
+      </ul>
+      {member && townHall.visibility !== 'invite' && <CopyLink townHallId={townHall.id} />}
+      {!owner && (
+        <button
+          type="button"
+          onClick={() => setReporting(true)}
+          className="inline-flex min-h-11 items-center self-start text-caption font-semibold text-text-secondary hover:underline pointer-fine:min-h-0"
+        >
+          Flag this group…
+        </button>
+      )}
+    </RailCard>
+  );
+
   return (
-    <>
+    <PageFrame rail={about} railLabel="About this group">
       <TownHallCard
         headingLevel={1}
         name={townHall.name}
         description={townHall.description}
         visibility={townHall.visibility}
-        joined={townHall.membership === 'active'}
+        joined={member}
         action={primaryAction}
       />
       {error && <FormMessage tone="error">{error}</FormMessage>}
@@ -174,93 +208,115 @@ export function TownHallDetailView({
         />
       )}
 
-      {townHall.membership === 'active' && initialCapsules && (staff || initialCapsules.length > 0) && (
-        <CapsulesCard
-          townHallId={townHall.id}
-          initial={initialCapsules}
-          staff={staff}
-          onSealed={() => router.refresh()}
-        />
-      )}
-
-      {townHall.membership === 'active' && initialFeed && (
-        <FeedSection
-          townHallId={townHall.id}
-          isOwner={staff}
-          initial={initialFeed}
-          initialHeld={initialHeld}
-        />
-      )}
-
-      {townHall.membership === 'active' && (
-        <ClayCard className="flex flex-col gap-4">
-          <h2 className="text-title text-text-primary">Members</h2>
-          {members.length === 0 ? (
-            <EmptyState as="h3" icon="🏛️" title="Just you so far" />
-          ) : (
-            <ul className="flex flex-col gap-3">
-              {members.map((m) => (
-                <li key={m.handle} className="flex items-center gap-3">
-                  <Avatar name={m.displayName} tint={m.portraitTint} src={m.portraitUrl} size="sm" />
-                  <span className="min-w-0 flex-1 text-body [overflow-wrap:anywhere] text-text-primary">
-                    {m.displayName} <span className="text-text-secondary">@{m.handle}</span>
-                  </span>
-                  {ROLE_LABEL[m.role] && (
-                    <span className="text-caption text-text-secondary">{ROLE_LABEL[m.role]}</span>
+      {member && (
+        // Posts first; the roster and (for the Owner and Deputies) the running of the group behind their own tabs, so a
+        // member sees a calm page.
+        <Tabs
+          label="This group"
+          tabs={[
+            {
+              id: 'posts',
+              label: 'Posts',
+              panel: initialFeed ? (
+                <FeedSection
+                  townHallId={townHall.id}
+                  isOwner={staff}
+                  initial={initialFeed}
+                  initialHeld={initialHeld}
+                />
+              ) : null,
+            },
+            {
+              id: 'members',
+              label: 'Members',
+              panel: (
+                <ClayCard className="flex flex-col gap-2">
+                  <h2 className="text-title text-text-primary">Members</h2>
+                  {members.length === 0 ? (
+                    <EmptyState as="h3" icon="🏛️" title="Just you so far" />
+                  ) : (
+                    <ul className="-mb-2.5 flex flex-col divide-y divide-border">
+                      {members.map((m) => (
+                        <li key={m.handle} className="flex items-center gap-3 py-2.5">
+                          <Avatar name={m.displayName} tint={m.portraitTint} src={m.portraitUrl} size="sm" />
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate text-body font-semibold text-text-primary">
+                              {m.displayName}
+                            </span>
+                            <span className="block truncate text-caption text-text-secondary">
+                              @{m.handle}
+                            </span>
+                          </span>
+                          {ROLE_LABEL[m.role] && (
+                            <span className="shrink-0 text-caption text-text-secondary">
+                              {ROLE_LABEL[m.role]}
+                            </span>
+                          )}
+                          <MemberMenu
+                            townHallId={townHall.id}
+                            member={m}
+                            viewerRole={townHall.myRole}
+                            onChanged={(role) => changed(m.handle, role)}
+                          />
+                        </li>
+                      ))}
+                    </ul>
                   )}
-                  <MemberMenu
-                    townHallId={townHall.id}
-                    member={m}
-                    viewerRole={townHall.myRole}
-                    onChanged={(role) => changed(m.handle, role)}
-                  />
-                </li>
-              ))}
-            </ul>
-          )}
-          {next && (
-            <Button
-              variant="secondary"
-              size="sm"
-              loading={busy === 'more'}
-              onClick={loadMore}
-              className="self-center"
-            >
-              More members
-            </Button>
-          )}
-        </ClayCard>
-      )}
-
-      {!owner && (
-        <Button variant="ghost" size="sm" onClick={() => setReporting(true)} className="self-start">
-          Flag this group…
-        </Button>
-      )}
-
-      {staff && <InviteForm townHallId={townHall.id} onInvited={() => router.refresh()} />}
-
-      {staff && initialBans && (
-        <BansCard
-          townHallId={townHall.id}
-          initial={initialBans}
-          onBanned={(handle) => changed(handle, null)}
+                  {next && (
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      loading={busy === 'more'}
+                      onClick={loadMore}
+                      className="mt-3 self-center"
+                    >
+                      More members
+                    </Button>
+                  )}
+                </ClayCard>
+              ),
+            },
+            ...(staff
+              ? [
+                  {
+                    id: 'manage',
+                    label: 'Manage',
+                    panel: (
+                      <div className="flex flex-col gap-4">
+                        <InviteForm townHallId={townHall.id} onInvited={() => router.refresh()} />
+                        {owner && townHall.visibility !== 'invite' && <JoinRuleCard townHall={townHall} />}
+                        {initialBans && (
+                          <BansCard
+                            townHallId={townHall.id}
+                            initial={initialBans}
+                            onBanned={(handle) => changed(handle, null)}
+                          />
+                        )}
+                        {owner && (
+                          <ClayCard className="flex flex-col gap-3">
+                            <h2 className="text-title text-text-primary">Delete this group</h2>
+                            <p className="text-caption text-text-secondary">
+                              Deleting a group removes it and every membership in it. This cannot be undone.
+                              To step away without deleting it, make someone a Deputy, then hand it to them
+                              from the Members tab.
+                            </p>
+                            <Button
+                              variant="danger"
+                              size="sm"
+                              onClick={() => setConfirmDelete(true)}
+                              className="self-start"
+                            >
+                              Delete this group
+                            </Button>
+                          </ClayCard>
+                        )}
+                      </div>
+                    ),
+                  },
+                ]
+              : []),
+          ]}
         />
-      )}
-
-      {owner && townHall.visibility !== 'invite' && <JoinRuleCard townHall={townHall} />}
-
-      {owner && (
-        <ClayCard className="flex flex-col gap-3">
-          <h2 className="text-title text-text-primary">Danger zone</h2>
-          <p className="text-caption text-text-secondary">
-            Deleting a group removes it and every membership in it. This cannot be undone. To step away
-            without deleting it, make someone a Deputy, then hand it to them from the Members list.
-          </p>
-          <Button variant="danger" size="sm" onClick={() => setConfirmDelete(true)} className="self-start">
-            Delete this group
-          </Button>
-        </ClayCard>
       )}
 
       <ReportDialog
@@ -280,7 +336,31 @@ export function TownHallDetailView({
         onCancel={() => setConfirmDelete(false)}
         onConfirm={confirmDeletion}
       />
-    </>
+    </PageFrame>
+  );
+}
+
+/** "Copy group link": a findable group's address, for sharing anywhere (whoever opens it may join or ask to join). */
+function CopyLink({ townHallId }: { townHallId: string }) {
+  const [copied, setCopied] = useState(false);
+  async function copy() {
+    const url = `${window.location.origin}/groups/${townHallId}`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: 'Howdy group', url });
+        return;
+      }
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    } catch {
+      // Closing the share sheet is not an error worth showing.
+    }
+  }
+  return (
+    <Button size="sm" variant="secondary" onClick={copy} className="self-start">
+      <span aria-live="polite">{copied ? 'Link copied!' : 'Share group link'}</span>
+    </Button>
   );
 }
 
@@ -332,136 +412,6 @@ function InviteForm({ townHallId, onInvited }: { townHallId: string; onInvited: 
           Send invite
         </Button>
       </form>
-    </ClayCard>
-  );
-}
-
-/**
- * Time Capsules for the whole Town Hall (ADR-043): members see who sealed one and when it opens, never the words. The
- * owner and Deputies seal them; on the day each becomes a post in the feed.
- */
-function CapsulesCard({
-  townHallId,
-  initial,
-  staff,
-  onSealed,
-}: {
-  townHallId: string;
-  initial: HallCapsule[];
-  staff: boolean;
-  onSealed: () => void;
-}) {
-  // The server's list (re-read on refresh) minus any taken back here a moment ago.
-  const [gone, setGone] = useState<Set<string>>(new Set());
-  const capsules = initial.filter((c) => !gone.has(c.id));
-  const [openOn, setOpenOn] = useState('');
-  const [body, setBody] = useState('');
-  const [fields, setFields] = useState<Record<string, string>>({});
-  const [error, setError] = useState<string | undefined>();
-  const [busy, setBusy] = useState<string | undefined>();
-  const [confirming, setConfirming] = useState<string | undefined>();
-  const today = dayOf();
-
-  async function seal(e: FormEvent) {
-    e.preventDefault();
-    setError(undefined);
-    setFields({});
-    if (!openOn) return setFields({ openOn: 'Pick the day it opens.' });
-    if (!body.trim()) return setFields({ body: 'Write something to seal.' });
-    setBusy('seal');
-    const res = await postJson(`/api/town-halls/${townHallId}/capsules`, { body, openOn });
-    setBusy(undefined);
-    if (!res.ok) {
-      setFields(res.error?.fields ?? {});
-      if (!res.error?.fields) setError(res.error?.message ?? 'That did not seal. Try again.');
-      return;
-    }
-    setBody('');
-    setOpenOn('');
-    onSealed();
-  }
-
-  async function takeBack(id: string) {
-    setBusy(`back:${id}`);
-    setError(undefined);
-    const res = await apiRequest('DELETE', `/api/town-halls/${townHallId}/capsules/${id}`);
-    setBusy(undefined);
-    setConfirming(undefined);
-    if (!res.ok) return setError(res.error?.message ?? 'That did not work. Try again.');
-    setGone((g) => new Set(g).add(id));
-    onSealed();
-  }
-
-  return (
-    <ClayCard className="flex flex-col gap-3">
-      <h2 className="text-title text-text-primary">Time Capsules</h2>
-      <p className="text-caption text-text-secondary">
-        {staff
-          ? 'Seal words for the whole group. They open as a post on the day you pick, and nobody can read them before — not even you.'
-          : 'Words sealed for this group. Each opens as a post on its day.'}
-      </p>
-      {error && <FormMessage tone="error">{error}</FormMessage>}
-      {capsules.length > 0 && (
-        <ul className="flex flex-col gap-3">
-          {capsules.map((c) => (
-            <li key={c.id} className="flex flex-wrap items-center gap-3">
-              <span aria-hidden="true" className="text-title">
-                ⏳
-              </span>
-              <span className="min-w-0 flex-1 text-body [overflow-wrap:anywhere] text-text-primary">
-                {c.from ? `From ${c.from.displayName}` : 'From a member'}
-                <span className="block text-caption text-text-secondary">Opens {longDay(c.openOn)}</span>
-              </span>
-              {c.canTakeBack && (
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  loading={busy === `back:${c.id}`}
-                  onClick={() => setConfirming(c.id)}
-                >
-                  Take back
-                </Button>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
-      {staff && (
-        <form onSubmit={seal} noValidate className="flex flex-col gap-3">
-          <Input
-            label="Opens on"
-            type="date"
-            min={addDays(today, 1)}
-            max={addYears(today, CAPSULE_MAX_YEARS)}
-            value={openOn}
-            onChange={(e) => setOpenOn(e.target.value)}
-            error={fields.openOn}
-            hint={`Any day from tomorrow to ${CAPSULE_MAX_YEARS} years from now.`}
-          />
-          <Textarea
-            label="Your words"
-            value={body}
-            onChange={(e) => setBody(e.target.value)}
-            maxLength={LIMITS.TOWNHALL_POST_MAX}
-            showCount
-            rows={3}
-            error={fields.body}
-          />
-          <Button type="submit" size="sm" loading={busy === 'seal'} className="self-start">
-            Seal it
-          </Button>
-        </form>
-      )}
-      <ConfirmationDialog
-        open={confirming !== undefined}
-        destructive
-        title="Take this capsule back?"
-        description="It is deleted, words and all, and will never open."
-        confirmLabel="Take it back"
-        loading={busy?.startsWith('back:') ?? false}
-        onCancel={() => setConfirming(undefined)}
-        onConfirm={() => confirming && takeBack(confirming)}
-      />
     </ClayCard>
   );
 }

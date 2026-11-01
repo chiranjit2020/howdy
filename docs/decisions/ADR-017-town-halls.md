@@ -4,6 +4,8 @@ Status: accepted (Phase 10). Decisions taken with you: directory + membership on
 yet), any active member may create one, `open`/`members` both self-serve instantly and are both listed in the
 directory, `invite` is never listed and needs the owner's invite plus the invitee's acceptance (2026-09-23).
 
+**Partly superseded by ADR-054 (2026-11-01):** groups are circles; no public directory ("Groups your friends are in" instead), and "Members only" is retired.
+
 ## Context
 
 Master prompt §61 Phase 10 is "Town Halls" (PRODUCT_DISCOVERY: `Town Hall → Community`), specified only as a name,

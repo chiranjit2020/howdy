@@ -544,7 +544,7 @@ export function KitShowcase({ initialTheme }: { initialTheme: Theme | undefined 
         <TownHallCard
           name="Hostel B Night Owls"
           description="For anyone awake past 2am."
-          visibility="members"
+          visibility="open"
           joined
           action={
             <Button variant="secondary" size="sm">

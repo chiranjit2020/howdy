@@ -74,36 +74,60 @@ describe('creating one', () => {
   });
 });
 
-describe('the directory', () => {
-  it('lists only open and members visibility, never invite-only', async () => {
+describe('groups your friends are in (ADR-054: no public directory)', () => {
+  const friends = async (a: { handle: string; cookie: string }, b: { handle: string; cookie: string }) => {
+    await doAct(b.handle, 'request', as(a));
+    await doAct(a.handle, 'accept', as(b));
+  };
+
+  it('lists findable groups a friend is in, with how many friends: never private ones, never ones with no friend in them', async () => {
     const owner = await person('owner');
-    await create(make({ name: 'Open One', visibility: 'open' }), as(owner));
-    await create(make({ name: 'Members One', visibility: 'members' }), as(owner));
-    await create(make({ name: 'Secret One', visibility: 'invite' }), as(owner));
-    const stranger = await person('stranger');
-    const seen = await directory(as(stranger));
-    const names = seen.data.townHalls!.map((t) => t.name);
-    expect(names).toContain('Open One');
-    expect(names).toContain('Members One');
-    expect(names).not.toContain('Secret One');
+    const pal = await person('pal');
+    const me = await person('me');
+    await friends(me, pal);
+    const withPal = (await create(make({ name: 'Batch of 2019', visibility: 'open' }), as(owner))).data
+      .townHall!.id;
+    const secret = (await create(make({ name: 'Family', visibility: 'invite' }), as(owner))).data.townHall!
+      .id;
+    await create(make({ name: 'Strangers Only', visibility: 'open' }), as(owner));
+    await act(withPal, 'join', as(pal));
+    await invite(secret, pal.handle, as(owner));
+    await act(secret, 'accept', as(pal));
+
+    const seen = (await directory(as(me))).data.townHalls!;
+    expect(seen.map((t) => t.name)).toEqual(['Batch of 2019']);
+    expect(seen[0]).toMatchObject({ friendsHere: 1, joined: false });
   });
 
-  it('marks a group as joined once you have joined it', async () => {
+  it('leaves out groups I am already in, and shows nothing to someone without friends', async () => {
     const owner = await person('owner');
-    const made = await create(make(), as(owner));
-    const id = made.data.townHall!.id;
-    const stranger = await person('stranger');
-    expect((await directory(as(stranger))).data.townHalls![0]!.joined).toBe(false);
-    await act(id, 'join', as(stranger));
-    expect((await directory(as(stranger))).data.townHalls![0]!.joined).toBe(true);
+    const pal = await person('pal');
+    const me = await person('me');
+    const loner = await person('loner');
+    await friends(me, pal);
+    const id = (await create(make(), as(owner))).data.townHall!.id;
+    await act(id, 'join', as(pal));
+    expect((await directory(as(me))).data.townHalls!).toHaveLength(1);
+    await act(id, 'join', as(me));
+    expect((await directory(as(me))).data.townHalls!).toHaveLength(0);
+    expect((await directory(as(loner))).data.townHalls!).toHaveLength(0);
   });
 
-  it('never reveals a member count', async () => {
+  it('never reveals a member count or who the friends are', async () => {
     const owner = await person('owner');
-    await create(make(), as(owner));
-    const stranger = await person('stranger');
-    const seen = await directory(as(stranger));
+    const pal = await person('pal');
+    const me = await person('me');
+    await friends(me, pal);
+    const id = (await create(make(), as(owner))).data.townHall!.id;
+    await act(id, 'join', as(pal));
+    const seen = await directory(as(me));
     expect(seen.text).not.toMatch(/memberCount|"count"/i);
+    expect(seen.text).not.toContain(pal.handle);
+  });
+
+  it('"Members only" is retired: creating one is refused', async () => {
+    const owner = await person('owner');
+    expect((await create(make({ visibility: 'members' }), as(owner))).status).toBe(422);
   });
 
   it('needs a session', async () => {

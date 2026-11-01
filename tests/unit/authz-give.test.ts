@@ -3,9 +3,9 @@ import { can, type Action, type Actor } from '@/modules/authz';
 import { RELATIONSHIP_STATES, type RelationshipState } from '@/shared/relationship';
 
 /**
- * An independent oracle for giving Tributes and Marks (ADR-044), written from the product rule rather than from
- * policy.ts: an active account, a different person, no block either way, and EITHER a mutual Posse OR Town Hall
- * neighbours. Whispers never widen: neighbours who are not Pals still cannot exchange them.
+ * An independent oracle for giving Tributes and Marks and exchanging Whispers, written from the product rule rather
+ * than from policy.ts: an active account, a different person, no block either way, and a mutual Posse. Sharing a group
+ * grants nothing (group neighbours could give Tributes and Marks under ADR-044, until groups became circles, ADR-054).
  */
 const OWNER = 'other';
 const ME = 'me';
@@ -18,40 +18,29 @@ const actors: Array<{ name: string; actor: Actor }> = [
   { name: 'the owner themselves', actor: { kind: 'user', id: OWNER, status: 'active' } },
 ];
 
-function oracle(action: Action, actor: Actor, rel: RelationshipState, neighbour: boolean): boolean {
+function oracle(actor: Actor, rel: RelationshipState): boolean {
   if (actor.kind !== 'user' || actor.status !== 'active' || actor.id === OWNER) return false;
   if (rel === 'BLOCKED') return false;
-  const pals = rel === 'POSSE' || rel === 'CLOSE_POSSE';
-  return action === 'whisper:exchange' ? pals : pals || neighbour;
+  return rel === 'POSSE' || rel === 'CLOSE_POSSE';
 }
 
-describe('can(): Testimonials, Marks and messages with group neighbours (ADR-044)', () => {
-  it('match an independent oracle over every action × actor × relationship × neighbour', () => {
+describe('can(): Testimonials, Marks and messages are between friends (ADR-054)', () => {
+  it('match an independent oracle over every action × actor × relationship', () => {
     let n = 0;
-    for (const action of ['tribute:give', 'mark:give', 'whisper:exchange'] as const)
+    for (const action of ['tribute:give', 'mark:give', 'whisper:exchange'] as Action[])
       for (const { name, actor } of actors)
-        for (const rel of RELATIONSHIP_STATES)
-          for (const neighbour of [false, true]) {
-            const got = can(actor, action, RANCH, { relationship: rel, neighbour }).allow;
-            expect(got, `${action} · ${name} · ${rel} · neighbour=${neighbour}`).toBe(
-              oracle(action, actor, rel, neighbour),
-            );
-            n += 1;
-          }
-    expect(n).toBe(3 * actors.length * RELATIONSHIP_STATES.length * 2);
+        for (const rel of RELATIONSHIP_STATES) {
+          expect(can(actor, action, RANCH, { relationship: rel }).allow, `${action} · ${name} · ${rel}`).toBe(
+            oracle(actor, rel),
+          );
+          n += 1;
+        }
+    expect(n).toBe(3 * actors.length * RELATIONSHIP_STATES.length);
   });
 
-  it('a neighbour who is not a friend may give a Mark or a testimonial, but never message', () => {
+  it('a block beats being friends', () => {
     const me: Actor = { kind: 'user', id: ME, status: 'active' };
-    const ctx = { relationship: 'UNKNOWN' as RelationshipState, neighbour: true };
-    expect(can(me, 'mark:give', RANCH, ctx).allow).toBe(true);
-    expect(can(me, 'tribute:give', RANCH, ctx).allow).toBe(true);
-    expect(can(me, 'whisper:exchange', RANCH, ctx).allow).toBe(false);
-  });
-
-  it('a block beats being neighbours', () => {
-    const me: Actor = { kind: 'user', id: ME, status: 'active' };
-    expect(can(me, 'mark:give', RANCH, { relationship: 'BLOCKED', neighbour: true })).toEqual({
+    expect(can(me, 'mark:give', RANCH, { relationship: 'BLOCKED' })).toEqual({
       allow: false,
       reason: 'blocked',
     });

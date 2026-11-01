@@ -1,20 +1,11 @@
 import { marks } from '@db/schema';
 import { and, eq, sql } from 'drizzle-orm';
-import {
-  can,
-  inPosse,
-  neighbourMatters,
-  type Actor,
-  type PolicyContext,
-  type RanchResource,
-} from '@/modules/authz';
+import { can, inPosse, type Actor, type RanchResource } from '@/modules/authz';
 import { getFenceResource, resolveHandle } from '@/modules/profiles';
 import { fenceStanding } from '@/modules/relationships';
-import { areNeighbours } from '@/modules/town-halls';
 import { getDb } from '@/platform/db';
 import { AppError } from '@/platform/errors';
 import { emit } from '@/platform/events';
-import type { RelationshipState } from '@/shared/relationship';
 import { enforceRateLimit, type RateLimitRule } from '@/platform/rate-limit';
 import { MARK_KINDS, type MarkKind } from '@/shared/validation/marks';
 
@@ -28,18 +19,6 @@ export const RATE = {
 } as const;
 
 const actorOf = (userId: string): Actor => ({ kind: 'user', id: userId, status: 'active' });
-
-/** The policy facts for giving (ADR-044): the relationship, and — only when it could matter — whether they are neighbours. */
-async function giveContext(
-  viewerId: string | null,
-  ownerId: string,
-  relationship: RelationshipState,
-): Promise<PolicyContext> {
-  return {
-    relationship,
-    neighbour: neighbourMatters(viewerId, ownerId, relationship) && (await areNeighbours(viewerId, ownerId)),
-  };
-}
 
 async function access(
   viewer: Actor,
@@ -68,7 +47,7 @@ export interface Description {
   /** The most-picked words, most first (ties in catalogue order); empty until MIN_DESCRIBERS people have picked. */
   words: MarkKind[];
   isOwner: boolean;
-  /** May the viewer pick a word for this person (friends or group neighbours, not the owner)? */
+  /** May the viewer pick a word for this person (a friend, not the owner)? */
   canGive: boolean;
   /** The viewer's own current pick for this person, if any. */
   mine: MarkKind | null;
@@ -97,8 +76,7 @@ export async function getDescription(
   const viewerId = viewer.kind === 'user' ? viewer.id : null;
   const canGive =
     viewerId !== ownerId &&
-    can(viewer, 'mark:give', acc.ranch, await giveContext(viewerId, ownerId, acc.relationship.relationship))
-      .allow;
+    can(viewer, 'mark:give', acc.ranch, { relationship: acc.relationship.relationship }).allow;
   const [rows, [own]] = await Promise.all([
     getDb()
       .select({ kind: marks.kind, n: sql<number>`count(*)::int` })
@@ -136,8 +114,8 @@ export async function getDescription(
 }
 
 /**
- * Pick (or change) the one word that describes the person with call sign `handle`. Needs to be Pals or Town Hall
- * neighbours (same gate as a Tribute, ADR-044). One current pick per pair, enforced by the database: picking again
+ * Pick (or change) the one word that describes the person with call sign `handle`. Needs to be Pals (the same gate as
+ * a Tribute; group neighbours could too until ADR-054). One current pick per pair, enforced by the database: picking again
  * replaces it. Only a first pick rings their bell, and it never says which word.
  */
 export async function giveMark(raterId: string, handle: string, kind: MarkKind): Promise<{ kind: MarkKind }> {
@@ -149,8 +127,8 @@ export async function giveMark(raterId: string, handle: string, kind: MarkKind):
   const acc = await access(actor, targetId);
   if (!acc) throw new AppError('NOT_FOUND');
   const relationship = acc.relationship.relationship;
-  if (!can(actor, 'mark:give', acc.ranch, await giveContext(raterId, targetId, relationship)).allow) {
-    throw new AppError('FORBIDDEN', { message: 'Only friends and group neighbours can describe someone.' });
+  if (!can(actor, 'mark:give', acc.ranch, { relationship: relationship }).allow) {
+    throw new AppError('FORBIDDEN', { message: 'Only friends can describe someone.' });
   }
   const fromPal = inPosse(relationship);
   // `xmax = 0` is true only for a row this statement inserted (not one it updated): a first pick.

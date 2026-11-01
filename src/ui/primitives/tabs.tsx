@@ -35,7 +35,8 @@ export function Tabs({ tabs, defaultId, label }: { tabs: TabItem[]; defaultId?: 
         role="tablist"
         aria-label={label}
         onKeyDown={onKeyDown}
-        className="flex gap-1 overflow-x-auto rounded-pill bg-surface-sunken p-1"
+        // The same look as Settings' tabs: a row with a sunflower underline under the current one.
+        className="flex gap-1 overflow-x-auto border-b border-border"
       >
         {tabs.map((t) => {
           const selected = t.id === activeId;
@@ -53,10 +54,10 @@ export function Tabs({ tabs, defaultId, label }: { tabs: TabItem[]; defaultId?: 
               tabIndex={selected ? 0 : -1}
               onClick={() => setActiveId(t.id)}
               className={cn(
-                'min-h-11 flex-1 rounded-pill px-4 text-caption font-semibold whitespace-nowrap transition-colors',
+                '-mb-px min-h-11 border-b-2 px-3 text-caption font-semibold whitespace-nowrap transition-colors',
                 selected
-                  ? 'bg-surface text-text-primary shadow-clay-sm'
-                  : 'text-text-secondary hover:text-text-primary',
+                  ? 'border-highlight text-text-primary'
+                  : 'border-transparent text-text-secondary hover:border-border-strong hover:text-text-primary',
               )}
             >
               {t.label}

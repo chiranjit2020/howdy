@@ -25,7 +25,6 @@ import {
 import { leadingMention } from '@/shared/mentions';
 import type { PortraitTint } from '@/shared/validation/profile';
 import { HALL_FEED_MAX_PAGE_SIZE, HALL_FEED_PAGE_SIZE } from '@/shared/validation/town-halls';
-import { openHallCapsules } from './capsules';
 import { activeRole, isStaff, outranks, rolesIn, type HallRole } from './roles';
 
 /**
@@ -328,8 +327,6 @@ export async function listFeed(
   await enforceRateLimit(`townhalls:feed:${viewerId}`, FEED_RATE.read);
   const hall = await hallForMember(viewerId, townHallId);
   if (!hall) return null;
-  // Time Capsules whose day has come become posts before the first page is read (ADR-043).
-  if (!cursor) await openHallCapsules({ townHallId: hall.id });
   const limit = Math.min(Math.max(opts.limit ?? HALL_FEED_PAGE_SIZE, 1), HALL_FEED_MAX_PAGE_SIZE);
 
   const kept: PostRow[] = [];

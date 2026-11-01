@@ -32,6 +32,9 @@ type Person = Awaited<ReturnType<typeof person>>;
 
 const memberRow = (page: Page, handle: string) =>
   page.getByRole('listitem').filter({ hasText: `@${handle}` });
+/** The roster and the running of the group sit behind their own tabs (ADR-054). */
+const openTab = (page: Page, name: 'Members' | 'Manage') =>
+  page.getByRole('tab', { name, exact: true }).click();
 
 async function checkPhone(page: Page) {
   await pageReady(page);
@@ -61,11 +64,12 @@ test.describe('Group roles (production build, real CSP)', () => {
     await owner.page.getByRole('button', { name: 'Start a group' }).click();
     await owner.page.getByLabel('Name').fill(name);
     await owner.page.getByLabel('What is it about?').fill('Slow evenings, good company.');
+    await owner.page.getByLabel('Who can find it?').selectOption('open');
     await owner.page.getByRole('switch', { name: /Ask to join/ }).click();
     await owner.page.getByRole('button', { name: 'Start it' }).click();
-    await owner.page.getByRole('tab', { name: /^Mine/ }).click();
-    const manage = owner.page.getByRole('link', { name: /^Manage/ }).first();
-    const url = (await manage.getAttribute('href'))!;
+    // Starting one lands on it (ADR-054); its address is the link others open.
+    await expect(owner.page).toHaveURL(/\/groups\/[0-9a-f-]{36}$/);
+    const url = new URL(owner.page.url()).pathname;
 
     // The future Deputy asks, and the owner lets them in and appoints them.
     await askToJoin(dep, url);
@@ -74,6 +78,7 @@ test.describe('Group roles (production build, real CSP)', () => {
     await expect(asking).toBeVisible();
     await memberRow(owner.page, dep.handle).getByRole('button', { name: 'Let in' }).click();
     await owner.page.reload();
+    await openTab(owner.page, 'Members');
     await memberRow(owner.page, dep.handle)
       .getByRole('button', { name: `Options for @${dep.handle}` })
       .click();
@@ -98,6 +103,7 @@ test.describe('Group roles (production build, real CSP)', () => {
 
     // A Deputy may remove an ordinary member (the menu is there) but has no menu on the owner.
     await dep.page.reload();
+    await openTab(dep.page, 'Members');
     await expect(
       memberRow(dep.page, eve.handle).getByRole('button', { name: `Options for @${eve.handle}` }),
     ).toBeVisible();
@@ -107,15 +113,19 @@ test.describe('Group roles (production build, real CSP)', () => {
 
     // The owner hands it over.
     await owner.page.reload();
+    await openTab(owner.page, 'Members');
     await memberRow(owner.page, dep.handle)
       .getByRole('button', { name: `Options for @${dep.handle}` })
       .click();
     await owner.page.getByRole('menuitem', { name: 'Hand the group to them…' }).click();
     await owner.page.getByRole('alertdialog').getByRole('button', { name: 'Hand it over' }).click();
     await expect(owner.page.getByRole('button', { name: 'Leave' })).toBeVisible();
-    await expect(owner.page.getByRole('heading', { name: 'Danger zone' })).toBeHidden();
+    // Deleting is the Owner's alone: the old owner (now a Deputy) still manages, but cannot delete; the new one can.
+    await openTab(owner.page, 'Manage');
+    await expect(owner.page.getByRole('heading', { name: 'Delete this group' })).toHaveCount(0);
     await dep.page.reload();
-    await expect(dep.page.getByRole('heading', { name: 'Danger zone' })).toBeVisible();
+    await openTab(dep.page, 'Manage');
+    await expect(dep.page.getByRole('heading', { name: 'Delete this group' })).toBeVisible();
     await checkPhone(dep.page);
     expect(problems).toEqual([]);
     for (const p of [owner, dep, eve]) await p.ctx.close();

@@ -410,9 +410,9 @@ describe('ChimeItem, TownHallCard, RanchHeader', () => {
 
   it('groups show visibility but no member counts', () => {
     const { container } = render(
-      <TownHallCard name="Night Owls" description="Awake past 2am" visibility="members" />,
+      <TownHallCard name="Night Owls" description="Awake past 2am" visibility="open" />,
     );
-    expect(screen.getByText('Members only')).toBeInTheDocument();
+    expect(screen.getByText('Friends can find it')).toBeInTheDocument();
     expect(container.textContent).not.toMatch(/\d+\s*(members|people)/i);
   });
 

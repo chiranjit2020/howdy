@@ -17,7 +17,7 @@ export { MARK_EMOJI, MARK_LABEL, MARK_MEANING, MARK_ORDER, MarkIcon } from './ma
 export { Fence } from './fence';
 export { WhisperBubble, type WhisperStatus } from './whisper-bubble';
 export { PosseBadge } from './posse-badge';
-export { TownHallCard, type TownHallVisibility } from './town-hall-card';
+export { GROUP_VISIBILITY_LABEL, TownHallCard, type TownHallVisibility } from './town-hall-card';
 export { PersonRow } from './person-row';
 export { ChimeItem, type ChimeType } from './chime-item';
 export { GlossaryHint } from './glossary-hint';

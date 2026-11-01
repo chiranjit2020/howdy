@@ -20,7 +20,7 @@ export const GET = route(async ({ req, requestId, params }) => {
   return json(description);
 });
 
-/** Pick (or change) the word that describes them. Friends and group neighbours only; everyone else gets the same 403. */
+/** Pick (or change) the word that describes them. Friends only; everyone else gets the same 403. */
 export const POST = route(async ({ req, params }) => {
   const { user } = await requireSession(req);
   const { kind } = await readJson(req, giveMarkSchema);

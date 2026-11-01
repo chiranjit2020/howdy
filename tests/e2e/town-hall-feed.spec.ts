@@ -39,17 +39,11 @@ const api = (p: Person, path: string, data: unknown) =>
 /** The Post Card-shaped post from this person (its accessible name says who wrote it). */
 const postFrom = (page: Page, handle: string) => page.getByRole('article', { name: `Post from ${handle}` });
 
-/** Reach the Town Hall the way a person would: Town Halls → Mine → Open. */
+/** Reach the group the way a person would: Groups → its row under "Your groups". */
 async function openByTapping(p: Person, name: string, id: string) {
   await p.page.goto('/groups');
   await pageReady(p.page);
-  await p.page.getByRole('tab', { name: /^Mine/ }).tap();
-  await p.page
-    .getByRole('heading', { name, level: 2, exact: true })
-    .locator('xpath=ancestor::*[contains(concat(" ", @class, " "), " clay ")][1]')
-    .getByRole('link')
-    .first()
-    .tap();
+  await p.page.getByRole('link', { name: new RegExp(name) }).tap();
   await expect(p.page).toHaveURL(new RegExp(`/groups/${id}$`));
   await pageReady(p.page);
 }

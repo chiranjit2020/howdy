@@ -49,12 +49,11 @@ test('a photo in a group post: chosen on a phone, seen by another member, no hid
   await owner.page.getByRole('button', { name: 'Start a group' }).click();
   await owner.page.getByLabel('Name').fill(`Photo profile ${Date.now().toString(36)}`);
   await owner.page.getByLabel('What is it about?').fill('Pictures welcome.');
+  await owner.page.getByLabel('Who can find it?').selectOption('open');
   await owner.page.getByRole('button', { name: 'Start it' }).click();
-  await owner.page.getByRole('tab', { name: /^Mine/ }).click();
-  const url = (await owner.page
-    .getByRole('link', { name: /^Manage/ })
-    .first()
-    .getAttribute('href'))!;
+  // Starting one lands on it (ADR-054); its address is the link others open.
+  await expect(owner.page).toHaveURL(/\/groups\/[0-9a-f-]{36}$/);
+  const url = new URL(owner.page.url()).pathname;
   await ann.page.goto(url);
   await pageReady(ann.page);
   await ann.page.getByRole('button', { name: 'Join', exact: true }).click();

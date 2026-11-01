@@ -32,82 +32,91 @@ type Person = Awaited<ReturnType<typeof person>>;
 const api = (p: Person, path: string, data: unknown) =>
   p.page.request.fetch(path, { method: 'POST', data, headers: { origin: ORIGIN } });
 
-/** A name nobody else's run can have, so the shared directory never confuses two tests. */
+/** A name nobody else's run can have, so two tests never confuse their groups. */
 const hallName = (label: string) => `${label} ${Date.now().toString(36)}`;
 
-/** The card (a Town Hall or an invite, both clay cards) whose h2 is this name. */
-const hallCard = (page: Page, name: string) =>
-  page
-    .getByRole('heading', { name, level: 2, exact: true })
-    .locator('xpath=ancestor::*[contains(concat(" ", @class, " "), " clay ")][1]');
+async function makePals(asker: Person, asked: Person) {
+  expect((await api(asker, `/api/relationships/${asked.handle}`, { action: 'request' })).ok()).toBe(true);
+  expect((await api(asked, `/api/relationships/${asker.handle}`, { action: 'accept' })).ok()).toBe(true);
+}
 
-async function startViaUi(p: Person, name: string, visibility: 'open' | 'members' | 'invite') {
+/** Start a group from the dialog on /groups; you land on its page. Returns its id. */
+async function startViaUi(p: Person, name: string, visibility: 'open' | 'invite') {
   await p.page.goto('/groups');
   await pageReady(p.page);
   await p.page.getByRole('button', { name: 'Start a group' }).click();
-  await p.page.getByLabel('Name').fill(name);
-  await p.page.getByLabel('What is it about?').fill(`All about ${name}.`);
-  await p.page.getByLabel('Who can find and join it?').selectOption(visibility);
-  await p.page.getByRole('button', { name: 'Start it' }).click();
-  await p.page.getByRole('tab', { name: /^Mine/ }).click();
-  const manage = hallCard(p.page, name).getByRole('link', { name: 'Manage' });
-  await expect(manage).toBeVisible();
-  const href = await manage.getAttribute('href');
-  return href!.split('/').pop()!;
+  const dialog = p.page.getByRole('dialog', { name: 'Start a group' });
+  await dialog.getByLabel('Name').fill(name);
+  await dialog.getByLabel('What is it about?').fill(`All about ${name}.`);
+  await dialog.getByLabel('Who can find it?').selectOption(visibility);
+  await dialog.getByRole('button', { name: 'Start it' }).click();
+  await expect(p.page).toHaveURL(/\/groups\/[0-9a-f-]{36}$/);
+  await expect(p.page.getByRole('heading', { name, level: 1 })).toBeVisible();
+  return p.page.url().split('/').pop()!;
 }
 
-test.describe('Groups (production build, real CSP)', () => {
-  test('start, discover and join, invite-only stays hidden until invited, remove a member, delete', async ({
+const tab = (page: Page, name: string) => page.getByRole('tab', { name, exact: true });
+
+test.describe('Groups as circles (production build, real CSP)', () => {
+  test('start one, a friend finds and joins it, a link opens it, private stays hidden until invited, remove, delete', async ({
     browser,
   }) => {
+    test.slow(); // three people sign up
     const a = await person(browser, 'hallowner');
     const b = await person(browser, 'halljoiner');
     const c = await person(browser, 'hallguest');
+    await makePals(b, a);
     const problems = await watchProblems(a.page);
 
-    // Alice starts an open Town Hall; it is hers to manage.
+    // Alice starts one her friends can find; she lands on it, hers to manage.
     const openName = hallName('Chai Club');
     const openId = await startViaUi(a, openName, 'open');
+    await expect(tab(a.page, 'Manage')).toBeVisible();
 
-    // Bob finds it in the directory and joins with one tap; opening it shows both of them.
+    // Bob, her friend, finds it under "Groups your friends are in" and joins with one tap.
     await b.page.goto('/groups');
     await pageReady(b.page);
-    await hallCard(b.page, openName).getByRole('button', { name: 'Join' }).click();
-    await hallCard(b.page, openName).getByRole('link', { name: 'Open' }).click();
+    const found = b.page.getByRole('region', { name: 'Groups your friends are in' });
+    await expect(found.getByText('1 friend is here')).toBeVisible();
+    await found.getByRole('button', { name: `Join ${openName}` }).click();
+    await found.getByRole('link', { name: 'Open' }).click();
     await expect(b.page).toHaveURL(new RegExp(`/groups/${openId}$`));
     await pageReady(b.page);
-    await expect(b.page.getByRole('heading', { name: 'Members' })).toBeVisible();
+    await tab(b.page, 'Members').click();
     await expect(b.page.getByText(`@${a.handle}`)).toBeVisible();
     await expect(b.page.getByText(`@${b.handle}`)).toBeVisible();
     await expect(b.page.getByRole('button', { name: 'Leave' })).toBeVisible();
-    await expect(b.page.getByRole('heading', { name: 'Invite someone' })).toHaveCount(0); // owners only
+    await expect(tab(b.page, 'Manage')).toHaveCount(0); // the Owner and Deputies only
 
-    // Alice starts an invite-only one: Carol cannot find it or open it (a real 404, like a made-up one).
-    const secretName = hallName('Quiet Room');
-    const secretId = await startViaUi(a, secretName, 'invite');
+    // Carol is nobody's friend here: it is not listed for her, but its link opens it, with a Join button.
     await c.page.goto('/groups');
     await pageReady(c.page);
-    await expect(c.page.getByRole('heading', { name: secretName })).toHaveCount(0);
-    expect((await c.page.goto(`/groups/${secretId}`))?.status()).toBe(404);
+    await expect(c.page.getByText(openName)).toHaveCount(0);
+    await c.page.goto(`/groups/${openId}`);
+    await pageReady(c.page);
+    await expect(c.page.getByRole('button', { name: 'Join' })).toBeVisible();
 
-    // Alice invites Carol by call sign; Carol sees the invite, joins, and can open it.
-    await a.page.goto(`/groups/${secretId}`);
-    await pageReady(a.page);
+    // A private one: Carol cannot open it (a real 404, like a made-up one) until Alice invites her.
+    const secretName = hallName('Family');
+    const secretId = await startViaUi(a, secretName, 'invite');
+    expect((await c.page.goto(`/groups/${secretId}`))?.status()).toBe(404);
+    await tab(a.page, 'Manage').click();
     await a.page.getByLabel('Their username').fill(`@${c.handle}`);
     await a.page.getByRole('button', { name: 'Send invite' }).click();
     await expect(a.page.getByText(`Invited @${c.handle.toLowerCase()}.`)).toBeVisible();
     await c.page.goto('/groups');
     await pageReady(c.page);
-    await c.page.getByRole('tab', { name: 'Invites (1)' }).click();
+    await expect(c.page.getByRole('heading', { name: 'Invites for you (1)' })).toBeVisible();
     await expect(c.page.getByText(`Invited by @${a.handle}`)).toBeVisible();
-    await hallCard(c.page, secretName).getByRole('button', { name: 'Join' }).click();
-    await expect(c.page.getByText('No invites waiting')).toBeVisible();
+    await c.page.getByRole('button', { name: `Join ${secretName}` }).click();
+    await expect(c.page.getByRole('heading', { name: /^Invites for you/ })).toHaveCount(0);
+    await expect(c.page.getByRole('link', { name: new RegExp(secretName) })).toBeVisible(); // under Your groups
     expect((await c.page.goto(`/groups/${secretId}`))?.status()).toBe(200);
-    await expect(c.page.getByText(`@${c.handle}`)).toBeVisible();
 
-    // Alice removes Bob from the open one: he is back to a Join button and no member list.
+    // Alice removes Bob from the open one: he is back to a Join button and no tabs.
     await a.page.goto(`/groups/${openId}`);
     await pageReady(a.page);
+    await tab(a.page, 'Members').click();
     // Member actions live in each row's Options menu (ADR-041).
     await a.page.getByRole('button', { name: `Options for @${b.handle}` }).click();
     await a.page.getByRole('menuitem', { name: 'Remove…' }).click();
@@ -119,11 +128,12 @@ test.describe('Groups (production build, real CSP)', () => {
     await b.page.reload();
     await pageReady(b.page);
     await expect(b.page.getByRole('button', { name: 'Join' })).toBeVisible();
-    await expect(b.page.getByRole('heading', { name: 'Members' })).toHaveCount(0);
+    await expect(tab(b.page, 'Members')).toHaveCount(0);
 
-    // Alice deletes the invite-only one: it is gone for Carol too.
+    // Alice deletes the private one from its Manage tab: it is gone for Carol too.
     await a.page.goto(`/groups/${secretId}`);
     await pageReady(a.page);
+    await tab(a.page, 'Manage').click();
     await a.page.getByRole('button', { name: 'Delete this group' }).click();
     await a.page
       .getByRole('alertdialog', { name: 'Delete this group?' })
@@ -151,7 +161,7 @@ test.describe('Groups (production build, real CSP)', () => {
   }
 
   for (const scheme of ['light', 'dark'] as const) {
-    test(`axe finds no violations on the directory and a group (${scheme})`, async ({ browser }) => {
+    test(`axe finds no violations on Groups and a group (${scheme})`, async ({ browser }) => {
       const { a, b, id } = await seed(browser, {
         colorScheme: scheme,
         bypassCSP: true,

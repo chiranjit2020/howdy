@@ -1,7 +1,6 @@
 import { sql } from 'drizzle-orm';
 import {
   check,
-  date,
   index,
   pgTable,
   primaryKey,
@@ -44,7 +43,7 @@ export const townHalls = pgTable(
     check('town_halls_join_rule_check', sql`${t.joinRule} in ('instant', 'approval')`),
     check('town_halls_name_len', sql`char_length(${t.name}) between 3 and 50`),
     check('town_halls_description_len', sql`char_length(${t.description}) between 1 and 280`),
-    check('town_halls_visibility_check', sql`${t.visibility} in ('open', 'members', 'invite')`),
+    check('town_halls_visibility_check', sql`${t.visibility} in ('open', 'invite')`),
     // Keyset pagination for the directory: newest first, ties broken by id.
     index('town_halls_directory_idx').on(t.visibility, t.createdAt.desc(), t.id.desc()),
     index('town_halls_owner_idx').on(t.ownerId),
@@ -159,35 +158,6 @@ export const townHallPosts = pgTable(
     // Keyset pagination: newest first, ties broken by id.
     index('town_hall_posts_feed_idx').on(t.townHallId, t.status, t.createdAt.desc(), t.id.desc()),
     index('town_hall_posts_author_idx').on(t.authorId),
-  ],
-);
-
-/**
- * A Time Capsule sealed for a whole Town Hall (ADR-043) by its owner or a Deputy. Sealed means sealed for everyone, the
- * writer included: no read selects `body` here. On its day (Howdy's calendar, Asia/Kolkata) it becomes a post in the feed
- * (`town_hall_posts.capsule_sealed_at` set) and this row is deleted in the same transaction — even if the writer has left
- * or been banned since. Goes with the Town Hall or the writer's account.
- */
-export const townHallCapsules = pgTable(
-  'town_hall_capsules',
-  {
-    id: uuid('id').primaryKey().defaultRandom(),
-    townHallId: uuid('town_hall_id')
-      .notNull()
-      .references(() => townHalls.id, { onDelete: 'cascade' }),
-    authorId: uuid('author_id')
-      .notNull()
-      .references(() => users.id, { onDelete: 'cascade' }),
-    body: text('body').notNull(),
-    openOn: date('open_on', { mode: 'string' }).notNull(),
-    createdAt: tstz('created_at').notNull().defaultNow(),
-  },
-  (t) => [
-    // It becomes a post, so it obeys the post's length.
-    check('town_hall_capsules_body_len', sql`char_length(${t.body}) between 1 and 280`),
-    index('town_hall_capsules_hall_idx').on(t.townHallId, t.openOn),
-    index('town_hall_capsules_due_idx').on(t.openOn),
-    index('town_hall_capsules_author_idx').on(t.authorId),
   ],
 );
 

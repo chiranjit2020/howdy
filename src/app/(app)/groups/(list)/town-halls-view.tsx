@@ -1,40 +1,139 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import type { DirectoryItem, DirectoryPage, InviteSummary, MineItem } from '@/modules/town-halls';
 import { apiRequest } from '@/ui/auth/api';
 import { FormMessage } from '@/ui/auth/form-parts';
-import { TownHallCard } from '@/ui/howdy';
-import { Button, ClayCard, EmptyState, Tabs } from '@/ui/primitives';
+import { GROUP_VISIBILITY_LABEL } from '@/ui/howdy';
+import { RailCard } from '@/ui/howdy/rail-card';
+import { GroupIcon } from '@/ui/icons';
+import { Badge, Button, ClayCard, EmptyState } from '@/ui/primitives';
 
-/** Directory, your own Town Halls, and invites waiting for your answer — three tabs, nothing shared between them. */
-export function TownHallsView({
-  initialDirectory,
-  mine,
-  invites,
-}: {
-  initialDirectory: DirectoryPage;
-  mine: MineItem[];
-  invites: InviteSummary[];
-}) {
+/** A group's initial on a quiet tile: a circle has no picture yet, and its name is what people know it by. */
+function GroupMark({ name }: { name: string }) {
   return (
-    <Tabs
-      label="Groups"
-      tabs={[
-        { id: 'directory', label: 'Discover', panel: <Directory initial={initialDirectory} /> },
-        { id: 'mine', label: `Mine (${mine.length})`, panel: <Mine mine={mine} /> },
-        {
-          id: 'invites',
-          label: invites.length > 0 ? `Invites (${invites.length})` : 'Invites',
-          panel: <Invites initial={invites} />,
-        },
-      ]}
-    />
+    <span
+      aria-hidden="true"
+      className="grid size-11 shrink-0 place-items-center rounded-lg bg-primary-soft text-title font-semibold text-on-highlight"
+    >
+      {name.trim().charAt(0).toUpperCase()}
+    </span>
   );
 }
 
-function Directory({ initial }: { initial: DirectoryPage }) {
+/** Invites waiting for my answer, at the top of the page (there is nothing to do with a group until I answer). */
+export function InvitesCard({ initial }: { initial: InviteSummary[] }) {
+  const router = useRouter();
+  const [invites, setInvites] = useState(initial);
+  const [busy, setBusy] = useState<string | undefined>();
+  const [error, setError] = useState<string | undefined>();
+  if (invites.length === 0) return null;
+
+  async function answer(townHallId: string, action: 'accept' | 'decline') {
+    setBusy(`${townHallId}:${action}`);
+    setError(undefined);
+    const res = await apiRequest('POST', `/api/town-halls/${townHallId}`, { action });
+    setBusy(undefined);
+    if (res.ok) {
+      setInvites((all) => all.filter((i) => i.townHallId !== townHallId));
+      router.refresh();
+    } else setError(res.error?.message ?? 'That did not work. Try again.');
+  }
+
+  return (
+    <ClayCard className="flex flex-col gap-2">
+      <h2 className="text-title text-text-primary">Invites for you ({invites.length})</h2>
+      {error && <FormMessage tone="error">{error}</FormMessage>}
+      <ul className="-mb-2.5 flex flex-col divide-y divide-border">
+        {invites.map((i) => (
+          <li key={i.townHallId} className="flex flex-wrap items-center gap-3 py-2.5">
+            <GroupMark name={i.name} />
+            <div className="min-w-0 flex-[1_1_12rem]">
+              <p className="truncate text-body font-semibold text-text-primary">{i.name}</p>
+              <p className="truncate text-caption text-text-secondary">Invited by @{i.invitedBy.handle}</p>
+            </div>
+            <div className="ml-auto flex gap-2">
+              <Button
+                size="sm"
+                loading={busy === `${i.townHallId}:accept`}
+                onClick={() => answer(i.townHallId, 'accept')}
+                aria-label={`Join ${i.name}`}
+              >
+                Join
+              </Button>
+              <Button
+                size="sm"
+                variant="secondary"
+                loading={busy === `${i.townHallId}:decline`}
+                onClick={() => answer(i.townHallId, 'decline')}
+                aria-label={`Decline ${i.name}`}
+              >
+                Decline
+              </Button>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </ClayCard>
+  );
+}
+
+/** The circles I belong to: one row each, straight to it. */
+export function MyGroups({ mine }: { mine: MineItem[] }) {
+  if (mine.length === 0) {
+    return (
+      <ClayCard>
+        <EmptyState
+          as="h2"
+          icon={<GroupIcon className="text-text-muted" />}
+          title="No groups yet"
+          description="Start one for your batch, family, society or team, and invite them. Groups your friends are in show on the right."
+        />
+      </ClayCard>
+    );
+  }
+  return (
+    <ClayCard className="flex flex-col gap-2">
+      <h2 className="text-title text-text-primary">Your groups ({mine.length})</h2>
+      <ul className="-mx-2 -mb-2 flex flex-col">
+        {mine.map((t) => (
+          <li key={t.id}>
+            <Link
+              href={`/groups/${t.id}`}
+              className="flex min-h-11 items-center gap-3 rounded-lg px-2 py-2.5 no-underline hover:bg-surface-sunken hover:no-underline"
+            >
+              <GroupMark name={t.name} />
+              <span className="flex min-w-0 flex-1 flex-col">
+                <span className="truncate text-body font-semibold text-text-primary">{t.name}</span>
+                <span className="truncate text-caption text-text-secondary">{t.description}</span>
+              </span>
+              <span className="flex shrink-0 flex-col items-end gap-1">
+                {t.requestsWaiting ? (
+                  <Badge tone="new">
+                    {t.requestsWaiting}
+                    <span className="sr-only"> asking to join</span>
+                  </Badge>
+                ) : null}
+                <span className="text-metadata text-text-muted">
+                  {t.myRole === 'owner'
+                    ? 'Owner'
+                    : t.myRole === 'deputy'
+                      ? 'Deputy'
+                      : GROUP_VISIBILITY_LABEL[t.visibility]}
+                </span>
+              </span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </ClayCard>
+  );
+}
+
+/** "Groups your friends are in" (ADR-054): circles friends of mine are in and that may be found. */
+export function FriendsGroups({ initial }: { initial: DirectoryPage }) {
   const [items, setItems] = useState<DirectoryItem[]>(initial.townHalls);
   const [next, setNext] = useState<string | null>(initial.nextCursor);
   const [busy, setBusy] = useState<string | undefined>();
@@ -61,136 +160,55 @@ function Directory({ initial }: { initial: DirectoryPage }) {
     } else setError(res.error?.message ?? 'Could not load more.');
   }
 
-  if (items.length === 0) {
-    return (
-      <ClayCard>
-        <EmptyState as="h2" icon="🏛️" title="No groups yet" description="Be the first to start one." />
-      </ClayCard>
-    );
-  }
-
   return (
-    <div className="flex flex-col gap-4">
+    <RailCard id="friends-groups" title="Groups your friends are in">
       {error && <FormMessage tone="error">{error}</FormMessage>}
-      {items.map((t) => (
-        <TownHallCard
-          key={t.id}
-          name={t.name}
-          description={t.description}
-          visibility={t.visibility}
-          joined={t.joined}
-          action={
-            t.joined ? (
-              <Link href={`/groups/${t.id}`} className="text-caption text-auth-link">
-                Open
+      {items.length === 0 ? (
+        <p className="text-caption text-text-secondary">
+          When your friends are in groups that can be found, they show here.
+        </p>
+      ) : (
+        <ul className="-my-2.5 flex flex-col divide-y divide-border">
+          {items.map((t) => (
+            <li key={t.id} className="flex flex-col gap-1.5 py-2.5">
+              <Link href={`/groups/${t.id}`} className="block min-h-11 min-w-0 no-underline hover:underline">
+                <span className="block truncate font-semibold text-text-primary">{t.name}</span>
+                <span className="block text-caption text-text-secondary">
+                  {t.friendsHere === 1 ? '1 friend is here' : `${t.friendsHere} friends are here`}
+                </span>
               </Link>
-            ) : t.joinRule === 'approval' ? (
-              // Asked for on its own page, which explains that the owner or a Deputy lets people in (ADR-041).
-              <Link
-                href={`/groups/${t.id}`}
-                className="inline-flex min-h-11 items-center text-caption text-auth-link"
-              >
-                Ask to join
-              </Link>
-            ) : (
-              <Button size="sm" loading={busy === t.id} onClick={() => join(t.id)}>
-                Join
-              </Button>
-            )
-          }
-        />
-      ))}
+              {t.joined ? (
+                <Link href={`/groups/${t.id}`} className="text-caption font-semibold">
+                  Open
+                </Link>
+              ) : t.joinRule === 'approval' ? (
+                // Asked for on its own page, which explains that the owner or a Deputy lets people in (ADR-041).
+                <Link
+                  href={`/groups/${t.id}`}
+                  className="inline-flex min-h-11 items-center text-caption font-semibold"
+                >
+                  Ask to join
+                </Link>
+              ) : (
+                <Button
+                  size="sm"
+                  loading={busy === t.id}
+                  onClick={() => join(t.id)}
+                  className="self-start"
+                  aria-label={`Join ${t.name}`}
+                >
+                  Join
+                </Button>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
       {next && (
-        <Button variant="secondary" loading={busy === '__more__'} onClick={loadMore} className="self-center">
+        <Button variant="secondary" size="sm" loading={busy === '__more__'} onClick={loadMore}>
           More groups
         </Button>
       )}
-    </div>
-  );
-}
-
-function Mine({ mine }: { mine: MineItem[] }) {
-  if (mine.length === 0) {
-    return (
-      <ClayCard>
-        <EmptyState
-          as="h2"
-          icon="🏛️"
-          title="You have not joined any yet"
-          description="Discover one, or start your own."
-        />
-      </ClayCard>
-    );
-  }
-  return (
-    <div className="flex flex-col gap-4">
-      {mine.map((t) => (
-        <TownHallCard
-          key={t.id}
-          name={t.name}
-          description={t.description}
-          visibility={t.visibility}
-          joined
-          action={
-            <Link href={`/groups/${t.id}`} className="text-caption text-auth-link">
-              {t.myRole === 'owner' || t.myRole === 'deputy' ? 'Manage' : 'Open'}
-              {t.requestsWaiting ? ` · ${t.requestsWaiting} asking to join` : ''}
-            </Link>
-          }
-        />
-      ))}
-    </div>
-  );
-}
-
-function Invites({ initial }: { initial: InviteSummary[] }) {
-  const [invites, setInvites] = useState(initial);
-  const [busy, setBusy] = useState<string | undefined>();
-  const [error, setError] = useState<string | undefined>();
-
-  async function answer(townHallId: string, action: 'accept' | 'decline') {
-    setBusy(`${townHallId}:${action}`);
-    setError(undefined);
-    const res = await apiRequest('POST', `/api/town-halls/${townHallId}`, { action });
-    setBusy(undefined);
-    if (res.ok) setInvites((all) => all.filter((i) => i.townHallId !== townHallId));
-    else setError(res.error?.message ?? 'That did not work. Try again.');
-  }
-
-  if (invites.length === 0) {
-    return (
-      <ClayCard>
-        <EmptyState as="h2" icon="🏛️" title="No invites waiting" description="You are all caught up." />
-      </ClayCard>
-    );
-  }
-  return (
-    <div className="flex flex-col gap-4">
-      {error && <FormMessage tone="error">{error}</FormMessage>}
-      {invites.map((i) => (
-        <ClayCard key={i.townHallId} className="flex flex-col gap-3">
-          <h2 className="text-title text-text-primary">{i.name}</h2>
-          <p className="text-body text-text-secondary">{i.description}</p>
-          <p className="text-caption text-text-secondary">Invited by @{i.invitedBy.handle}</p>
-          <div className="flex gap-2">
-            <Button
-              size="sm"
-              loading={busy === `${i.townHallId}:accept`}
-              onClick={() => answer(i.townHallId, 'accept')}
-            >
-              Join
-            </Button>
-            <Button
-              size="sm"
-              variant="secondary"
-              loading={busy === `${i.townHallId}:decline`}
-              onClick={() => answer(i.townHallId, 'decline')}
-            >
-              Decline
-            </Button>
-          </div>
-        </ClayCard>
-      ))}
-    </div>
+    </RailCard>
   );
 }

@@ -1,8 +1,8 @@
 import { townHallBans, townHallMembers, townHalls } from '@db/schema';
-import { and, asc, desc, eq, gt, inArray, isNull, lt, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, getTableColumns, gt, inArray, isNull, lt, sql } from 'drizzle-orm';
 import { enforceNewAccountLimit } from '@/modules/moderation';
 import { getCards, resolveHandle, type PersonCard } from '@/modules/profiles';
-import { hiddenAuthors } from '@/modules/relationships';
+import { friendIdsOf, hiddenAuthors } from '@/modules/relationships';
 import { decodeCursor, encodeCursor, type Cursor } from '@/platform/cursor';
 import { getDb } from '@/platform/db';
 import { AppError } from '@/platform/errors';
@@ -73,8 +73,10 @@ export interface MineItem extends TownHallSummary {
 }
 
 export interface DirectoryItem extends TownHallSummary {
-  /** Am I already an active member (so "Join" should read "Open" instead)? */
+  /** Am I already an active member (so "Join" should read "Open" instead)? Never, in "Groups your friends are in". */
   joined: boolean;
+  /** How many of my friends are active members (a number, never who: the roster stays members-only). */
+  friendsHere: number;
 }
 
 export interface DirectoryPage {
@@ -272,7 +274,11 @@ export async function createTownHall(
   return toDetail(row, ownerId, { role: 'owner', status: 'active', createdAt: row.createdAt });
 }
 
-/** One page of the directory: open and members-visibility Town Halls, newest first. Invite-only ones never appear here. */
+/**
+ * "Groups your friends are in" (ADR-054): circles that may be found (`open`, "Friends can find it") with at least one of
+ * my friends as an active member, that I am not in yet, newest first, each with how many of my friends are there.
+ * Private (`invite`) circles never appear; nor does anything when I have no friends. Not a public directory any more.
+ */
 export async function listDirectory(
   viewerId: string,
   opts: { cursor?: string | undefined; limit?: number | undefined },
@@ -284,43 +290,38 @@ export async function listDirectory(
   }
   await enforceRateLimit(`townhalls:read:${viewerId}`, RATE.read);
   const limit = Math.min(Math.max(opts.limit ?? TOWNHALL_PAGE_SIZE, 1), TOWNHALL_MAX_PAGE_SIZE);
+  const friends = await friendIdsOf(viewerId);
+  if (friends.length === 0) return { townHalls: [], nextCursor: null };
 
-  const rows: Row[] = await getDb()
-    .select()
+  const rows = await getDb()
+    .select({
+      ...getTableColumns(townHalls),
+      friendsHere: sql<number>`count(distinct ${townHallMembers.userId})::int`,
+    })
     .from(townHalls)
+    .innerJoin(
+      townHallMembers,
+      and(
+        eq(townHallMembers.townHallId, townHalls.id),
+        eq(townHallMembers.status, 'active'),
+        inArray(townHallMembers.userId, friends),
+      ),
+    )
     .where(
       and(
-        inArray(townHalls.visibility, ['open', 'members']),
+        eq(townHalls.visibility, 'open'),
+        sql`not exists (select 1 from town_hall_members mine where mine.town_hall_id = ${townHalls.id}
+              and mine.user_id = ${viewerId} and mine.status = 'active')`,
         cursor ? sql`(${townHalls.createdAt}, ${townHalls.id}) < (${cursor.at}, ${cursor.id})` : undefined,
       ),
     )
+    .groupBy(townHalls.id)
     .orderBy(desc(townHalls.createdAt), desc(townHalls.id))
     .limit(limit + 1);
   const more = rows.length > limit;
   const page = rows.slice(0, limit);
 
-  const memberships = page.length
-    ? await getDb()
-        .select({
-          townHallId: townHallMembers.townHallId,
-          role: townHallMembers.role,
-          status: townHallMembers.status,
-          createdAt: townHallMembers.createdAt,
-        })
-        .from(townHallMembers)
-        .where(
-          and(
-            eq(townHallMembers.userId, viewerId),
-            eq(townHallMembers.status, 'active'),
-            inArray(
-              townHallMembers.townHallId,
-              page.map((r) => r.id),
-            ),
-          ),
-        )
-    : [];
-  const mine = new Map(memberships.map((m) => [m.townHallId, m]));
-  // Where the viewer is banned, the directory says "needs approval" too, as the Town Hall's own page does (ADR-042).
+  // Where the viewer is banned, it says "needs approval" too, as the Town Hall's own page does (ADR-042).
   const bans = page.length
     ? await getDb()
         .select({ townHallId: townHallBans.townHallId })
@@ -339,10 +340,11 @@ export async function listDirectory(
 
   const last = page.at(-1);
   return {
-    townHalls: page.map((row) => ({
-      ...toSummary(row, viewerId, mine.get(row.id) ?? null),
+    townHalls: page.map(({ friendsHere, ...row }) => ({
+      ...toSummary(row, viewerId, null),
       ...(banned.has(row.id) ? { joinRule: 'approval' as const } : {}),
-      joined: mine.has(row.id),
+      joined: false,
+      friendsHere,
     })),
     nextCursor: more && last ? encodeCursor({ at: last.createdAt, id: last.id }) : null,
   };

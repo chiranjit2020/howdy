@@ -1,6 +1,5 @@
 import { z } from 'zod';
 import { LIMITS } from '../limits';
-import { capsuleDaySchema } from './capsules';
 import { cursorParamSchema, idParamSchema, postReplySchema, yoSchema } from './fence';
 import { handleParamSchema, hasDisguisingChars, hasLink, normaliseText } from './profile';
 import './zod-setup'; // jitless Zod (no eval probe under our CSP)
@@ -12,11 +11,11 @@ import './zod-setup'; // jitless Zod (no eval probe under our CSP)
  */
 
 /**
- * Who may find and join. `open` and `members` both self-serve instantly and are both listed in the directory — the
- * distinct label is for the owner, not a different join rule. `invite` is never listed; only an accepted invite admits
- * someone.
+ * Who may find and join a circle (ADR-054). `open` ("Friends can find it"): shown to friends of its members, and anyone
+ * with its link may join (or ask, under the approval rule). `invite` ("Private"): never shown; only an accepted invite
+ * admits someone. (`members` was the same as `open` under another label, and is retired.)
  */
-export const TOWNHALL_VISIBILITIES = ['open', 'members', 'invite'] as const;
+export const TOWNHALL_VISIBILITIES = ['open', 'invite'] as const;
 export type TownHallVisibility = (typeof TOWNHALL_VISIBILITIES)[number];
 
 const clean = (max: number, emptyMessage: string, what: string) =>
@@ -103,8 +102,6 @@ export const hallPostBodySchema = clean(LIMITS.TOWNHALL_POST_MAX, 'Write somethi
 /** A post, and optionally one finished photo of mine to go with it (ADR-046). */
 export const hallPostSchema = z.object({ body: hallPostBodySchema, photoId: z.uuid().optional() });
 
-/** A Time Capsule for a whole Town Hall (ADR-043): it becomes a post, so it follows a post's rules. */
-export const sealHallCapsuleSchema = z.object({ body: hallPostBodySchema, openOn: capsuleDaySchema });
 export const hallReplySchema = postReplySchema;
 export const hallReactionSchema = yoSchema;
 export const hallActionSchema = z.object({ action: z.enum(['approve']) });
