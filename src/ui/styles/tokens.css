@@ -418,16 +418,25 @@
     overflow-wrap: break-word;
   }
   /*
-   * Links are recognisable without relying on colour alone (underline), and use the AA-checked link token.
-   * Button-styled and navigation links override this with their own utility classes (no-underline + text colour).
+   * Links in the interface (names, "See all", menus, the footer) carry no underline: they are told apart by colour,
+   * weight and where they sit, and underline on hover; the focus ring marks them for the keyboard (2026-11-01).
+   * A link inside running text (a plain <a> in a sentence) keeps a quiet underline, so it is never told by colour alone.
    */
   a {
     color: var(--color-link);
-    text-decoration: underline;
-    text-underline-offset: 0.18em;
+    text-decoration-line: none;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.2em;
   }
   a:hover {
-    text-decoration-thickness: 2px;
+    text-decoration-line: underline;
+  }
+  :where(p, li, dd, td, blockquote, figcaption) > a:not([class]) {
+    text-decoration-line: underline;
+    text-decoration-color: color-mix(in srgb, currentColor 45%, transparent);
+  }
+  :where(p, li, dd, td, blockquote, figcaption) > a:not([class]):hover {
+    text-decoration-color: currentColor;
   }
   /* No drag handle on any text box: each one is sized for what it holds (and counts its characters). */
   textarea {

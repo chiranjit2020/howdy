@@ -34,7 +34,12 @@ export function useToast(): (t: ToastInput) => void {
 
 const MAX_VISIBLE = 3;
 const DURATION_MS: Record<ToastTone, number> = { info: 5000, success: 5000, danger: 8000 };
-const TONE_BAR: Record<ToastTone, string> = { info: 'bg-info', success: 'bg-success', danger: 'bg-danger' };
+// The brand pair for everything good or neutral (sunflower for "done", violet for "good to know"); red stays for errors.
+const TONE_BAR: Record<ToastTone, string> = {
+  info: 'bg-accent',
+  success: 'bg-highlight',
+  danger: 'bg-danger',
+};
 
 function ToastView({ toast, onDismiss }: { toast: ToastItem; onDismiss: (id: number) => void }) {
   const tone = toast.tone ?? 'info';
@@ -62,9 +67,12 @@ function ToastView({ toast, onDismiss }: { toast: ToastItem; onDismiss: (id: num
         <p className="text-caption font-semibold text-text-primary">{toast.title}</p>
         {toast.description && <p className="text-caption text-text-secondary">{toast.description}</p>}
       </div>
-      <IconButton label="Dismiss notification" onClick={() => onDismiss(toast.id)}>
-        <CloseIcon />
-      </IconButton>
+      {/* Centred on the toast's height, however many lines it has; the colour bar still runs full height. */}
+      <div className="flex shrink-0 items-center self-center pr-1">
+        <IconButton label="Dismiss notification" onClick={() => onDismiss(toast.id)}>
+          <CloseIcon />
+        </IconButton>
+      </div>
     </div>
   );
 }

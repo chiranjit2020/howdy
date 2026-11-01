@@ -37,8 +37,8 @@ export function ShadowWalk({ initial }: { initial: boolean }) {
         label="Private browsing"
         hint={
           on
-            ? 'Your visits leave no trace, and your own visitor list is paused.'
-            : 'Browse without being seen. In return, your own visitor list pauses.'
+            ? 'No one can see when you visit. Your own visitors stay hidden until you turn this off.'
+            : 'Visit profiles without anyone knowing. While it’s on, you won’t see your own visitors either.'
         }
         checked={on}
         onCheckedChange={set}

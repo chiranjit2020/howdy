@@ -1,9 +1,10 @@
+import Link from 'next/link';
 import { attachPortraits } from '@/app/_lib/social';
 import { requireUser } from '@/modules/auth';
 import { getOwnRanch } from '@/modules/profiles';
 import { listTracks } from '@/modules/tracks';
 import { COARSE_LABEL, TrackItem, type CoarseWhen } from '@/ui/howdy';
-import { EyeOffIcon, TracksIcon } from '@/ui/icons';
+import { EyeOffIcon, TracksIcon, WhisperIcon } from '@/ui/icons';
 import { RailCard } from '@/ui/howdy/rail-card';
 import { ClayCard, EmptyState } from '@/ui/primitives';
 import { ShadowWalk } from './shadow-walk';
@@ -63,6 +64,17 @@ export default async function TracksPage() {
                       key={p.handle}
                       visitor={{ name: p.displayName, handle: p.handle, avatarUrl: p.portraitUrl ?? null }}
                       href={`/profile/${p.handle}`}
+                      action={
+                        // They thought of you: one tap to say hi (the same round button as on Friends).
+                        <Link
+                          href={`/messages/${p.handle}`}
+                          aria-label={`Message to ${p.displayName}`}
+                          title="Message"
+                          className="inline-flex size-11 shrink-0 items-center justify-center rounded-pill text-title text-text-secondary hover:bg-surface-sunken hover:text-text-primary"
+                        >
+                          <WhisperIcon />
+                        </Link>
+                      }
                     />
                   ))}
                   {g.hidden > 0 && (

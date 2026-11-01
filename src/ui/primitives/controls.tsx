@@ -115,22 +115,21 @@ export function Switch({ label, hint, checked, onCheckedChange, disabled, id }: 
 
 /**
  * The switch on its own, for when something else names it (a card's heading, through `aria-labelledby`). The button is
- * the 44px touch target; the visible track inside it is 32px tall.
+ * the 44px touch target; the visible track inside it is a compact 40x24.
+ * Off: a white track with a firm outline and a grey knob (it stands out on a white card). On: sunflower, white knob.
+ * The knob springs across with a little overshoot and stretches while pressed; none of that with reduced motion.
  */
 export function SwitchButton({
   checked,
   onCheckedChange,
   disabled,
   id,
-  tone = 'accent',
   ...aria
 }: {
   checked: boolean;
   onCheckedChange: (checked: boolean) => void;
   disabled?: boolean | undefined;
   id?: string | undefined;
-  /** The "on" colour: violet (settings), or sunflower for a status you show others (Free to talk). Off is always grey. */
-  tone?: 'accent' | 'highlight';
   'aria-labelledby'?: string;
   'aria-describedby'?: string;
   'aria-label'?: string;
@@ -143,25 +142,29 @@ export function SwitchButton({
       aria-checked={checked}
       disabled={disabled}
       onClick={() => onCheckedChange(!checked)}
-      className="relative flex h-11 w-14 shrink-0 items-center disabled:opacity-60"
+      className="group relative flex h-11 w-11 shrink-0 items-center justify-center disabled:opacity-60"
       {...aria}
     >
       <span
         aria-hidden="true"
         className={cn(
-          'relative h-8 w-14 rounded-pill border-2 transition-colors duration-200',
-          !checked
-            ? 'border-border-strong bg-surface-sunken'
-            : tone === 'highlight'
-              ? // A faint violet edge: sunflower alone is pale against a white panel.
-                'border-on-highlight/25 bg-highlight'
-              : 'border-accent bg-accent',
+          'relative h-6 w-10 rounded-pill border transition-colors duration-300 motion-reduce:transition-none',
+          checked
+            ? // A faint violet edge: sunflower alone is pale against a white panel.
+              'border-on-highlight/40 bg-highlight'
+            : 'border-border-strong bg-surface',
         )}
       >
         <span
           className={cn(
-            'absolute top-0.5 left-0.5 size-6 rounded-pill bg-surface shadow-clay-sm transition-transform duration-200 ease-spring',
-            checked && 'translate-x-6',
+            'absolute top-0.5 left-0.5 h-[18px] w-[18px] rounded-pill',
+            // `translate` (Tailwind 4 moves with the translate property, not transform): a half-second glide that
+            // overshoots a touch and settles.
+            'transition-[translate,width,background-color] duration-500 ease-[cubic-bezier(0.34,1.4,0.64,1)] motion-reduce:transition-none',
+            'group-active:w-[22px]',
+            checked
+              ? 'translate-x-[18px] bg-surface shadow-clay-sm group-active:translate-x-3.5'
+              : 'bg-border-strong',
           )}
         />
       </span>

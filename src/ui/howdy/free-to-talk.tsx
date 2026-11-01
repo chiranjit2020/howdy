@@ -151,7 +151,6 @@ export function FreeToTalkPanel({
           Options
         </button>
         <SwitchButton
-          tone="highlight"
           checked={mine !== null}
           disabled={busy}
           onCheckedChange={(on) => void (on ? switchOn() : switchOff())}
