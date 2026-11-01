@@ -161,7 +161,10 @@ describe('AppShell', () => {
     const panel = within(screen.getByRole('region', { name: 'Your account' }));
     expect(panel.getByRole('link', { name: 'My profile' })).toHaveAttribute('href', '/profile/chiru');
     expect(panel.getByRole('link', { name: 'Settings' })).toHaveAttribute('href', '/settings');
-    expect(panel.getByRole('link', { name: /^Devices/ })).toHaveAttribute('href', '/settings/account#devices');
+    expect(panel.getByRole('link', { name: /^Devices/ })).toHaveAttribute(
+      'href',
+      '/settings/account#devices',
+    );
     expect(panel.getByRole('button', { name: 'Sign out' })).toBeInTheDocument();
     // The device list and "Sign out everywhere" live in Settings, not in the menu.
     expect(panel.queryByRole('button', { name: 'Sign out everywhere…' })).not.toBeInTheDocument();
