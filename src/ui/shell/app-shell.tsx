@@ -9,6 +9,7 @@ import { AccountMenu } from './account-menu';
 import { FreeToTalkPill, type FreeToTalkState } from './free-to-talk-menu';
 import { PeopleSearch } from './people-search';
 import { ShellBottomNav, ShellMoreMenu, ShellSidebarNav, type ShellNavItem } from './nav';
+import { FooterGate } from './footer-gate';
 import { SiteFooter } from './site-footer';
 
 // The signed-out top bar's two ways in: ordinary buttons of equal width (the wider word sets both), one word each.
@@ -163,7 +164,11 @@ export function AppShell({
         {/* Room for the phone tab bar and its raised Nail button (and the safe-area inset under it); signed in only. */}
         <div className={cn('min-w-0 flex-1', me && 'pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-8')}>
           {children}
-          {(me || !bare) && <SiteFooter />}
+          {(me || !bare) && (
+            <FooterGate>
+              <SiteFooter />
+            </FooterGate>
+          )}
         </div>
       </div>
       {me && <ShellBottomNav items={items} me={me} />}

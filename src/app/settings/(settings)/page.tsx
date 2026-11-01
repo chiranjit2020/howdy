@@ -12,6 +12,7 @@ import { ExportData } from './export-data';
 import { PeopleControls } from './people-controls';
 import { PortraitForm } from './portrait-form';
 import { SignInSecurity } from './sign-in-security';
+import { ReadReceipts } from './read-receipts';
 import { TrustCard } from './trust-card';
 import { BoundaryForm, ChimePrefsForm, FenceRulesForm, StoryViewsForm, TendForm } from './ranch-forms';
 
@@ -52,6 +53,8 @@ export default async function WorkshopPage() {
       />
       {trust && !trust.team && <TrustCard status={trust} />}
       <StoryViewsForm initial={ranch.storyViews} />
+      {/* Moved here from Messages (2026-11-01): a set-once privacy switch, next to its twin for Stories. */}
+      <ReadReceipts initial={ranch.readReceipts} />
       <FenceRulesForm
         fenceVisibility={ranch.fenceVisibility}
         fencePosting={ranch.fencePosting}

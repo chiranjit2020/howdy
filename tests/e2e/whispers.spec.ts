@@ -196,6 +196,54 @@ test.describe('Messages in a real browser (production build, real CSP, real WebS
   });
 });
 
+test('Messages as a messenger: start one from New message, find it with search, and get back to the list on a phone', async ({
+  browser,
+}) => {
+  test.slow(); // three people sign up
+  const a = await person(browser, 'nma');
+  const b = await person(browser, 'nmb');
+  const c = await person(browser, 'nmc');
+  await makePosse(b, a);
+  await makePosse(c, a);
+  await api(c, `/api/whispers/${a.handle}`, {
+    clientId: crypto.randomUUID(),
+    body: 'An older chat with Carol',
+  });
+
+  // New message lists my friends (Bob has never been written to) and opens the chat with the one I pick.
+  await a.page.goto('/messages');
+  await pageReady(a.page);
+  await a.page.getByRole('button', { name: 'New message' }).click();
+  const picker = a.page.getByRole('dialog', { name: 'New message' });
+  await picker.getByLabel('Search friends').fill(b.handle.slice(0, 5));
+  await picker.getByRole('link', { name: new RegExp(b.handle) }).click();
+  await expect(a.page).toHaveURL(new RegExp(`/messages/${b.handle}$`));
+  await say(a.page, 'Howdy from New message');
+  await expect(log(a.page).getByText('Howdy from New message')).toBeVisible();
+  await expect(log(a.page).getByText('Sent', { exact: true })).toBeVisible(); // stored, not just on screen
+
+  // Beside the chat, the list marks the open conversation and filters by name.
+  await a.page.reload();
+  await pageReady(a.page);
+  const list = a.page.getByRole('list', { name: 'Your conversations' });
+  await expect(list.getByRole('link', { name: new RegExp(b.handle) })).toHaveAttribute(
+    'aria-current',
+    'page',
+  );
+  await a.page.getByLabel('Search conversations').fill(c.handle);
+  await expect(list.getByRole('link')).toHaveCount(1);
+  await expect(list.getByRole('link', { name: new RegExp(c.handle) })).toBeVisible();
+
+  // On a phone the chat is the whole screen, with a way back to the list.
+  await a.page.setViewportSize({ width: 390, height: 800 });
+  await a.page.goto(`/messages/${b.handle}`);
+  await pageReady(a.page);
+  await a.page.getByRole('link', { name: 'Back to messages' }).click();
+  await expect(a.page).toHaveURL(/\/messages$/);
+  await expect(a.page.getByRole('heading', { name: 'Messages', level: 1 })).toBeVisible();
+  await Promise.all([a, b, c].map((p) => p.ctx.close()));
+});
+
 test.describe('Messages: accessibility and layout in a real browser', () => {
   async function seed(browser: Browser, opts: Parameters<typeof newContext>[1]) {
     const a = await person(browser, `xa${Date.now().toString(36).slice(-4)}`, opts);

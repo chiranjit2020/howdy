@@ -51,8 +51,12 @@ describe('compiled stylesheet', () => {
     }
   });
 
-  it('underlines links and colours them with the AA-checked link token (never colour alone)', () => {
-    expect(css).toMatch(/\ba\s*\{[^}]*color:\s*var\(--color-link\)[^}]*text-decoration:\s*underline/);
+  it('colours links with the AA-checked link token; interface links underline on hover, links in running text always (never colour alone)', () => {
+    expect(css).toMatch(/\ba\s*\{[^}]*color:\s*var\(--color-link\)/);
+    expect(css).toMatch(/\ba:hover\s*\{[^}]*text-decoration-line:\s*underline/);
+    expect(css).toMatch(
+      /:where\(p,\s*li[^)]*\)\s*>\s*a:not\(\[class\]\)\s*\{[^}]*text-decoration-line:\s*underline/,
+    );
   });
 
   it('defines the keyframes the animation tokens refer to', () => {

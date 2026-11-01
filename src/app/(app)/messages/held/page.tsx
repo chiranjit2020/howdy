@@ -19,7 +19,8 @@ export default async function HeldPage() {
     held.map((w) => w.from),
   );
   return (
-    <main id="main" className="mx-auto flex w-full max-w-xl flex-col gap-4 py-4 sm:gap-6 sm:py-8">
+    // Inside the Messages frame (its pane), which carries the page's <main>.
+    <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto">
       <div className="flex flex-col gap-1">
         <h1 className="text-heading text-text-primary">Held back</h1>
         <p className="text-caption text-text-secondary">
@@ -42,6 +43,6 @@ export default async function HeldPage() {
       ) : (
         <HeldList held={held} />
       )}
-    </main>
+    </div>
   );
 }

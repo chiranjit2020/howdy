@@ -21,7 +21,7 @@ import { FormMessage } from '@/ui/auth/form-parts';
 import { WhisperBubble } from '@/ui/howdy';
 import { ReportDialog } from '@/ui/howdy/report-dialog';
 import { cn } from '@/ui/cn';
-import { CloseIcon, ExpandIcon, MoreIcon, SendIcon } from '@/ui/icons';
+import { BackIcon, CloseIcon, ExpandIcon, MoreIcon, SendIcon } from '@/ui/icons';
 import { Avatar, Button, ConfirmationDialog, Dropdown, IconButton, Input, Textarea } from '@/ui/primitives';
 
 type Msg = WhisperMessage & { state?: 'sending' | 'failed'; error?: string };
@@ -217,10 +217,9 @@ export function ThreadView({
   }, [markRead]);
 
   useEffect(() => {
-    // In the chat window the messages scroll inside it: move that, never the page behind it.
-    if (dock && log.current) log.current.scrollTop = log.current.scrollHeight;
-    else bottom.current?.scrollIntoView({ block: 'end' });
-  }, [messages.length, dock]);
+    // The messages scroll inside their own box (the chat window and the Messages page alike): move that, never the page.
+    if (log.current) log.current.scrollTop = log.current.scrollHeight;
+  }, [messages.length]);
 
   // ─── sending ───────────────────────────────────────────────────────────────────────────────────────────────────────
   function request(type: string, d: unknown): Promise<Frame> {
@@ -314,11 +313,25 @@ export function ThreadView({
     setBusy(undefined);
     if (res.ok) {
       if (dock) dock.onClose();
-      else router.push('/messages');
+      else {
+        // The conversation list sits beside the chat (in the layout): refresh it too, so the burnt thread leaves it.
+        router.push('/messages');
+        router.refresh();
+      }
     } else setError(res.error?.message ?? 'Could not burn the thread.');
     setBurning(false);
   }
 
+  const dayOf = (iso: string) => new Date(iso).toDateString();
+  const dayLabel = (iso: string) => {
+    const d = new Date(iso);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 1);
+    if (d.toDateString() === today.toDateString()) return 'Today';
+    if (d.toDateString() === yesterday.toDateString()) return 'Yesterday';
+    return d.toLocaleDateString([], { weekday: 'long', day: 'numeric', month: 'short' });
+  };
   const clock = (iso: string) =>
     mounted ? new Date(iso).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : '';
   const status: Record<Live, string> = {
@@ -333,26 +346,40 @@ export function ThreadView({
     <>
       {/* Who you are talking to, and the thread's rarer actions behind one ⋯ button (as on a Porch), so the name
           keeps its width and nothing sits there unexplained. Not named "More": the phone top bar has that one. */}
-      <header className={cn('flex items-center', dock ? 'gap-2.5' : 'gap-3')}>
-        <Avatar
-          name={displayName}
-          tint={portraitTint}
-          src={portraitUrl}
-          {...(dock ? { size: 'sm' as const } : {})}
-        />
+      <header
+        className={cn(
+          'flex items-center',
+          dock ? 'gap-2.5' : 'gap-2 border-b border-border px-2 py-2 sm:gap-3 sm:px-3',
+        )}
+      >
+        {!dock && (
+          // Back to the list where the list is not beside the chat (phones, narrow windows).
+          <Link
+            href="/messages"
+            aria-label="Back to messages"
+            title="Back"
+            className="-ml-1 inline-flex size-11 shrink-0 items-center justify-center rounded-pill text-title text-text-secondary no-underline hover:bg-surface-sunken hover:text-text-primary lg:hidden"
+          >
+            <BackIcon />
+          </Link>
+        )}
+        {/* Small in the window and on a phone, where the name needs the room; full size beside a wide chat. */}
+        <span className={cn('inline-flex shrink-0', !dock && 'sm:hidden')}>
+          <Avatar name={displayName} tint={portraitTint} src={portraitUrl} size="sm" />
+        </span>
+        {!dock && (
+          <span className="hidden shrink-0 sm:inline-flex">
+            <Avatar name={displayName} tint={portraitTint} src={portraitUrl} />
+          </span>
+        )}
         <div className="min-w-0 flex-1">
           {/* On Home the page already has its h1; the window is a section of it. */}
           {dock ? (
             <h2 className="truncate text-caption font-semibold text-text-primary">{displayName}</h2>
           ) : (
-            <h1 className="text-title [overflow-wrap:anywhere] text-text-primary">{displayName}</h1>
+            <h1 className="truncate text-title text-text-primary">{displayName}</h1>
           )}
-          <p
-            className={cn(
-              '[overflow-wrap:anywhere] text-text-secondary',
-              dock ? 'truncate text-metadata' : 'text-caption',
-            )}
-          >
+          <p className={cn('truncate text-text-secondary', dock ? 'text-metadata' : 'text-caption')}>
             <Link href={`/profile/${handle}`} className="text-text-secondary no-underline hover:underline">
               @{handle}
             </Link>
@@ -368,7 +395,7 @@ export function ThreadView({
               title="Thread options"
               className={cn(
                 'inline-flex size-11 shrink-0 items-center justify-center rounded-pill text-title text-text-secondary hover:bg-surface-sunken',
-                dock ? 'pointer-fine:size-8' : '-mr-2',
+                dock ? 'pointer-fine:size-8' : '-mr-1',
               )}
               {...p}
             >
@@ -412,7 +439,7 @@ export function ThreadView({
         )}
       </header>
       {picking && (
-        <div className="flex items-center gap-3 rounded-lg bg-surface-sunken p-3">
+        <div className={cn('flex items-center gap-3 rounded-lg bg-surface-sunken p-3', !dock && 'mx-3 mt-3')}>
           <p className="flex-1 text-caption text-text-secondary">
             Tap <strong className="font-semibold text-text-primary">Flag this message</strong> under the one
             that is the problem. Only that message goes to our team, never the rest of the thread.
@@ -422,30 +449,23 @@ export function ThreadView({
           </Button>
         </div>
       )}
-      {flagged && <FormMessage tone="success">Thanks. We will take a look. They are not told.</FormMessage>}
+      {flagged && (
+        <div className={cn(!dock && 'mx-3 mt-3')}>
+          <FormMessage tone="success">Thanks. We will take a look. They are not told.</FormMessage>
+        </div>
+      )}
       {/* Without our own socket, the Ably doorbell (ADR-035) is what makes the thread live. The window only speaks up
           when something is wrong (reconnecting, signed out); the page always says how it is connected. */}
       <p
         role="status"
         className={cn(
           'text-metadata text-text-secondary',
-          dock && (live === 'offline' || live === 'ended' ? '' : 'sr-only'),
+          !dock && 'px-4 pt-2',
+          live === 'offline' || live === 'ended' ? '' : 'sr-only',
         )}
       >
         {live === 'off' && ring !== 'off' ? status[ring] : status[live]}
       </p>
-
-      {hasMore && (
-        <Button
-          variant="secondary"
-          size="sm"
-          loading={busy === 'older'}
-          onClick={older}
-          className="self-center"
-        >
-          Older messages
-        </Button>
-      )}
 
       <div
         ref={log}
@@ -456,16 +476,35 @@ export function ThreadView({
           // Soft Sunflower, like reply bubbles under posts: conversations share one warm surface.
           // …sunk in a soft well, so the bubbles in it sit up off the page.
           'flex flex-col gap-1.5 rounded-lg bg-primary-soft p-2.5 shadow-well',
-          dock ? 'min-h-0 flex-1 overflow-y-auto' : 'min-h-40',
+          'min-h-0 flex-1 overflow-y-auto',
+          // On the page the messages fill the card between its header and the reply bar.
+          !dock && 'rounded-none p-3 shadow-none',
         )}
       >
+        {hasMore && (
+          <Button
+            variant="secondary"
+            size="sm"
+            loading={busy === 'older'}
+            onClick={older}
+            className="self-center"
+          >
+            Older messages
+          </Button>
+        )}
         {messages.length === 0 && (
           <p className="m-auto py-8 text-center text-caption text-text-secondary">
             Nothing yet. Say howdy. Messages vanish after 7 days.
           </p>
         )}
-        {messages.map((m) => (
+        {messages.map((m, i) => (
           <div key={m.id} className="flex flex-col gap-1">
+            {/* "Today", "Yesterday" or the date, where the day changes (the browser's own days: after hydrating). */}
+            {mounted && (i === 0 || dayOf(messages[i - 1]!.createdAt) !== dayOf(m.createdAt)) && (
+              <div className="my-1.5 self-center rounded-pill bg-surface px-3 py-0.5 text-metadata font-medium text-text-secondary shadow-clay-sm">
+                {dayLabel(m.createdAt)}
+              </div>
+            )}
             <WhisperBubble
               direction={m.mine ? 'out' : 'in'}
               body={m.body}
@@ -499,7 +538,11 @@ export function ThreadView({
         <div ref={bottom} />
       </div>
 
-      {error && <FormMessage tone="error">{error}</FormMessage>}
+      {error && (
+        <div className={cn(!dock && 'mx-3 mt-2')}>
+          <FormMessage tone="error">{error}</FormMessage>
+        </div>
+      )}
       {dock ? (
         // The window's box: one line, Enter sends, a round Sunflower Send (paper plane) beside it.
         <form onSubmit={submit} className="flex items-center gap-2">
@@ -519,20 +562,38 @@ export function ThreadView({
           </IconButton>
         </form>
       ) : (
-        <form onSubmit={submit} className="flex flex-col gap-2">
-          <Textarea
-            label={`Message to ${displayName}`}
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            onKeyDown={onKey}
-            maxLength={LIMITS.WHISPER_MAX}
-            showCount
-            rows={2}
-            placeholder="Just between the two of you…"
-          />
-          <IconButton type="submit" tone="accent" label="Send" disabled={!text.trim()} className="self-end">
-            <SendIcon className="size-4" />
-          </IconButton>
+        // The reply bar: one line that grows to about five as you type, Enter sends (Shift+Enter for a new line), and a
+        // count only once you are close to the limit.
+        <form onSubmit={submit} className="flex flex-col gap-1 border-t border-border px-3 py-2">
+          <div className="flex items-end gap-2">
+            <Textarea
+              label={`Message to ${displayName}`}
+              hideLabel
+              oneLine
+              rows={1}
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              onKeyDown={onKey}
+              maxLength={LIMITS.WHISPER_MAX}
+              placeholder="Message…"
+              className="min-w-0 flex-1 [&_textarea]:max-h-32 [&_textarea]:[field-sizing:content]"
+            />
+            <IconButton type="submit" tone="accent" label="Send" disabled={!text.trim()}>
+              <SendIcon className="size-4" />
+            </IconButton>
+          </div>
+          {text.length >= LIMITS.WHISPER_MAX * 0.8 && (
+            <p
+              aria-live="polite"
+              className={cn(
+                'self-end text-metadata tabular-nums',
+                text.length >= LIMITS.WHISPER_MAX ? 'text-danger' : 'text-text-muted',
+              )}
+            >
+              <span className="sr-only">Characters used: </span>
+              {text.length}/{LIMITS.WHISPER_MAX}
+            </p>
+          )}
         </form>
       )}
 

@@ -29,18 +29,14 @@ export default async function ThreadPage({
   } catch (err) {
     if (err instanceof AppError && err.code === 'RATE_LIMITED') {
       return (
-        <>
-          <main id="main" className="mx-auto max-w-md px-4 py-16">
-            <ClayCard>
-              <EmptyState
-                as="h1"
-                icon="⏳"
-                title="Slow down a little"
-                description="Give it a minute and try again."
-              />
-            </ClayCard>
-          </main>
-        </>
+        <ClayCard className="flex flex-1 items-center justify-center">
+          <EmptyState
+            as="h1"
+            icon="⏳"
+            title="Slow down a little"
+            description="Give it a minute and try again."
+          />
+        </ClayCard>
       );
     }
     throw err;
@@ -48,19 +44,22 @@ export default async function ThreadPage({
   if (!page) notFound();
   await attachPortraits(user.id, [page.person]);
   return (
-    <>
-      <main id="main" className="mx-auto flex w-full max-w-xl flex-col gap-4 py-4 sm:py-6">
-        <ThreadView
-          handle={page.person.handle}
-          displayName={page.person.displayName}
-          portraitTint={page.person.portraitTint}
-          portraitUrl={page.person.portraitUrl}
-          initial={{ messages: page.messages, hasMore: page.hasMore, seenUpTo: page.seenUpTo }}
-          wsUrl={getEnv().WS_PUBLIC_URL}
-          liveChannel={liveChannelFor(user.id)}
-          {...(draft ? { initialDraft: draft } : {})}
-        />
-      </main>
-    </>
+    // The chat pane of the Messages frame (which carries the page's <main>): a card the height of the screen; only the
+    // messages scroll inside it.
+    <section
+      aria-label={`Conversation with ${page.person.displayName}`}
+      className="clay flex min-h-0 flex-1 flex-col max-md:rounded-none max-md:border-0 max-md:shadow-none"
+    >
+      <ThreadView
+        handle={page.person.handle}
+        displayName={page.person.displayName}
+        portraitTint={page.person.portraitTint}
+        portraitUrl={page.person.portraitUrl}
+        initial={{ messages: page.messages, hasMore: page.hasMore, seenUpTo: page.seenUpTo }}
+        wsUrl={getEnv().WS_PUBLIC_URL}
+        liveChannel={liveChannelFor(user.id)}
+        {...(draft ? { initialDraft: draft } : {})}
+      />
+    </section>
   );
 }

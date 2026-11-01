@@ -2,6 +2,7 @@ import type { ComponentProps, ComponentType } from 'react';
 import type { IconBaseProps } from 'react-icons';
 import {
   GoAlert,
+  GoArrowLeft,
   GoArrowRight,
   GoBell,
   GoCheckCircle,
@@ -68,6 +69,8 @@ export const AlertIcon = go(GoAlert);
 export const CheckCircleIcon = go(GoCheckCircle);
 export const XCircleIcon = go(GoXCircle);
 export const ArrowRightIcon = go(GoArrowRight);
+// Back to the list (a conversation on a phone).
+export const BackIcon = go(GoArrowLeft);
 export const UserIcon = go(GoPerson);
 // Groups: a building, so it never reads like Friends' two people.
 export const GroupIcon = go(GoOrganization);
