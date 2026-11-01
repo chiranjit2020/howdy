@@ -66,7 +66,9 @@ test('add details with their own audiences; a friend, a stranger and the owner e
   await expect(dialog).toBeHidden();
 
   // The owner sees all three, each with who sees it.
-  await expect(card).toContainText('Kolkata · Everyone on Howdy');
+  // For everyone on Howdy: no marker (it needs no reminder); friends only and only me are marked.
+  await expect(card).toContainText('Lives in Kolkata');
+  await expect(card).not.toContainText('Everyone on Howdy');
   await expect(card).toContainText('Teacher at a school · Friends');
   await expect(card).toContainText('12 March · Only me');
   await expect(card.getByRole('button', { name: 'Edit details' })).toBeVisible();

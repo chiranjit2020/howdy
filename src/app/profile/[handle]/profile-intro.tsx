@@ -4,7 +4,6 @@ import {
   GoBriefcase,
   GoComment,
   GoGift,
-  GoGlobe,
   GoHeart,
   GoHome,
   GoLocation,
@@ -28,8 +27,11 @@ const SHOWN: Record<DetailKey, { Icon: ComponentType<IconBaseProps>; lead?: stri
   relationship: { Icon: GoHeart },
 };
 
-const AUDIENCE_ICON: Record<DetailAudience, ComponentType<IconBaseProps>> = {
-  members: GoGlobe,
+/**
+ * A marker only where a detail is held back: friends only, or only you. A detail for everyone needs no reminder (a globe
+ * on every line read as noise, 2026-11-01).
+ */
+const AUDIENCE_ICON: Partial<Record<DetailAudience, ComponentType<IconBaseProps>>> = {
   posse: GoPeople,
   only_me: GoLock,
 };
@@ -37,7 +39,8 @@ const AUDIENCE_ICON: Record<DetailAudience, ComponentType<IconBaseProps>> = {
 /**
  * A profile's intro, inside the profile card under the bio: what its tick means, then the details this viewer may see
  * (`lines`, already filtered by the server for them) as one wrapping line of icon + words. On your own profile (`mine`)
- * each detail carries a small icon for who sees it (named for screen readers and on hover), and an Edit details link
+ * a detail only friends or only you can see carries a small icon saying so (named for screen readers and on hover;
+ * one for everyone has none), and an Edit details link
  * ends the line. Nothing to show a visitor: nothing at all.
  */
 export function ProfileIntro({
@@ -74,7 +77,7 @@ export function ProfileIntro({
         )}
         {lines.map((l) => {
           const { Icon, lead } = SHOWN[l.key];
-          const Seen = l.audience ? AUDIENCE_ICON[l.audience] : null;
+          const Seen = l.audience ? AUDIENCE_ICON[l.audience] : undefined;
           return (
             <li key={l.key} className="inline-flex min-w-0 items-center gap-1.5">
               <Icon aria-hidden="true" className="size-4 shrink-0 text-text-muted" />
