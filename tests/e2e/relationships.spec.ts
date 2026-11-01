@@ -31,7 +31,7 @@ async function makePosse(asker: Person, asked: Person) {
   await expect(asker.page.getByText('Requested', { exact: true }).first()).toBeVisible();
   await asked.page.goto('/friends');
   await asked.page.getByRole('button', { name: `Accept ${asker.handle}` }).click();
-  await expect(asked.page.getByRole('heading', { name: /^Friends \(1\)/ })).toBeVisible();
+  await expect(asked.page.getByRole('heading', { name: /^Your friends \(1\)/ })).toBeVisible();
 }
 
 const openMore = async (page: Page) => {
@@ -71,11 +71,15 @@ test.describe('Posse, Block and Flag trouble (production build, real CSP)', () =
     await expect(friends).toHaveText(/1\s*waiting/);
     await friends.click();
     await expect(a.page.getByRole('heading', { name: 'Requests for you (1)' })).toBeVisible();
-    await expect(a.page.getByText('wants to be your friend')).toBeVisible();
+    await expect(
+      a.page
+        .getByRole('region', { name: 'Requests for you (1)' })
+        .getByRole('link', { name: new RegExp(b.handle) }),
+    ).toBeVisible();
     expect((await b.page.goto(`/profile/${a.handle}`))?.status()).toBe(404); // still hidden while pending
 
     await a.page.getByRole('button', { name: `Accept ${b.handle}` }).click();
-    await expect(a.page.getByRole('heading', { name: /^Friends \(1\)/ })).toBeVisible();
+    await expect(a.page.getByRole('heading', { name: /^Your friends \(1\)/ })).toBeVisible();
 
     // Now Bob is in the Posse: the Ranch opens for him, with the relationship shown.
     const after = await b.page.goto(`/profile/${a.handle}`);
@@ -293,7 +297,9 @@ test.describe('Posse pages: accessibility and layout in a real browser', () => {
           if (x > 1 && y > 1) out.push((li.textContent ?? '').slice(0, 40));
           // A box's rect does not include text spilling out of it, so also catch unbreakable text overflowing its box
           // (a long call sign is exactly what covered the buttons before).
+          // A name cut with "…" (`truncate`) is clipped inside its box, never spilling: that is the fix, not the bug.
           for (const span of li.querySelectorAll<HTMLElement>('span.block')) {
+            if (getComputedStyle(span).textOverflow === 'ellipsis') continue;
             if (span.scrollWidth > span.clientWidth + 1)
               out.push(`overflow: ${(span.textContent ?? '').slice(0, 40)}`);
           }

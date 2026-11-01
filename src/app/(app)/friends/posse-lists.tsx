@@ -55,21 +55,23 @@ export function PosseLists({ lists }: { lists: RelationshipLists }) {
     people: PersonEntry[],
     empty: string,
     row: (p: PersonEntry) => ReactNode,
+    footer?: ReactNode,
   ) => (
-    <section aria-labelledby={id} className="flex flex-col gap-3">
+    <section aria-labelledby={id} className="flex flex-col gap-2">
       <h2 id={id} className="text-title text-text-primary">
         {title}
       </h2>
       {people.length === 0 ? (
         <p className="text-caption text-text-secondary">{empty}</p>
       ) : (
-        <ul className="flex flex-col gap-2">{people.map(row)}</ul>
+        <ul className="-mb-2.5 flex flex-col divide-y divide-border">{people.map(row)}</ul>
       )}
+      {footer}
     </section>
   );
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       {error && <FormMessage tone="error">{error}</FormMessage>}
       {lists.truncated && <FormMessage tone="info">Showing the first 100 in each list.</FormMessage>}
 
@@ -79,7 +81,6 @@ export function PosseLists({ lists }: { lists: RelationshipLists }) {
             <PersonRow
               key={p.handle}
               {...p}
-              note="wants to be your friend"
               actions={
                 <>
                   {btn(p, 'accept', 'Accept', 'primary')}
@@ -102,7 +103,7 @@ export function PosseLists({ lists }: { lists: RelationshipLists }) {
         ) : (
           section(
             'posse',
-            `Friends (${lists.posse.length})`,
+            `Your friends (${lists.posse.length})`,
             lists.posse,
             'Nobody yet. Accept a request or ask someone.',
             (p) => (
@@ -148,19 +149,18 @@ export function PosseLists({ lists }: { lists: RelationshipLists }) {
                 }
               />
             ),
+            <p className="mt-3 border-t border-border pt-3 text-metadata text-text-muted">
+              Close friend and following are private labels, just for you: nobody else sees them, and they
+              change nothing for the other person.
+            </p>,
           )
         )}
       </ClayCard>
 
       {lists.outgoing.length > 0 && (
         <ClayCard>
-          {section('waiting', 'Waiting on', lists.outgoing, '', (p) => (
-            <PersonRow
-              key={p.handle}
-              {...p}
-              note="request sent"
-              actions={btn(p, 'cancel', 'Cancel', 'ghost')}
-            />
+          {section('waiting', `Sent requests (${lists.outgoing.length})`, lists.outgoing, '', (p) => (
+            <PersonRow key={p.handle} {...p} inlineActions actions={btn(p, 'cancel', 'Cancel', 'ghost')} />
           ))}
         </ClayCard>
       )}
@@ -168,15 +168,10 @@ export function PosseLists({ lists }: { lists: RelationshipLists }) {
       {lists.scouting.length > 0 && (
         <ClayCard>
           {section('scouting', 'Following', lists.scouting, '', (p) => (
-            <PersonRow key={p.handle} {...p} actions={btn(p, 'unscout', 'Unfollow', 'ghost')} />
+            <PersonRow key={p.handle} {...p} inlineActions actions={btn(p, 'unscout', 'Unfollow', 'ghost')} />
           ))}
         </ClayCard>
       )}
-
-      <p className="text-metadata text-text-muted">
-        Close friends and following are private labels, just for you: nobody else can see them, and they
-        change nothing for the other person.
-      </p>
 
       <ConfirmationDialog
         open={leaving !== undefined}

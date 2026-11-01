@@ -41,7 +41,7 @@ export function PeopleControls({
         <h3 id={id} className="text-caption font-semibold text-text-primary">
           {title}
         </h3>
-        <ul className="flex flex-col gap-2">
+        <ul className="flex flex-col divide-y divide-border">
           {people.map((p) => (
             <PersonRow
               key={p.handle}

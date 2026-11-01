@@ -1,12 +1,11 @@
-import { SkeletonFormCard, SkeletonListCard, SkeletonPage, SkeletonTitle } from '@/ui/howdy';
+import { SkeletonListCard, SkeletonPage, SkeletonTitle } from '@/ui/howdy';
 
-/** Pals' outline: the heading, the "ask by call sign" form and the list of Pals. */
+/** Friends' outline: the heading and the list of friends (adding people sits in the right panel). */
 export default function Loading() {
   return (
     <SkeletonPage>
       <SkeletonTitle width="w-28" />
-      <SkeletonFormCard fields={1} />
-      <SkeletonListCard rows={3} />
+      <SkeletonListCard rows={4} />
     </SkeletonPage>
   );
 }

@@ -4,7 +4,6 @@ import { myInvite } from '@/modules/invites';
 import { getEnv } from '@/platform/config/env';
 import { listMyRelationships } from '@/modules/relationships';
 import { palSuggestions } from '@/modules/suggestions';
-import { GlossaryHint } from '@/ui/howdy';
 import { AskForm } from './ask-form';
 import { InviteCard } from './invite-card';
 import { PosseLists } from './posse-lists';
@@ -12,7 +11,11 @@ import { Suggestions } from './suggestions';
 
 export const metadata = { title: 'Friends' };
 
-/** Your Posse and everything pending around it. Protected; only ever shows the signed-in person's own relationships. */
+/**
+ * Your Posse and everything pending around it, in Home's frame: the lists in the middle; adding people (by username,
+ * suggestions, your invite link) in the right panel, which follows the lists on a phone. Protected; only ever shows the
+ * signed-in person's own relationships.
+ */
 export default async function PossePage() {
   const user = await requireUser();
   const [lists, suggestions, invite] = await Promise.all([
@@ -24,17 +27,19 @@ export default async function PossePage() {
   ]);
   await attachPortraits(user.id, suggestions);
   return (
-    <>
-      <main id="main" className="mx-auto flex max-w-xl flex-col gap-4 py-4 sm:gap-6 sm:py-8">
-        <div className="flex items-center">
-          <h1 className="text-heading text-text-primary">Your friends</h1>
-          <GlossaryHint term="posse" />
-        </div>
-        <AskForm />
+    <div className="flex w-full flex-col gap-4 py-4 xl:grid xl:grid-cols-[minmax(0,1fr)_18rem] xl:items-start xl:gap-6">
+      <main id="main" className="mx-auto flex w-full max-w-2xl min-w-0 flex-col gap-4">
+        <h1 className="text-heading text-text-primary">Friends</h1>
         <PosseLists lists={lists} />
-        <Suggestions initial={suggestions} />
-        {invite && <InviteCard initial={invite} origin={new URL(getEnv().APP_URL).origin} />}
       </main>
-    </>
+      <aside
+        aria-label="Add friends"
+        className="mx-auto flex w-full max-w-2xl min-w-0 flex-col gap-4 xl:max-w-none"
+      >
+        <Suggestions initial={suggestions} />
+        <AskForm />
+        {invite && <InviteCard initial={invite} origin={new URL(getEnv().APP_URL).origin} />}
+      </aside>
+    </div>
   );
 }

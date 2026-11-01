@@ -5,7 +5,8 @@ import { useState, type FormEvent } from 'react';
 import { handleParamSchema } from '@/shared/validation/profile';
 import { postJson } from '@/ui/auth/api';
 import { FormMessage } from '@/ui/auth/form-parts';
-import { Button, ClayCard, Input } from '@/ui/primitives';
+import { RailCard } from '@/ui/howdy/rail-card';
+import { Button, Input } from '@/ui/primitives';
 
 /**
  * Ask someone to join your Posse by call sign. It works for private Ranches too (which you cannot open), and it always
@@ -40,9 +41,8 @@ export function AskForm() {
   }
 
   return (
-    <ClayCard>
-      <form onSubmit={submit} noValidate className="flex flex-col gap-3">
-        <h2 className="text-title text-text-primary">Ask someone to be your friend</h2>
+    <RailCard id="ask-by-username" title="Add by username">
+      <form onSubmit={submit} noValidate className="flex flex-col gap-2">
         {formError && <FormMessage tone="error">{formError}</FormMessage>}
         {sent && (
           <FormMessage tone="success">
@@ -51,18 +51,21 @@ export function AskForm() {
         )}
         <Input
           label="Their username"
+          hideLabel
+          prefix="@"
+          placeholder="username"
           name="handle"
           value={handle}
           onChange={(e) => setHandle(e.target.value)}
           error={fieldError}
           autoCapitalize="none"
           spellCheck={false}
-          hint="You can ask people whose profile is private, too."
+          hint="Works for private profiles too."
         />
-        <Button type="submit" loading={busy} className="self-start">
+        <Button type="submit" size="sm" loading={busy} fullWidth>
           Ask to be friends
         </Button>
       </form>
-    </ClayCard>
+    </RailCard>
   );
 }

@@ -5,7 +5,8 @@ import { useState } from 'react';
 import type { PalSuggestion } from '@/modules/suggestions';
 import { apiRequest } from '@/ui/auth/api';
 import { FormMessage } from '@/ui/auth/form-parts';
-import { Avatar, Button, ClayCard } from '@/ui/primitives';
+import { RailCard } from '@/ui/howdy/rail-card';
+import { Avatar, Button } from '@/ui/primitives';
 
 const why = (s: PalSuggestion) => {
   const names = s.via.map((v) => v.displayName);
@@ -45,26 +46,25 @@ export function Suggestions({ initial }: { initial: PalSuggestion[] }) {
   }
 
   return (
-    <section aria-labelledby="suggestions-heading">
-      <ClayCard className="flex flex-col gap-3">
-        <h2 id="suggestions-heading" className="text-title text-text-primary">
-          Friends you may know
-        </h2>
-        {error && <FormMessage tone="error">{error}</FormMessage>}
-        <ul className="flex flex-col gap-3">
-          {list.map((s) => (
-            <li key={s.handle} className="flex flex-wrap items-center gap-3">
-              <Avatar name={s.displayName} tint={s.portraitTint} src={s.portraitUrl} size="sm" />
-              <span className="min-w-0 flex-1">
-                <Link href={`/profile/${s.handle}`} className="block font-semibold [overflow-wrap:anywhere]">
-                  {s.displayName}
-                </Link>
-                <span className="block text-caption text-text-secondary">{why(s)}</span>
-              </span>
+    <RailCard id="suggestions-heading" title="Friends you may know">
+      {error && <FormMessage tone="error">{error}</FormMessage>}
+      <ul className="-my-2.5 flex flex-col divide-y divide-border">
+        {list.map((s) => (
+          <li key={s.handle} className="flex gap-3 py-2.5">
+            <Avatar name={s.displayName} tint={s.portraitTint} src={s.portraitUrl} size="sm" />
+            <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+              {/* The name and why are one link: a 44 px target that reads as "Dev · Friends with Bikram". */}
+              <Link
+                href={`/profile/${s.handle}`}
+                className="block min-h-11 min-w-0 no-underline hover:underline"
+              >
+                <span className="block truncate font-semibold">{s.displayName}</span>
+                <span className="line-clamp-2 text-caption text-text-secondary">{why(s)}</span>
+              </Link>
               {asked.has(s.handle) ? (
                 <span className="text-caption text-text-secondary">Asked</span>
               ) : (
-                <span className="flex gap-2">
+                <span className="flex items-center gap-2">
                   <Button
                     size="sm"
                     loading={busy === `${s.handle}:ask`}
@@ -84,10 +84,10 @@ export function Suggestions({ initial }: { initial: PalSuggestion[] }) {
                   </Button>
                 </span>
               )}
-            </li>
-          ))}
-        </ul>
-      </ClayCard>
-    </section>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </RailCard>
   );
 }

@@ -4,8 +4,8 @@ import { useState } from 'react';
 import type { MyInvite } from '@/modules/invites';
 import { apiRequest } from '@/ui/auth/api';
 import { FormMessage } from '@/ui/auth/form-parts';
-import { Art } from '@/ui/art/glyph';
-import { Button, ClayCard, ConfirmationDialog } from '@/ui/primitives';
+import { RailCard } from '@/ui/howdy/rail-card';
+import { Button, ConfirmationDialog } from '@/ui/primitives';
 
 /**
  * My personal invite link (ADR-045): share it anywhere. Whoever joins through it sends me a Pal request once they confirm
@@ -45,17 +45,12 @@ export function InviteCard({ initial, origin }: { initial: MyInvite; origin: str
   }
 
   return (
-    <ClayCard className="flex flex-col gap-3 bg-accent-soft/40">
-      <div className="flex items-center gap-3">
-        <Art name="mailbox" size="free" className="w-10 shrink-0" />
-        <h2 className="text-title text-text-primary">Invite friends to Howdy</h2>
-      </div>
+    <RailCard id="invite-friends" title="Invite friends">
       <p className="text-caption text-text-secondary">
-        Share your link anywhere. Whoever joins with it sends you a friend request once they confirm their
-        email — you decide whether to accept.
+        Whoever joins with your link sends you a friend request once they confirm their email. You decide.
       </p>
       {error && <FormMessage tone="error">{error}</FormMessage>}
-      <p className="rounded-md bg-surface px-3 py-2.5 font-mono text-caption [overflow-wrap:anywhere] text-text-primary shadow-clay-pressed">
+      <p className="rounded-md bg-surface-sunken px-3 py-2 font-mono text-caption [overflow-wrap:anywhere] text-text-primary">
         {link}
       </p>
       <div className="flex flex-wrap items-center gap-2">
@@ -80,6 +75,6 @@ export function InviteCard({ initial, origin }: { initial: MyInvite; origin: str
         onCancel={() => setConfirming(false)}
         onConfirm={reset}
       />
-    </ClayCard>
+    </RailCard>
   );
 }
