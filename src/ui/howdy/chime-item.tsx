@@ -1,5 +1,23 @@
 import Link from 'next/link';
-import { Glyph } from '../art/glyph';
+import type { ComponentType } from 'react';
+import type { IconBaseProps } from 'react-icons';
+import {
+  GoCheck,
+  GoClock,
+  GoComment,
+  GoCommentDiscussion,
+  GoEye,
+  GoHeart,
+  GoHourglass,
+  GoNote,
+  GoOrganization,
+  GoPeople,
+  GoPersonAdd,
+  GoQuote,
+  GoReply,
+  GoTag,
+} from 'react-icons/go';
+import type { PortraitTint } from '@/shared/validation/profile';
 import { cn } from '../cn';
 import { Avatar } from '../primitives/avatar';
 import { RelativeTime } from './time';
@@ -21,25 +39,30 @@ export type ChimeType =
   | 'TOWNHALL_ACCEPTED'
   | 'CAPSULE_OPENED';
 
-const ICON: Record<ChimeType, string> = {
-  POST_CARD_CREATED: '📮',
-  POST_CARD_REPLIED: '✍️',
-  TRACK_CREATED: '👣',
-  YO_DROPPED: '👋',
-  MARK_AWARDED: '💎',
-  TRIBUTE_CREATED: '📜',
-  WHISPER_RECEIVED: '🤫',
-  POSSE_REQUESTED: '🤝',
-  POSSE_ACCEPTED: '🤝',
-  CARD_WAITING: '⏳',
-  REPLY_WAITING: '⏳',
-  CARD_APPROVED: '✅',
-  TOWNHALL_INVITED: '🏛️',
-  TOWNHALL_ACCEPTED: '🤝',
-  CAPSULE_OPENED: '💌',
+/** What happened, as a line icon (Octicons, like the rest of the app) in the sunflower badge on the person's photo. */
+const ICON: Record<ChimeType, ComponentType<IconBaseProps>> = {
+  POST_CARD_CREATED: GoNote,
+  POST_CARD_REPLIED: GoReply,
+  TRACK_CREATED: GoEye,
+  YO_DROPPED: GoHeart,
+  MARK_AWARDED: GoTag,
+  TRIBUTE_CREATED: GoQuote,
+  WHISPER_RECEIVED: GoCommentDiscussion,
+  POSSE_REQUESTED: GoPersonAdd,
+  POSSE_ACCEPTED: GoPeople,
+  CARD_WAITING: GoClock,
+  REPLY_WAITING: GoComment,
+  CARD_APPROVED: GoCheck,
+  TOWNHALL_INVITED: GoOrganization,
+  TOWNHALL_ACCEPTED: GoOrganization,
+  CAPSULE_OPENED: GoHourglass,
 };
 
-/** One notification ("Chime"). Unread is conveyed with text for assistive tech, not the dot alone. */
+/**
+ * One notification ("Chime"), as a row in the notifications card: the person's photo (or initials) with what happened as
+ * a small sunflower badge (violet icon) in its corner, the words, and when. Unread rows are tinted with a red dot, and say "Unread" to
+ * screen readers (not the colour alone).
+ */
 export function ChimeItem({
   type,
   text,
@@ -47,7 +70,7 @@ export function ChimeItem({
   unread,
   href,
   onOpen,
-  photo,
+  person,
 }: {
   type: ChimeType;
   text: string;
@@ -56,52 +79,40 @@ export function ChimeItem({
   href?: string;
   /** Called when the link is followed (e.g. to mark the Chime read). */
   onOpen?: () => void;
-  /** The person it is about, when the viewer may see their Portrait: shown with the Chime's icon in its corner. */
-  photo?: { name: string; src: string };
+  /** Who it is about. `src` only when the viewer may see their photo; otherwise their initials. */
+  person: { name: string; tint?: PortraitTint | undefined; src?: string | undefined };
 }) {
+  const Icon = ICON[type];
   const content = (
     <>
-      {photo ? (
-        <span aria-hidden="true" className="relative inline-flex shrink-0">
-          <Avatar name={photo.name} src={photo.src} />
-          <span className="absolute -right-1 -bottom-1 inline-flex size-6 items-center justify-center rounded-pill bg-surface text-caption shadow-clay-sm">
-            <Glyph emoji={ICON[type]} size="free" className="size-4" />
-          </span>
+      <span aria-hidden="true" className="relative inline-flex shrink-0">
+        <Avatar name={person.name} tint={person.tint} src={person.src} />
+        <span className="absolute -right-1 -bottom-1 grid size-5 place-items-center rounded-pill bg-primary text-on-primary ring-2 ring-surface">
+          <Icon className="size-3" />
         </span>
-      ) : (
-        <span
-          aria-hidden="true"
-          className="inline-flex size-11 shrink-0 items-center justify-center rounded-pill bg-surface-sunken text-title"
-        >
-          <Glyph emoji={ICON[type]} size="badge" />
-        </span>
-      )}
+      </span>
       <span className="min-w-0 flex-1">
-        <span className="block text-body text-text-primary">
+        <span className="block text-caption text-text-primary">
           {unread && <span className="sr-only">Unread: </span>}
           {text}
         </span>
-        <RelativeTime
-          date={createdAt}
-          // Muted text falls just short of AA on the tinted unread background in Dusk, so unread uses the stronger colour.
-          className={cn('text-metadata', unread ? 'text-text-secondary' : 'text-text-muted')}
-        />
+        <RelativeTime date={createdAt} className="text-metadata text-text-secondary" />
       </span>
-      {unread && <span aria-hidden="true" className="size-2.5 shrink-0 rounded-pill bg-accent" />}
+      {unread && <span aria-hidden="true" className="size-2 shrink-0 rounded-pill bg-danger" />}
     </>
   );
-  const box = cn(
-    'flex items-center gap-3 rounded-lg p-3 no-underline',
-    unread ? 'bg-accent-soft' : 'bg-surface',
+  const row = cn(
+    'flex items-center gap-3 px-4 py-3 no-underline transition-colors hover:bg-surface-sunken hover:no-underline',
+    unread && 'bg-accent-soft',
   );
   return (
     <li>
       {href ? (
-        <Link href={href} className={box} {...(onOpen ? { onClick: onOpen } : {})}>
+        <Link href={href} className={row} {...(onOpen ? { onClick: onOpen } : {})}>
           {content}
         </Link>
       ) : (
-        <div className={box}>{content}</div>
+        <div className={row}>{content}</div>
       )}
     </li>
   );

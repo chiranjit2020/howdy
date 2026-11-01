@@ -47,3 +47,6 @@ export const chimePrefsSchema = z
   .refine((v) => Object.values(v).some((x) => x !== undefined), 'Nothing to change.');
 
 export type ChimePrefs = Record<ChimeCategory, boolean>;
+
+/** DELETE /api/me/chimes ("Clear all"): up to what the page showed, so a Chime that rang since is kept. */
+export const clearChimesSchema = z.object({ before: z.iso.datetime().optional() });

@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState, useSyncExternalStore } from 'react';
+import { useEffect, useId, useState, useSyncExternalStore } from 'react';
 import { FormMessage } from '../auth/form-parts';
 import { Button, ClayCard } from '../primitives';
+import { SwitchButton } from '../primitives/controls';
 import {
   canPromptInstall,
   disablePush,
@@ -29,6 +30,8 @@ export function AppOnPhone({ vapidKey }: { vapidKey: string | undefined }) {
   const [push, setPush] = useState<PushState | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | undefined>();
+  const switchLabel = useId();
+  const switchHint = useId();
 
   useEffect(() => {
     void pushState().then(setPush);
@@ -82,27 +85,32 @@ export function AppOnPhone({ vapidKey }: { vapidKey: string | undefined }) {
           ))}
 
         {vapidKey && push !== null && (
-          <div className="flex flex-wrap items-center gap-3">
-            <p className="min-w-0 flex-[1_1_12rem] text-caption text-text-secondary">
-              {push === 'on'
-                ? 'Notifications are on for this device. You will hear about messages and notifications even when Howdy is closed.'
-                : push === 'blocked'
-                  ? 'Notifications are blocked for Howdy. Allow them in your browser’s site settings, then come back.'
-                  : push === 'unsupported'
-                    ? os === 'ios' && !installed
-                      ? 'On iPhone, notifications work once Howdy is on your Home Screen. Install it, then open it from there.'
-                      : 'This browser cannot show notifications while Howdy is closed.'
-                    : 'Get a notification for messages and notifications, even when Howdy is closed.'}
-            </p>
+          // The animated switch (sunflower when on) where it can be changed; otherwise just why it cannot.
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex min-w-0 flex-col gap-0.5">
+              <p id={switchLabel} className="text-body font-semibold text-text-primary">
+                Notifications on this device
+              </p>
+              <p id={switchHint} className="text-caption text-text-secondary">
+                {push === 'on'
+                  ? 'You will hear about messages and notifications even when Howdy is closed.'
+                  : push === 'blocked'
+                    ? 'Blocked for Howdy. Allow them in your browser’s site settings, then come back.'
+                    : push === 'unsupported'
+                      ? os === 'ios' && !installed
+                        ? 'On iPhone, notifications work once Howdy is on your Home Screen. Install it, then open it from there.'
+                        : 'This browser cannot show notifications while Howdy is closed.'
+                      : 'Get a notification for messages and notifications, even when Howdy is closed.'}
+              </p>
+            </div>
             {(push === 'on' || push === 'off') && (
-              <Button
-                size="sm"
-                variant={push === 'on' ? 'secondary' : 'primary'}
-                loading={busy}
-                onClick={() => toggle(push !== 'on')}
-              >
-                {push === 'on' ? 'Turn off' : 'Turn on notifications'}
-              </Button>
+              <SwitchButton
+                checked={push === 'on'}
+                onCheckedChange={(on) => void toggle(on)}
+                disabled={busy}
+                aria-labelledby={switchLabel}
+                aria-describedby={switchHint}
+              />
             )}
           </div>
         )}

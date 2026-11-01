@@ -4,7 +4,7 @@ import { flushBackground } from '@/platform/background';
 import { getPool } from '@/platform/db';
 import { subscribe } from '@/platform/events';
 import { freshAuthState, signedInUser, stable, uniqueUser, type TestKit } from '../helpers/auth';
-import { bell, chimesOf, getPrefs, markRead, patchPrefs, texts, types } from '../helpers/chimes';
+import { bell, chimesOf, clearAll, getPrefs, markRead, patchPrefs, texts, types } from '../helpers/chimes';
 import { approve, fenceOf, nail, replyTo, scrape, yo } from '../helpers/fence';
 import { patchRanch } from '../helpers/ranch';
 import { doAct, insertUser, q, userId } from '../helpers/social';
@@ -485,6 +485,35 @@ describe('marking read', () => {
     }
     expect((await markRead({ all: true }, {})).status).toBe(401);
     expect((await markRead({ all: true }, { ...as(me), origin: 'https://evil.example' })).status).toBe(403);
+  });
+});
+
+describe('clearing all', () => {
+  it('deletes only the caller’s own, up to what their page showed; needs a session and the right origin', async () => {
+    const { owner, friend } = await wall();
+    await nail(owner.handle, { body: 'shown on the page' }, as(friend));
+    const other = await person('other');
+    await doAct(other.handle, 'request', as(friend));
+    await flushBackground();
+    const seenAt = new Date().toISOString();
+    await new Promise((r) => setTimeout(r, 20));
+    await nail(owner.handle, { body: 'rang afterwards' }, as(friend));
+
+    expect((await clearAll({ before: seenAt }, {})).status).toBe(401);
+    expect(
+      (await clearAll({ before: seenAt }, { ...as(owner), origin: 'https://evil.example' })).status,
+    ).toBe(403);
+    expect((await clearAll({ before: 'yesterday' }, as(owner))).status).toBe(422);
+
+    const res = await clearAll({ before: seenAt }, as(owner));
+    expect(res.status).toBe(200);
+    expect(res.data.cleared).toBe(1);
+    // The one that rang after the page was drawn is kept; someone else's are untouched.
+    expect(await texts(as(owner))).toEqual([expect.stringMatching(/posted on your wall/)]);
+    expect(await bell(as(other))).toBe(1);
+    // Without `before`, everything of mine goes.
+    expect((await clearAll({}, as(owner))).data.cleared).toBe(1);
+    expect((await chimesOf(as(owner))).data.chimes).toEqual([]);
   });
 });
 

@@ -136,7 +136,7 @@ describe('what gets pushed', () => {
     expect(to(bd)).toHaveLength(1);
     const p = to(bd)[0]!.payload;
     expect(p).toMatchObject({ title: 'Howdy', url: `/messages/${a.handle}`, tag: `whisper:${a.handle}` });
-    expect(p.body).toMatch(/whispered to you\.$/);
+    expect(p.body).toMatch(/sent you a message\.$/);
     expect(JSON.stringify(p)).not.toContain('secret plan');
     expect(JSON.stringify(p)).not.toMatch(/[0-9a-f]{8}-[0-9a-f]{4}-/); // no ids of people
     expect(p.badge).toBeGreaterThanOrEqual(1);

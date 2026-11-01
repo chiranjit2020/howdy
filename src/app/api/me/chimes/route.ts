@@ -1,9 +1,10 @@
 import { attachPortraits } from '@/app/_lib/social';
 import { requireSession } from '@/modules/auth';
-import { listChimes } from '@/modules/notifications';
+import { clearChimes, listChimes } from '@/modules/notifications';
 import { AppError } from '@/platform/errors';
+import { readJson } from '@/platform/http/body';
 import { json, route } from '@/platform/http/route';
-import { chimeQuerySchema } from '@/shared/validation/chimes';
+import { chimeQuerySchema, clearChimesSchema } from '@/shared/validation/chimes';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,4 +22,11 @@ export const GET = route(async ({ req }) => {
     page.chimes.map((c) => c.actor),
   );
   return json(page);
+});
+
+/** "Clear all": delete my own Chimes, up to what my page showed (`before`). Only ever mine: there is no id to change. */
+export const DELETE = route(async ({ req }) => {
+  const { user } = await requireSession(req);
+  const { before } = await readJson(req, clearChimesSchema);
+  return json(await clearChimes(user.id, before));
 });

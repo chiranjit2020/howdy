@@ -402,7 +402,13 @@ describe('ChimeItem, TownHallCard, RanchHeader', () => {
   it('unread notifications are announced as unread', () => {
     render(
       <ul>
-        <ChimeItem type="YO_DROPPED" text="Sneha dropped a Yo." createdAt={at} unread />
+        <ChimeItem
+          type="YO_DROPPED"
+          text="Sneha reacted to your post."
+          createdAt={at}
+          unread
+          person={{ name: 'Sneha' }}
+        />
       </ul>,
     );
     expect(screen.getByText(/Unread:/)).toBeInTheDocument();
@@ -439,7 +445,13 @@ describe('ChimeItem, TownHallCard, RanchHeader', () => {
         <Fence>{card()}</Fence>
         <ul>
           <TrackItem when="today" />
-          <ChimeItem type="TRACK_CREATED" text="Someone left Tracks." createdAt={at} unread />
+          <ChimeItem
+            type="TRACK_CREATED"
+            text="Riya visited your profile."
+            createdAt={at}
+            unread
+            person={{ name: 'Riya' }}
+          />
         </ul>
         <TributeCard status="published" authorHandle="alex" body="Machine." pinned />
         <TownHallCard name="Night Owls" description="Awake" visibility="open" />

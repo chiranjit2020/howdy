@@ -557,20 +557,27 @@ export function KitShowcase({ initialTheme }: { initialTheme: Theme | undefined 
           visibility="open"
           action={<Button size="sm">Join</Button>}
         />
-        <ul className="flex flex-col gap-2">
+        <ul className="flex flex-col divide-y divide-border overflow-hidden rounded-lg border border-border bg-surface">
           <ChimeItem
             type="TRACK_CREATED"
-            text="Someone visited your profile."
+            text="Riya visited your profile."
             createdAt={ago(12)}
             unread
             href="#tracks"
+            person={{ name: 'Riya Sen', tint: 'mint' }}
           />
-          <ChimeItem type="YO_DROPPED" text="Sneha waved at your post." createdAt={ago(120)} />
+          <ChimeItem
+            type="YO_DROPPED"
+            text="Sneha reacted to your post."
+            createdAt={ago(120)}
+            person={{ name: 'Sneha Roy', tint: 'peach' }}
+          />
           <ChimeItem
             type="POSSE_REQUESTED"
             text="Alex wants to be your friend."
             createdAt={ago(60 * 26)}
             unread
+            person={{ name: 'Alex Paul', tint: 'sky' }}
           />
         </ul>
       </Section>

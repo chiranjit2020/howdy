@@ -4,6 +4,7 @@
  * `relationships` only; no module depends on it.
  */
 export {
+  clearChimes,
   getPrefs,
   handleEvent,
   listChimes,

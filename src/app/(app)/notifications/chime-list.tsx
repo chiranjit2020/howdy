@@ -6,7 +6,8 @@ import type { ChimeType, ChimeView } from '@/modules/notifications';
 import { apiRequest, postJson } from '@/ui/auth/api';
 import { FormMessage } from '@/ui/auth/form-parts';
 import { ChimeItem, type ChimeType as ItemType } from '@/ui/howdy';
-import { Button, ClayCard, EmptyState } from '@/ui/primitives';
+import { BellIcon } from '@/ui/icons';
+import { Button, ClayCard, ConfirmationDialog, EmptyState } from '@/ui/primitives';
 
 type Wire = Omit<ChimeView, 'at'> & { at: string };
 interface Page {
@@ -49,7 +50,8 @@ export function ChimeList({ initial, seenAt }: { initial: Page; seenAt: string }
   const router = useRouter();
   const [chimes, setChimes] = useState<Wire[]>(initial.chimes);
   const [next, setNext] = useState<string | null>(initial.nextCursor);
-  const [busy, setBusy] = useState<'more' | undefined>();
+  const [busy, setBusy] = useState<'more' | 'clear' | undefined>();
+  const [clearing, setClearing] = useState(false);
   const [error, setError] = useState<string | undefined>();
   const marked = useRef(false);
   const fresh = initial.unread;
@@ -75,46 +77,79 @@ export function ChimeList({ initial, seenAt }: { initial: Page; seenAt: string }
     } else setError(res.error?.message ?? 'Could not load older notifications.');
   }
 
-  if (chimes.length === 0) {
-    return (
-      <ClayCard>
-        <EmptyState
-          icon="🔔"
-          title="All quiet on the range"
-          description="When someone asks to be your friend, posts on your wall, waves at you, leaves a testimonial or a badge, or invites you to a group, it rings here."
-        />
-      </ClayCard>
-    );
+  async function clearAll() {
+    setBusy('clear');
+    setError(undefined);
+    const res = await apiRequest('DELETE', '/api/me/chimes', { before: seenAt });
+    setBusy(undefined);
+    setClearing(false);
+    if (res.ok) {
+      setChimes([]);
+      setNext(null);
+      router.refresh(); // the bell's count lives in the layout
+    } else setError(res.error?.message ?? 'Could not clear your notifications. Try again.');
   }
 
   return (
-    <section aria-label="Your notifications" className="flex flex-col gap-4">
+    <>
       <div className="flex items-center justify-between gap-3">
-        <p role="status" className="text-caption text-text-secondary">
-          {fresh > 0 ? `${fresh > 99 ? '99+' : fresh} new` : 'All caught up'}
-        </p>
+        <div className="flex items-baseline gap-2">
+          <h1 className="text-heading text-text-primary">Notifications</h1>
+          <p role="status" className="text-caption text-text-secondary">
+            {fresh > 0 && chimes.length > 0 ? `${fresh > 99 ? '99+' : fresh} new` : ''}
+          </p>
+        </div>
+        {chimes.length > 0 && (
+          <Button variant="link" onClick={() => setClearing(true)}>
+            Clear all
+          </Button>
+        )}
       </div>
       {error && <FormMessage tone="error">{error}</FormMessage>}
-      <ul className="flex flex-col gap-2">
-        {chimes.map((c) => (
-          <ChimeItem
-            key={c.id}
-            type={ITEM[c.type]}
-            text={c.text}
-            createdAt={c.at}
-            unread={c.unread}
-            href={c.href}
-            {...(c.actor.portraitUrl
-              ? { photo: { name: c.actor.displayName, src: c.actor.portraitUrl } }
-              : {})}
+      {chimes.length === 0 ? (
+        <ClayCard>
+          <EmptyState
+            as="h2"
+            icon={<BellIcon className="text-text-muted" />}
+            title="No notifications"
+            description="When a friend posts on your wall, replies, reacts, sends you a message or invites you to a group, it shows here."
           />
-        ))}
-      </ul>
+        </ClayCard>
+      ) : (
+        <section
+          aria-label="Your notifications"
+          className="overflow-hidden rounded-lg border border-border bg-surface"
+        >
+          <ul className="flex flex-col divide-y divide-border">
+            {chimes.map((c) => (
+              <ChimeItem
+                key={c.id}
+                type={ITEM[c.type]}
+                text={c.text}
+                createdAt={c.at}
+                unread={c.unread}
+                href={c.href}
+                person={{ name: c.actor.displayName, tint: c.actor.portraitTint, src: c.actor.portraitUrl }}
+              />
+            ))}
+          </ul>
+        </section>
+      )}
       {next && (
         <Button variant="secondary" loading={busy === 'more'} onClick={more} className="self-center">
           Older notifications
         </Button>
       )}
-    </section>
+      <ConfirmationDialog
+        open={clearing}
+        destructive
+        title="Clear all notifications?"
+        description="They are removed for good. New ones will still come in."
+        confirmLabel="Clear all"
+        loading={busy === 'clear'}
+        onCancel={() => setClearing(false)}
+        onConfirm={clearAll}
+      />
+    </>
   );
 }

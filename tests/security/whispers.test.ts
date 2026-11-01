@@ -708,7 +708,7 @@ describe('Notifications for messages', () => {
     expect(list).toHaveLength(1);
     expect(list[0]).toMatchObject({
       type: 'whisper_received',
-      text: `${a.handle} whispered to you.`,
+      text: `${a.handle} sent you a message.`,
       href: `/messages/${a.handle}`,
       unread: true,
     });

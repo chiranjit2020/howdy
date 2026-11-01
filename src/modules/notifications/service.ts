@@ -448,7 +448,7 @@ function describe(userId: string, s: Shown, myHandle: string): { text: string; h
     case 'yo_given':
       return { text: `${name} reacted to your post.`, href: fence };
     case 'whisper_received':
-      return { text: `${name} whispered to you.`, href: `/messages/${s.actor.handle}` };
+      return { text: `${name} sent you a message.`, href: `/messages/${s.actor.handle}` };
     case 'tribute_waiting':
       return {
         text: `A testimonial from ${name} is waiting for your approval.`,
@@ -471,7 +471,7 @@ function describe(userId: string, s: Shown, myHandle: string): { text: string; h
     case 'townhall_join_requested':
       return { text: `${name} asked to join a group you look after.`, href: '/groups' };
     case 'townhall_request_approved':
-      return { text: `${name} let you into a group.`, href: '/groups' };
+      return { text: `${name} approved your request to join a group.`, href: '/groups' };
     case 'townhall_made_deputy':
       return { text: `${name} made you a Deputy of a group.`, href: '/groups' };
     case 'townhall_made_owner':
@@ -604,6 +604,24 @@ export async function markRead(
     .where('all' in target ? mine : and(mine, inArray(notifications.id, target.ids)))
     .returning({ id: notifications.id });
   return { marked: rows.length };
+}
+
+/**
+ * "Clear all": delete the caller's own Chimes, up to `before` (what their page showed; anything that rang after it stays).
+ * Gone for good, unread or not. There is no id to choose, so nobody can clear anyone else's.
+ */
+export async function clearChimes(userId: string, before?: string): Promise<{ cleared: number }> {
+  await enforceRateLimit(`chimes:mark:${userId}`, RATE.mark);
+  const rows = await getDb()
+    .delete(notifications)
+    .where(
+      and(
+        eq(notifications.recipientId, userId),
+        before ? lte(notifications.createdAt, new Date(before)) : undefined,
+      ),
+    )
+    .returning({ id: notifications.id });
+  return { cleared: rows.length };
 }
 
 // ─── preferences ─────────────────────────────────────────────────────────────────────────────────────────────────────

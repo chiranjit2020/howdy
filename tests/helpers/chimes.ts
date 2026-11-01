@@ -1,6 +1,6 @@
 import { GET as chimePrefsGet, PATCH as chimePrefsPatch } from '@/app/api/me/chime-prefs/route';
 import { POST as markReadRoute } from '@/app/api/me/chimes/read/route';
-import { GET as chimesRoute } from '@/app/api/me/chimes/route';
+import { DELETE as clearRoute, GET as chimesRoute } from '@/app/api/me/chimes/route';
 import { GET as unreadRoute } from '@/app/api/me/chimes/unread/route';
 import { flushBackground } from '@/platform/background';
 import { call } from './auth';
@@ -57,3 +57,12 @@ export const markRead = async (body: unknown, opts: Opts) => {
 export const getPrefs = (opts: Opts) => call(chimePrefsGet, 'GET', '/api/me/chime-prefs', undefined, opts);
 export const patchPrefs = (body: unknown, opts: Opts) =>
   call(chimePrefsPatch, 'PATCH', '/api/me/chime-prefs', body, opts);
+
+/** "Clear all": DELETE /api/me/chimes. */
+export const clearAll = async (body: unknown, opts: Opts) => {
+  await flushBackground();
+  return call(clearRoute, 'DELETE', '/api/me/chimes', body, opts) as Promise<{
+    status: number;
+    data: { cleared?: number; error?: { code: string } };
+  }>;
+};

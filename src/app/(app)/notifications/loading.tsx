@@ -1,19 +1,17 @@
-import { SkeletonPage, SkeletonRow, SkeletonTitle } from '@/ui/howdy';
-import { Skeleton } from '@/ui/primitives';
+import { SkeletonFramedPage, SkeletonRow, SkeletonTitle } from '@/ui/howdy';
 
-/** Chimes' outline: the heading, the "caught up" line and a stack of notification cards. */
+/** Notifications' outline in Home's frame: the heading, then one card of rows, like the page itself. */
 export default function Loading() {
   return (
-    <SkeletonPage>
-      <SkeletonTitle width="w-28" />
-      <Skeleton className="h-4 w-24" />
-      <div className="flex flex-col gap-3">
-        {Array.from({ length: 4 }, (_, i) => (
-          <div key={i} className="clay p-4">
+    <SkeletonFramedPage rail={0}>
+      <SkeletonTitle width="w-36" hint={false} />
+      <div className="flex flex-col divide-y divide-border overflow-hidden rounded-lg border border-border bg-surface">
+        {Array.from({ length: 5 }, (_, i) => (
+          <div key={i} className="px-4 py-3">
             <SkeletonRow />
           </div>
         ))}
       </div>
-    </SkeletonPage>
+    </SkeletonFramedPage>
   );
 }

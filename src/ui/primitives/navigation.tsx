@@ -111,7 +111,7 @@ function TabMark({
       {children}
       {count ? (
         // A notification count: the theme red, so it stands out from the sunflower of the current tab.
-        <span className="absolute -top-1 right-1.5 grid h-4 min-w-4 animate-yo-pop place-items-center rounded-pill bg-danger px-1 text-[0.625rem] leading-none font-bold text-on-danger ring-2 ring-surface">
+        <span className="absolute -top-1 right-1.5 grid h-4 min-w-4 animate-yo-pop place-items-center rounded-pill bg-danger px-1 text-tab leading-none font-bold text-on-danger ring-2 ring-surface">
           {count}
         </span>
       ) : (
