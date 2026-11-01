@@ -44,10 +44,12 @@ export {
   hallPostPhotoFor,
   listFeed,
   listHeld,
+  pinPost,
   purgeStaleHeld,
   removePost,
   removeReply,
   setReaction,
+  unpinPost,
   FEED_RATE,
 } from './feed';
 export type {

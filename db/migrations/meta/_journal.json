@@ -316,6 +316,13 @@
       "when": 1793527779662,
       "tag": "0044_groups_as_circles",
       "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "7",
+      "when": 1793530320228,
+      "tag": "0045_group_pinned_post",
+      "breakpoints": true
     }
   ]
 }

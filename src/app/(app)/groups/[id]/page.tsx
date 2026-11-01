@@ -30,7 +30,10 @@ export default async function TownHallPage({ params }: { params: Promise<{ id: s
     ...(requests ?? []),
     ...(bans ?? []),
     ...(members?.members ?? []),
-    ...(feed?.posts.flatMap((p) => [p.author, ...p.replies.map((r) => r.author)]) ?? []),
+    ...[...(feed?.pinned ? [feed.pinned] : []), ...(feed?.posts ?? [])].flatMap((p) => [
+      p.author,
+      ...p.replies.map((r) => r.author),
+    ]),
     ...[...(held?.posts ?? []), ...(held?.replies ?? [])].map((h) => h.author),
   ]);
 

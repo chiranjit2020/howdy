@@ -7,7 +7,7 @@ import {
   townHalls,
   users,
 } from '@db/schema';
-import { and, asc, count, desc, eq, gt, inArray, isNull, lt, or, sql } from 'drizzle-orm';
+import { and, asc, count, desc, eq, gt, inArray, isNull, lt, ne, or, sql } from 'drizzle-orm';
 import { enforceNewAccountLimit, shouldHoldForOthers } from '@/modules/moderation';
 import { getCards, type PersonCard } from '@/modules/profiles';
 import { hiddenAuthors } from '@/modules/relationships';
@@ -116,6 +116,8 @@ export interface HallPostView {
   canRemove: boolean;
   canReact: boolean;
   canReply: boolean;
+  /** May this viewer pin it to the top of the feed (the owner or a Deputy, a published post)? */
+  canPin: boolean;
   /** Its photo (ADR-046), when it has one this viewer may see. */
   photo: HallPhoto | null;
   /** Set when this post is a Time Capsule that opened (ADR-043): when its words were sealed. */
@@ -127,6 +129,8 @@ export interface HallPostView {
 }
 
 export interface HallFeedPage {
+  /** The pinned notice, on the first page only, when there is one this viewer may see; never repeated in `posts`. */
+  pinned: HallPostView | null;
   posts: HallPostView[];
   nextCursor: string | null;
 }
@@ -164,13 +168,20 @@ interface Hall {
   ownerId: string;
   /** The member's own role here (they are always an active member when they hold a Hall). */
   myRole: HallRole;
+  /** The post pinned to the top of the feed, if any. */
+  pinnedPostId: string | null;
 }
 
 /** The Town Hall, when this person is an active member of it; null otherwise (hidden ≡ missing). */
 async function hallForMember(userId: string, townHallId: string): Promise<Hall | null> {
   if (!idParamSchema.safeParse(townHallId).success) return null;
   const [row] = await getDb()
-    .select({ id: townHalls.id, ownerId: townHalls.ownerId, myRole: sql<HallRole>`${townHallMembers.role}` })
+    .select({
+      id: townHalls.id,
+      ownerId: townHalls.ownerId,
+      myRole: sql<HallRole>`${townHallMembers.role}`,
+      pinnedPostId: townHalls.pinnedPostId,
+    })
     .from(townHalls)
     .innerJoin(
       townHallMembers,
@@ -300,6 +311,7 @@ async function hydrate(
         canRemove: mayRemove(row.authorId),
         canReact: published && row.authorId !== viewerId,
         canReply: published,
+        canPin: published && isStaff(hall.myRole),
         photo: photos.get(row.id) ?? null,
         capsuleSealedAt: row.capsuleSealedAt,
         reactions: reactionsByPost.get(row.id) ?? emptyReactions(),
@@ -341,6 +353,8 @@ export async function listFeed(
         and(
           eq(townHallPosts.townHallId, hall.id),
           or(eq(townHallPosts.status, 'published'), eq(townHallPosts.authorId, viewerId)),
+          // The pinned notice has its own place at the top; it is not repeated in the list.
+          hall.pinnedPostId ? ne(townHallPosts.id, hall.pinnedPostId) : undefined,
           position
             ? sql`(${townHallPosts.createdAt}, ${townHallPosts.id}) < (${position.at}, ${position.id})`
             : undefined,
@@ -377,10 +391,67 @@ export async function listFeed(
     next = position;
   }
 
-  return {
-    posts: await hydrate(viewerId, hall, kept, keptAuthors),
-    nextCursor: next ? encodeCursor(next) : null,
-  };
+  const [posts, pinned] = await Promise.all([
+    hydrate(viewerId, hall, kept, keptAuthors),
+    cursor ? Promise.resolve(null) : pinnedFor(viewerId, hall),
+  ]);
+  return { pinned, posts, nextCursor: next ? encodeCursor(next) : null };
+}
+
+/**
+ * The pinned notice as this member sees it, or null: a published post whose writer is active and not hidden from them
+ * (the same rules as any post in the list).
+ */
+async function pinnedFor(viewerId: string, hall: Hall): Promise<HallPostView | null> {
+  if (!hall.pinnedPostId) return null;
+  const [row] = await getDb()
+    .select()
+    .from(townHallPosts)
+    .where(and(eq(townHallPosts.id, hall.pinnedPostId), eq(townHallPosts.status, 'published')))
+    .limit(1);
+  if (!row) return null;
+  const [authors, hidden] = await Promise.all([
+    getCards([row.authorId]),
+    hiddenAuthors(viewerId, [row.authorId]),
+  ]);
+  if (hidden.has(row.authorId) || !authors.has(row.authorId)) return null;
+  const [view] = await hydrate(viewerId, hall, [row], authors);
+  return view ?? null;
+}
+
+/**
+ * Pin a post to the top of its Town Hall's feed (a pinned notice), replacing any pinned before. The owner or a Deputy,
+ * and only a published post; to anyone else, or for a held post, the same 404 as a post that is not there. Quiet: nobody
+ * is told.
+ */
+export async function pinPost(staffId: string, postId: string): Promise<void> {
+  await enforceRateLimit(`townhalls:feed-manage:${staffId}`, FEED_RATE.manage);
+  if (!idParamSchema.safeParse(postId).success) throw new AppError('NOT_FOUND');
+  const [row] = await getDb()
+    .select({ status: townHallPosts.status, townHallId: townHallPosts.townHallId })
+    .from(townHallPosts)
+    .where(eq(townHallPosts.id, postId))
+    .limit(1);
+  if (!row || row.status !== 'published' || !(await onStaff(staffId, row.townHallId))) {
+    throw new AppError('NOT_FOUND');
+  }
+  await getDb().update(townHalls).set({ pinnedPostId: postId }).where(eq(townHalls.id, row.townHallId));
+}
+
+/** Unpin it (only if it is still the pinned one: a stale tab never unpins a newer notice). The owner or a Deputy. */
+export async function unpinPost(staffId: string, postId: string): Promise<void> {
+  await enforceRateLimit(`townhalls:feed-manage:${staffId}`, FEED_RATE.manage);
+  if (!idParamSchema.safeParse(postId).success) throw new AppError('NOT_FOUND');
+  const [row] = await getDb()
+    .select({ townHallId: townHallPosts.townHallId })
+    .from(townHallPosts)
+    .where(eq(townHallPosts.id, postId))
+    .limit(1);
+  if (!row || !(await onStaff(staffId, row.townHallId))) throw new AppError('NOT_FOUND');
+  await getDb()
+    .update(townHalls)
+    .set({ pinnedPostId: null })
+    .where(and(eq(townHalls.id, row.townHallId), eq(townHalls.pinnedPostId, postId)));
 }
 
 /**

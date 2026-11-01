@@ -28,7 +28,10 @@ type WirePost = Omit<HallPostView, 'createdAt' | 'replies'> & {
   createdAt: Date | string;
   replies: WireReply[];
 };
-export type InitialFeed = Omit<HallFeedPage, 'posts'> & { posts: WirePost[] };
+export type InitialFeed = Omit<HallFeedPage, 'posts' | 'pinned'> & {
+  pinned: WirePost | null;
+  posts: WirePost[];
+};
 type WireHeld = {
   posts: (Omit<HeldItems['posts'][number], 'createdAt'> & { createdAt: Date | string })[];
   replies: (Omit<HeldItems['replies'][number], 'createdAt'> & { createdAt: Date | string })[];
@@ -64,6 +67,8 @@ export function FeedSection({
   const toast = useToast();
   const headingId = useId();
   const [posts, setPosts] = useState<WirePost[]>(initial.posts);
+  // The pinned notice (one per group), shown above the list and never inside it.
+  const [pinned, setPinned] = useState<WirePost | null>(initial.pinned);
   const [next, setNext] = useState<string | null>(initial.nextCursor);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | undefined>();
@@ -71,8 +76,38 @@ export function FeedSection({
   const [removing, setRemoving] = useState(false);
   const [reporting, setReporting] = useState<string | undefined>();
 
-  const patchPost = (id: string, fn: (p: WirePost) => WirePost) =>
+  const patchPost = (id: string, fn: (p: WirePost) => WirePost) => {
     setPosts((all) => all.map((p) => (p.id === id ? fn(p) : p)));
+    setPinned((p) => (p && p.id === id ? fn(p) : p));
+  };
+
+  /** Back into the list at its own place (newest first), when it stops being the pinned one. */
+  const intoList = (p: WirePost) =>
+    setPosts((all) =>
+      [...all.filter((x) => x.id !== p.id), p].sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      ),
+    );
+
+  /** Pin it to the top (replacing the one before) or unpin it. The owner and Deputies only; the server checks. */
+  async function pin(p: WirePost, on: boolean) {
+    setError(undefined);
+    const res = await apiRequest(on ? 'POST' : 'DELETE', `/api/hall-posts/${p.id}/pin`);
+    if (!res.ok) {
+      setError(res.error?.message ?? 'That did not work. Try again.');
+      return;
+    }
+    if (on) {
+      if (pinned) intoList(pinned);
+      setPosts((all) => all.filter((x) => x.id !== p.id));
+      setPinned(p);
+      toast({ title: 'Pinned to the top.', tone: 'success' });
+    } else {
+      setPinned(null);
+      intoList(p);
+      toast({ title: 'Unpinned.', tone: 'success' });
+    }
+  }
 
   async function post(body: string, photoId?: string): Promise<boolean> {
     setError(undefined);
@@ -132,9 +167,14 @@ export function FeedSection({
     );
     setRemoving(false);
     if (res.ok || res.status === 404) {
-      if (removal.kind === 'post') setPosts((all) => all.filter((p) => p.id !== removal.id));
-      else
-        setPosts((all) => all.map((p) => ({ ...p, replies: p.replies.filter((r) => r.id !== removal.id) })));
+      if (removal.kind === 'post') {
+        setPosts((all) => all.filter((p) => p.id !== removal.id));
+        setPinned((p) => (p?.id === removal.id ? null : p));
+      } else {
+        const drop = (p: WirePost) => ({ ...p, replies: p.replies.filter((r) => r.id !== removal.id) });
+        setPosts((all) => all.map(drop));
+        setPinned((p) => (p ? drop(p) : p));
+      }
       toast({ title: removal.kind === 'post' ? 'Post taken down.' : 'Reply taken down.', tone: 'success' });
     } else setError(res.error?.message ?? 'Could not take that down.');
     setRemoval(undefined);
@@ -169,7 +209,11 @@ export function FeedSection({
   }
 
   function postMenu(p: WirePost) {
+    const isPinned = pinned?.id === p.id;
     const items = [
+      ...(p.canPin
+        ? [{ id: 'pin', label: isPinned ? 'Unpin' : 'Pin to top', onSelect: () => void pin(p, !isPinned) }]
+        : []),
       ...(p.canRemove
         ? [
             {
@@ -213,7 +257,7 @@ export function FeedSection({
           onPhoto={(file: File) => uploadPhoto('/api/me/card-photo', file)}
         />
         {error && <FormMessage tone="error">{error}</FormMessage>}
-        {posts.length === 0 ? (
+        {posts.length === 0 && !pinned ? (
           <EmptyState
             as="h3"
             icon="🏛️"
@@ -222,7 +266,7 @@ export function FeedSection({
           />
         ) : (
           <ol className={POST_LIST}>
-            {posts.map((p) => (
+            {(pinned ? [pinned, ...posts] : posts).map((p) => (
               <li key={p.id}>
                 <PostCard
                   noun="Post"
@@ -230,12 +274,14 @@ export function FeedSection({
                   body={p.body}
                   createdAt={p.createdAt}
                   photo={p.photo}
-                  {...(p.capsuleSealedAt
-                    ? {
-                        stamp: 'Time Capsule',
-                        notice: `Sealed on ${longDay(dayOf(new Date(p.capsuleSealedAt)))}`,
-                      }
-                    : {})}
+                  {...(p.id === pinned?.id
+                    ? { pinned: true }
+                    : p.capsuleSealedAt
+                      ? {
+                          stamp: 'Time Capsule',
+                          notice: `Sealed on ${longDay(dayOf(new Date(p.capsuleSealedAt)))}`,
+                        }
+                      : {})}
                   reactions={p.reactions}
                   myReaction={p.myReaction}
                   canReact={p.canReact}

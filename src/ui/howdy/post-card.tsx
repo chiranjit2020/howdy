@@ -21,7 +21,7 @@ import type { ReactionKind } from '@/shared/validation/fence';
 import type { PortraitTint } from '@/shared/validation/profile';
 import { Img } from '../art/img';
 import { cn } from '../cn';
-import { CameraIcon, ReplyIcon, SendIcon } from '../icons';
+import { CameraIcon, PinIcon, ReplyIcon, SendIcon } from '../icons';
 import { Avatar } from '../primitives/avatar';
 import { PhotoViewer } from '../primitives/dialog';
 import { Button, buttonClasses } from '../primitives/button';
@@ -380,6 +380,8 @@ export interface PostCardProps {
   createdAt: Date | string;
   /** Faux postal stamp, e.g. cohort label. Plain text only. */
   stamp?: string;
+  /** A group's pinned notice (ADR-055): a sunflower "Pinned" badge in the header, instead of a stamp. */
+  pinned?: boolean;
   /** Reactions per kind (counts only). */
   reactions: Record<ReactionKind, number>;
   /** The viewer's own reaction, if any. */
@@ -467,6 +469,7 @@ export function PostCard({
   body,
   createdAt,
   stamp,
+  pinned,
   reactions,
   myReaction,
   onReact,
@@ -556,7 +559,13 @@ export function PostCard({
                 )}
               </p>
             </div>
-            {stamp && (
+            {pinned && (
+              <span className="inline-flex shrink-0 items-center gap-1 rounded-pill bg-highlight px-2 py-0.5 text-metadata font-semibold text-on-highlight">
+                <PinIcon aria-hidden="true" className="size-3" />
+                Pinned
+              </span>
+            )}
+            {stamp && !pinned && (
               <span className="rounded-sm border-2 border-dashed border-border-strong px-2 py-0.5 text-metadata text-text-secondary">
                 {stamp}
               </span>

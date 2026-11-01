@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm';
 import {
+  type AnyPgColumn,
   check,
   index,
   pgTable,
@@ -15,10 +16,8 @@ const tstz = (name: string) => timestamp(name, { withTimezone: true, mode: 'date
 
 /**
  * A Town Hall (community): name, description and a visibility that governs who may find and join it.
- * - `open`     any active member may join instantly; listed in the directory
- * - `members`  any active member may join instantly (same as open); listed in the directory — the distinct label is
- *              for the owner's messaging, not a different join rule
- * - `invite`   never listed; reachable only through an invite from the owner, which the invitee must accept
+ * - `open`     "Friends can find it" (ADR-054): shown to friends of its members; anyone with its link may join
+ * - `invite`   "Private": never listed; reachable only through an invite, which the invitee must accept
  * Members share a post feed (`town_hall_posts`, ADR-033; ADR-017 for the rest). Deleting the owner deletes the whole
  * Town Hall (no ownership transfer yet); deleting any other member just removes their row.
  */
@@ -37,6 +36,13 @@ export const townHalls = pgTable(
      * or a Deputy says yes. Invite-only Town Halls ignore it (an invite is always needed).
      */
     joinRule: text('join_rule').notNull().default('instant'),
+    /**
+     * The one post the owner or a Deputy pinned to the top of the feed (a pinned notice), or null. Cleared when that post
+     * is deleted; only a published post of this Town Hall is ever pinned (the service checks).
+     */
+    pinnedPostId: uuid('pinned_post_id').references((): AnyPgColumn => townHallPosts.id, {
+      onDelete: 'set null',
+    }),
     createdAt: tstz('created_at').notNull().defaultNow(),
   },
   (t) => [

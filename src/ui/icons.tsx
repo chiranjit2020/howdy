@@ -22,6 +22,7 @@ import {
   GoPencil,
   GoPeople,
   GoPerson,
+  GoPin,
   GoPlay,
   GoPlus,
   GoReply,
@@ -82,6 +83,8 @@ export const EyeIcon = go(GoEye);
 export const EyeOffIcon = go(GoEyeClosed);
 export const KeyIcon = go(GoKey);
 export const PlusIcon = go(GoPlus);
+// A group's pinned notice.
+export const PinIcon = go(GoPin);
 export const PlayIcon = go(GoPlay);
 // Add or change a photo (Octicons has no camera).
 export const CameraIcon = go(GoImage);

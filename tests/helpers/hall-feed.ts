@@ -4,6 +4,7 @@ import { DELETE as removePostRoute } from '@/app/api/hall-posts/[id]/route';
 import { POST as replyRoute } from '@/app/api/hall-posts/[id]/replies/route';
 import { POST as reactRoute } from '@/app/api/hall-posts/[id]/react/route';
 import { POST as approvePostRoute } from '@/app/api/hall-posts/[id]/approve/route';
+import { DELETE as unpinRoute, POST as pinRoute } from '@/app/api/hall-posts/[id]/pin/route';
 import { DELETE as removeReplyRoute } from '@/app/api/hall-replies/[id]/route';
 import { POST as approveReplyRoute } from '@/app/api/hall-replies/[id]/approve/route';
 import { POST as reportPostRoute } from '@/app/api/reports/hall-post/[id]/route';
@@ -26,6 +27,8 @@ export interface HallPost {
   canRemove: boolean;
   canReact: boolean;
   canReply: boolean;
+  /** The owner or a Deputy, on a published post. */
+  canPin?: boolean;
   reactions: Record<string, number>;
   myReaction: string | null;
   replies: HallReply[];
@@ -33,6 +36,8 @@ export interface HallPost {
   photo?: { url: string; width: number; height: number } | null;
 }
 type Wire = {
+  /** The pinned notice, first page only. */
+  pinned?: HallPost | null;
   posts?: HallPost[];
   post?: HallPost;
   reply?: HallReply;
@@ -71,6 +76,10 @@ export const reply = (postId: string, body: unknown, opts: Opts = {}) =>
   send(replyRoute, 'POST', `/api/hall-posts/${enc(postId)}/replies`, postId, body, opts);
 export const react = (postId: string, body: unknown, opts: Opts = {}) =>
   send(reactRoute, 'POST', `/api/hall-posts/${enc(postId)}/react`, postId, body, opts);
+export const pin = (id: string, opts: Opts = {}) =>
+  send(pinRoute, 'POST', `/api/hall-posts/${enc(id)}/pin`, id, {}, opts);
+export const unpin = (id: string, opts: Opts = {}) =>
+  send(unpinRoute, 'DELETE', `/api/hall-posts/${enc(id)}/pin`, id, undefined, opts);
 export const approvePost = (id: string, opts: Opts = {}) =>
   send(approvePostRoute, 'POST', `/api/hall-posts/${enc(id)}/approve`, id, {}, opts);
 export const removeReply = (id: string, opts: Opts = {}) =>
