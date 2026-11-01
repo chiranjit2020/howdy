@@ -26,7 +26,7 @@ import { coverUrl, portraitUrl } from '@/shared/portrait';
 import { MARK_LABEL, RanchCover, RanchHeader } from '@/ui/howdy';
 import { buttonClasses, ClayCard, EmptyState } from '@/ui/primitives';
 import { DescribePicker } from './describe-picker';
-import { DetailsCard } from './details-card';
+import { ProfileIntro } from './profile-intro';
 import { EditCover } from './edit-cover';
 import { EditPhotoButton, EditProfile, EditProfileButton } from './edit-profile';
 import { RelationshipBar } from './relationship-bar';
@@ -218,6 +218,15 @@ export default async function RanchPage({ params }: { params: Promise<{ handle: 
                   {...(description && description.words.length > 0
                     ? { describedAs: description.words.map((w) => MARK_LABEL[w]).join(' · ') }
                     : {})}
+                  // The tick's meaning and the details this viewer may see, inside the card (no separate Details card).
+                  intro={
+                    <ProfileIntro
+                      verified={ranch.verified}
+                      trusted={trust ? trust.earned : ranch.trusted}
+                      lines={details}
+                      mine={mine}
+                    />
+                  }
                   // Your own profile is edited where you see it (photo, name, bio); Settings keeps the rest.
                   {...(isOwner
                     ? { actions: <EditProfileButton />, portraitAction: <EditPhotoButton /> }
@@ -240,13 +249,6 @@ export default async function RanchPage({ params }: { params: Promise<{ handle: 
             header
           );
         })()}
-
-        <DetailsCard
-          verified={ranch.verified}
-          trusted={trust ? trust.earned : ranch.trusted}
-          lines={details}
-          mine={mine}
-        />
 
         {rel && (
           <RelationshipBar

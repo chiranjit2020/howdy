@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { DetailsCard } from '@/app/profile/[handle]/details-card';
+import { ProfileIntro } from '@/app/profile/[handle]/profile-intro';
 import { PORTRAIT_TINTS } from '@/shared/validation/profile';
 import { RanchHeader } from '@/ui/howdy';
 import { Avatar } from '@/ui/primitives';
@@ -23,19 +23,19 @@ describe('profile header extras', () => {
     expect(screen.queryByRole('link', { name: /friends?$/ })).not.toBeInTheDocument();
   });
 
-  it('the Details card says what the tick means, team first; no tick and nothing to show, no card', () => {
-    const { rerender, container } = render(<DetailsCard verified trusted lines={[]} />);
+  it('the intro says what the tick means, team first; no tick and nothing to show, nothing at all', () => {
+    const { rerender, container } = render(<ProfileIntro verified trusted lines={[]} />);
     expect(screen.getByText('Howdy team')).toBeInTheDocument();
     expect(screen.queryByText('Trusted member')).not.toBeInTheDocument();
-    rerender(<DetailsCard verified={false} trusted lines={[]} />);
+    rerender(<ProfileIntro verified={false} trusted lines={[]} />);
     expect(screen.getByText('Trusted member')).toBeInTheDocument();
-    rerender(<DetailsCard verified={false} trusted={false} lines={[]} />);
+    rerender(<ProfileIntro verified={false} trusted={false} lines={[]} />);
     expect(container).toBeEmptyDOMElement();
   });
 
-  it('details show as label and value; only the owner’s lines say who sees them', () => {
+  it('details read as a line ("Lives in Kolkata"); only the owner’s say who sees them', () => {
     const { rerender } = render(
-      <DetailsCard
+      <ProfileIntro
         verified={false}
         trusted={false}
         lines={[
@@ -44,12 +44,12 @@ describe('profile header extras', () => {
         ]}
       />,
     );
-    const list = document.querySelector('dl') as HTMLElement;
-    expect(within(list).getByText('Lives in')).toBeInTheDocument();
-    expect(within(list).getByText('12 March')).toBeInTheDocument();
+    const intro = screen.getByRole('region', { name: 'Details' });
+    expect(intro).toHaveTextContent('Lives in Kolkata');
+    expect(intro).toHaveTextContent('Birthday 12 March');
     expect(screen.queryByText(/Friends|Only me|Everyone on Howdy/)).not.toBeInTheDocument();
     rerender(
-      <DetailsCard
+      <ProfileIntro
         verified={false}
         trusted={false}
         lines={[{ key: 'work', text: XSS, audience: 'only_me' }]}

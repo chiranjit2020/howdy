@@ -18,6 +18,7 @@ import {
 } from '@/shared/validation/details';
 import { apiRequest } from '@/ui/auth/api';
 import { FormMessage } from '@/ui/auth/form-parts';
+import { PencilIcon } from '@/ui/icons';
 import { Button, Input, Modal, Select, useToast } from '@/ui/primitives';
 
 const PLACEHOLDER: Record<TextDetail, string> = {
@@ -43,7 +44,16 @@ const WHO: Record<DetailKey, string> = {
  * Your personal details, edited on your profile: each one, and beside it who sees it (Everyone on Howdy, Friends, Only
  * me). Empty means not shown. The server checks everything again.
  */
-export function EditDetails({ initial, label }: { initial: MyDetails; label: string }) {
+export function EditDetails({
+  initial,
+  label,
+  look = 'button',
+}: {
+  initial: MyDetails;
+  label: string;
+  /** A small link-style button at the end of the profile's intro line, or an ordinary secondary button. */
+  look?: 'button' | 'link';
+}) {
   const router = useRouter();
   const toast = useToast();
   const [open, setOpen] = useState(false);
@@ -114,9 +124,20 @@ export function EditDetails({ initial, label }: { initial: MyDetails; label: str
 
   return (
     <>
-      <Button variant="secondary" size="sm" onClick={() => setOpen(true)}>
-        {label}
-      </Button>
+      {look === 'link' ? (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="inline-flex min-h-11 items-center gap-1 text-caption font-semibold text-link hover:underline pointer-fine:min-h-0"
+        >
+          <PencilIcon aria-hidden="true" className="size-3.5" />
+          {label}
+        </button>
+      ) : (
+        <Button variant="secondary" size="sm" onClick={() => setOpen(true)}>
+          {label}
+        </Button>
+      )}
       <Modal open={open} onClose={() => setOpen(false)} title="Your details">
         <form onSubmit={save} noValidate className="flex flex-col gap-4">
           <p className="text-caption text-text-secondary">
