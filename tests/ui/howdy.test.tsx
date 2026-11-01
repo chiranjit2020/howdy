@@ -296,7 +296,7 @@ describe('TrackItem (privacy)', () => {
         <TrackItem when="today" hint="Someone who shares 4 mutual friends stopped by." />
       </ul>,
     );
-    expect(screen.getByText('Hidden track')).toBeInTheDocument();
+    expect(screen.getByText('Someone else')).toBeInTheDocument();
     expect(screen.getByText('Today')).toBeInTheDocument();
     expect(container.querySelector('time')).toBeNull();
     expect(container.textContent).not.toMatch(/@|\d{1,2}:\d{2}|\bago\b/);

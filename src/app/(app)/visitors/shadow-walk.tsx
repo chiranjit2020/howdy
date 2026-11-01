@@ -4,9 +4,13 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { apiRequest } from '@/ui/auth/api';
 import { FormMessage } from '@/ui/auth/form-parts';
-import { ClayCard, Switch, useToast } from '@/ui/primitives';
+import { RailCard } from '@/ui/howdy/rail-card';
+import { Switch, useToast } from '@/ui/primitives';
 
-/** The Eye: Shadow Walk hides my visits and, in return, freezes my own Tracks. Private to me. */
+/**
+ * The Eye: Shadow Walk hides my visits and, in return, freezes my own Tracks. Private to me. A card in the right panel,
+ * "Your visits": whether the profiles I open see that I stopped by.
+ */
 export function ShadowWalk({ initial }: { initial: boolean }) {
   const router = useRouter();
   const toast = useToast();
@@ -28,7 +32,7 @@ export function ShadowWalk({ initial }: { initial: boolean }) {
   }
 
   return (
-    <ClayCard>
+    <RailCard id="your-visits" title="Your visits">
       <Switch
         label="Private browsing"
         hint={
@@ -40,6 +44,6 @@ export function ShadowWalk({ initial }: { initial: boolean }) {
         onCheckedChange={set}
       />
       {error && <FormMessage tone="error">{error}</FormMessage>}
-    </ClayCard>
+    </RailCard>
   );
 }

@@ -69,10 +69,10 @@ test.describe('Tracks in a real browser (production build, real CSP)', () => {
     await a.page.goto('/home');
     await a.page.getByRole('navigation', { name: 'Primary' }).getByRole('link', { name: 'Visitors' }).click();
     await expect(a.page.getByRole('heading', { name: 'Profile visitors', level: 1 })).toBeVisible();
-    await expect(a.page.getByRole('heading', { name: 'Your friends dropped by' })).toBeVisible();
-    const named = a.page.getByRole('list').filter({ hasText: friend.handle });
-    await expect(named).toContainText('Today');
-    await expect(a.page.getByText('Hidden track')).toBeVisible();
+    // Grouped by day: the friend by name under Today, the stranger only as "Someone else".
+    const today = a.page.getByRole('region', { name: 'Today', exact: true });
+    await expect(today.getByRole('link', { name: new RegExp(friend.handle) })).toBeVisible();
+    await expect(today.getByText('Someone else')).toBeVisible();
     // Nothing else about the stranger is anywhere on the page.
     expect(await a.page.content()).not.toContain(stranger.handle);
     // …and no time of day anywhere on it.
@@ -102,7 +102,7 @@ test.describe('Tracks in a real browser (production build, real CSP)', () => {
     await api(a, '/api/me/porch', { shadowWalk: true }, 'PATCH');
     await a.page.reload();
     await expect(a.page.getByRole('heading', { name: 'Your visitor list is paused' })).toBeVisible();
-    await expect(a.page.getByText('Your friends dropped by')).toHaveCount(0);
+    await expect(a.page.getByRole('region', { name: 'Today', exact: true })).toHaveCount(0);
 
     expect(problems).toEqual([]);
     await Promise.all([a.ctx.close(), friend.ctx.close(), stranger.ctx.close(), bystander.ctx.close()]);
