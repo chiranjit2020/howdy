@@ -1,11 +1,12 @@
-import { SkeletonListCard, SkeletonPage, SkeletonTitle } from '@/ui/howdy';
+import { SkeletonFramedPage, SkeletonListCard, SkeletonTitle } from '@/ui/howdy';
 
-/** Visitors' outline: the heading and the list of who stopped by (Private browsing sits in the right panel). */
+/** Visitors' outline in Home's frame: the heading, a card per day, and the two right-panel cards. */
 export default function Loading() {
   return (
-    <SkeletonPage>
-      <SkeletonTitle width="w-24" />
-      <SkeletonListCard rows={4} />
-    </SkeletonPage>
+    <SkeletonFramedPage rail={2}>
+      <SkeletonTitle width="w-40" hint={false} />
+      <SkeletonListCard rows={3} />
+      <SkeletonListCard rows={2} />
+    </SkeletonFramedPage>
   );
 }

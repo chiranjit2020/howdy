@@ -24,7 +24,9 @@ export { GlossaryHint } from './glossary-hint';
 export { NameBadge, TrustedBadge, VerifiedBadge } from './verified-badge';
 export { RelativeTime, formatRelative, COARSE_LABEL, type CoarseWhen } from './time';
 export {
+  SkeletonFramedPage,
   SkeletonPage,
+  SkeletonRailCard,
   SkeletonTitle,
   SkeletonRow,
   SkeletonListCard,

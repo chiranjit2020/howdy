@@ -37,12 +37,46 @@ export function SkeletonPage({
   );
 }
 
-/** A page heading (and the little "?" beside it). */
-export function SkeletonTitle({ width = 'w-32' }: { width?: string }) {
+/**
+ * Home's frame (Friends, Profile visitors): the 672 px column and, on wide screens, the 18 rem right panel holding `rail`
+ * striped cards — the same boxes as the page, so nothing jumps when it arrives.
+ */
+export function SkeletonFramedPage({ children, rail = 2 }: { children: ReactNode; rail?: number }) {
+  return (
+    <div className="flex w-full flex-col gap-4 py-4 xl:grid xl:grid-cols-[minmax(0,1fr)_18rem] xl:items-start xl:gap-6">
+      <main id="main" aria-busy="true" className="mx-auto flex w-full max-w-2xl min-w-0 flex-col gap-4">
+        <p role="status" className="sr-only">
+          Loading…
+        </p>
+        {children}
+      </main>
+      <div aria-hidden="true" className="hidden flex-col gap-4 xl:flex">
+        {Array.from({ length: rail }, (_, i) => (
+          <SkeletonRailCard key={i} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** A right-panel card: the stripe along the top, a small title and two lines. */
+export function SkeletonRailCard() {
+  return (
+    <div className="relative flex flex-col gap-3 overflow-hidden rounded-lg border border-border bg-surface p-4 pt-6">
+      <Skeleton className="absolute inset-x-0 top-0 h-1.5 rounded-none" />
+      <Skeleton className="h-3 w-24" />
+      <Skeleton className="h-3 w-full" />
+      <Skeleton className="h-3 w-3/4" />
+    </div>
+  );
+}
+
+/** A page heading (and the little "?" beside it, where the page still has one). */
+export function SkeletonTitle({ width = 'w-32', hint = true }: { width?: string; hint?: boolean }) {
   return (
     <div className="flex items-center gap-2">
       <Skeleton className={cn('h-7', width)} />
-      <Skeleton className="size-5 rounded-full" />
+      {hint && <Skeleton className="size-5 rounded-full" />}
     </div>
   );
 }

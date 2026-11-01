@@ -13,7 +13,7 @@ export const metadata = { title: 'Profile visitors' };
 const ORDER: CoarseWhen[] = ['today', 'yesterday', 'this-week'];
 
 /**
- * Who stopped by this week, in Home's frame: one list grouped Today / Yesterday / This week — friends by name, then
+ * Who stopped by this week, in Home's frame: a card each for Today, Yesterday and This week — friends by name, then
  * everyone else as a single count — and Private browsing with how visits work in the right panel. Protected: the
  * session is checked on the server before any of this renders.
  */
@@ -51,16 +51,13 @@ export default async function TracksPage() {
             />
           </ClayCard>
         ) : (
-          <ClayCard className="flex flex-col gap-4">
-            {groups.map((g) => (
-              <section key={g.when} aria-labelledby={`visits-${g.when}`} className="flex flex-col">
-                <h2
-                  id={`visits-${g.when}`}
-                  className="text-metadata font-semibold tracking-wider text-text-secondary uppercase"
-                >
+          groups.map((g) => (
+            <ClayCard key={g.when}>
+              <section aria-labelledby={`visits-${g.when}`} className="flex flex-col gap-2">
+                <h2 id={`visits-${g.when}`} className="text-title text-text-primary">
                   {COARSE_LABEL[g.when]}
                 </h2>
-                <ul className="flex flex-col divide-y divide-border">
+                <ul className="-mb-2.5 flex flex-col divide-y divide-border">
                   {g.people.map((p) => (
                     <TrackItem
                       key={p.handle}
@@ -73,8 +70,8 @@ export default async function TracksPage() {
                   )}
                 </ul>
               </section>
-            ))}
-          </ClayCard>
+            </ClayCard>
+          ))
         )}
       </main>
       <aside
