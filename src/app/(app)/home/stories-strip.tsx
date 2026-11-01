@@ -66,7 +66,7 @@ export function StoriesStrip({
             lead ? '-right-0.5 -bottom-0.5 size-5' : '-right-1 -bottom-1 size-7',
           )}
         >
-          <PlusIcon strokeWidth={2} className={lead ? 'size-3' : 'size-4'} />
+          <PlusIcon className={lead ? 'size-3' : 'size-4'} />
         </span>
       )}
     </div>

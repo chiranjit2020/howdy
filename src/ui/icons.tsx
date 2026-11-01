@@ -1,43 +1,94 @@
-import type { ComponentProps } from 'react';
+import type { ComponentProps, ComponentType } from 'react';
+import type { IconBaseProps } from 'react-icons';
+import {
+  GoAlert,
+  GoArrowRight,
+  GoBell,
+  GoCheckCircle,
+  GoChevronDown,
+  GoCommentDiscussion,
+  GoEye,
+  GoEyeClosed,
+  GoGear,
+  GoHome,
+  GoHourglass,
+  GoImage,
+  GoKebabHorizontal,
+  GoKey,
+  GoNote,
+  GoOrganization,
+  GoPaperAirplane,
+  GoPencil,
+  GoPeople,
+  GoPerson,
+  GoPlay,
+  GoPlus,
+  GoReply,
+  GoScreenFull,
+  GoSearch,
+  GoShield,
+  GoSmiley,
+  GoStar,
+  GoX,
+  GoXCircle,
+} from 'react-icons/go';
 
 type IconProps = Omit<ComponentProps<'svg'>, 'children'>;
 
 /**
- * Every line icon: a 1 px hairline at ANY size (`vector-effect: non-scaling-stroke`, so a 24-unit drawing shown at 20 px
- * is still exactly 1 px, never a blurry 0.83), with sharp corners (miter joins) and clean square-cut ends. Dots are real
- * filled dots (`dots`, in the 24-unit grid): a dot drawn as a 1 px line would all but vanish.
+ * Every icon is GitHub's Octicons (react-icons/go, 2026-11-01): crisp filled shapes on a 16 px grid, 1em square so they
+ * take the size of the text around them. Always decorative: a label or an aria-label beside it says what it means.
+ * The names stay Howdy's own, so a page never knows which set draws them.
  */
-function Svg(props: IconProps & { d: string; dots?: [number, number][] }) {
-  const { d, dots, ...rest } = props;
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      width="1em"
-      height="1em"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1"
-      strokeLinecap="butt"
-      strokeLinejoin="miter"
-      strokeMiterlimit="8"
-      shapeRendering="geometricPrecision"
-      aria-hidden="true"
-      focusable="false"
-      {...rest}
-    >
-      {d && <path d={d} vectorEffect="non-scaling-stroke" />}
-      {dots?.map(([cx, cy]) => (
-        <circle key={`${cx},${cy}`} cx={cx} cy={cy} r="1.15" fill="currentColor" stroke="none" />
-      ))}
-    </svg>
-  );
-}
+const go = (Icon: ComponentType<IconBaseProps>) =>
+  function HowdyIcon(p: IconProps) {
+    return <Icon aria-hidden="true" focusable="false" {...(p as IconBaseProps)} />;
+  };
 
-export const CloseIcon = (p: IconProps) => <Svg d="M6 6l12 12M18 6L6 18" {...p} />;
-// "More": three solid dots, larger than the hairline icons' dots, so the menu reads as a button at a glance.
-export const MoreIcon = (p: IconProps) => (
+export const CloseIcon = go(GoX);
+export const MoreIcon = go(GoKebabHorizontal);
+export const StarIcon = go(GoStar);
+export const ChevronDownIcon = go(GoChevronDown);
+// Open in full (the chat window's "open the full chat").
+export const ExpandIcon = go(GoScreenFull);
+export const ReplyIcon = go(GoReply);
+export const PencilIcon = go(GoPencil);
+export const HomeIcon = go(GoHome);
+export const FenceIcon = go(GoNote);
+// Visitors: an eye (who looked at my profile).
+export const TracksIcon = go(GoEye);
+// "Pick a reaction".
+export const ReactIcon = go(GoSmiley);
+export const WhisperIcon = go(GoCommentDiscussion);
+export const BellIcon = go(GoBell);
+export const SearchIcon = go(GoSearch);
+export const UsersIcon = go(GoPeople);
+// Next to an error message, so it is not told by colour alone.
+export const AlertIcon = go(GoAlert);
+export const CheckCircleIcon = go(GoCheckCircle);
+export const XCircleIcon = go(GoXCircle);
+export const ArrowRightIcon = go(GoArrowRight);
+export const UserIcon = go(GoPerson);
+// Groups: a building, so it never reads like Friends' two people.
+export const GroupIcon = go(GoOrganization);
+export const SettingsIcon = go(GoGear);
+// Time Capsules: words sealed until a day comes.
+export const CapsuleIcon = go(GoHourglass);
+export const ShieldIcon = go(GoShield);
+export const EyeIcon = go(GoEye);
+export const EyeOffIcon = go(GoEyeClosed);
+export const KeyIcon = go(GoKey);
+export const PlusIcon = go(GoPlus);
+export const PlayIcon = go(GoPlay);
+// Add or change a photo (Octicons has no camera).
+export const CameraIcon = go(GoImage);
+// Post, Reply, Send.
+export const SendIcon = go(GoPaperAirplane);
+
+/** Octicons has no pause: drawn on the same 16 px grid as GoPlay (a ring with two bars), filled like the rest. */
+export const PauseIcon = (p: IconProps) => (
   <svg
-    viewBox="0 0 24 24"
+    viewBox="0 0 16 16"
     width="1em"
     height="1em"
     fill="currentColor"
@@ -45,133 +96,16 @@ export const MoreIcon = (p: IconProps) => (
     focusable="false"
     {...p}
   >
-    <circle cx="5" cy="12" r="2" />
-    <circle cx="12" cy="12" r="2" />
-    <circle cx="19" cy="12" r="2" />
+    <path
+      fillRule="evenodd"
+      d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0ZM6 5h1.5v6H6Zm2.5 0H10v6H8.5Z"
+    />
   </svg>
 );
-export const StarIcon = (p: IconProps) => (
-  <Svg d="M12 3l2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3l-5.6 2.9 1.1-6.2L3 9.6l6.2-.9z" {...p} />
+
+/** A turning arc for "loading" (Octicons has none that spins); the caller adds `animate-spin`. */
+export const SpinnerIcon = (p: IconProps) => (
+  <svg viewBox="0 0 16 16" width="1em" height="1em" fill="none" aria-hidden="true" focusable="false" {...p}>
+    <path d="M8 1.5A6.5 6.5 0 1 0 14.5 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+  </svg>
 );
-export const ChevronDownIcon = (p: IconProps) => <Svg d="M6 9l6 6 6-6" {...p} />;
-// Open in full: two corners pulling apart (the chat window's "open the full chat").
-export const ExpandIcon = (p: IconProps) => <Svg d="M14 4h6v6M20 4l-7 7M10 20H4v-6M4 20l7-7" {...p} />;
-// Reply: an empty speech bubble (Messages' bubble has two lines of text in it, so the two never read alike).
-export const ReplyIcon = (p: IconProps) => (
-  <Svg
-    d="M5 4.5h14a1.5 1.5 0 0 1 1.5 1.5v9a1.5 1.5 0 0 1-1.5 1.5h-8l-5 4v-4H5A1.5 1.5 0 0 1 3.5 15V6A1.5 1.5 0 0 1 5 4.5z"
-    {...p}
-  />
-);
-export const PencilIcon = (p: IconProps) => (
-  <Svg d="M4 20h4L19 9a2.83 2.83 0 0 0-4-4L4 16v4zM13.5 6.5l4 4" {...p} />
-);
-export const HomeIcon = (p: IconProps) => <Svg d="M3 11l9-8 9 8M5 10v10h14V10" {...p} />;
-export const FenceIcon = (p: IconProps) => <Svg d="M5 4v16M12 4v16M19 4v16M3 9h18M3 15h18" {...p} />;
-// Two footprints: an oval print with a heel line, walking up and to the right.
-// Visitors: an eye (who looked at my profile). Footprints were too busy to read as a 1 px line at menu size.
-export const TracksIcon = (p: IconProps) => (
-  <Svg
-    d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"
-    dots={[[12, 12]]}
-    {...p}
-  />
-);
-// A smiling face: "pick a reaction".
-export const ReactIcon = (p: IconProps) => (
-  <Svg
-    d="M12 21a9 9 0 1 1 0-18 9 9 0 0 1 0 18zM8.5 14a4 4 0 0 0 7 0"
-    dots={[
-      [9, 9.5],
-      [15, 9.5],
-    ]}
-    {...p}
-  />
-);
-// Messages: a speech bubble with a tail and two lines of text, which is what makes it read as "messages" when small.
-export const WhisperIcon = (p: IconProps) => (
-  <Svg
-    d="M5 4.5h14a1.5 1.5 0 0 1 1.5 1.5v9a1.5 1.5 0 0 1-1.5 1.5h-8l-5 4v-4H5A1.5 1.5 0 0 1 3.5 15V6A1.5 1.5 0 0 1 5 4.5zM8 9h8M8 12h5"
-    {...p}
-  />
-);
-export const BellIcon = (p: IconProps) => (
-  <Svg d="M6 8a6 6 0 1 1 12 0c0 7 3 8 3 8H3s3-1 3-8M10 20a2 2 0 0 0 4 0" {...p} />
-);
-export const SearchIcon = (p: IconProps) => (
-  <Svg d="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM21 21l-5-5" {...p} />
-);
-export const UsersIcon = (p: IconProps) => (
-  <Svg
-    d="M16 20v-1a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v1M9.5 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM21 20v-1a4 4 0 0 0-3-3.9M15 4.1a3.5 3.5 0 0 1 0 6.8"
-    {...p}
-  />
-);
-// A circle with "!": next to an error message, so it is not told by colour alone.
-export const AlertIcon = (p: IconProps) => (
-  <Svg d="M12 21a9 9 0 1 1 0-18 9 9 0 0 1 0 18zM12 7.5v5.5" dots={[[12, 16.2]]} {...p} />
-);
-export const CheckCircleIcon = (p: IconProps) => (
-  <Svg d="M12 21a9 9 0 1 1 0-18 9 9 0 0 1 0 18zM8.5 12.2l2.3 2.3 4.7-4.8" {...p} />
-);
-export const XCircleIcon = (p: IconProps) => (
-  <Svg d="M12 21a9 9 0 1 1 0-18 9 9 0 0 1 0 18zM9.5 9.5l5 5M14.5 9.5l-5 5" {...p} />
-);
-export const ArrowRightIcon = (p: IconProps) => <Svg d="M5 12h14M13 6l6 6-6 6" {...p} />;
-export const UserIcon = (p: IconProps) => (
-  <Svg d="M20 21v-1a5 5 0 0 0-5-5H9a5 5 0 0 0-5 5v1M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" {...p} />
-);
-// Three heads, the middle one in front: a group, not just two friends.
-export const GroupIcon = (p: IconProps) => (
-  <Svg
-    d="M12 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM6.5 20v-1a4 4 0 0 1 4-4h3a4 4 0 0 1 4 4v1M5 11.5a2.3 2.3 0 1 1 0-4.6M2 18v-.5a3 3 0 0 1 2.5-3M19 11.5a2.3 2.3 0 1 0 0-4.6M22 18v-.5a3 3 0 0 0-2.5-3"
-    {...p}
-  />
-);
-export const SettingsIcon = (p: IconProps) => (
-  <Svg
-    d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"
-    {...p}
-  />
-);
-// An hourglass: words sealed until a day comes (Time Capsules).
-export const CapsuleIcon = (p: IconProps) => (
-  <Svg d="M6 3h12M6 21h12M7 3v3a5 5 0 0 0 5 5 5 5 0 0 0 5-5V3M7 21v-3a5 5 0 0 1 5-5 5 5 0 0 1 5 5v3" {...p} />
-);
-export const ShieldIcon = (p: IconProps) => (
-  <Svg d="M12 21s8-3.5 8-10V5l-8-3-8 3v6c0 6.5 8 10 8 10z" {...p} />
-);
-export const SpinnerIcon = (p: IconProps) => <Svg d="M12 3a9 9 0 1 0 9 9" {...p} />;
-export const BoltIcon = (p: IconProps) => <Svg d="M13 2 4 14h7l-1 8 9-12h-7z" {...p} />;
-export const ToolsIcon = (p: IconProps) => (
-  <Svg d="M14.7 6.3a4 4 0 0 0-5.2 5.2L3 18l3 3 6.5-6.5a4 4 0 0 0 5.2-5.2L15 12l-3-3z" {...p} />
-);
-// A simple columned building: pediment, four columns, base — reads as "Town Hall" at nav-icon size.
-export const TownHallIcon = (p: IconProps) => (
-  <Svg d="M4 10L12 4L20 10M6 10v9M10 10v9M14 10v9M18 10v9M3 21h18" {...p} />
-);
-export const EyeIcon = (p: IconProps) => (
-  <Svg d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" {...p} />
-);
-export const EyeOffIcon = (p: IconProps) => (
-  <Svg
-    d="M3 3l18 18M10.6 5.1A10.4 10.4 0 0 1 12 5c6.4 0 10 7 10 7a17.6 17.6 0 0 1-3.2 4.1M6.6 6.6C3.8 8.4 2 12 2 12s3.6 7 10 7a9.7 9.7 0 0 0 5.4-1.6M9.9 9.9a3 3 0 0 0 4.2 4.2"
-    {...p}
-  />
-);
-// A key: a closed round head with a hole, the shaft, two teeth (the old head was an open arc and read as broken).
-export const KeyIcon = (p: IconProps) => (
-  <Svg
-    d="M8.5 4a4.5 4.5 0 1 0 0 9 4.5 4.5 0 1 0 0-9zM11.7 11.7L20.5 20.5M17.5 17.5l2.5-2.5M14.8 14.8l2-2"
-    dots={[[8.5, 8.5]]}
-    {...p}
-  />
-);
-export const PlusIcon = (p: IconProps) => <Svg d="M12 5v14M5 12h14" {...p} />;
-export const PauseIcon = (p: IconProps) => <Svg d="M9 5v14M15 5v14" {...p} />;
-export const PlayIcon = (p: IconProps) => <Svg d="M8 5l11 7-11 7z" {...p} />;
-export const CameraIcon = (p: IconProps) => (
-  <Svg d="M3 8h4l2-3h6l2 3h4v11H3zM12 16.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z" {...p} />
-);
-// A paper plane: Post, Reply, Send.
-export const SendIcon = (p: IconProps) => <Svg d="M21 3L3 10.5l7 2.5 2.5 7zM21 3L10 13" {...p} />;
