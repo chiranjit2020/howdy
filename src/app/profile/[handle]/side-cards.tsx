@@ -1,9 +1,7 @@
 import Link from 'next/link';
 import type { PersonEntry } from '@/app/_lib/social';
-import { Glyph } from '@/ui/art/glyph';
-import { TracksIcon, UsersIcon } from '@/ui/icons';
-import { GlossaryHint } from '@/ui/howdy';
-import { Avatar, buttonClasses, ClayCard } from '@/ui/primitives';
+import { RailCard } from '@/ui/howdy/rail-card';
+import { Avatar } from '@/ui/primitives';
 
 /**
  * Porch Light (ADR-032): shown to a Pal it is on for, with a way to start talking; and to the owner, as a reminder that it
@@ -25,27 +23,20 @@ export function PorchLightNotice({
   audience?: 'pals' | 'close';
 }) {
   return (
-    <ClayCard className="flex flex-col gap-3 bg-warning/20">
-      <h2 className="flex items-center gap-2 font-display text-title text-brand-ink">
-        <Glyph emoji="💡" size="free" className="size-7" />
-        Free to talk on
-      </h2>
-      <p className="text-body break-words text-text-primary">
+    <RailCard
+      id="free-to-talk"
+      title="Free to talk"
+      more={
+        owner ? { href: '/home', label: 'Change on Home' } : { href: `/messages/${handle}`, label: 'Message' }
+      }
+    >
+      <p className="text-caption break-words text-text-primary">
         {owner
           ? `Your light is on until ${untilLabel}, for ${audience === 'close' ? 'your close friends' : 'all your friends'}.`
           : `${displayName} is free to talk until ${untilLabel}.`}
-        {note && <span className="mt-1 block text-caption text-text-secondary">“{note}”</span>}
+        {note && <span className="mt-1 block text-text-secondary">“{note}”</span>}
       </p>
-      {owner ? (
-        <Link href="/home" className={buttonClasses({ variant: 'secondary', size: 'sm' })}>
-          Change it on Home
-        </Link>
-      ) : (
-        <Link href={`/messages/${handle}`} className={buttonClasses({ size: 'sm' })}>
-          Message
-        </Link>
-      )}
-    </ClayCard>
+    </RailCard>
   );
 }
 
@@ -55,21 +46,9 @@ export function PorchLightNotice({
  */
 export function TracksCard() {
   return (
-    <ClayCard className="flex flex-col gap-3 bg-info/25">
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center">
-          <h2 className="flex items-center gap-3 font-display text-title text-brand-ink">
-            <TracksIcon className="size-6" />
-            Profile visitors
-          </h2>
-          <GlossaryHint term="tracks" />
-        </div>
-        <Link href="/visitors" className="inline-flex min-h-11 items-center text-caption text-auth-link">
-          Open
-        </Link>
-      </div>
+    <RailCard id="profile-visitors" title="Profile visitors" more={{ href: '/visitors', label: 'Open' }}>
       <p className="text-caption text-text-secondary">See who stopped by your profile this week.</p>
-    </ClayCard>
+    </RailCard>
   );
 }
 
@@ -78,21 +57,9 @@ export function PosseCard({ members }: { members: PersonEntry[] }) {
   const shown = members.slice(0, 4);
   const more = members.length - shown.length;
   return (
-    <ClayCard className="flex flex-col gap-4 bg-mystery/20">
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center">
-          <h2 className="flex items-center gap-3 font-display text-title text-brand-ink">
-            <UsersIcon className="size-6" />
-            Friends
-          </h2>
-          <GlossaryHint term="posse" />
-        </div>
-        <Link href="/friends" className="inline-flex min-h-11 items-center text-caption text-auth-link">
-          View all
-        </Link>
-      </div>
+    <RailCard id="your-friends" title="Friends" more={{ href: '/friends', label: 'View all' }}>
       {shown.length > 0 ? (
-        <>
+        <div className="flex items-center gap-3">
           <ul className="flex items-center" aria-label="Some of your friends">
             {shown.map((m) => (
               <li key={m.handle} className="-ml-2 first:ml-0">
@@ -113,12 +80,12 @@ export function PosseCard({ members }: { members: PersonEntry[] }) {
             )}
           </ul>
           <p className="text-caption text-text-secondary">
-            {members.length} {members.length === 1 ? 'Friend' : 'Friends'}
+            {members.length} {members.length === 1 ? 'friend' : 'friends'}
           </p>
-        </>
+        </div>
       ) : (
         <p className="text-caption text-text-secondary">Nobody yet. Ask someone from the friends page.</p>
       )}
-    </ClayCard>
+    </RailCard>
   );
 }

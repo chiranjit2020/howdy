@@ -10,7 +10,9 @@ export const RAIL_CARD =
   'before:absolute before:inset-x-0 before:top-0 before:h-1.5 before:content-[""] ' +
   'before:bg-[repeating-linear-gradient(-45deg,var(--color-accent)_0_8px,var(--color-highlight)_8px_16px)]';
 export const RAIL_TITLE = 'text-metadata font-semibold tracking-wider text-text-secondary uppercase';
-export const RAIL_MORE = 'text-caption font-semibold';
+/** 44 px to tap on touch screens, without making the title row any taller (the negative margin takes it back). */
+export const RAIL_MORE =
+  '-my-3 inline-flex min-h-11 items-center text-caption font-semibold pointer-fine:my-0 pointer-fine:min-h-0';
 
 export function RailCard({
   id,
@@ -29,7 +31,7 @@ export function RailCard({
 }) {
   return (
     <section aria-labelledby={id} className={RAIL_CARD}>
-      <div className="flex items-baseline justify-between gap-2">
+      <div className="flex items-center justify-between gap-2">
         <h2 id={id} className={RAIL_TITLE}>
           {title}
         </h2>

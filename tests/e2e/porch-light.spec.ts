@@ -106,7 +106,7 @@ test.describe('Free to talk (production build, real CSP)', () => {
     // ...and on the owner's Porch.
     await pal.page.goto(`/profile/${owner.handle}`);
     await pageReady(pal.page);
-    await expect(pal.page.getByRole('heading', { name: 'Free to talk on' })).toBeVisible();
+    await expect(pal.page.getByRole('heading', { name: 'Free to talk' })).toBeVisible();
     await expect(pal.page.getByText(new RegExp(`is free to talk until`))).toBeVisible();
     expect(await horizontalOverflow(pal.page)).toBe(0);
 
