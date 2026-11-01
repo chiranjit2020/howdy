@@ -1,119 +1,34 @@
 import { reactionOfEmoji } from '@/shared/reactions';
 import { cn } from '../cn';
 import { ReactionEmoji } from './emoji';
-import { Img } from './img';
 
-/**
- * Howdy's clay artwork, cut out of the brand sticker sheet (files in /public/art), standing in for emoji. Callers keep using
- * the emoji they always did (`<Glyph emoji="🤠" />`); an emoji that has artwork shows the artwork, anything else falls back to
- * the emoji itself, so nothing ever goes missing. Always decorative: the label next to it says what it means (empty `alt`).
- * Sizes are the files' real pixel sizes; CSS scales them.
+/*
+ * The clay artwork (public/art) was removed on 2026-11-01: the app is flat now, with Octicons for its own icons. Emoji are
+ * the device's own, except the reaction emoji, which stay Microsoft's flat Fluent set (./emoji.tsx).
  */
-const FILES = {
-  cactus: { w: 134, h: 156 },
-  chat: { w: 117, h: 104 },
-  cloud: { w: 128, h: 129 },
-  fence: { w: 145, h: 122 },
-  friends: { w: 165, h: 117 },
-  hat: { w: 150, h: 116 },
-  hill: { w: 167, h: 107 },
-  house: { w: 192, h: 120 },
-  loader: { w: 82, h: 82 },
-  mailbox: { w: 98, h: 163 },
-  note: { w: 87, h: 82 },
-  plane: { w: 93, h: 83 },
-  sparkle: { w: 65, h: 69 },
-  star: { w: 96, h: 101 },
-  sun: { w: 120, h: 98 },
-  /** The gem on the welcome page. (The words friends pick are plain emoji, ADR-052; reactions are Fluent Emoji: ./emoji.tsx.) */
-  'mark-gem': { w: 160, h: 160 },
-  /** The blue badge next to the Howdy team account's name. */
-  verified: { w: 96, h: 96 },
-  /** Navigation (cut from the user's icon sheet by .dev/cut-nav.mjs; 96 px = sharp at 32 px on a 3x phone). */
-  'nav-home': { w: 96, h: 96 },
-  'nav-pals': { w: 96, h: 96 },
-  /** The user's mint tap-pin (2026-10-02, .dev/cut-nail-icons.mjs), 192 px: it fills the 64 px tab-bar button. */
-  'nav-nail': { w: 96, h: 96 },
-  'nav-whispers': { w: 96, h: 96 },
-  'nav-scribble': { w: 96, h: 96 },
-  'nav-porch': { w: 96, h: 96 },
-  'nav-tracks': { w: 96, h: 96 },
-  'nav-chimes': { w: 96, h: 96 },
-  'nav-wordshop': { w: 96, h: 96 },
-  'nav-town-halls': { w: 96, h: 96 },
-  /** From the user's second sheet (2026-09-30) by .dev/cut-nav2.mjs. */
-  'nav-capsules': { w: 96, h: 96 },
-  'nav-moderation': { w: 96, h: 96 },
-  /** From the user's third sheet (2026-09-30) by .dev/cut-rules.mjs: "Add a photo", and one per Campfire Rule. */
-  camera: { w: 96, h: 96 },
-  'rule-respect-the-campfire': { w: 96, h: 96 },
-  'rule-no-harassment': { w: 96, h: 96 },
-  'rule-no-hate': { w: 96, h: 96 },
-  'rule-no-doxxing': { w: 96, h: 96 },
-  'rule-no-spam': { w: 96, h: 96 },
-  'rule-no-impersonation': { w: 96, h: 96 },
-  'rule-respect-boundaries': { w: 96, h: 96 },
-  'rule-keep-it-safe-and-legal': { w: 96, h: 96 },
-  'rule-look-after-each-other': { w: 96, h: 96 },
-  'rule-when-rules-are-broken': { w: 96, h: 96 },
-  /** "Nail a postcard" (the user's, 2026-10-02): the empty Fence, for someone who may nail the first card. */
-  'nail-postcard': { w: 360, h: 300 },
-} as const;
-
-export type ArtName = keyof typeof FILES;
-
-const BY_EMOJI: Record<string, ArtName> = {
-  '🌵': 'cactus',
-  '🪵': 'fence',
-  '🤠': 'hat',
-  '📮': 'mailbox',
-  '🤫': 'chat',
-  '🤝': 'friends',
-  '📜': 'note',
-  '🔔': 'sparkle',
-  '💎': 'mark-gem',
-};
 
 const SIZE = {
   /** Beside a line of text or a button label. */
   inline: 'size-5 align-text-bottom',
-  /** Inside a round badge (Chimes). */
+  /** Inside a round badge. */
   badge: 'size-7',
   /** The big picture above an empty state or a confirmation. */
   hero: 'size-16',
-  /** No size of its own: the caller sets width and position (scenery and illustrations). */
+  /** No size of its own: the caller sets it. */
+  free: '',
+} as const;
+
+/** Text sizes that match the picture sizes, for an emoji drawn by the device. */
+const TEXT = {
+  inline: 'text-body',
+  badge: 'text-title',
+  hero: 'text-display',
   free: '',
 } as const;
 
 export type GlyphSize = keyof typeof SIZE;
 
-/** A named piece of artwork (for things with no emoji twin, like the paper plane on Send). */
-export function Art({
-  name,
-  size = 'inline',
-  className,
-  loading,
-}: {
-  name: ArtName;
-  size?: GlyphSize;
-  className?: string;
-  /** "eager" for art that is on screen from the first paint (the navigation); lazy otherwise. */
-  loading?: 'eager' | 'lazy';
-}) {
-  const { w, h } = FILES[name];
-  return (
-    <Img
-      src={`/art/${name}.png`}
-      width={w}
-      height={h}
-      alt=""
-      className={cn('inline-block object-contain', SIZE[size], className)}
-      {...(loading ? { loading } : {})}
-    />
-  );
-}
-
-/** An emoji, drawn as a Fluent reaction emoji or clay artwork when we have one. */
+/** An emoji: a Fluent reaction emoji when it is one of the reactions, otherwise the device's own. Decorative. */
 export function Glyph({
   emoji,
   size = 'inline',
@@ -125,7 +40,9 @@ export function Glyph({
 }) {
   const reaction = reactionOfEmoji(emoji);
   if (reaction) return <ReactionEmoji kind={reaction} className={cn(SIZE[size], className)} />;
-  const name = BY_EMOJI[emoji];
-  if (!name) return <span aria-hidden="true">{emoji}</span>;
-  return <Art name={name} size={size} {...(className ? { className } : {})} />;
+  return (
+    <span aria-hidden="true" className={cn('leading-none', TEXT[size], className)}>
+      {emoji}
+    </span>
+  );
 }

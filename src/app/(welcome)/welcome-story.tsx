@@ -1,78 +1,100 @@
 import Link from 'next/link';
-import type { ReactNode } from 'react';
+import type { ComponentType, ReactNode } from 'react';
+import type { IconBaseProps } from 'react-icons';
+import {
+  GoBell,
+  GoBellSlash,
+  GoBlocked,
+  GoCircleSlash,
+  GoCommentDiscussion,
+  GoDownload,
+  GoEye,
+  GoHourglass,
+  GoImage,
+  GoInfinity,
+  GoKey,
+  GoLaw,
+  GoNote,
+  GoOrganization,
+  GoPeople,
+  GoPerson,
+  GoQuote,
+  GoShieldCheck,
+} from 'react-icons/go';
 import { ReactionEmoji } from '@/ui/art/emoji';
-import { Art, type ArtName } from '@/ui/art/glyph';
 import { Img } from '@/ui/art/img';
 import { cn } from '@/ui/cn';
 import { buttonClasses } from '@/ui/primitives';
 import { ShareButton } from './welcome/share-button';
 
-/** The soft clay tints the app uses for its tiles, in turn. */
+/** The soft tints the app uses for its tiles, in turn; each holds a line icon (Octicons, like the app). */
 const TINTS = ['bg-accent-soft', 'bg-success', 'bg-warning', 'bg-info', 'bg-mystery'] as const;
 
-const FEATURES: { art: ArtName; name: string; text: string }[] = [
+type Icon = ComponentType<IconBaseProps>;
+
+const FEATURES: { icon: Icon; name: string; text: string }[] = [
   {
-    art: 'nav-porch',
+    icon: GoPerson,
     name: 'Your profile',
     text: 'Your corner of Howdy: your photo and cover, a few words about you, and the details you choose to share — your website, socials, even a number for friends — each with its own who-can-see.',
   },
   {
-    art: 'nav-pals',
+    icon: GoPeople,
     name: 'Friends',
     text: 'Friends both ways. Follow people you look up to and see their posts on Home. Meet friends you may know, or bring friends in with your own invite link.',
   },
   {
-    art: 'nav-nail',
+    icon: GoNote,
     name: 'Posts',
     text: 'Write a short post (and add a photo) on a friend’s wall, and see your friends’ posts on Home, newest first. React with a Wave, Laugh, Fire, Popcorn or Love. Reply to someone with @name and they’re told — on walls and in groups.',
   },
   {
-    art: 'camera',
+    icon: GoImage,
     name: 'Stories',
     text: 'A photo for your friends — or just close friends — gone after 12 hours. Who viewed it only if you both want it.',
   },
   {
-    art: 'nav-whispers',
+    icon: GoCommentDiscussion,
     name: 'Messages',
     text: 'Private messages that arrive instantly. “Seen” only if you both want it. Burn a thread any time.',
   },
   {
-    art: 'nav-tracks',
+    icon: GoEye,
     name: 'Profile visitors',
     text: 'See who dropped by your profile — or turn on Private browsing and leave no footprints (yours pause too).',
   },
   {
-    art: 'mark-gem',
+    icon: GoQuote,
     name: 'Testimonials & how friends see you',
     text: 'Kind words you approve before they show, and the one word each friend picks for you — Gem, Pure, Chill, Sharp or Bold. Your profile shows the top words, never a number.',
   },
   {
-    art: 'nav-town-halls',
+    icon: GoOrganization,
     name: 'Groups',
     text: 'Circles for people who know each other: your batch, family, society or team. Private or findable by friends, with their own posts and photos, events people can say they’re going to, polls to decide things, a pinned notice at the top, Deputies who keep order, and “ask to join” when you want it.',
   },
   {
-    art: 'nav-capsules',
+    icon: GoHourglass,
     name: 'Time Capsules',
     text: 'Seal words for future you or a friend. Nobody can read them early — not even you.',
   },
   {
-    art: 'nav-chimes',
+    icon: GoBell,
     name: 'Notifications',
     text: 'Gentle notifications, on your phone too. “On this day” Memories bring back the good bits.',
   },
 ];
 
-const SAFETY: { art: ArtName; text: string }[] = [
+const SAFETY: { icon: Icon; text: string }[] = [
   {
-    art: 'rule-respect-the-campfire',
+    icon: GoLaw,
     text: 'Community Guidelines that everyone agrees to before they step in',
   },
-  { art: 'rule-respect-boundaries', text: 'Block, restrict and report — quietly. A “no” is never announced' },
-  { art: 'rule-keep-it-safe-and-legal', text: 'Passkeys and two-step sign-in to keep your account yours' },
-  { art: 'camera', text: 'Photos are checked before they reach anyone' },
-  { art: 'rule-look-after-each-other', text: 'Download everything you have shared, any time' },
-  { art: 'rule-no-spam', text: 'No ads, no tracking, and your data is never sold' },
+  { icon: GoBlocked, text: 'Block, restrict and report — quietly. A “no” is never announced' },
+  { icon: GoKey, text: 'Passkeys and two-step sign-in to keep your account yours' },
+  { icon: GoShieldCheck, text: 'Photos are checked before they reach anyone' },
+  { icon: GoDownload, text: 'Download everything you have shared, any time' },
+  { icon: GoCircleSlash, text: 'No ads, no tracking, and your data is never sold' },
 ];
 
 const AHEAD: { name: string; text: string; tag: string }[] = [
@@ -125,18 +147,6 @@ function PhonePeek() {
       aria-label="A peek at Howdy: a post with reactions, a private message, and a notification saying a friend described you."
       className="relative mx-auto w-full max-w-[22rem] lg:max-w-[25rem]"
     >
-      <Art
-        name="sun"
-        size="free"
-        className="absolute -top-10 -right-6 w-20 motion-safe:animate-drift sm:-right-12 sm:w-24"
-      />
-      <Art
-        name="cloud"
-        size="free"
-        className="absolute top-24 -left-10 w-16 opacity-90 motion-safe:animate-drift sm:-left-16 sm:w-20"
-      />
-      <Art name="sparkle" size="free" className="absolute right-2 -bottom-8 w-9 motion-safe:animate-drift" />
-
       <div
         aria-hidden="true"
         className="relative flex flex-col gap-3 rounded-xl border-[6px] border-surface bg-surface-sunken p-3 shadow-float"
@@ -174,7 +184,7 @@ function PhonePeek() {
         {/* Whisper */}
         <div className="clay flex flex-col gap-2 p-4">
           <p className="flex items-center gap-2 text-caption font-semibold text-text-primary">
-            <Art name="nav-whispers" size="free" className="size-5" loading="eager" /> Messages · Arjun
+            <GoCommentDiscussion aria-hidden="true" className="size-4 text-text-secondary" /> Messages · Arjun
           </p>
           <p className="max-w-[85%] self-start rounded-lg rounded-bl-sm bg-surface-sunken px-3 py-2 text-caption text-text-primary">
             Saw you’re free to talk. Still up?
@@ -187,7 +197,9 @@ function PhonePeek() {
 
         {/* Chime */}
         <div className="flex items-center gap-3 rounded-pill bg-island px-4 py-2.5 text-on-island shadow-float">
-          <Art name="mark-gem" size="free" className="size-7" loading="eager" />
+          <span aria-hidden="true" className="text-title leading-none">
+            💎
+          </span>
           <p className="text-caption font-medium">Kavya described you on Howdy</p>
         </div>
       </div>
@@ -230,7 +242,6 @@ export function WelcomeStory({ invite }: { invite?: { code: string; invitedBy: s
         <section className="mx-auto grid w-full max-w-6xl items-center gap-14 px-4 pt-6 pb-16 sm:px-6 lg:grid-cols-[1.1fr_1fr] lg:gap-10 lg:pt-12 lg:pb-24">
           <div className="flex flex-col items-start gap-6 motion-safe:animate-rise">
             <p className="flex items-center gap-2 rounded-pill bg-surface px-3 py-1.5 text-caption font-semibold text-text-secondary shadow-clay-sm">
-              <Art name="hat" size="free" className="w-6" loading="eager" />{' '}
               {invite ? `${invite.invitedBy} invited you to Howdy` : 'A small-circle social world'}
             </p>
             <h1 className="font-display text-[clamp(2.6rem,1.6rem+4.6vw,4.75rem)] leading-[1.02] font-semibold tracking-tight text-text-primary">
@@ -268,25 +279,25 @@ export function WelcomeStory({ invite }: { invite?: { code: string; invitedBy: s
               {(
                 [
                   [
-                    'fence',
+                    GoInfinity,
                     'No feed to doom-scroll',
                     'You visit walls and groups on purpose. Nothing is ranked, nothing auto-plays, and there is no bottom to fall into.',
                   ],
                   [
-                    'friends',
+                    GoPeople,
                     'No public follower counts',
                     'Friends are friends both ways. Only you see how many follow you, so nobody competes for numbers: friends describe you in words, never a score.',
                   ],
                   [
-                    'chat',
+                    GoBellSlash,
                     'Quiet by design',
                     'A “no” is never announced, blocks never show, and read receipts are a switch you control.',
                   ],
                 ] as const
-              ).map(([art, name, text], i) => (
+              ).map(([WhyIcon, name, text], i) => (
                 <li key={name} className="clay flex flex-col gap-3 p-6">
-                  <span className={cn('flex size-16 items-center justify-center rounded-lg', TINTS[i])}>
-                    <Art name={art} size="free" className="w-12" />
+                  <span className={cn('flex size-12 items-center justify-center rounded-lg', TINTS[i])}>
+                    <WhyIcon aria-hidden="true" className="size-6 text-text-primary" />
                   </span>
                   <h3 className="text-title text-text-primary">{name}</h3>
                   <p className="text-body text-text-secondary">{text}</p>
@@ -307,7 +318,7 @@ export function WelcomeStory({ invite }: { invite?: { code: string; invitedBy: s
                     TINTS[i % TINTS.length],
                   )}
                 >
-                  <Art name={f.art} size="free" className="size-10" />
+                  <f.icon aria-hidden="true" className="size-6 text-text-primary" />
                 </span>
                 <div className="flex min-w-0 flex-col gap-1">
                   <h3 className="text-title text-text-primary">{f.name}</h3>
@@ -324,7 +335,9 @@ export function WelcomeStory({ invite }: { invite?: { code: string; invitedBy: s
             <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {SAFETY.map((s) => (
                 <li key={s.text} className="flex items-center gap-4 rounded-lg bg-surface p-4 shadow-clay-sm">
-                  <Art name={s.art} size="free" className="size-11 shrink-0" />
+                  <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-primary text-on-primary">
+                    <s.icon aria-hidden="true" className="size-5" />
+                  </span>
                   <p className="text-body font-medium text-text-primary">{s.text}</p>
                 </li>
               ))}
@@ -359,7 +372,6 @@ export function WelcomeStory({ invite }: { invite?: { code: string; invitedBy: s
           className="mx-auto w-full max-w-6xl px-4 pb-16 sm:px-6 sm:pb-24"
         >
           <div className="clay relative flex flex-col items-center gap-5 overflow-hidden bg-accent-soft px-6 py-12 text-center sm:py-16">
-            <Art name="house" size="free" className="w-36 sm:w-44" />
             <h2
               id="join-title"
               className="font-display text-[clamp(2rem,1.4rem+2.6vw,3.25rem)] leading-tight font-semibold text-text-primary"

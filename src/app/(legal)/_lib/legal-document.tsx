@@ -1,25 +1,37 @@
 import Link from 'next/link';
-import { Fragment } from 'react';
+import { Fragment, type ComponentType } from 'react';
+import type { IconBaseProps } from 'react-icons';
+import {
+  GoAlert,
+  GoBlocked,
+  GoCircleSlash,
+  GoEyeClosed,
+  GoHeart,
+  GoLaw,
+  GoPeople,
+  GoPerson,
+  GoShield,
+  GoStop,
+} from 'react-icons/go';
 import { formatLegalDate, LEGAL_DOCS, LEGAL_SLUGS, type LegalSlug } from '@/shared/legal';
 import type { Block, Inline } from '@/shared/legal-markdown';
-import { Art, type ArtName } from '@/ui/art/glyph';
 import { cn } from '@/ui/cn';
 import { Badge, ClayCard } from '@/ui/primitives';
 import { loadLegal } from './load';
 import { LegalContents, ReadingProgress } from './reading-aids';
 
-/** A little picture per Campfire Rule, so the rules read as a set of friendly cards rather than a wall of text. */
-const CAMPFIRE_ICON: Record<string, ArtName> = {
-  'respect-the-campfire': 'rule-respect-the-campfire',
-  'no-harassment': 'rule-no-harassment',
-  'no-hate': 'rule-no-hate',
-  'no-doxxing': 'rule-no-doxxing',
-  'no-spam': 'rule-no-spam',
-  'no-impersonation': 'rule-no-impersonation',
-  'respect-boundaries': 'rule-respect-boundaries',
-  'keep-it-safe-and-legal': 'rule-keep-it-safe-and-legal',
-  'look-after-each-other': 'rule-look-after-each-other',
-  'when-rules-are-broken': 'rule-when-rules-are-broken',
+/** A line icon per Community Guidelines rule (Octicons, like the app), so the rules read as a set of cards. */
+const CAMPFIRE_ICON: Record<string, ComponentType<IconBaseProps>> = {
+  'respect-the-campfire': GoHeart,
+  'no-harassment': GoShield,
+  'no-hate': GoStop,
+  'no-doxxing': GoEyeClosed,
+  'no-spam': GoCircleSlash,
+  'no-impersonation': GoPerson,
+  'respect-boundaries': GoBlocked,
+  'keep-it-safe-and-legal': GoLaw,
+  'look-after-each-other': GoPeople,
+  'when-rules-are-broken': GoAlert,
 };
 
 const LINK = 'font-medium text-link underline underline-offset-4 hover:text-text-primary';
@@ -165,7 +177,7 @@ export function LegalDocument({ slug }: { slug: LegalSlug }) {
             </ClayCard>
           )}
           {sections.map((s) => {
-            const icon = campfire ? CAMPFIRE_ICON[s.id] : undefined;
+            const Icon = campfire ? CAMPFIRE_ICON[s.id] : undefined;
             return (
               <section key={s.id} aria-labelledby={s.id}>
                 <ClayCard className="flex flex-col gap-4 sm:p-7">
@@ -174,7 +186,14 @@ export function LegalDocument({ slug }: { slug: LegalSlug }) {
                     tabIndex={-1}
                     className="flex scroll-mt-24 items-center gap-3 font-display text-heading text-text-primary focus:outline-none"
                   >
-                    {icon && <Art name={icon} size="free" className="size-12 shrink-0" />}
+                    {Icon && (
+                      <span
+                        aria-hidden="true"
+                        className="grid size-10 shrink-0 place-items-center rounded-lg bg-primary text-title text-on-primary"
+                      >
+                        <Icon />
+                      </span>
+                    )}
                     <a href={`#${s.id}`} className="no-underline hover:underline hover:underline-offset-4">
                       {s.title}
                     </a>

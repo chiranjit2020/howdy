@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react';
 import type { CoverPreset } from '@/shared/validation/profile';
-import { Art } from '../art/glyph';
 import { Img } from '../art/img';
 import { cn } from '../cn';
 
@@ -71,13 +70,21 @@ export function CoverSwatch({ preset }: { preset: CoverPreset }) {
   );
 }
 
-/** The default cover: a pastel sky, rolling hills, and the clay homestead (sun, clouds, house, cactus). */
+/**
+ * The default cover: a pastel sky, a flat sunflower sun and rolling hills. (It had a clay sun, clouds, house and cactus
+ * until 2026-11-01; the preset's name, "porch", is unchanged, so nobody's chosen cover changes.)
+ */
 function PorchScene() {
   return (
     <div className="relative size-full bg-linear-to-b from-info to-parchment">
-      <Art name="sun" size="free" className="absolute top-4 left-[56%] w-16 sm:w-20" />
-      <Art name="cloud" size="free" className="absolute top-5 left-[8%] w-20 sm:w-28" />
-      <Art name="cloud" size="free" className="absolute top-14 left-[38%] w-12 opacity-90 sm:w-16" />
+      <svg
+        aria-hidden="true"
+        viewBox="0 0 100 100"
+        className="absolute top-5 left-[62%] size-16 fill-highlight sm:size-20"
+      >
+        <circle cx="50" cy="50" r="30" />
+        <circle cx="50" cy="50" r="44" className="opacity-25" />
+      </svg>
       {/* Three layers of hills, back to front. Stretched to the width, so the curves always run edge to edge. */}
       <svg
         viewBox="0 0 800 160"
@@ -100,8 +107,6 @@ function PorchScene() {
       >
         <path d="M0 40C150 10 300 30 450 50S700 60 800 30V80H0Z" />
       </svg>
-      <Art name="house" size="free" className="absolute right-[24%] bottom-2 w-28 sm:w-36" />
-      <Art name="cactus" size="free" className="absolute right-3 bottom-1 w-14 sm:right-6 sm:w-20" />
     </div>
   );
 }

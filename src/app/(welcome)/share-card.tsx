@@ -26,16 +26,7 @@ async function art(file: string): Promise<string> {
 }
 
 export async function shareCard(kicker: string = 'A small-circle social world'): Promise<ImageResponse> {
-  const [logo, hat, sun, cloud, gem, yo] = await Promise.all(
-    [
-      'brand/howdy-wordmark.png',
-      'art/hat.png',
-      'art/sun.png',
-      'art/cloud.png',
-      'art/mark-gem.png',
-      'emoji/fluent/yo.svg',
-    ].map(art),
-  );
+  const [logo, yo] = await Promise.all(['brand/howdy-wordmark.png', 'emoji/fluent/yo.svg'].map(art));
   const [fraunces, googleSans] = await Promise.all([font('fraunces-600.ttf'), font('google-sans-500.ttf')]);
   return new ImageResponse(
     <div
@@ -51,27 +42,24 @@ export async function shareCard(kicker: string = 'A small-circle social world'):
         fontFamily: 'Google Sans',
       }}
     >
-      <img src={sun} width={150} height={122} style={{ position: 'absolute', top: 48, right: 90 }} alt="" />
-      <img
-        src={cloud}
-        width={130}
-        height={131}
-        style={{ position: 'absolute', top: 210, right: 300 }}
-        alt=""
-      />
-      <img
-        src={gem}
-        width={120}
-        height={120}
-        style={{ position: 'absolute', bottom: 70, right: 110 }}
-        alt=""
+      {/* A flat sunflower sun (the clay artwork is gone, 2026-11-01). */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 56,
+          right: 80,
+          width: 150,
+          height: 150,
+          borderRadius: 999,
+          background: PRIMARY,
+          boxShadow: `0 0 0 26px ${ACCENT_SOFT}`,
+        }}
       />
       <img src={yo} width={96} height={96} style={{ position: 'absolute', top: 64, right: 300 }} alt="" />
       <img src={logo} width={300} height={92} alt="" />
       <div
         style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 28, color: SLATE, fontSize: 30 }}
       >
-        <img src={hat} width={52} height={40} alt="" />
         {kicker}
       </div>
       <div
