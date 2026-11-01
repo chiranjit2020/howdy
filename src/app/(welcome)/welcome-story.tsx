@@ -49,7 +49,7 @@ const FEATURES: { art: ArtName; name: string; text: string }[] = [
   {
     art: 'nav-town-halls',
     name: 'Groups',
-    text: 'Circles for people who know each other: your batch, family, society or team. Private or findable by friends, with their own posts and photos, events people can say they’re going to, a pinned notice at the top, Deputies who keep order, and “ask to join” when you want it.',
+    text: 'Circles for people who know each other: your batch, family, society or team. Private or findable by friends, with their own posts and photos, events people can say they’re going to, polls to decide things, a pinned notice at the top, Deputies who keep order, and “ask to join” when you want it.',
   },
   {
     art: 'nav-capsules',

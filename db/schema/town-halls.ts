@@ -3,6 +3,7 @@ import {
   type AnyPgColumn,
   check,
   index,
+  integer,
   pgTable,
   primaryKey,
   text,
@@ -251,5 +252,59 @@ export const townHallRsvps = pgTable(
     primaryKey({ columns: [t.postId, t.userId] }),
     index('town_hall_rsvps_user_idx').on(t.userId),
     check('town_hall_rsvps_answer_check', sql`${t.answer} in ('going', 'maybe', 'no')`),
+  ],
+);
+
+/**
+ * A poll (ADR-057): a group post whose words are its question, with two to four options. Whoever asked it (or the owner
+ * or a Deputy) may close it; then it shows final results. Deleting the post deletes the poll, its options and votes.
+ */
+export const townHallPolls = pgTable('town_hall_polls', {
+  postId: uuid('post_id')
+    .primaryKey()
+    .references(() => townHallPosts.id, { onDelete: 'cascade' }),
+  closedAt: tstz('closed_at'),
+});
+
+/** One option of a poll, in the order it was written. */
+export const townHallPollOptions = pgTable(
+  'town_hall_poll_options',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    postId: uuid('post_id')
+      .notNull()
+      .references(() => townHallPolls.postId, { onDelete: 'cascade' }),
+    position: integer('position').notNull(),
+    label: text('label').notNull(),
+  },
+  (t) => [
+    uniqueIndex('town_hall_poll_options_order_idx').on(t.postId, t.position),
+    check('town_hall_poll_options_label_len', sql`char_length(${t.label}) between 1 and 60`),
+    check('town_hall_poll_options_position', sql`${t.position} between 0 and 3`),
+  ],
+);
+
+/**
+ * One member's vote: one per person per poll, changeable or taken back. Nobody is ever shown who voted what; only counts
+ * from current active members are shown.
+ */
+export const townHallPollVotes = pgTable(
+  'town_hall_poll_votes',
+  {
+    postId: uuid('post_id')
+      .notNull()
+      .references(() => townHallPolls.postId, { onDelete: 'cascade' }),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    optionId: uuid('option_id')
+      .notNull()
+      .references(() => townHallPollOptions.id, { onDelete: 'cascade' }),
+    votedAt: tstz('voted_at').notNull().defaultNow(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.postId, t.userId] }),
+    index('town_hall_poll_votes_user_idx').on(t.userId),
+    index('town_hall_poll_votes_option_idx').on(t.optionId),
   ],
 );

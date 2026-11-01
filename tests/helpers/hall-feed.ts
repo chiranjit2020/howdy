@@ -6,6 +6,9 @@ import { POST as reactRoute } from '@/app/api/hall-posts/[id]/react/route';
 import { POST as approvePostRoute } from '@/app/api/hall-posts/[id]/approve/route';
 import { DELETE as unpinRoute, POST as pinRoute } from '@/app/api/hall-posts/[id]/pin/route';
 import { POST as rsvpRoute } from '@/app/api/hall-posts/[id]/rsvp/route';
+import { POST as voteRoute } from '@/app/api/hall-posts/[id]/vote/route';
+import { POST as closePollRoute } from '@/app/api/hall-posts/[id]/close-poll/route';
+import { POST as pollRoute } from '@/app/api/town-halls/[id]/polls/route';
 import { POST as eventRoute } from '@/app/api/town-halls/[id]/events/route';
 import { DELETE as removeReplyRoute } from '@/app/api/hall-replies/[id]/route';
 import { POST as approveReplyRoute } from '@/app/api/hall-replies/[id]/approve/route';
@@ -31,6 +34,14 @@ export interface HallPost {
   canReply: boolean;
   /** The owner or a Deputy, on a published post. */
   canPin?: boolean;
+  /** ADR-057: when the post is a poll. */
+  poll?: {
+    options: { id: string; label: string; votes: number }[];
+    total: number;
+    mine: string | null;
+    closed: boolean;
+    canClose: boolean;
+  } | null;
   /** ADR-056: when the post is an event. */
   event?: {
     title: string;
@@ -92,6 +103,12 @@ export const createEvent = (hallId: string, body: unknown, opts: Opts = {}) =>
   send(eventRoute, 'POST', `/api/town-halls/${enc(hallId)}/events`, hallId, body, opts);
 export const rsvp = (postId: string, answer: unknown, opts: Opts = {}) =>
   send(rsvpRoute, 'POST', `/api/hall-posts/${enc(postId)}/rsvp`, postId, { answer }, opts);
+export const createPoll = (hallId: string, body: unknown, opts: Opts = {}) =>
+  send(pollRoute, 'POST', `/api/town-halls/${enc(hallId)}/polls`, hallId, body, opts);
+export const vote = (postId: string, optionId: unknown, opts: Opts = {}) =>
+  send(voteRoute, 'POST', `/api/hall-posts/${enc(postId)}/vote`, postId, { optionId }, opts);
+export const closePoll = (postId: string, opts: Opts = {}) =>
+  send(closePollRoute, 'POST', `/api/hall-posts/${enc(postId)}/close-poll`, postId, {}, opts);
 export const pin = (id: string, opts: Opts = {}) =>
   send(pinRoute, 'POST', `/api/hall-posts/${enc(id)}/pin`, id, {}, opts);
 export const unpin = (id: string, opts: Opts = {}) =>

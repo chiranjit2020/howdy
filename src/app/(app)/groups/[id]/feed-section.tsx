@@ -11,6 +11,7 @@ import { ReportDialog } from '@/ui/howdy/report-dialog';
 import type { RsvpAnswer } from '@/shared/validation/town-halls';
 import { EventBlock, type WireEvent } from './event-block';
 import { NewEvent } from './new-event';
+import { NewPoll, PollBlock } from './poll-block';
 import { RelativeTime } from '@/ui/howdy/time';
 import { MoreIcon } from '@/ui/icons';
 import { Img } from '@/ui/art/img';
@@ -181,6 +182,35 @@ export function FeedSection({
     }
   }
 
+  /** Vote, change or take back a vote: shown at once, put back if the server says no. */
+  async function vote(p: WirePost, optionId: string | null) {
+    if (!p.poll) return;
+    const before = p.poll;
+    const options = before.options.map((o) => ({
+      ...o,
+      votes: o.votes - (o.id === before.mine ? 1 : 0) + (o.id === optionId ? 1 : 0),
+    }));
+    const total = before.total - (before.mine ? 1 : 0) + (optionId ? 1 : 0);
+    setError(undefined);
+    setAnswering(p.id);
+    patchPost(p.id, (x) => (x.poll ? { ...x, poll: { ...x.poll, options, total, mine: optionId } } : x));
+    const res = await postJson(`/api/hall-posts/${p.id}/vote`, { optionId });
+    setAnswering(undefined);
+    if (!res.ok) {
+      patchPost(p.id, (x) => ({ ...x, poll: before }));
+      setError(res.error?.message ?? 'Your vote did not go through.');
+    }
+  }
+
+  async function closePoll(p: WirePost) {
+    setError(undefined);
+    const res = await postJson(`/api/hall-posts/${p.id}/close-poll`, {});
+    if (res.ok) {
+      patchPost(p.id, (x) => (x.poll ? { ...x, poll: { ...x.poll, closed: true, canClose: false } } : x));
+      toast({ title: 'Poll closed.', tone: 'success' });
+    } else setError(res.error?.message ?? 'Could not close the poll.');
+  }
+
   async function confirmRemoval() {
     if (!removal) return;
     setRemoving(true);
@@ -281,6 +311,13 @@ export function FeedSection({
               toast({ title: 'Event posted.', tone: 'success' });
             }}
           />
+          <NewPoll<WirePost>
+            townHallId={townHallId}
+            onPosted={(made) => {
+              setPosts((all) => [made, ...all]);
+              toast({ title: 'Poll posted.', tone: 'success' });
+            }}
+          />
         </div>
         {/* One photo per post (ADR-046): the same upload and check as a Post Card's. */}
         <PostCardComposer
@@ -304,9 +341,23 @@ export function FeedSection({
                   noun="Post"
                   author={authorOf(p.author)}
                   // An event's name is its words when it has no details: shown once, in the event.
-                  body={p.event && p.body === p.event.title ? '' : p.body}
+                  // A poll's words are its question, shown in the poll itself.
+                  body={p.poll || (p.event && p.body === p.event.title) ? '' : p.body}
                   createdAt={p.createdAt}
                   photo={p.photo}
+                  {...(p.poll
+                    ? {
+                        attachment: (
+                          <PollBlock
+                            question={p.body}
+                            poll={p.poll}
+                            busy={answering === p.id}
+                            onVote={(o) => vote(p, o)}
+                            onClose={() => void closePoll(p)}
+                          />
+                        ),
+                      }
+                    : {})}
                   {...(p.event
                     ? {
                         attachment: (

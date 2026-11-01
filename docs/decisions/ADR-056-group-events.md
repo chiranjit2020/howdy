@@ -1,7 +1,7 @@
 # ADR-056 — Events with RSVP in a group
 
 Status: accepted (2026-11-01). The second circle extension planned in ADR-054 (after the pinned notice, ADR-055;
-polls come next).
+polls follow in ADR-057).
 
 ## Why
 

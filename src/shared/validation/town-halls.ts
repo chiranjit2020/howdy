@@ -136,6 +136,33 @@ export const createEventSchema = z.object({
 });
 export type CreateEventInput = z.infer<typeof createEventSchema>;
 
+/**
+ * A new group poll (ADR-057): a question and two to four different options (blank ones are dropped first, so the form
+ * can send its empty boxes). Every part gets a post's screening.
+ */
+export const createPollSchema = z.object({
+  question: clean(LIMITS.POLL_QUESTION_MAX, 'Ask a question.', 'A question').pipe(
+    z.string().min(3, 'At least 3 characters.'),
+  ),
+  options: z
+    .array(z.string())
+    .transform((all) => all.map((o) => o.trim()).filter((o) => o !== ''))
+    .pipe(
+      z
+        .array(clean(LIMITS.POLL_OPTION_MAX, 'Write the option.', 'An option'))
+        .min(LIMITS.POLL_OPTIONS_MIN, `Give at least ${LIMITS.POLL_OPTIONS_MIN} options.`)
+        .max(LIMITS.POLL_OPTIONS_MAX, `At most ${LIMITS.POLL_OPTIONS_MAX} options.`)
+        .refine(
+          (all) => new Set(all.map((o) => o.toLowerCase())).size === all.length,
+          'Each option must be different.',
+        ),
+    ),
+});
+export type CreatePollInput = z.infer<typeof createPollSchema>;
+
+/** Vote for one option (its id), or `null` to take the vote back. */
+export const pollVoteSchema = z.object({ optionId: z.uuid().nullable() });
+
 export const hallReplySchema = postReplySchema;
 export const hallReactionSchema = yoSchema;
 export const hallActionSchema = z.object({ action: z.enum(['approve']) });

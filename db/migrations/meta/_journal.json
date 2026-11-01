@@ -330,6 +330,13 @@
       "when": 1793531591684,
       "tag": "0046_group_events",
       "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1793534729664,
+      "tag": "0047_group_polls",
+      "breakpoints": true
     }
   ]
 }

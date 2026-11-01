@@ -16,6 +16,11 @@ export const LIMITS = {
   /** A group event's name and place (ADR-056). */
   EVENT_TITLE_MAX: 80,
   EVENT_PLACE_MAX: 80,
+  /** A group poll (ADR-057): its question, each option, and how many options. */
+  POLL_QUESTION_MAX: 140,
+  POLL_OPTION_MAX: 60,
+  POLL_OPTIONS_MIN: 2,
+  POLL_OPTIONS_MAX: 4,
   HANDLE_MIN: 3,
   HANDLE_MAX: 24,
 } as const;

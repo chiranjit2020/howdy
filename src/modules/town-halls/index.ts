@@ -37,6 +37,7 @@ export type {
 } from './service';
 export {
   answerEvent,
+  closePoll,
   approvePost,
   approveReply,
   createPost,
@@ -52,11 +53,13 @@ export {
   removeReply,
   setReaction,
   unpinPost,
+  votePoll,
   FEED_RATE,
 } from './feed';
 export type {
   HallAuthor,
   HallEventView,
+  HallPollView,
   HallFeedPage,
   HallPhoto,
   HallPostView,

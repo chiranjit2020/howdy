@@ -2,6 +2,9 @@ import {
   media,
   townHallEvents,
   townHallMembers,
+  townHallPollOptions,
+  townHallPollVotes,
+  townHallPolls,
   townHallPosts,
   townHallReactions,
   townHallReplies,
@@ -129,6 +132,19 @@ export interface HallEventView {
   answers: Record<RsvpAnswer, HallAuthor[]> | null;
 }
 
+/** A group poll as one member sees it (ADR-057). Counts only, ever: nobody is shown who voted what. */
+export interface HallPollView {
+  options: { id: string; label: string; votes: number }[];
+  /** Votes from current members, all options together. */
+  total: number;
+  /** The option I voted for, if any. */
+  mine: string | null;
+  /** Closed: final results, no more voting. */
+  closed: boolean;
+  /** May I close it (whoever asked, the owner or a Deputy), while it is open? */
+  canClose: boolean;
+}
+
 export interface HallPostView {
   id: string;
   body: string;
@@ -142,6 +158,8 @@ export interface HallPostView {
   canPin: boolean;
   /** When this post is an event (ADR-056): its details and answers. */
   event: HallEventView | null;
+  /** When this post is a poll (ADR-057): its options and counts. */
+  poll: HallPollView | null;
   /** Its photo (ADR-046), when it has one this viewer may see. */
   photo: HallPhoto | null;
   /** Set when this post is a Time Capsule that opened (ADR-043): when its words were sealed. */
@@ -258,7 +276,7 @@ async function hydrate(
   if (rows.length === 0) return [];
   const db = getDb();
   const ids = rows.map((r) => r.id);
-  const [counts, mine, replyRows, photos, events] = await Promise.all([
+  const [counts, mine, replyRows, photos, events, polls] = await Promise.all([
     db
       .select({ postId: townHallReactions.postId, kind: townHallReactions.kind, n: count() })
       .from(townHallReactions)
@@ -282,6 +300,7 @@ async function hydrate(
       .limit(ids.length * (REPLIES_PER_CARD + 5)),
     photosOn(viewerId, ids),
     eventsOn(viewerId, hall.id, rows),
+    pollsOn(viewerId, hall, rows),
   ]);
 
   const replyAuthorIds = replyRows.map((r) => r.authorId);
@@ -338,6 +357,7 @@ async function hydrate(
         canReply: published,
         canPin: published && isStaff(hall.myRole),
         event: events.get(row.id) ?? null,
+        poll: polls.get(row.id) ?? null,
         photo: photos.get(row.id) ?? null,
         capsuleSealedAt: row.capsuleSealedAt,
         reactions: reactionsByPost.get(row.id) ?? emptyReactions(),
@@ -500,6 +520,8 @@ export async function createPost(
   photoId?: string,
   /** Makes the post an event (ADR-056): written with it, in the same transaction, or not at all. */
   event?: { title: string; startsAt: Date; place?: string | undefined },
+  /** Makes the post a poll (ADR-057): its options, written with it in the same transaction. */
+  poll?: { options: string[] },
 ): Promise<HallPostView> {
   // Spent before the Town Hall is looked up: the same limit trips whether it exists, is hidden or is made up.
   await enforceRateLimit(`townhalls:post:${userId}`, FEED_RATE.post);
@@ -521,6 +543,12 @@ export async function createPost(
         startsAt: event.startsAt,
         place: event.place ?? null,
       });
+    }
+    if (poll) {
+      await tx.insert(townHallPolls).values({ postId: post!.id });
+      await tx
+        .insert(townHallPollOptions)
+        .values(poll.options.map((label, position) => ({ postId: post!.id, position, label })));
     }
     if (photoId) {
       // Only MY finished photo, on no card and no other post yet, and young enough that the clean-up cannot take it.
@@ -965,3 +993,120 @@ export const peopleOn = (posts: HallPostView[]): HallAuthor[] =>
     ...p.replies.map((r) => r.author),
     ...(p.event?.answers ? RSVP_ANSWERS.flatMap((a) => p.event!.answers![a]) : []),
   ]);
+
+/**
+ * The polls among these posts, as this viewer sees them (ADR-057): options in order, how many current active members
+ * chose each (decided now), and my own vote. Never who voted what.
+ */
+async function pollsOn(viewerId: string, hall: Hall, rows: PostRow[]): Promise<Map<string, HallPollView>> {
+  const out = new Map<string, HallPollView>();
+  const ids = rows.map((r) => r.id);
+  if (ids.length === 0) return out;
+  const db = getDb();
+  const polls = await db.select().from(townHallPolls).where(inArray(townHallPolls.postId, ids));
+  if (polls.length === 0) return out;
+  const pollIds = polls.map((p) => p.postId);
+  const [options, votes] = await Promise.all([
+    db
+      .select()
+      .from(townHallPollOptions)
+      .where(inArray(townHallPollOptions.postId, pollIds))
+      .orderBy(asc(townHallPollOptions.position)),
+    db
+      .select({
+        postId: townHallPollVotes.postId,
+        userId: townHallPollVotes.userId,
+        optionId: townHallPollVotes.optionId,
+      })
+      .from(townHallPollVotes)
+      .innerJoin(
+        townHallMembers,
+        and(
+          eq(townHallMembers.townHallId, hall.id),
+          eq(townHallMembers.userId, townHallPollVotes.userId),
+          eq(townHallMembers.status, 'active'),
+        ),
+      )
+      .where(inArray(townHallPollVotes.postId, pollIds)),
+  ]);
+  const writerOf = new Map(rows.map((r) => [r.id, r.authorId]));
+  for (const p of polls) {
+    const mineHere = votes.find((v) => v.postId === p.postId && v.userId === viewerId);
+    const opts = options
+      .filter((o) => o.postId === p.postId)
+      .map((o) => ({
+        id: o.id,
+        label: o.label,
+        votes: votes.filter((v) => v.optionId === o.id).length,
+      }));
+    out.set(p.postId, {
+      options: opts,
+      total: opts.reduce((n, o) => n + o.votes, 0),
+      mine: mineHere?.optionId ?? null,
+      closed: p.closedAt !== null,
+      canClose: p.closedAt === null && (writerOf.get(p.postId) === viewerId || isStaff(hall.myRole)),
+    });
+  }
+  return out;
+}
+
+/**
+ * Vote in a group poll (ADR-057): one of its own options, or `null` to take the vote back. Active members who may see
+ * the post; anyone else, a post that is not a poll, or an option of another poll, gets the same 404. Not once closed.
+ * Nobody is told, and nobody can ever see who voted what.
+ */
+export async function votePoll(userId: string, postId: string, optionId: string | null): Promise<void> {
+  await enforceRateLimit(`townhalls:vote:${userId}`, FEED_RATE.react);
+  const found = await loadPost(userId, postId);
+  if (!found || found.post.status !== 'published') throw new AppError('NOT_FOUND');
+  const [poll] = await getDb()
+    .select({ closedAt: townHallPolls.closedAt })
+    .from(townHallPolls)
+    .where(eq(townHallPolls.postId, postId))
+    .limit(1);
+  if (!poll) throw new AppError('NOT_FOUND');
+  if (poll.closedAt) throw new AppError('BAD_REQUEST', { message: 'This poll is closed.' });
+  if (optionId === null) {
+    await getDb()
+      .delete(townHallPollVotes)
+      .where(and(eq(townHallPollVotes.postId, postId), eq(townHallPollVotes.userId, userId)));
+    return;
+  }
+  const [option] = await getDb()
+    .select({ id: townHallPollOptions.id })
+    .from(townHallPollOptions)
+    .where(and(eq(townHallPollOptions.id, optionId), eq(townHallPollOptions.postId, postId)))
+    .limit(1);
+  if (!option) throw new AppError('NOT_FOUND');
+  await getDb()
+    .insert(townHallPollVotes)
+    .values({ postId, userId, optionId, votedAt: new Date() })
+    .onConflictDoUpdate({
+      target: [townHallPollVotes.postId, townHallPollVotes.userId],
+      set: { optionId, votedAt: new Date() },
+    });
+}
+
+/**
+ * Close a poll for good: final results, no more voting. Whoever asked it, or the owner or a Deputy; anyone else gets the
+ * same 404 as a poll that is not there. Closing twice is a harmless repeat.
+ */
+export async function closePoll(userId: string, postId: string): Promise<void> {
+  await enforceRateLimit(`townhalls:feed-manage:${userId}`, FEED_RATE.manage);
+  const found = await loadPost(userId, postId);
+  if (!found || (found.post.authorId !== userId && !isStaff(found.hall.myRole)))
+    throw new AppError('NOT_FOUND');
+  const closed = await getDb()
+    .update(townHallPolls)
+    .set({ closedAt: new Date() })
+    .where(and(eq(townHallPolls.postId, postId), isNull(townHallPolls.closedAt)))
+    .returning({ postId: townHallPolls.postId });
+  if (closed.length === 0) {
+    const [exists] = await getDb()
+      .select({ postId: townHallPolls.postId })
+      .from(townHallPolls)
+      .where(eq(townHallPolls.postId, postId))
+      .limit(1);
+    if (!exists) throw new AppError('NOT_FOUND');
+  }
+}
