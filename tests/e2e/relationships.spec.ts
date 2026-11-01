@@ -46,9 +46,8 @@ test.describe('Posse, Block and Flag trouble (production build, real CSP)', () =
     const problems = await watchProblems(b.page);
 
     // Alice makes her Ranch posse-only. Bob (a stranger for now) cannot see it.
-    await a.page.goto('/settings');
+    await a.page.goto('/settings/privacy');
     await a.page.getByLabel('Who can visit your profile?').selectOption('posse');
-    await a.page.getByRole('button', { name: 'Save Privacy' }).click();
     await expect(a.page.getByRole('status').filter({ hasText: 'Privacy updated' })).toBeVisible();
     const before = await b.page.goto(`/profile/${a.handle}`);
     expect(before?.status()).toBe(404);
@@ -134,11 +133,11 @@ test.describe('Posse, Block and Flag trouble (production build, real CSP)', () =
     await expect(b.page.getByText(a.handle)).toHaveCount(0);
 
     // Alice's Workshop lists Bob as an Outlaw, with an undo; her Posse is empty.
-    await a.page.goto('/settings');
+    await a.page.goto('/settings/people');
     await expect(a.page.getByRole('heading', { name: 'Blocked', exact: true })).toBeVisible();
     await a.page.goto('/friends');
     await expect(a.page.getByText('No friends yet')).toBeVisible();
-    await a.page.goto('/settings');
+    await a.page.goto('/settings/people');
     await a.page.getByRole('button', { name: `Unblock ${b.handle}` }).click();
     await expect(a.page.getByText(/Nobody\. You can block/)).toBeVisible();
 
@@ -229,7 +228,7 @@ test.describe('Posse pages: accessibility and layout in a real browser', () => {
         headers: { origin: 'http://localhost:3300' },
       });
       const source = axeSource();
-      for (const path of ['/friends', `/profile/${b.handle}`, '/settings', '/home']) {
+      for (const path of ['/friends', `/profile/${b.handle}`, '/settings/people', '/home']) {
         await a.page.goto(path);
         await pageReady(a.page);
         await a.page.evaluate(() => document.fonts.ready);
@@ -262,7 +261,7 @@ test.describe('Posse pages: accessibility and layout in a real browser', () => {
     });
     const b = await person(browser, 'smallb');
     await makePosse(b, a);
-    for (const path of ['/friends', `/profile/${b.handle}`, '/settings']) {
+    for (const path of ['/friends', `/profile/${b.handle}`, '/settings/people']) {
       await a.page.goto(path);
       await pageReady(a.page);
       expect(await horizontalOverflow(a.page), `${path} overflow`).toBeLessThanOrEqual(0);

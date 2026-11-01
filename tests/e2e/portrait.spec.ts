@@ -94,9 +94,8 @@ test.describe('Profile photo (production build, real CSP, local file storage)', 
     await anon.close();
 
     // Hide the Ranch from non-Posse members: the photo goes with it, at the very next request.
-    await a.page.goto('/settings');
+    await a.page.goto('/settings/privacy');
     await a.page.getByLabel('Who can visit your profile?').selectOption('posse');
-    await a.page.getByRole('button', { name: 'Save Privacy' }).click();
     await expect(a.page.getByRole('status').filter({ hasText: 'Privacy updated' })).toBeVisible();
     expect((await b.page.request.get(src!)).status()).toBe(404);
 

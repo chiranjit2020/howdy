@@ -7,7 +7,7 @@ import { FormMessage } from '@/ui/auth/form-parts';
 import { ClayCard, Switch, useToast } from '@/ui/primitives';
 
 /** Read receipts ("Seen"), reciprocal: turning them off also hides everyone else's. Private to me. */
-export function ReadReceipts({ initial }: { initial: boolean }) {
+export function ReadReceipts({ initial, bare = false }: { initial: boolean; bare?: boolean }) {
   const router = useRouter();
   const toast = useToast();
   const [on, setOn] = useState(initial);
@@ -27,8 +27,8 @@ export function ReadReceipts({ initial }: { initial: boolean }) {
     }
   }
 
-  return (
-    <ClayCard>
+  const body = (
+    <>
       <Switch
         label="Read receipts"
         hint={
@@ -40,6 +40,7 @@ export function ReadReceipts({ initial }: { initial: boolean }) {
         onCheckedChange={set}
       />
       {error && <FormMessage tone="error">{error}</FormMessage>}
-    </ClayCard>
+    </>
   );
+  return bare ? body : <ClayCard>{body}</ClayCard>;
 }

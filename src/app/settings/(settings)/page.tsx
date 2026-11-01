@@ -1,91 +1,41 @@
-import { withCards } from '@/app/_lib/social';
-import { listMySessions, requireUser, twoStepSummary } from '@/modules/auth';
-import { Devices } from '@/ui/shell/devices';
+import { requireUser } from '@/modules/auth';
 import { getPortraitVersion } from '@/modules/media';
-import { getPrefs } from '@/modules/notifications';
 import { getOwnRanch } from '@/modules/profiles';
-import { listMyRelationships } from '@/modules/relationships';
-import { recheckTrust } from '@/modules/trust';
 import { portraitUrl } from '@/shared/portrait';
-import { DeleteAccount } from './delete-account';
-import { ExportData } from './export-data';
-import { PeopleControls } from './people-controls';
+import { ClayCard } from '@/ui/primitives';
 import { PortraitForm } from './portrait-form';
-import { SignInSecurity } from './sign-in-security';
-import { ReadReceipts } from './read-receipts';
-import { TrustCard } from './trust-card';
-import { BoundaryForm, ChimePrefsForm, FenceRulesForm, StoryViewsForm, TendForm } from './ranch-forms';
+import { TendForm } from './ranch-forms';
 
 export const metadata = { title: 'Settings' };
 
-/** The Workshop (settings). Protected: the session is checked on the server before any of this renders. */
-export default async function WorkshopPage() {
+/**
+ * Settings › Profile: your photo, name, bio and photo colour in one card (the same parts as "Edit your profile" on the
+ * profile itself). Protected: the session is checked on the server before any of this renders.
+ */
+export default async function ProfileSettingsPage() {
   const user = await requireUser();
-  const [ranch, prefs, lists, photo, security, sessions, trust] = await Promise.all([
+  const [ranch, photo] = await Promise.all([
     getOwnRanch(user.id),
-    getPrefs(user.id),
-    listMyRelationships(user.id).then((r) => withCards(r, user.id)),
     getPortraitVersion(user.id, { userId: user.id }).catch(() => null),
-    twoStepSummary(user.id),
-    listMySessions(),
-    // The Trusted tick's checklist lives here, not on the profile (ADR-052). Checking also refreshes the stored tick.
-    recheckTrust(user.id),
   ]);
   return (
-    <main id="main" className="mx-auto flex max-w-xl flex-col gap-4 py-4 sm:gap-6 sm:py-8">
-      <h1 className="text-heading text-text-primary">Settings</h1>
+    <ClayCard className="flex flex-col gap-5">
+      <h2 className="text-title text-text-primary">Your profile</h2>
       <PortraitForm
+        bare
         displayName={ranch.displayName}
         portraitTint={ranch.portraitTint}
         portraitSrc={photo ? portraitUrl(user.handle, photo) : null}
       />
-      <TendForm
-        displayName={ranch.displayName}
-        bio={ranch.bio ?? ''}
-        portraitTint={ranch.portraitTint}
-        handle={user.handle}
-      />
-      <BoundaryForm
-        ranchVisibility={ranch.ranchVisibility}
-        discoverable={ranch.discoverable}
-        searchable={ranch.searchable}
-        official={ranch.verified}
-      />
-      {trust && !trust.team && <TrustCard status={trust} />}
-      <StoryViewsForm initial={ranch.storyViews} />
-      {/* Moved here from Messages (2026-11-01): a set-once privacy switch, next to its twin for Stories. */}
-      <ReadReceipts initial={ranch.readReceipts} />
-      <FenceRulesForm
-        fenceVisibility={ranch.fenceVisibility}
-        fencePosting={ranch.fencePosting}
-        fenceReview={ranch.fenceReview}
-      />
-      <ChimePrefsForm initial={prefs} />
-      <PeopleControls blocked={lists.blocked} muted={lists.muted} restricted={lists.restricted} />
-      <SignInSecurity
-        view={{
-          ...security,
-          passkeys: security.passkeys.map((p) => ({
-            ...p,
-            createdAt: p.createdAt.toISOString(),
-            lastUsedAt: p.lastUsedAt?.toISOString() ?? null,
-          })),
-        }}
-      />
-      {/* The phone's More menu and the avatar menu ("Devices · 5") link here (#devices). */}
-      <div id="devices" className="scroll-mt-20">
-        <Devices
-          initial={sessions.map((s) => ({
-            id: s.id,
-            deviceLabel: s.deviceLabel,
-            createdAt: s.createdAt.toISOString(),
-            lastSeenAt: s.lastSeenAt.toISOString(),
-            current: s.current,
-          }))}
+      <div className="border-t border-border pt-5">
+        <TendForm
+          bare
+          displayName={ranch.displayName}
+          bio={ranch.bio ?? ''}
+          portraitTint={ranch.portraitTint}
+          handle={user.handle}
         />
       </div>
-      <ExportData />
-      <DeleteAccount />
-    </main>
+    </ClayCard>
   );
 }

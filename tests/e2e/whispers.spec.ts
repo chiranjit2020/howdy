@@ -265,7 +265,12 @@ test.describe('Messages: accessibility and layout in a real browser', () => {
     test(`axe finds no violations, including real colour contrast (${scheme})`, async ({ browser }) => {
       const { a, b } = await seed(browser, { colorScheme: scheme, bypassCSP: true, reducedMotion: 'reduce' });
       const source = axeSource();
-      for (const path of ['/messages', `/messages/${b.handle}`, '/settings', `/profile/${b.handle}`]) {
+      for (const path of [
+        '/messages',
+        `/messages/${b.handle}`,
+        '/settings/privacy',
+        `/profile/${b.handle}`,
+      ]) {
         await a.page.goto(path);
         await pageReady(a.page);
         await a.page.evaluate(() => document.fonts.ready);

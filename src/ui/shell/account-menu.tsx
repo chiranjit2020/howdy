@@ -87,7 +87,7 @@ export function AccountMenu({ me }: { me: ShellMe }) {
               </Link>
             ))}
             <Link
-              href="/settings#devices"
+              href="/settings/account#devices"
               onClick={() => setOpen(false)}
               className={`${ROW} justify-between`}
             >

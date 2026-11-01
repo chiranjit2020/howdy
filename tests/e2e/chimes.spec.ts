@@ -102,7 +102,7 @@ test.describe('Notifications in a real browser (production build, real CSP)', ()
     expect((await api(a, `/api/relationships/${b.handle}`, { action: 'unmute' })).ok()).toBe(true);
 
     // Chime settings: switching Reactions off means a new Yo does not ring.
-    await a.page.goto('/settings');
+    await a.page.goto('/settings/notifications');
     await a.page.getByRole('switch', { name: /^Reactions When/ }).click();
     await expect(a.page.getByRole('status').filter({ hasText: 'Notification settings saved' })).toBeVisible();
     const second = await api(a, `/api/porch/${a.handle}/fence`, { body: 'Second card' });
@@ -165,7 +165,7 @@ test.describe('Notifications: accessibility and layout in a real browser', () =>
     test(`axe finds no violations, including real colour contrast (${scheme})`, async ({ browser }) => {
       const { a, b } = await seed(browser, { colorScheme: scheme, bypassCSP: true, reducedMotion: 'reduce' });
       const source = axeSource();
-      for (const path of ['/notifications', '/settings', '/home']) {
+      for (const path of ['/notifications', '/settings/notifications', '/home']) {
         await a.page.goto(path);
         await pageReady(a.page);
         await a.page.evaluate(() => document.fonts.ready);
@@ -201,7 +201,7 @@ test.describe('Notifications: accessibility and layout in a real browser', () =>
       isMobile: true,
       viewport: { width: 320, height: 700 },
     });
-    for (const path of ['/notifications', '/settings', '/home']) {
+    for (const path of ['/notifications', '/settings/notifications', '/home']) {
       await a.page.goto(path);
       await pageReady(a.page);
       expect(await horizontalOverflow(a.page), `${path} overflow`).toBeLessThanOrEqual(0);

@@ -173,7 +173,7 @@ export function ShellMoreMenu({
             onSelect: () => router.push(it.href),
           })),
           // Where people look for them on a phone. Devices (and "Sign out everywhere", which asks first) are in Settings.
-          { id: 'devices', label: 'Devices', onSelect: () => router.push('/settings#devices') },
+          { id: 'devices', label: 'Devices', onSelect: () => router.push('/settings/account#devices') },
           {
             id: 'sign-out',
             label: 'Sign out',

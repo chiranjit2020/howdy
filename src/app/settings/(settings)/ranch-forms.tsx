@@ -157,7 +157,10 @@ export function TendForm({
   return bare ? form : <ClayCard>{form}</ClayCard>;
 }
 
-/** Boundary Lines: who may open the Ranch, and whether you are suggested and findable. */
+/**
+ * Boundary Lines: who may open the Ranch, and whether you are suggested and findable. Each control saves the moment it
+ * changes (like every switch in Settings); on a problem it goes back to what was saved and says why.
+ */
 export function BoundaryForm({
   ranchVisibility,
   discoverable,
@@ -172,75 +175,74 @@ export function BoundaryForm({
   /** The Howdy team account: these settings are overridden to "everyone", so say so rather than pretend. */
   official?: boolean;
 }) {
-  const router = useRouter();
-  const toast = useToast();
-  const [ranch, setRanch] = useState(ranchVisibility);
-  const [suggestMe, setSuggestMe] = useState(discoverable);
-  const [findMe, setFindMe] = useState(searchable);
-  const [formError, setFormError] = useState<string | undefined>();
-  const [busy, setBusy] = useState(false);
-
-  async function save(e: FormEvent) {
-    e.preventDefault();
-    setFormError(undefined);
-    setBusy(true);
-    const res = await apiRequest('PATCH', '/api/me/porch', {
-      ranchVisibility: ranch,
-      discoverable: suggestMe,
-      searchable: findMe,
-    });
-    setBusy(false);
-    if (res.ok) {
-      toast({ title: 'Privacy updated.', tone: 'success' });
-      router.refresh();
-    } else setFormError(res.error?.message);
-  }
+  const [values, setValues] = useState({ ranchVisibility, discoverable, searchable });
+  const { save, error } = useInstantSave('Privacy updated.');
+  const set = <K extends keyof typeof values>(key: K, value: (typeof values)[K]) =>
+    save(values, setValues, { [key]: value } as Partial<typeof values>);
 
   return (
-    <ClayCard>
-      <form onSubmit={save} noValidate className="flex flex-col gap-5">
-        <h2 className="text-title text-text-primary">Privacy</h2>
-        {formError && <FormMessage tone="error">{formError}</FormMessage>}
-        {official && (
-          <FormMessage tone="info">
-            As the Howdy team account, your profile and wall are always open to everyone (signed in or not),
-            whatever you choose here, and nobody can block you.
-          </FormMessage>
-        )}
-        <Select
-          label="Who can visit your profile?"
-          value={ranch}
-          onChange={(e) => setRanch(e.target.value as Visibility)}
-          hint="New profiles start with members only."
-        >
-          {VISIBILITIES.map((v) => (
-            <option key={v} value={v}>
-              {VISIBILITY_LABEL[v]}
-            </option>
-          ))}
-        </Select>
-        <Switch
-          label="Suggest me to friends of my friends"
-          hint="People who share at least two friends with you may see you under “Friends you may know”. Never shown to anyone you have blocked, muted or restricted, or who did the same to you."
-          checked={suggestMe}
-          onCheckedChange={setSuggestMe}
-        />
-        <Switch
-          label="Let people find me in search"
-          hint="Anyone signed in can then find you by your name or @username. Off by default. Your friends can always find you, and anyone you have blocked or muted, or who blocked you, never can."
-          checked={findMe}
-          onCheckedChange={setFindMe}
-        />
-        <Button type="submit" loading={busy}>
-          Save Privacy
-        </Button>
-      </form>
+    <ClayCard className="flex flex-col gap-5">
+      <h2 className="text-title text-text-primary">Who can see you</h2>
+      {error && <FormMessage tone="error">{error}</FormMessage>}
+      {official && (
+        <FormMessage tone="info">
+          As the Howdy team account, your profile and wall are always open to everyone (signed in or not),
+          whatever you choose here, and nobody can block you.
+        </FormMessage>
+      )}
+      <Select
+        label="Who can visit your profile?"
+        value={values.ranchVisibility}
+        onChange={(e) => set('ranchVisibility', e.target.value as Visibility)}
+        hint="New profiles start with members only."
+      >
+        {VISIBILITIES.map((v) => (
+          <option key={v} value={v}>
+            {VISIBILITY_LABEL[v]}
+          </option>
+        ))}
+      </Select>
+      <Switch
+        label="Suggest me to friends of my friends"
+        hint="People who share at least two friends with you may see you under “Friends you may know”. Never shown to anyone you have blocked, muted or restricted, or who did the same to you."
+        checked={values.discoverable}
+        onCheckedChange={(v) => set('discoverable', v)}
+      />
+      <Switch
+        label="Let people find me in search"
+        hint="Anyone signed in can then find you by your name or @username. Off by default. Your friends can always find you, and anyone you have blocked or muted, or who blocked you, never can."
+        checked={values.searchable}
+        onCheckedChange={(v) => set('searchable', v)}
+      />
     </ClayCard>
   );
 }
 
+/**
+ * Saves one change to the Porch at once: shows it straight away, sends just that field, says so in a toast, and puts the
+ * old value back if the server says no (with its reason).
+ */
+function useInstantSave(done: string) {
+  const router = useRouter();
+  const toast = useToast();
+  const [error, setError] = useState<string | undefined>();
+  async function save<T extends object>(before: T, apply: (v: T) => void, change: Partial<T>) {
+    apply({ ...before, ...change });
+    setError(undefined);
+    const res = await apiRequest('PATCH', '/api/me/porch', change);
+    if (res.ok) {
+      toast({ title: done, tone: 'success' });
+      router.refresh();
+    } else {
+      apply(before);
+      setError(res.error?.message ?? 'That did not save. Try again.');
+    }
+  }
+  return { save, error };
+}
+
 /** Story views (ADR-047), reciprocal like read receipts: off also hides who viewed mine. Saves on switching. */
-export function StoryViewsForm({ initial }: { initial: boolean }) {
+export function StoryViewsForm({ initial, bare = false }: { initial: boolean; bare?: boolean }) {
   const router = useRouter();
   const toast = useToast();
   const [on, setOn] = useState(initial);
@@ -260,8 +262,8 @@ export function StoryViewsForm({ initial }: { initial: boolean }) {
     }
   }
 
-  return (
-    <ClayCard>
+  const body = (
+    <>
       <Switch
         label="Story views"
         hint={
@@ -273,8 +275,9 @@ export function StoryViewsForm({ initial }: { initial: boolean }) {
         onCheckedChange={set}
       />
       {error && <FormMessage tone="error">{error}</FormMessage>}
-    </ClayCard>
+    </>
   );
+  return bare ? body : <ClayCard>{body}</ClayCard>;
 }
 
 const POSTING_LABEL: Record<FencePosting, string> = {
@@ -283,7 +286,7 @@ const POSTING_LABEL: Record<FencePosting, string> = {
   nobody: 'Nobody but me',
 };
 
-/** Fence rules: who reads it, who may nail cards to it, and whether cards wait for approval. */
+/** Fence rules: who reads it, who may nail cards to it, and whether cards wait for approval. Each saves as it changes. */
 export function FenceRulesForm({
   fenceVisibility,
   fencePosting,
@@ -293,69 +296,45 @@ export function FenceRulesForm({
   fencePosting: FencePosting;
   fenceReview: boolean;
 }) {
-  const router = useRouter();
-  const toast = useToast();
-  const [reading, setReading] = useState(fenceVisibility);
-  const [posting, setPosting] = useState(fencePosting);
-  const [review, setReview] = useState(fenceReview);
-  const [formError, setFormError] = useState<string | undefined>();
-  const [busy, setBusy] = useState(false);
-
-  async function save(e: FormEvent) {
-    e.preventDefault();
-    setFormError(undefined);
-    setBusy(true);
-    const res = await apiRequest('PATCH', '/api/me/porch', {
-      fenceVisibility: reading,
-      fencePosting: posting,
-      fenceReview: review,
-    });
-    setBusy(false);
-    if (res.ok) {
-      toast({ title: 'Wall rules updated.', tone: 'success' });
-      router.refresh();
-    } else setFormError(res.error?.message);
-  }
+  const [values, setValues] = useState({ fenceVisibility, fencePosting, fenceReview });
+  const { save, error } = useInstantSave('Wall rules updated.');
+  const set = <K extends keyof typeof values>(key: K, value: (typeof values)[K]) =>
+    save(values, setValues, { [key]: value } as Partial<typeof values>);
 
   return (
-    <ClayCard>
-      <form onSubmit={save} noValidate className="flex flex-col gap-5">
-        <h2 className="text-title text-text-primary">Wall rules</h2>
-        {formError && <FormMessage tone="error">{formError}</FormMessage>}
-        <Select
-          label="Who can read your wall?"
-          value={reading}
-          onChange={(e) => setReading(e.target.value as Visibility)}
-          hint="Never broader than who can visit your profile."
-        >
-          {VISIBILITIES.map((v) => (
-            <option key={v} value={v}>
-              {VISIBILITY_LABEL[v]}
-            </option>
-          ))}
-        </Select>
-        <Select
-          label="Who can post on it?"
-          value={posting}
-          onChange={(e) => setPosting(e.target.value as FencePosting)}
-          hint="You can always write on your own wall. People you restrict have their posts held for you."
-        >
-          {FENCE_POSTING_LEVELS.map((v) => (
-            <option key={v} value={v}>
-              {POSTING_LABEL[v]}
-            </option>
-          ))}
-        </Select>
-        <Switch
-          label="Approve posts first"
-          hint="Posts from others wait for you before anyone else sees them."
-          checked={review}
-          onCheckedChange={setReview}
-        />
-        <Button type="submit" loading={busy}>
-          Save wall rules
-        </Button>
-      </form>
+    <ClayCard className="flex flex-col gap-5">
+      <h2 className="text-title text-text-primary">Your wall</h2>
+      {error && <FormMessage tone="error">{error}</FormMessage>}
+      <Select
+        label="Who can read your wall?"
+        value={values.fenceVisibility}
+        onChange={(e) => set('fenceVisibility', e.target.value as Visibility)}
+        hint="Never broader than who can visit your profile."
+      >
+        {VISIBILITIES.map((v) => (
+          <option key={v} value={v}>
+            {VISIBILITY_LABEL[v]}
+          </option>
+        ))}
+      </Select>
+      <Select
+        label="Who can post on it?"
+        value={values.fencePosting}
+        onChange={(e) => set('fencePosting', e.target.value as FencePosting)}
+        hint="You can always write on your own wall. People you restrict have their posts held for you."
+      >
+        {FENCE_POSTING_LEVELS.map((v) => (
+          <option key={v} value={v}>
+            {POSTING_LABEL[v]}
+          </option>
+        ))}
+      </Select>
+      <Switch
+        label="Approve posts first"
+        hint="Posts from others wait for you before anyone else sees them."
+        checked={values.fenceReview}
+        onCheckedChange={(v) => set('fenceReview', v)}
+      />
     </ClayCard>
   );
 }
@@ -386,7 +365,7 @@ export function ChimePrefsForm({
 
   return (
     <ClayCard className="flex flex-col gap-2">
-      <h2 className="text-title text-text-primary">Notifications</h2>
+      <h2 className="text-title text-text-primary">What notifies you</h2>
       <p className="text-caption text-text-secondary">
         Choose what rings. People you have muted, restricted or blocked never ring, whatever you choose here.
       </p>
@@ -422,8 +401,8 @@ export function ChimePrefsForm({
         onCheckedChange={(v) => set('whispers', v)}
       />
       <Switch
-        label="Testimonials & badges"
-        hint="A testimonial waiting for you, one that was approved, or a new badge."
+        label="Testimonials & descriptions"
+        hint="A testimonial waiting for you, one that was approved, or a friend describing you."
         checked={prefs.tributes}
         onCheckedChange={(v) => set('tributes', v)}
       />

@@ -72,7 +72,7 @@ test.describe('Two-step sign-in (production build, real CSP)', () => {
     const me = await signedInMember(page, 'passkey');
     const problems = await watchProblems(page);
 
-    await page.goto('/settings');
+    await page.goto('/settings/account');
     await pageReady(page);
     const card = securityCard(page);
     await card.scrollIntoViewIfNeeded();
@@ -120,7 +120,7 @@ test.describe('Two-step sign-in (production build, real CSP)', () => {
     const me = await signedInMember(page, 'totp');
     const problems = await watchProblems(page);
 
-    await page.goto('/settings');
+    await page.goto('/settings/account');
     await pageReady(page);
     const card = securityCard(page);
     await card.scrollIntoViewIfNeeded();
@@ -165,7 +165,7 @@ test.describe('Two-step sign-in (production build, real CSP)', () => {
     await page.getByRole('button', { name: 'Log in', exact: true }).click();
     await expect(page).toHaveURL(/\/home$/);
 
-    await page.goto('/settings');
+    await page.goto('/settings/account');
     await expect(securityCard(page).getByText('9 of 10 left', { exact: false })).toBeVisible();
     expect(problems).toEqual([]);
     await ctx.close();

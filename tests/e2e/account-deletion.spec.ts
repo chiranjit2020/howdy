@@ -39,7 +39,7 @@ test.describe('Account deletion (production build, real CSP)', () => {
     const me = await person(browser, 'leaver');
     const problems = await watchProblems(me.page);
 
-    await me.page.goto('/settings');
+    await me.page.goto('/settings/account');
     await pageReady(me.page);
     const card = me.page
       .locator('.clay')
@@ -51,7 +51,7 @@ test.describe('Account deletion (production build, real CSP)', () => {
     expect(await horizontalOverflow(me.page)).toBe(0);
 
     // Signed out everywhere: the Workshop now sends me to sign in.
-    await me.page.goto('/settings');
+    await me.page.goto('/settings/account');
     await expect(me.page).toHaveURL(/\/login/);
 
     await stepInsideVia(me.page, me.email, me.password);

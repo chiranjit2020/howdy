@@ -54,7 +54,7 @@ export function EditProfile({
           </div>
           <p className="text-caption text-text-secondary">
             Who can see your profile, and everything else, is in{' '}
-            <Link href="/settings" className="font-semibold">
+            <Link href="/settings/privacy" className="font-semibold">
               Settings
             </Link>
             .

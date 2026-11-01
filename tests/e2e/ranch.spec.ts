@@ -25,11 +25,10 @@ async function person(browser: Browser, tag: string, opts: Parameters<typeof new
 }
 
 async function saveBoundaries(page: Page, ranch: string) {
-  await page.goto('/settings');
+  await page.goto('/settings/privacy');
   await page.getByLabel('Who can visit your profile?').selectOption(ranch);
   // Status is retired (2026-11-01): there is no "who can read your status" any more.
   await expect(page.getByLabel('Who can read your status?')).toHaveCount(0);
-  await page.getByRole('button', { name: 'Save Privacy' }).click();
   await expect(page.getByRole('status').filter({ hasText: 'Privacy updated' })).toBeVisible();
 }
 

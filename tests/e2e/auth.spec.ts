@@ -264,7 +264,7 @@ test.describe('authentication journey (production build, real CSP, real cookies)
     await stepInsideVia(p2, a.email, a.password);
     await expect(p2).toHaveURL(/\/home$/);
 
-    await p1.goto('/settings');
+    await p1.goto('/settings/account');
     const gates = p1.getByRole('region', { name: 'Devices' });
     await expect(gates.getByRole('listitem')).toHaveCount(2);
     await expect(gates.getByText('This device')).toHaveCount(1);
@@ -297,7 +297,7 @@ test.describe('authentication journey (production build, real CSP, real cookies)
       .getByRole('link', { name: /^Devices/ });
     await expect(devicesLink).toHaveAccessibleName('Devices 1 signed in');
     await devicesLink.click();
-    await expect(page).toHaveURL(/\/settings#devices$/);
+    await expect(page).toHaveURL(/\/settings\/account#devices$/);
     const panel = page.getByRole('region', { name: 'Devices' });
     await panel.getByRole('button', { name: 'Sign out everywhere…' }).click();
     const dialog = page.getByRole('alertdialog', { name: 'Sign out of every device?' });
@@ -305,7 +305,7 @@ test.describe('authentication journey (production build, real CSP, real cookies)
     await expect(dialog.getByRole('button', { name: 'Cancel' })).toBeFocused(); // the safe choice is the default
     await page.keyboard.press('Escape');
     await expect(dialog).toBeHidden();
-    await expect(page).toHaveURL(/\/settings#devices$/); // cancelling changed nothing
+    await expect(page).toHaveURL(/\/settings\/account#devices$/); // cancelling changed nothing
     await panel.getByRole('button', { name: 'Sign out everywhere…' }).click();
     await dialog.getByRole('button', { name: 'Sign out everywhere' }).click();
     await expect(page).toHaveURL(/\/gate$/);

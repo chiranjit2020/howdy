@@ -166,10 +166,9 @@ test.describe('The wall in a real browser (production build, real CSP)', () => {
     const a = await person(browser, 'reviewowner');
     const b = await person(browser, 'reviewfriend');
     await makePosse(b, a);
-    await a.page.goto('/settings');
+    await a.page.goto('/settings/privacy');
     await a.page.getByLabel('Who can post on it?').selectOption('members');
     await a.page.getByRole('switch', { name: /Approve posts first/ }).click();
-    await a.page.getByRole('button', { name: 'Save wall rules' }).click();
     await expect(a.page.getByRole('status').filter({ hasText: 'Wall rules updated' })).toBeVisible();
 
     await b.page.goto(`/profile/${a.handle}`);
@@ -214,7 +213,7 @@ test.describe('Wall: accessibility and layout in a real browser', () => {
       for (const [who, path] of [
         [a, `/profile/${a.handle}`], // owner: queue + menus
         [b, `/profile/${a.handle}`], // Posse friend: composer
-        [a, '/settings'], // Fence rules
+        [a, '/settings/privacy'], // Wall rules
       ] as const) {
         await who.page.goto(path);
         await pageReady(who.page);
@@ -257,7 +256,7 @@ test.describe('Wall: accessibility and layout in a real browser', () => {
     for (const [who, path] of [
       [a, `/profile/${a.handle}`],
       [b, `/profile/${a.handle}`],
-      [a, '/settings'],
+      [a, '/settings/privacy'],
     ] as const) {
       await who.page.goto(path);
       await pageReady(who.page);

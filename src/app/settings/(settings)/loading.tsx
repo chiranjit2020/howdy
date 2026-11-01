@@ -1,13 +1,17 @@
-import { SkeletonFormCard, SkeletonPage, SkeletonTitle } from '@/ui/howdy';
+import { SkeletonFormCard } from '@/ui/howdy';
 
-/** The Workshop's outline: the heading and its stack of settings forms. */
+/**
+ * A Settings section's outline, under the heading and tabs (the layout shows those at once, and carries the <main>):
+ * a couple of form cards.
+ */
 export default function Loading() {
   return (
-    <SkeletonPage>
-      <SkeletonTitle width="w-36" />
+    <div aria-busy="true" className="flex flex-col gap-4">
+      <p role="status" className="sr-only">
+        Loading…
+      </p>
       <SkeletonFormCard fields={2} />
       <SkeletonFormCard fields={2} />
-      <SkeletonFormCard fields={3} />
-    </SkeletonPage>
+    </div>
   );
 }
