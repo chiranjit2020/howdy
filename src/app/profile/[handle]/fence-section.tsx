@@ -52,8 +52,9 @@ export function FenceSection({
   const ownerName = feed ? '' : source.ownerName;
   const toast = useToast();
   const composerRef = useRef<HTMLDivElement>(null);
-  // The tab bar's "Nail" button opens your Porch with ?nail=1: bring the composer into view and put the cursor in it.
-  const wantsNail = useSearchParams().get('nail') === '1';
+  // "Write a post" (the phone's Create sheet) opens Home with ?nail=<a fresh value>: bring the composer into view and put
+  // the cursor in it. A fresh value each time, so it works again while Home is already open.
+  const wantsNail = useSearchParams().get('nail');
   useEffect(() => {
     if (!wantsNail) return;
     const box = composerRef.current;

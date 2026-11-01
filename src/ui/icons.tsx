@@ -8,6 +8,7 @@ import {
   GoCheckCircle,
   GoChevronDown,
   GoCommentDiscussion,
+  GoDeviceMobile,
   GoEye,
   GoEyeClosed,
   GoGear,
@@ -28,6 +29,7 @@ import {
   GoReply,
   GoScreenFull,
   GoSearch,
+  GoSignOut,
   GoShield,
   GoSmiley,
   GoStar,
@@ -90,6 +92,9 @@ export const PlayIcon = go(GoPlay);
 export const CameraIcon = go(GoImage);
 // Post, Reply, Send.
 export const SendIcon = go(GoPaperAirplane);
+// Your signed-in devices, and signing out (the phone's You sheet).
+export const DevicesIcon = go(GoDeviceMobile);
+export const SignOutIcon = go(GoSignOut);
 
 /** Octicons has no pause: drawn on the same 16 px grid as GoPlay (a ring with two bars), filled like the rest. */
 export const PauseIcon = (p: IconProps) => (

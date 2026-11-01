@@ -2,11 +2,12 @@ import Link from 'next/link';
 import { attachPortraits } from '@/app/_lib/social';
 import { requireUser } from '@/modules/auth';
 import { getOwnRanch } from '@/modules/profiles';
-import { listTracks } from '@/modules/tracks';
+import { listTracks, newVisits } from '@/modules/tracks';
 import { COARSE_LABEL, TrackItem, type CoarseWhen } from '@/ui/howdy';
 import { EyeOffIcon, TracksIcon, WhisperIcon } from '@/ui/icons';
 import { RailCard } from '@/ui/howdy/rail-card';
 import { ClayCard, EmptyState } from '@/ui/primitives';
+import { MarkVisitsSeen } from './mark-seen';
 import { ShadowWalk } from './shadow-walk';
 
 export const metadata = { title: 'Profile visitors' };
@@ -20,7 +21,11 @@ const ORDER: CoarseWhen[] = ['today', 'yesterday', 'this-week'];
  */
 export default async function TracksPage() {
   const user = await requireUser();
-  const [tracks, ranch] = await Promise.all([listTracks(user.id), getOwnRanch(user.id)]);
+  const [tracks, ranch, fresh] = await Promise.all([
+    listTracks(user.id),
+    getOwnRanch(user.id),
+    newVisits(user.id).catch(() => 0),
+  ]);
   // Named visitors only: the hidden ones stay counts, with nothing to attach a photo to.
   await attachPortraits(user.id, tracks.people);
   const groups = ORDER.map((when) => ({
@@ -33,6 +38,7 @@ export default async function TracksPage() {
     <div className="flex w-full flex-col gap-4 py-4 xl:grid xl:grid-cols-[minmax(0,1fr)_18rem] xl:items-start xl:gap-6">
       <main id="main" className="mx-auto flex w-full max-w-2xl min-w-0 flex-col gap-4">
         <h1 className="text-heading text-text-primary">Profile visitors</h1>
+        <MarkVisitsSeen fresh={fresh} />
         {tracks.frozen ? (
           <ClayCard>
             <EmptyState

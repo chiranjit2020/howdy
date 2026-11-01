@@ -11,7 +11,6 @@ import {
   HomeIcon,
   TracksIcon,
   UsersIcon,
-  PencilIcon,
   WhisperIcon,
 } from '@/ui/icons';
 import {
@@ -583,11 +582,7 @@ export function KitShowcase({ initialTheme }: { initialTheme: Theme | undefined 
         </p>
       </Section>
 
-      <BottomNavigation
-        label="Primary"
-        items={nav}
-        action={{ href: '#fence', label: 'Nail', description: 'Write a post', icon: <PencilIcon /> }}
-      />
+      <BottomNavigation label="Primary" items={nav} />
     </main>
   );
 }

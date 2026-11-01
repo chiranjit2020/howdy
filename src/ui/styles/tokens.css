@@ -481,8 +481,28 @@
 }
 
 /*
- * The phone tab bar's main action (Nail) and the welcome page's join button: a flat accent fill with a hairline ring
- * that lifts it off the bar, and one subtle shadow. No gloss, no bulge.
+ * Frosted ("acrylic") surface for the phone tab bar: the surface colour at 80 % with content blurred behind it. Solid
+ * where blur is not supported, and for people who ask for less transparency. 80 % keeps labels readable over any post.
+ */
+@utility acrylic {
+  background-color: var(--color-surface);
+
+  @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+    background-color: color-mix(in oklab, var(--color-surface) 80%, transparent);
+    -webkit-backdrop-filter: blur(18px) saturate(1.6);
+    backdrop-filter: blur(18px) saturate(1.6);
+  }
+
+  @media (prefers-reduced-transparency: reduce) {
+    background-color: var(--color-surface);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/*
+ * The welcome page's join button: a flat accent fill with a hairline ring that lifts it off the page, and one subtle
+ * shadow. No gloss, no bulge.
  */
 @utility nav-action-gloss {
   background: var(--color-primary);

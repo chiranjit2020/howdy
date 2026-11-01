@@ -5,22 +5,17 @@ import type { ReactNode } from 'react';
 import { cn } from '../cn';
 
 export interface NavItem {
-  href: string;
+  /** Where the item goes. A phone tab can instead open something (`onSelect`, e.g. a sheet). */
+  href?: string;
+  onSelect?: () => void;
+  /** For an item that opens a sheet: whether it is open now (aria-expanded). */
+  expanded?: boolean;
   label: string;
   icon?: ReactNode;
   current?: boolean;
-  /** Small dot for unread activity (announced as text, not colour alone). */
+  /** Something new: what screen readers hear ("3 unread"). On a phone tab, `count` is the number shown. */
   badge?: string;
-}
-
-/** The raised button in the middle of the phone tab bar (the app's main action). */
-export interface NavAction {
-  href: string;
-  /** Its short name (not shown: the icon fills the circle); screen readers hear it when there is no description. */
-  label: string;
-  /** What screen readers hear, when the short word needs more (e.g. "Nail a card to your Fence"). */
-  description?: string;
-  icon: ReactNode;
+  count?: string;
 }
 
 /** Side/top navigation. `current` maps to aria-current="page". */
@@ -29,7 +24,7 @@ export function Navigation({
   label,
   className,
 }: {
-  items: NavItem[];
+  items: (NavItem & { href: string })[];
   label: string;
   className?: string;
 }) {
@@ -66,148 +61,126 @@ export function Navigation({
 }
 
 /**
- * A tab's icon. Lives inside the <Link> so it can see that link's navigation: on a slow network, before the next page's
- * outline has arrived, the tapped icon dims and breathes so the tap never feels ignored (useLinkStatus; usually the
- * outline is already prefetched and this never shows).
+ * A tab's icon, in a pill that turns sunflower on the current tab (the sidebar's mark). Lives inside the <Link> so it can
+ * see that link's navigation: on a slow network, before the next page's outline has arrived, the tapped icon dims and
+ * breathes so the tap never feels ignored (useLinkStatus; usually the outline is already prefetched and this never shows).
  */
-function TabIcon({ current, badge, children }: { current: boolean; badge: boolean; children: ReactNode }) {
+function TabIcon({
+  current,
+  count,
+  dot,
+  children,
+}: {
+  current: boolean;
+  count?: string;
+  dot: boolean;
+  children: ReactNode;
+}) {
   const { pending } = useLinkStatus();
+  return (
+    <TabMark current={current} count={count} dot={dot} pending={pending}>
+      {children}
+    </TabMark>
+  );
+}
+
+function TabMark({
+  current,
+  count,
+  dot,
+  pending,
+  children,
+}: {
+  current: boolean;
+  count?: string | undefined;
+  dot: boolean;
+  pending?: boolean;
+  children: ReactNode;
+}) {
   return (
     <span
       aria-hidden="true"
       className={cn(
-        'relative flex size-8 items-center justify-center text-title transition-[transform,opacity,color] duration-150 group-active:scale-85',
-        current ? 'animate-nav-pop text-text-primary' : 'text-text-muted group-hover:text-text-secondary',
+        'relative flex h-8 w-14 items-center justify-center rounded-pill text-title transition-[transform,background-color,color] duration-150 group-active:scale-90',
+        current
+          ? 'animate-nav-pop bg-primary text-on-primary'
+          : 'text-text-secondary group-hover:text-text-primary',
         pending && 'animate-shimmer opacity-60',
       )}
     >
       {children}
-      {badge && (
-        // "Something new" is sunflower everywhere. With no number in it, the dot gets a dark edge: yellow alone is too
-        // faint against the white bar.
-        <span className="absolute -top-0.5 -right-0.5 size-2.5 animate-yo-pop rounded-full border border-on-highlight bg-highlight ring-2 ring-surface" />
+      {count ? (
+        // A notification count: the theme red, so it stands out from the sunflower of the current tab.
+        <span className="absolute -top-1 right-1.5 grid h-4 min-w-4 animate-yo-pop place-items-center rounded-pill bg-danger px-1 text-[0.625rem] leading-none font-bold text-on-danger ring-2 ring-surface">
+          {count}
+        </span>
+      ) : (
+        dot && (
+          <span className="absolute top-0 right-2.5 size-2.5 animate-yo-pop rounded-full bg-danger ring-2 ring-surface" />
+        )
       )}
     </span>
   );
 }
 
+const TAB =
+  'group flex h-full w-full flex-col items-center justify-center gap-0.5 text-tab no-underline transition-colors';
+
 function Tab({ it }: { it: NavItem }) {
+  const look = cn(TAB, it.current ? 'font-bold text-text-primary' : 'font-semibold text-text-secondary');
+  const label = (
+    <>
+      <span className="max-w-full truncate tracking-tight">{it.label}</span>
+      {it.badge && <span className="sr-only"> ({it.badge})</span>}
+    </>
+  );
   return (
-    // min-w-0: tabs share a 320 px screen.
+    // min-w-0: five tabs share a 320 px screen.
     <li className="min-w-0 flex-1">
-      <Link
-        href={it.href}
-        aria-current={it.current ? 'page' : undefined}
-        className={cn(
-          'group flex min-h-16 flex-col items-center justify-center gap-0.5 text-tab no-underline transition-colors',
-          it.current ? 'font-bold text-text-primary' : 'font-semibold text-text-secondary',
-        )}
-      >
-        <TabIcon current={Boolean(it.current)} badge={Boolean(it.badge)}>
-          {it.icon}
-        </TabIcon>
-        <span className="max-w-full truncate tracking-tight">{it.label}</span>
-        {/* The current tab's mark: a small coral dot that pops in under the label. */}
-        <span
-          aria-hidden="true"
-          className={cn('size-1 rounded-full bg-accent', it.current ? 'animate-yo-pop' : 'invisible')}
-        />
-        {it.badge && <span className="sr-only"> ({it.badge})</span>}
-      </Link>
+      {it.href ? (
+        <Link href={it.href} aria-current={it.current ? 'page' : undefined} className={look}>
+          <TabIcon current={Boolean(it.current)} count={it.count} dot={Boolean(it.badge)}>
+            {it.icon}
+          </TabIcon>
+          {label}
+        </Link>
+      ) : (
+        <button
+          type="button"
+          onClick={it.onSelect}
+          aria-haspopup="dialog"
+          aria-expanded={it.expanded ?? false}
+          className={look}
+        >
+          <TabMark current={Boolean(it.current)} count={it.count} dot={Boolean(it.badge)}>
+            {it.icon}
+          </TabMark>
+          {label}
+        </button>
+      )}
     </li>
   );
 }
 
 /**
- * The raised circle in the notch: a glossy, softly embossed button filled by its icon. The label is not shown — the
- * picture says it — but it (or the longer description) is the link's name.
+ * Mobile tab bar, hidden from md up (use <Navigation> there): a frosted ("acrylic") bar across the bottom edge, with a
+ * hairline on top and content scrolling softly blurred behind it; it reaches down over the phone's home-bar area. Where
+ * blur is not supported, or the person asks for less transparency, it is a plain solid bar. Full width, so five tabs
+ * each get a fifth of the screen. Each tab is an icon in a pill (sunflower on the current tab, with a small hop) over a
+ * short label; a pressed icon squishes. A tab is a link, or a button that opens a sheet. Reduced motion turns the
+ * movement into plain state changes.
  */
-function ActionButton({ action }: { action: NavAction }) {
-  return (
-    <Link
-      href={action.href}
-      aria-label={action.description ?? action.label}
-      className="group nav-action-gloss absolute -top-8 left-1/2 grid size-16 -translate-x-1/2 place-items-center rounded-full text-on-primary no-underline transition-[transform,box-shadow] duration-150"
-    >
-      <ActionIcon>{action.icon}</ActionIcon>
-    </Link>
-  );
-}
-
-function ActionIcon({ children }: { children: ReactNode }) {
-  const { pending } = useLinkStatus();
-  return (
-    <span
-      aria-hidden="true"
-      className={cn(
-        'flex size-full items-center justify-center overflow-hidden rounded-full transition-transform duration-150 group-active:scale-95 [&_img]:size-full',
-        pending && 'animate-shimmer',
-      )}
-    >
-      {children}
-    </span>
-  );
-}
-
-/*
- * The curved cut-out the action circle sits in: flat at both ends (meeting the two halves of the bar), dipping into a
- * round bowl a little wider than the circle. Drawn in a 112 × 64 box, the same height as the bar.
- */
-const NOTCH = 'M0 0C12 0 16 2 20 10C27 26 38 38 56 38C74 38 85 26 92 10C96 2 100 0 112 0V64H0Z';
-
-/**
- * Mobile tab bar, hidden from md up (use <Navigation> there). Attached to the bottom edge with rounded top corners.
- * With an `action`, the tabs split into two halves around a curved notch holding a raised circle for the app's main
- * action. The current tab's icon gives a small hop and a coral dot pops in under its label; a pressed icon squishes.
- * Tabs with unread activity carry a dot. Reduced motion turns all of it into plain state changes.
- */
-export function BottomNavigation({
-  items,
-  label,
-  action,
-}: {
-  items: NavItem[];
-  label: string;
-  action?: NavAction;
-}) {
-  const half = Math.ceil(items.length / 2);
-  const left = action ? items.slice(0, half) : items;
-  const right = action ? items.slice(half) : [];
+export function BottomNavigation({ items, label }: { items: NavItem[]; label: string }) {
   return (
     <nav
       aria-label={label}
-      // One soft shadow for the whole shape (drop-shadow follows the notch; a box-shadow would not).
-      className="fixed inset-x-0 bottom-0 z-40 drop-shadow-[0_-4px_14px_rgb(43_45_66/0.10)] md:hidden"
+      className="acrylic fixed inset-x-0 bottom-0 z-40 border-t border-border/70 pb-[env(safe-area-inset-bottom)] md:hidden"
     >
-      <div className="flex">
-        <ul className={cn('flex flex-1 rounded-tl-3xl bg-surface pl-2', !action && 'rounded-tr-3xl pr-2')}>
-          {left.map((it) => (
-            <Tab key={it.href} it={it} />
-          ))}
-        </ul>
-        {action && (
-          <>
-            <div className="relative -mx-px w-28 shrink-0">
-              <svg
-                aria-hidden="true"
-                viewBox="0 0 112 64"
-                className="absolute inset-0 size-full fill-surface"
-                preserveAspectRatio="none"
-              >
-                <path d={NOTCH} />
-              </svg>
-              <ActionButton action={action} />
-            </div>
-            <ul className="flex flex-1 rounded-tr-3xl bg-surface pr-2">
-              {right.map((it) => (
-                <Tab key={it.href} it={it} />
-              ))}
-            </ul>
-          </>
-        )}
-      </div>
-      {/* The phone's own home-bar area, in the bar's colour. */}
-      <div className="h-[env(safe-area-inset-bottom)] bg-surface" />
+      <ul className="flex h-16 items-stretch px-1">
+        {items.map((it) => (
+          <Tab key={it.href ?? it.label} it={it} />
+        ))}
+      </ul>
     </nav>
   );
 }

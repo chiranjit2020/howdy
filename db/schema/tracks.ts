@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { check, date, index, pgTable, primaryKey, uuid } from 'drizzle-orm/pg-core';
+import { boolean, check, date, index, pgTable, primaryKey, uuid } from 'drizzle-orm/pg-core';
 import { users } from './auth';
 
 /**
@@ -7,7 +7,9 @@ import { users } from './auth';
  *  - ONE row per (owner, visitor), holding only the UTC DATE of the latest visit — never a time of day, never a count, never an
  *    address, device or place;
  *  - written at most once per pair per day (the upsert changes nothing when the date is the same);
- *  - gone after 7 days (the retention job), and deleted with either person.
+ *  - gone after 7 days (the retention job), and deleted with either person;
+ *  - `unseen` until the owner next opens their visitors (set again only by a visit on a later day), so a "new" mark
+ *    can clear without keeping any time of day.
  * Who may SEE the visitor is not stored: it is decided when the list is read, from the current relationships.
  */
 export const tracks = pgTable(
@@ -20,6 +22,7 @@ export const tracks = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
     seenOn: date('seen_on', { mode: 'string' }).notNull(),
+    unseen: boolean('unseen').notNull().default(false),
   },
   (t) => [
     primaryKey({ columns: [t.ownerId, t.visitorId] }),

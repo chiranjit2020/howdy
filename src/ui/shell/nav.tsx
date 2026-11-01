@@ -1,16 +1,14 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { useState, type ReactNode } from 'react';
-import { postJson } from '../auth/api';
 import { cn } from '../cn';
 import {
   BellIcon,
   GroupIcon,
   HomeIcon,
-  MoreIcon,
-  PencilIcon,
+  PlusIcon,
   SettingsIcon,
   ShieldIcon,
   TracksIcon,
@@ -18,11 +16,11 @@ import {
   UsersIcon,
   WhisperIcon,
 } from '../icons';
-import { Dropdown } from '../primitives/dropdown';
 import { Avatar } from '../primitives/avatar';
 import { BottomNavigation, type NavItem } from '../primitives/navigation';
 import type { ShellMe } from './app-shell';
-import { FreeToTalkDialog, freeToTalkSummary, type FreeToTalkState } from './free-to-talk-menu';
+import type { FreeToTalkState } from './free-to-talk-menu';
+import { CreateSheet, YouSheet } from './phone-sheets';
 
 export type ShellNavKey =
   | 'home'
@@ -120,130 +118,86 @@ export function ShellSidebarNav({ items }: { items: ShellNavItem[] }) {
 }
 
 /**
- * The phone tabs, in order: two each side of the raised "Nail" button, your own picture last. Chimes is left out (the
- * bell in the top bar already has it, with its count) and so is Tracks (it has a card on your own Porch); the sidebar
- * still lists everything.
+ * The phone tab bar, in order: Home, Friends, ＋ (Create), Messages, and your photo (You). Notifications are the bell in
+ * the top bar, with their count; everything else (Visitors, Groups, Settings, staff pages, Free to talk, Devices, Sign
+ * out) is in the You sheet. The sidebar still lists everything on wide screens.
  */
-const PHONE_TABS: ShellNavKey[] = ['home', 'posse', 'whispers', 'ranch'];
+const PHONE_TABS = ['home', 'posse', 'whispers'] as const;
+/** In the You sheet: every page that is neither a tab nor the bell, nor your own profile (the sheet's first row). */
+const IN_TABS: ShellNavKey[] = [...PHONE_TABS, 'chimes', 'ranch'];
 
-/**
- * Phones only (hidden from `md` up, where the sidebar lists everything): a "More" menu in the top bar for every page
- * that is neither a tab nor the bell — Tracks, Workshop, Town Halls, Moderation for staff — then what the account menu
- * holds on wide screens: Time Capsules, Devices and Sign out. Without it those pages had no way in on a phone.
- */
-export function ShellMoreMenu({
+/** The phone form of the navigation: a frosted tab bar along the bottom (hidden from `md` up by the primitive itself). */
+export function ShellBottomNav({
   items,
+  me,
   freeToTalk,
 }: {
   items: ShellNavItem[];
-  /** Phones reach Free to talk here (wide screens have the pill in the top bar). */
+  me: ShellMe;
+  /** Phones reach Free to talk in the You sheet (wide screens have the pill in the top bar). */
   freeToTalk?: FreeToTalkState | undefined;
 }) {
-  const router = useRouter();
-  const [talkOpen, setTalkOpen] = useState(false);
-  const more = items.filter((it) => !PHONE_TABS.includes(it.key) && it.key !== 'chimes');
-  if (more.length === 0) return null;
-  const freeFriends = freeToTalk?.lit.length ?? 0;
-  const waiting = more.reduce((n, it) => n + (it.badge ?? 0), 0) + freeFriends;
-  const talk = freeToTalk ? freeToTalkSummary(freeToTalk) : null;
-  return (
-    <div className="md:hidden">
-      {freeToTalk && (
-        <FreeToTalkDialog state={freeToTalk} open={talkOpen} onClose={() => setTalkOpen(false)} />
-      )}
-      <Dropdown
-        label="More"
-        align="end"
-        items={[
-          ...(talk
-            ? [
-                {
-                  id: 'free-to-talk',
-                  label: freeFriends > 0 ? `${talk.label} (${badgeText(freeFriends)} free now)` : talk.label,
-                  onSelect: () => setTalkOpen(true),
-                },
-              ]
-            : []),
-          ...more.map((it) => ({
-            id: it.key,
-            label: it.badge ? `${it.label} (${badgeText(it.badge)} new)` : it.label,
-            onSelect: () => router.push(it.href),
-          })),
-          // The account menu's, on wide screens: Time Capsules is a now-and-then page, not one for the sidebar.
-          { id: 'capsules', label: 'Time Capsules', onSelect: () => router.push('/capsules') },
-          // Where people look for them on a phone. Devices (and "Sign out everywhere", which asks first) are in Settings.
-          { id: 'devices', label: 'Devices', onSelect: () => router.push('/settings/account#devices') },
-          {
-            id: 'sign-out',
-            label: 'Sign out',
-            onSelect: async () => {
-              await postJson('/api/auth/logout', {});
-              router.push('/gate');
-              router.refresh();
-            },
-          },
-        ]}
-        trigger={(props) => (
-          <button
-            type="button"
-            {...props}
-            aria-label={waiting > 0 ? `More pages, ${waiting} new` : 'More pages'}
-            className="relative grid size-11 place-items-center rounded-pill pointer-fine:size-9 border border-border bg-surface text-heading text-text-primary shadow-clay-sm"
-          >
-            <MoreIcon className="size-6" />
-            {waiting > 0 && (
-              <span aria-hidden="true" className="absolute -top-1 -right-1 size-3 rounded-pill bg-accent" />
-            )}
-          </button>
-        )}
-      />
-    </div>
-  );
-}
-
-/** The phone form of the same navigation: a fixed tab bar (hidden from `md` up by the primitive itself). */
-export function ShellBottomNav({ items, me }: { items: ShellNavItem[]; me: ShellMe }) {
   const pathname = usePathname();
+  const [sheet, setSheet] = useState<'create' | 'you' | undefined>();
   const byKey = new Map(items.map((it) => [it.key, it]));
-  const tabs: NavItem[] = PHONE_TABS.flatMap((key) => {
+  const tab = (key: (typeof PHONE_TABS)[number]): NavItem[] => {
     const it = byKey.get(key);
     if (!it) return [];
-    const current = isCurrent(pathname, it.href);
     return [
       {
         href: it.href,
-        // Your own picture stands for your Porch, like a profile tab; "My Porch" would not fit a fifth of 320 px.
-        label: key === 'ranch' ? 'Profile' : it.label,
-        icon:
-          key === 'ranch' ? (
-            <Avatar
-              name={me.displayName}
-              src={me.portraitUrl ?? undefined}
-              tint={me.portraitTint}
-              size="sm"
-              className={cn(
-                'rounded-full',
-                current && 'ring-2 ring-accent ring-offset-2 ring-offset-surface',
-              )}
-            />
-          ) : (
-            ICON[key]
-          ),
-        current,
-        ...(it.badge ? { badge: `${badgeText(it.badge)} ${it.badgeSays ?? 'unread'}` } : {}),
+        label: it.label,
+        icon: ICON[key],
+        current: isCurrent(pathname, it.href),
+        ...(it.badge
+          ? { badge: `${badgeText(it.badge)} ${it.badgeSays ?? 'unread'}`, count: badgeText(it.badge) }
+          : {}),
       },
     ];
-  });
+  };
+  const rest = items.filter((it) => !IN_TABS.includes(it.key));
+  // Something new behind your photo: a waiting count on a page in the sheet, or friends free to talk.
+  const waiting = rest.reduce((n, it) => n + (it.badge ?? 0), 0) + (freeToTalk?.lit.length ?? 0);
+  const onYourPages =
+    isCurrent(pathname, `/profile/${me.handle}`) || rest.some((it) => isCurrent(pathname, it.href));
+  const tabs: NavItem[] = [
+    ...tab('home'),
+    ...tab('posse'),
+    {
+      label: 'Create',
+      icon: <PlusIcon />,
+      onSelect: () => setSheet('create'),
+      expanded: sheet === 'create',
+    },
+    ...tab('whispers'),
+    {
+      label: 'You',
+      icon: (
+        <Avatar name={me.displayName} src={me.portraitUrl ?? undefined} tint={me.portraitTint} size="sm" />
+      ),
+      onSelect: () => setSheet('you'),
+      expanded: sheet === 'you',
+      current: onYourPages,
+      ...(waiting > 0 ? { badge: `${badgeText(waiting)} new` } : {}),
+    },
+  ];
   return (
-    <BottomNavigation
-      items={tabs}
-      label="Primary"
-      action={{
-        href: `/profile/${me.handle}?nail=1`,
-        label: 'Nail',
-        description: 'Write a post on your wall',
-        icon: <PencilIcon className="size-7 text-on-accent" />,
-      }}
-    />
+    <>
+      <BottomNavigation items={tabs} label="Primary" />
+      <CreateSheet open={sheet === 'create'} onClose={() => setSheet(undefined)} />
+      <YouSheet
+        open={sheet === 'you'}
+        onClose={() => setSheet(undefined)}
+        me={me}
+        freeToTalk={freeToTalk}
+        links={rest.map((it) => ({
+          href: it.href,
+          label: it.label,
+          icon: ICON[it.key],
+          badge: it.badge,
+          badgeSays: it.badgeSays,
+        }))}
+      />
+    </>
   );
 }

@@ -1,0 +1,1 @@
+ALTER TABLE "tracks" ADD COLUMN "unseen" boolean DEFAULT false NOT NULL;

@@ -129,7 +129,7 @@ describe('AppShell', () => {
         unread={3}
         unreadWhispers={2}
         friendRequests={1}
-        visitsToday={4}
+        newVisits={4}
       >
         <main>page</main>
       </AppShell>,
@@ -145,7 +145,7 @@ describe('AppShell', () => {
     // Each count is text (not only a coloured pill) that says what it counts, and the link still starts with its label.
     expect(nav.getByRole('link', { name: /^Messages/ })).toHaveTextContent(/2\s*unread/);
     expect(nav.getByRole('link', { name: /^Friends/ })).toHaveTextContent(/1\s*waiting/);
-    expect(nav.getByRole('link', { name: /^Visitors/ })).toHaveTextContent(/4\s*today/);
+    expect(nav.getByRole('link', { name: /^Visitors/ })).toHaveTextContent(/4\s*new/);
     // Notifications have the bell instead of a menu item.
     expect(nav.queryByRole('link', { name: /^Notifications/ })).not.toBeInTheDocument();
     // The top bar: a bell that says how many are unread, and the way to your own Ranch.
@@ -168,12 +168,9 @@ describe('AppShell', () => {
     expect(panel.getByRole('button', { name: 'Sign out' })).toBeInTheDocument();
     // The device list and "Sign out everywhere" live in Settings, not in the menu.
     expect(panel.queryByRole('button', { name: 'Sign out everywhere…' })).not.toBeInTheDocument();
-    // Phones: the pages that are not tabs are behind "More" (CSS hides it from md up), which says when one has news
-    // (Visitors is in there, with today's 4).
-    expect(screen.getByRole('button', { name: 'More pages, 4 new' })).toHaveAttribute(
-      'aria-haspopup',
-      'menu',
-    );
+    // Phones: the pages that are not tabs are in the You sheet, opened from your photo in the tab bar (CSS hides the bar
+    // from md up), which says when one has news (Visitors is in there, with 4 new).
+    expect(screen.getByRole('button', { name: /You.*4 new/ })).toHaveAttribute('aria-haspopup', 'dialog');
   });
   it('signed out: only a way in, and no handle-based links', () => {
     render(

@@ -26,10 +26,10 @@ test.afterAll(async () => {
   await db.end();
 });
 
-/** Phones reach Free to talk from the top bar's More menu; it opens as a dialog. */
+/** Phones reach Free to talk from the tab bar's You sheet; it opens as a dialog. */
 async function openFreeToTalk(page: Page) {
-  await page.getByRole('button', { name: /^More pages/ }).tap();
-  await page.getByRole('menuitem', { name: /^Free/ }).tap();
+  await page.getByRole('navigation', { name: 'Primary' }).getByRole('button', { name: /^You/ }).tap();
+  await page.getByRole('dialog', { name: 'You' }).getByRole('button', { name: /^Free/ }).tap();
   return page.getByRole('dialog', { name: 'Free to talk' });
 }
 
@@ -89,10 +89,10 @@ test.describe('Free to talk (production build, real CSP)', () => {
     await expect(card.getByText(/On until \d{1,2}:\d{2} [ap]m · all friends/)).toBeVisible();
     await expect(card.getByText(note)).toBeVisible();
 
-    // The Pal sees it in the top bar, with a Message button.
+    // The Pal sees it from the tab bar (a "new" mark on their photo), with a Message button.
     await pal.page.goto('/home');
     await pageReady(pal.page);
-    await expect(pal.page.getByRole('button', { name: 'More pages, 1 new' })).toBeVisible();
+    await expect(pal.page.getByRole('button', { name: /You.*1 new/ })).toBeVisible();
     const lit = (await openFreeToTalk(pal.page)).getByRole('list', { name: 'Friends free to talk' });
     await expect(lit.getByRole('link', { name: owner.handle, exact: true })).toBeVisible();
     await expect(lit.getByText(/until \d{1,2}:\d{2} [ap]m/)).toBeVisible();

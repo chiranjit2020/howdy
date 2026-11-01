@@ -67,7 +67,7 @@ Your settings decide most of it.
 
 Your visitor list tells you who has recently stopped by your profile. They are built to be vague on purpose.
 
-- **What is stored:** only the two people and the date of the latest visit. No time of day, no count, no device and no location.
+- **What is stored:** only the two people, the date of the latest visit, and whether you have looked at your visitors since (so a "new" mark can clear). No time of day, no count, no device and no location.
 - **Who is named:** you see the names of visitors who are your friends. Everyone else is only counted, and muted or blocked people are not even counted. Times are shown only as Today, Yesterday or This week.
 - **Private browsing:** turn it on and your visits are not recorded at all. While it is on, your own visitor list is paused too. Nobody else can see whether you use it.
 - **Nothing for signed-out visitors,** blocked people, or suspended accounts.

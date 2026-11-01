@@ -8,7 +8,7 @@ import { buttonClasses } from '../primitives/button';
 import { AccountMenu } from './account-menu';
 import { FreeToTalkPill, type FreeToTalkState } from './free-to-talk-menu';
 import { PeopleSearch } from './people-search';
-import { ShellBottomNav, ShellMoreMenu, ShellSidebarNav, type ShellNavItem } from './nav';
+import { ShellBottomNav, ShellSidebarNav, type ShellNavItem } from './nav';
 import { FooterGate } from './footer-gate';
 import { SiteFooter } from './site-footer';
 
@@ -33,7 +33,7 @@ export function AppShell({
   unread = 0,
   unreadWhispers = 0,
   friendRequests = 0,
-  visitsToday = 0,
+  newVisits = 0,
   townHallInvites = 0,
   freeToTalk,
   moderator = false,
@@ -50,8 +50,8 @@ export function AppShell({
   unreadWhispers?: number;
   /** Friend requests waiting for an answer. */
   friendRequests?: number;
-  /** People who visited your profile today. */
-  visitsToday?: number;
+  /** Visits to your profile this week that you have not looked at yet (they clear when you open Visitors). */
+  newVisits?: number;
   townHallInvites?: number;
   /** Adds the sidebar-only Moderation link. Only a hint: the page and API check the role themselves. */
   moderator?: boolean;
@@ -69,10 +69,10 @@ export function AppShell({
         { key: 'home', href: '/home', label: 'Home' },
         { key: 'ranch', href: `/profile/${me.handle}`, label: 'My profile' },
         { key: 'posse', href: '/friends', label: 'Friends', badge: friendRequests, badgeSays: 'waiting' },
-        { key: 'tracks', href: '/visitors', label: 'Visitors', badge: visitsToday, badgeSays: 'today' },
+        { key: 'tracks', href: '/visitors', label: 'Visitors', badge: newVisits, badgeSays: 'new' },
         { key: 'whispers', href: '/messages', label: 'Messages', badge: unreadWhispers },
         // Notifications have the bell in the top bar, with their count, so no menu item of their own.
-        // Sidebar-only on wide screens; on a phone these are in the top bar's "More" menu (ShellMoreMenu).
+        // Sidebar-only on wide screens; on a phone these are in the tab bar's You sheet.
         { key: 'town-halls', href: '/groups', label: 'Groups', badge: townHallInvites },
         ...(moderator ? [{ key: 'moderation', href: '/moderation', label: 'Moderation' } as const] : []),
         ...(admin ? [{ key: 'security', href: '/admin/security', label: 'Security Center' } as const] : []),
@@ -134,7 +134,6 @@ export function AppShell({
                 {/* Your account (profile, Settings, devices, sign out). Phones have your picture in the tab bar
                   instead, and devices in Settings, so this shows from md up only. */}
                 <AccountMenu me={me} />
-                <ShellMoreMenu items={items} freeToTalk={freeToTalk} />
               </div>
             ) : (
               // One word each: the old second line ("Sign in", "Create account") only repeated the first.
@@ -171,7 +170,7 @@ export function AppShell({
           )}
         </div>
       </div>
-      {me && <ShellBottomNav items={items} me={me} />}
+      {me && <ShellBottomNav items={items} me={me} freeToTalk={freeToTalk} />}
     </div>
   );
 }

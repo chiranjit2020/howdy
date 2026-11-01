@@ -45,9 +45,9 @@ export async function recordVisit(viewerId: string, ownerId: string): Promise<vo
   if ((await fenceStanding(ownerId, viewerId)).relationship === 'BLOCKED') return;
   // Same date already recorded = no change at all (the WHERE stops even a no-op write), so a person refreshing all day costs one row.
   await getDb().execute(sql`
-    insert into tracks (owner_id, visitor_id, seen_on)
-    values (${ownerId}, ${viewerId}, ${UTC_TODAY})
-    on conflict (owner_id, visitor_id) do update set seen_on = excluded.seen_on
+    insert into tracks (owner_id, visitor_id, seen_on, unseen)
+    values (${ownerId}, ${viewerId}, ${UTC_TODAY}, true)
+    on conflict (owner_id, visitor_id) do update set seen_on = excluded.seen_on, unseen = true
     where tracks.seen_on < excluded.seen_on`);
 }
 
@@ -129,21 +129,29 @@ export async function listTracks(userId: string): Promise<TracksView> {
 }
 
 /**
- * How many people visited my profile today, for the count beside Visitors in the menu: the "Today" of `listTracks`, by the
- * same rules (people I muted or blocked, or who blocked me, and inactive accounts are not counted; on Shadow Walk there is
- * nothing to count). It names nobody, so it does not spend the list's rate limit: the menu asks on every page.
+ * How many visitors are new to me: visits this week I have not yet looked at (the menu's count and the "new" dot). Counted
+ * like the list: only people who still exist and are not hidden from me; nothing while I am on Private browsing.
  */
-export async function visitsToday(userId: string): Promise<number> {
+export async function newVisits(userId: string): Promise<number> {
   if (await isShadowWalking(userId)) return 0;
   const rows = await getDb()
     .select({ visitorId: tracks.visitorId })
     .from(tracks)
-    .where(and(eq(tracks.ownerId, userId), eq(tracks.seenOn, UTC_TODAY)))
+    .where(and(eq(tracks.ownerId, userId), eq(tracks.unseen, true), gte(tracks.seenOn, OLDEST)))
     .limit(SCAN);
   const ids = rows.map((r) => r.visitorId);
   if (ids.length === 0) return 0;
   const [cards, hidden] = await Promise.all([getCards(ids), hiddenAuthors(userId, ids)]);
   return ids.filter((id) => cards.has(id) && !hidden.has(id)).length;
+}
+
+/** I have looked at my visitors: nothing is new any more. Only ever my own rows. */
+export async function markVisitsSeen(userId: string): Promise<void> {
+  await enforceRateLimit(`tracks:read:${userId}`, RATE.read);
+  await getDb()
+    .update(tracks)
+    .set({ unseen: false })
+    .where(and(eq(tracks.ownerId, userId), eq(tracks.unseen, true)));
 }
 
 // ─── retention ───────────────────────────────────────────────────────────────────────────────────────────────────────

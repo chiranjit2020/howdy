@@ -41,36 +41,49 @@ async function person(browser: Browser, tag: string, opts: Parameters<typeof new
 
 const PHONE = { hasTouch: true, isMobile: true, viewport: { width: 320, height: 700 } };
 
-test('on a 320 px phone, "More" reaches every page that is not a tab — Moderation too, for staff', async ({
+test('on a 320 px phone, the You sheet reaches every page that is not a tab — Moderation too, for staff', async ({
   browser,
 }) => {
   const me = await person(browser, 'navphone', PHONE);
   await makeStaff(db, me.handle);
   const problems = await watchProblems(me.page);
+  const bar = me.page.getByRole('navigation', { name: 'Primary' });
   const pages: [string, RegExp][] = [
     ['Visitors', /\/visitors$/],
-    ['Settings', /\/settings$/],
     ['Groups', /\/groups$/],
-    ['Time Capsules', /\/capsules$/],
     ['Moderation', /\/moderation$/],
+    ['Settings', /\/settings$/],
   ];
   for (const [label, url] of pages) {
     await me.page.goto('/home');
     await pageReady(me.page);
     expect(await horizontalOverflow(me.page)).toBe(0);
-    await me.page.getByRole('button', { name: /^More pages/ }).click();
-    const menu = me.page.getByRole('menu', { name: 'More' });
-    await expect(menu).toBeVisible();
+    await bar.getByRole('button', { name: /^You/ }).click();
+    const sheet = me.page.getByRole('dialog', { name: 'You' });
+    await expect(sheet).toBeVisible();
     if (label === 'Visitors') {
       expect(await axeViolations(me.page)).toEqual([]);
       expect(await smallTargets(me.page)).toEqual([]);
     }
-    await menu.getByRole('menuitem', { name: new RegExp(`^${label}`) }).click();
+    await sheet.getByRole('link', { name: new RegExp(`^${label}`) }).click();
     await expect(me.page).toHaveURL(url);
   }
-  // The menu ends with Sign out: on a phone that is where people look for it.
-  await me.page.getByRole('button', { name: /^More pages/ }).click();
-  await me.page.getByRole('menu', { name: 'More' }).getByRole('menuitem', { name: 'Sign out' }).click();
+  // ＋ opens Create: Time Capsules is one of its three ways to make something.
+  await me.page.goto('/home');
+  await pageReady(me.page);
+  await bar.getByRole('button', { name: 'Create' }).click();
+  const create = me.page.getByRole('dialog', { name: 'Create' });
+  expect(await axeViolations(me.page)).toEqual([]);
+  await create.getByRole('button', { name: /Seal a Time Capsule/ }).click();
+  await expect(me.page).toHaveURL(/\/capsules$/);
+  // "Write a post" opens Home with the cursor in "What's on your mind?".
+  await bar.getByRole('button', { name: 'Create' }).click();
+  await create.getByRole('button', { name: /Write a post/ }).click();
+  await expect(me.page).toHaveURL(/\/home\?nail=/);
+  await expect(me.page.locator('main textarea').first()).toBeFocused();
+  // The sheet ends with Sign out: on a phone that is where people look for it.
+  await bar.getByRole('button', { name: /^You/ }).click();
+  await me.page.getByRole('dialog', { name: 'You' }).getByRole('button', { name: 'Sign out' }).click();
   await expect(me.page).toHaveURL(/\/gate$/);
   await me.page.goto('/home');
   await expect(me.page).toHaveURL(/\/login$/);
@@ -78,11 +91,12 @@ test('on a 320 px phone, "More" reaches every page that is not a tab — Moderat
   await me.ctx.close();
 });
 
-test('on a desktop the sidebar has them, and there is no "More" button', async ({ browser }) => {
+test('on a desktop the sidebar has them, and there is no phone tab bar', async ({ browser }) => {
   const me = await person(browser, 'navdesk', { viewport: { width: 1280, height: 800 } });
   await me.page.goto('/home');
   await pageReady(me.page);
-  await expect(me.page.getByRole('button', { name: /^More pages/ })).toBeHidden();
+  // The phone tab bar (and its Create and You buttons) is hidden on wide screens.
+  await expect(me.page.getByRole('button', { name: 'Create' })).toBeHidden();
   const sidebar = me.page.getByRole('navigation', { name: 'Primary' }).first();
   for (const label of ['Visitors', 'Settings', 'Groups']) {
     await expect(sidebar.getByRole('link', { name: new RegExp(`^${label}`) })).toBeVisible();

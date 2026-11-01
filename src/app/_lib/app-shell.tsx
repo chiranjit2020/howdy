@@ -10,7 +10,7 @@ import { unreadCount } from '@/modules/notifications';
 import { getCards, getOwnRanch } from '@/modules/profiles';
 import { incomingRequesterIds } from '@/modules/relationships';
 import { countMyInvites } from '@/modules/town-halls';
-import { visitsToday } from '@/modules/tracks';
+import { newVisits } from '@/modules/tracks';
 import { unreadThreads } from '@/modules/whispers';
 import { clockOf } from '@/shared/calendar';
 import { portraitUrl } from '@/shared/portrait';
@@ -61,7 +61,7 @@ export async function AppFrame({
       incomingRequesterIds(user.id)
         .then(async (ids) => (await getCards(ids)).size)
         .catch(() => 0),
-      visitsToday(user.id).catch(() => 0),
+      newVisits(user.id).catch(() => 0),
       getOwnRanch(user.id).catch(() => null),
       getPortraitVersion(user.id, { userId: user.id }).catch(() => null),
       // Best-effort like the rest: if the check itself fails, let the person in rather than take every page down.
@@ -95,7 +95,7 @@ export async function AppFrame({
         unread={unread}
         unreadWhispers={unreadWhispers}
         friendRequests={requests}
-        visitsToday={visits}
+        newVisits={visits}
         townHallInvites={invites}
         freeToTalk={freeToTalk}
         moderator={moderator}

@@ -1,9 +1,10 @@
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
-import { bucketOf, purgeOldTracks, recordVisit } from '@/modules/tracks';
+import { POST as markSeen } from '@/app/api/me/tracks/seen/route';
+import { bucketOf, newVisits, purgeOldTracks, recordVisit } from '@/modules/tracks';
 import { flushBackground } from '@/platform/background';
 import { getPool } from '@/platform/db';
 import { subscribe } from '@/platform/events';
-import { freshAuthState, signedInUser, stable, uniqueUser, type TestKit } from '../helpers/auth';
+import { call, freshAuthState, signedInUser, stable, uniqueUser, type TestKit } from '../helpers/auth';
 import { patchRanch, viewRanch } from '../helpers/ranch';
 import { doAct, insertUser, q, userId } from '../helpers/social';
 import { myTracks, names } from '../helpers/tracks';
@@ -61,7 +62,9 @@ describe('what is recorded — and how little', () => {
     await open(owner);
     expect((await visit(v, owner)).status).toBe(200);
     const [row] = await rows();
-    expect(Object.keys(row).sort()).toEqual(['owner_id', 'seen_on', 'visitor_id']);
+    // `unseen` is a yes/no for the owner's "new" mark: still no time of day, no count, nothing about the visitor.
+    expect(Object.keys(row).sort()).toEqual(['owner_id', 'seen_on', 'unseen', 'visitor_id']);
+    expect(row.unseen).toBe(true);
     expect(row.owner_id).toBe(await userId(owner.handle));
     expect(row.visitor_id).toBe(await userId(v.handle));
     // A date column: the database itself cannot hold a time of day for a visit.
@@ -74,7 +77,7 @@ describe('what is recorded — and how little', () => {
     const cols = (
       await q("select column_name from information_schema.columns where table_name = 'tracks'")
     ).rows.map((c) => c.column_name);
-    expect(cols.sort()).toEqual(['owner_id', 'seen_on', 'visitor_id']);
+    expect(cols.sort()).toEqual(['owner_id', 'seen_on', 'unseen', 'visitor_id']);
   });
 
   it('many visits in a day are ONE row, and repeats do not even write to it', async () => {
@@ -300,6 +303,48 @@ describe('who is named — decided when the list is read', () => {
       );
     }
     expect((await myTracks(as(owner))).data.people).toHaveLength(50);
+  });
+});
+
+describe('"new" visitors (the menu count and the dot on your photo)', () => {
+  const seen = (p: P) => call(markSeen, 'POST', '/api/me/tracks/seen', {}, as(p));
+
+  it('a visit is new until I open my visitors; a later visit the same day stays seen; a visit on a later day is new', async () => {
+    const owner = await person('owner');
+    const friend = await person('friend');
+    await open(owner);
+    await posse(owner, friend);
+    const oid = await userId(owner.handle);
+    const fid = await userId(friend.handle);
+    await visit(friend, owner);
+    expect(await newVisits(oid)).toBe(1);
+    expect((await seen(owner)).status).toBe(200);
+    expect(await newVisits(oid)).toBe(0);
+    await visit(friend, owner); // again today: nothing new
+    expect(await newVisits(oid)).toBe(0);
+    await ageTo(oid, fid, 1); // that was yesterday; today they come back
+    await visit(friend, owner);
+    expect(await newVisits(oid)).toBe(1);
+  });
+
+  it('clearing needs a session and only ever clears my own; hidden people and Private browsing count for nothing', async () => {
+    const owner = await person('owner');
+    const other = await person('other');
+    const v = await person('visitor');
+    await open(owner);
+    await open(other);
+    await visit(v, owner);
+    await visit(v, other);
+    expect((await call(markSeen, 'POST', '/api/me/tracks/seen', {}, {})).status).toBe(401);
+    await seen(owner);
+    expect(await newVisits(await userId(owner.handle))).toBe(0);
+    expect(await newVisits(await userId(other.handle))).toBe(1);
+    // Muted: not shown, not counted, not new.
+    await doAct(v.handle, 'mute', as(other));
+    expect(await newVisits(await userId(other.handle))).toBe(0);
+    await doAct(v.handle, 'unmute', as(other));
+    await patchRanch({ shadowWalk: true }, as(other));
+    expect(await newVisits(await userId(other.handle))).toBe(0);
   });
 });
 
