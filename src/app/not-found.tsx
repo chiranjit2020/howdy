@@ -1,31 +1,29 @@
 import Link from 'next/link';
-import { buttonClasses, ClayCard, EmptyState } from '@/ui/primitives';
+import { GoMilestone } from 'react-icons/go';
+import { StatusPage } from '@/ui/howdy/status-page';
+import { buttonClasses } from '@/ui/primitives';
 
-export const metadata = { title: 'Not found' };
+export const metadata = { title: 'Page not found' };
 
 /**
- * Shown for any missing route AND for a Ranch the viewer may not see (those are deliberately identical). It has a
- * <main id="main"> so the skip link and landmark navigation work here too.
+ * Shown for any missing address AND for a profile, message thread or group the viewer may not see (those are deliberately
+ * identical: it never says "this exists but is hidden"). "Go to Home" goes to `/`, which sends signed-in people Home and
+ * everyone else to the welcome page.
  */
 export default function NotFound() {
   return (
-    <main
-      id="main"
-      className="daylight-only mx-auto flex min-h-dvh max-w-md flex-col justify-center px-4 py-10"
+    <StatusPage
+      Icon={GoMilestone}
+      title="Page not found"
+      actions={
+        <Link href="/" className={buttonClasses()}>
+          Go to Home
+        </Link>
+      }
     >
-      <ClayCard>
-        <EmptyState
-          as="h1"
-          icon="🌵"
-          title="Nothing out here"
-          description="We could not find that page."
-          action={
-            <Link href="/" className={buttonClasses()}>
-              Back to the Gate
-            </Link>
-          }
-        />
-      </ClayCard>
-    </main>
+      <p>
+        This page doesn’t exist, or it isn’t shared with you. Check the address, or start again from Home.
+      </p>
+    </StatusPage>
   );
 }

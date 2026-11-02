@@ -12,7 +12,7 @@ browsers never offer to install Howdy. Both need a service worker, which Howdy d
 ## Decisions
 
 1. **A minimal service worker** (`public/sw.js`): shows pushes and opens the right page on tap. It caches nothing and does not
-   handle `fetch`, so it can never serve a stale page or one person's page to another. Tap targets are forced to same-site
+   handle `fetch`, so it can never serve a stale page or one person's page to another. (Amended by ADR-060: it now keeps the offline page, and only that.) Tap targets are forced to same-site
    paths. CSP gains `worker-src 'self'` (under `'strict-dynamic'`, `script-src` ignores `'self'`) and `manifest-src 'self'`.
 2. **Installing:** the manifest gains `id`, `scope` and a maskable icon. `PwaBoot` (in every page's shell) registers the worker
    and keeps Chrome's `beforeinstallprompt` for our own **Install Howdy** button (Chimes page, "Howdy on your phone"). Where no

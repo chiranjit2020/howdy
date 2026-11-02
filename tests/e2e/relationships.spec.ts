@@ -88,7 +88,7 @@ test.describe('Posse, Block and Flag trouble (production build, real CSP)', () =
 
     // A stranger (Carol) still gets the ordinary 404.
     expect((await c.page.goto(`/profile/${a.handle}`))?.status()).toBe(404);
-    await expect(c.page.getByRole('heading', { name: 'Nothing out here' })).toBeVisible();
+    await expect(c.page.getByRole('heading', { name: 'Page not found' })).toBeVisible();
 
     // Bob marks Alice close (private) and then leaves the Posse; the Ranch closes to him again.
     await b.page.getByRole('switch', { name: 'Close friend' }).click();
@@ -102,7 +102,7 @@ test.describe('Posse, Block and Flag trouble (production build, real CSP)', () =
       .getByRole('alertdialog', { name: 'Stop being friends?' })
       .getByRole('button', { name: 'Stop being friends' })
       .click();
-    await expect(b.page.getByRole('heading', { name: 'Nothing out here' })).toBeVisible();
+    await expect(b.page.getByRole('heading', { name: 'Page not found' })).toBeVisible();
 
     expect(problems).toEqual([]);
     await Promise.all([a.ctx.close(), b.ctx.close(), c.ctx.close()]);

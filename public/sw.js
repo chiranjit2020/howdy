@@ -1,9 +1,59 @@
 /*
- * Howdy's service worker (ADR-022). Two jobs only: show a Chime that arrives while Howdy is closed, and open the right page
- * when it is tapped. It caches nothing and never touches requests, so it cannot serve a stale or someone else's page.
+ * Howdy's service worker (ADR-022, ADR-060). Three jobs only: show a notification that arrives while Howdy is closed, open
+ * the right page when it is tapped, and show the offline page when a page cannot be reached at all.
+ *
+ * The only thing it keeps is that offline page (plain HTML, its stylesheet and two brand images: nothing personal). It
+ * never stores a response from the site, and it only steps in for page loads that fail with no connection; every other
+ * request (and every page that does answer, even with an error) goes to the network untouched. So it still cannot serve a
+ * stale or someone else's page.
  */
-self.addEventListener('install', () => self.skipWaiting());
-self.addEventListener('activate', (event) => event.waitUntil(self.clients.claim()));
+const OFFLINE_CACHE = 'howdy-offline-v1';
+const OFFLINE_PAGE = '/offline.html';
+const OFFLINE_FILES = [OFFLINE_PAGE, '/offline.css', '/brand/howdy-wordmark.png', '/icons/howdy-h-192.png'];
+
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches
+      .open(OFFLINE_CACHE)
+      .then((cache) => cache.addAll(OFFLINE_FILES))
+      .then(() => self.skipWaiting()),
+  );
+});
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches
+      .keys()
+      .then((keys) => Promise.all(keys.filter((k) => k !== OFFLINE_CACHE).map((k) => caches.delete(k))))
+      // Navigation preload: the browser starts loading the page while this worker wakes up, so having a worker that
+      // watches page loads costs no time.
+      .then(() => self.registration.navigationPreload && self.registration.navigationPreload.enable())
+      .then(() => self.clients.claim()),
+  );
+});
+
+/** The offline page's own files, from the cache when there is no connection (so it can draw itself). */
+function isOfflineFile(url) {
+  return url.origin === self.location.origin && OFFLINE_FILES.includes(url.pathname);
+}
+
+self.addEventListener('fetch', (event) => {
+  const { request } = event;
+  if (request.method !== 'GET') return;
+  if (request.mode === 'navigate') {
+    // fetch() rejects only when there is no answer at all (offline, DNS, connection refused); a 404 or 500 resolves and
+    // is shown as the site sent it.
+    event.respondWith(
+      Promise.resolve(event.preloadResponse)
+        .then((preloaded) => preloaded || fetch(request))
+        .catch(() => caches.match(OFFLINE_PAGE).then((page) => page || Response.error())),
+    );
+    return;
+  }
+  if (isOfflineFile(new URL(request.url))) {
+    event.respondWith(fetch(request).catch(() => caches.match(request).then((r) => r || Response.error())));
+  }
+});
 
 /** Only ever a path on this site: a push can never send someone to another site. */
 function safePath(url) {
