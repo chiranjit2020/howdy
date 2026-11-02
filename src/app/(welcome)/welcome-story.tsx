@@ -42,7 +42,7 @@ const FEATURES: { icon: Icon; name: string; text: string }[] = [
   {
     icon: GoPeople,
     name: 'Friends',
-    text: 'Add people you know, follow people you look up to, and invite with your own link.',
+    text: 'Add people you know, meet friends of your friends, follow people you look up to, and invite with your own link.',
   },
   { icon: GoNote, name: 'Posts', text: 'Write on a friend’s wall, react, reply, and mention with @name.' },
   { icon: GoImage, name: 'Stories', text: 'A photo for your friends or close friends, gone in 12 hours.' },
@@ -335,6 +335,10 @@ export function WelcomeStory({ invite }: { invite?: { code: string; invitedBy: s
                 </li>
               ))}
             </ol>
+            <p className="mt-6 max-w-3xl text-body text-text-secondary">
+              Members help decide what comes next: there is a feedback form inside the app, and we read every
+              message.
+            </p>
           </Section>
         </div>
 
