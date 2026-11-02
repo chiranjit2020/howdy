@@ -9,6 +9,7 @@ import { memoriesToday } from '@/modules/memories';
 import { getOwnRanch, getTeamAnnouncement } from '@/modules/profiles';
 import { listMyRelationships } from '@/modules/relationships';
 import { storyRing } from '@/modules/stories';
+import { palSuggestions } from '@/modules/suggestions';
 import { listThreads } from '@/modules/whispers';
 import { clockOf } from '@/shared/calendar';
 import { portraitUrl } from '@/shared/portrait';
@@ -31,27 +32,30 @@ export default async function HomePage() {
   const user = await requireUser();
   // Independent lookups, asked for together rather than one after another. Everything but your own profile is
   // best-effort: Home never fails because one part could not be read.
-  const [ranch, photo, lists, news, memories, ring, feed, lit, mine, threads, capsules] = await Promise.all([
-    getOwnRanch(user.id),
-    getPortraitVersion(user.id, { userId: user.id }).catch(() => null),
-    // For the announcement below: whether this person has muted the Howdy team.
-    listMyRelationships(user.id).then((r) => withCards(r, user.id)),
-    getTeamAnnouncement().catch(() => null),
-    memoriesToday(user.id).catch(() => null),
-    // Stories (ADR-047).
-    storyRing(user.id).catch(() => []),
-    listFriendsFeed(user.id, { rateKey: user.id }).catch(() => null),
-    // The right panel: friends who switched Free to talk on, and the latest conversations.
-    litPals(user.id).catch(() => []),
-    myLight(user.id).catch(() => null),
-    listThreads(user.id)
-      .then((t) => t.slice(0, 5))
-      .catch(() => null),
-    // Time Capsules coming to me (never their words), with the page's own rules for whose still count.
-    myCapsules(user.id)
-      .then((c) => c.coming)
-      .catch(() => null),
-  ]);
+  const [ranch, photo, lists, news, memories, ring, feed, lit, mine, threads, capsules, suggestions] =
+    await Promise.all([
+      getOwnRanch(user.id),
+      getPortraitVersion(user.id, { userId: user.id }).catch(() => null),
+      // For the announcement below: whether this person has muted the Howdy team.
+      listMyRelationships(user.id).then((r) => withCards(r, user.id)),
+      getTeamAnnouncement().catch(() => null),
+      memoriesToday(user.id).catch(() => null),
+      // Stories (ADR-047).
+      storyRing(user.id).catch(() => []),
+      listFriendsFeed(user.id, { rateKey: user.id }).catch(() => null),
+      // The right panel: friends who switched Free to talk on, and the latest conversations.
+      litPals(user.id).catch(() => []),
+      myLight(user.id).catch(() => null),
+      listThreads(user.id)
+        .then((t) => t.slice(0, 5))
+        .catch(() => null),
+      // Time Capsules coming to me (never their words), with the page's own rules for whose still count.
+      myCapsules(user.id)
+        .then((c) => c.coming)
+        .catch(() => null),
+      // "Friends you may know" (ADR-029, on Home since ADR-061): the panel shows three, the rest wait their turn.
+      palSuggestions(user.id).catch(() => []),
+    ]);
   // One look-up for every photo on the page, whoever it belongs to.
   await attachPortraits(user.id, [
     ...ring.map((r) => r.person),
@@ -59,6 +63,7 @@ export default async function HomePage() {
     ...(feed?.cards.flatMap((c) => [c.author, c.wall, ...c.replies.map((r) => r.author)]) ?? []),
     ...lit.map((l) => l.pal),
     ...(threads ?? []),
+    ...suggestions,
   ]);
   // The Howdy team's current Signal ("what's new"), unless this person has muted the team.
   const announcement = news && !lists.muted.some((m) => m.handle === news.author.handle) ? news : null;
@@ -139,6 +144,7 @@ export default async function HomePage() {
             myLight={mine ? { untilLabel: clockOf(mine.until) } : null}
             memories={today}
             capsules={capsules}
+            suggestions={suggestions}
             news={announcement}
             handle={user.handle}
           />

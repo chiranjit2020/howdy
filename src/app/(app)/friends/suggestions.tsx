@@ -20,13 +20,34 @@ const why = (s: PalSuggestion) => {
 /**
  * "Pals you may know" (ADR-029): Pals of at least two of my Pals. Ask sends an ordinary Pal request; Not now hides them
  * for good. Neither tells them anything beyond what an ordinary ask does. Only rendered when there is someone.
+ *
+ * `show` keeps the card short (Home's panel, the Friends page on a phone): the first few, and the next one moves up when
+ * one is dismissed. Then either `more` links to the full card (Home) or a "Show N more" button opens it in place.
  */
-export function Suggestions({ initial }: { initial: PalSuggestion[] }) {
+export function Suggestions({
+  initial,
+  id = 'suggestions-heading',
+  show,
+  more,
+  className,
+}: {
+  initial: PalSuggestion[];
+  /** The heading's id; a page that renders the card twice (phone and wide layouts) gives each its own. */
+  id?: string;
+  show?: number;
+  more?: { href: string; label: string };
+  /** Classes for a wrapper around the card (e.g. which screen sizes show it); no wrapper without. Nothing at all when
+   *  there is nobody to suggest, so no empty box takes a gap. */
+  className?: string;
+}) {
   const [list, setList] = useState(initial);
   const [asked, setAsked] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState<string | undefined>();
   const [error, setError] = useState<string | undefined>();
+  const [expanded, setExpanded] = useState(false);
   if (list.length === 0) return null;
+  const cut = show !== undefined && !expanded && list.length > show;
+  const visible = cut ? list.slice(0, show) : list;
 
   async function ask(handle: string) {
     setBusy(`${handle}:ask`);
@@ -45,11 +66,11 @@ export function Suggestions({ initial }: { initial: PalSuggestion[] }) {
     else setError(res.error?.message ?? 'That did not work. Try again.');
   }
 
-  return (
-    <RailCard id="suggestions-heading" title="Friends you may know">
+  const card = (
+    <RailCard id={id} title="Friends you may know" {...(cut && more ? { more } : {})}>
       {error && <FormMessage tone="error">{error}</FormMessage>}
       <ul className="-my-2.5 flex flex-col divide-y divide-border">
-        {list.map((s) => (
+        {visible.map((s) => (
           <li key={s.handle} className="flex gap-3 py-2.5">
             <Avatar name={s.displayName} tint={s.portraitTint} src={s.portraitUrl} size="sm" />
             <div className="flex min-w-0 flex-1 flex-col gap-1.5">
@@ -88,6 +109,12 @@ export function Suggestions({ initial }: { initial: PalSuggestion[] }) {
           </li>
         ))}
       </ul>
+      {cut && !more && (
+        <Button variant="link" className="self-start" onClick={() => setExpanded(true)}>
+          Show {list.length - visible.length} more
+        </Button>
+      )}
     </RailCard>
   );
+  return className ? <div className={className}>{card}</div> : card;
 }
