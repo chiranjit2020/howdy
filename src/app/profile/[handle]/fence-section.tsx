@@ -34,6 +34,8 @@ type Source =
       feed: true;
       myHandle: string;
       /** Shown before "What's on your mind?" (Home: your Story). */ composerLead?: ReactNode;
+      /** Between "What's on your mind?" and the posts (Home: Friends you may know, ADR-061). */
+      beforePosts?: ReactNode;
     };
 
 /**
@@ -218,6 +220,7 @@ export function FenceSection({
       {/* In the feed, "What's on your mind?" comes first and the "Posts" heading sits over the posts it names;
         on a wall, the composer belongs under "The wall". */}
       {feed && composer}
+      {'feed' in source && source.beforePosts}
       <Fence
         composer={feed ? undefined : composer}
         hasMore={next !== null}

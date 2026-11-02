@@ -2,7 +2,6 @@ import Link from 'next/link';
 import type { PersonEntry } from '@/app/_lib/social';
 import type { ComingCapsule } from '@/modules/capsules';
 import type { MemoriesToday } from '@/modules/memories';
-import type { PalSuggestion } from '@/modules/suggestions';
 import type { ThreadSummary } from '@/modules/whispers';
 import { longDay } from '@/shared/calendar';
 import type { PortraitTint } from '@/shared/validation/profile';
@@ -12,7 +11,6 @@ import type { LitPalRow } from '@/ui/howdy/free-to-talk';
 import { RAIL_CARD, RailCard } from '@/ui/howdy/rail-card';
 import { WhisperIcon } from '@/ui/icons';
 import { Avatar, buttonClasses } from '@/ui/primitives';
-import { Suggestions } from '../friends/suggestions';
 import { ChatLink } from './chat-dock';
 import { MemoriesCard } from './memories-card';
 import { FindFriendsActions, SwitchYoursOn } from './rail-actions';
@@ -23,7 +21,7 @@ const iconButton =
   'inline-flex size-11 shrink-0 items-center justify-center rounded-pill text-text-secondary no-underline hover:bg-surface-sunken hover:text-text-primary';
 
 /** How many of each the panel shows; the full lists are a link away. */
-const SHOW = { free: 6, threads: 5, requests: 3, sayHi: 3, suggestions: 3 };
+const SHOW = { free: 6, threads: 5, requests: 3, sayHi: 3 };
 
 /** A friend, with a Message button: who is free now, or (with no messages yet) someone to say hi to. */
 function FriendLine({
@@ -121,8 +119,8 @@ function CapsulesCard({ coming }: { coming: ComingCapsule[] }) {
 
 /**
  * Home's right panel (wide screens only): your circle right now. The friends who switched Free to talk on (their own
- * choice; Howdy has no automatic "online" dot), your latest messages, friend requests waiting for you, friends you may
- * know, then "On this day", Time Capsules and the team's note. Everything in it is already filtered for this person by
+ * choice; Howdy has no automatic "online" dot), your latest messages, friend requests waiting for you, then "On this day",
+ * Time Capsules and the team's note. Everything in it is already filtered for this person by
  * the server.
  */
 export function HomeRail({
@@ -131,7 +129,6 @@ export function HomeRail({
   requests,
   memories,
   capsules,
-  suggestions,
   news,
   handle,
   friends,
@@ -147,8 +144,6 @@ export function HomeRail({
   memories: MemoriesToday | null;
   /** Time Capsules coming to me, soonest first; null when they could not be read (then no card). */
   capsules: ComingCapsule[] | null;
-  /** Friends you may know, best first; the card shows the first few. */
-  suggestions: PalSuggestion[];
   news: Announcement | null;
   handle: string;
 }) {
@@ -262,13 +257,6 @@ export function HomeRail({
           <RailRequests people={requests.slice(0, SHOW.requests)} />
         </RailCard>
       )}
-
-      <Suggestions
-        initial={suggestions}
-        id="rail-suggestions"
-        show={SHOW.suggestions}
-        more={{ href: '/friends', label: 'See all' }}
-      />
 
       {memories && (
         <MemoriesCard memories={memories} handle={handle} className={RAIL_CARD} headingId="rail-memories" />

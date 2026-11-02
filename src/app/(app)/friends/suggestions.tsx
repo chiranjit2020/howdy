@@ -18,36 +18,14 @@ const why = (s: PalSuggestion) => {
 };
 
 /**
- * "Pals you may know" (ADR-029): Pals of at least two of my Pals. Ask sends an ordinary Pal request; Not now hides them
- * for good. Neither tells them anything beyond what an ordinary ask does. Only rendered when there is someone.
- *
- * `show` keeps the card short (Home's panel, the Friends page on a phone): the first few, and the next one moves up when
- * one is dismissed. Then either `more` links to the full card (Home) or a "Show N more" button opens it in place.
+ * Ask and Not now, shared by the Friends page card and Home's strip (ADR-061). Ask sends an ordinary friend request;
+ * Not now hides that person for good, and the list closes up so the next one moves in.
  */
-export function Suggestions({
-  initial,
-  id = 'suggestions-heading',
-  show,
-  more,
-  className,
-}: {
-  initial: PalSuggestion[];
-  /** The heading's id; a page that renders the card twice (phone and wide layouts) gives each its own. */
-  id?: string;
-  show?: number;
-  more?: { href: string; label: string };
-  /** Classes for a wrapper around the card (e.g. which screen sizes show it); no wrapper without. Nothing at all when
-   *  there is nobody to suggest, so no empty box takes a gap. */
-  className?: string;
-}) {
+export function useSuggestionActions(initial: PalSuggestion[]) {
   const [list, setList] = useState(initial);
   const [asked, setAsked] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState<string | undefined>();
   const [error, setError] = useState<string | undefined>();
-  const [expanded, setExpanded] = useState(false);
-  if (list.length === 0) return null;
-  const cut = show !== undefined && !expanded && list.length > show;
-  const visible = cut ? list.slice(0, show) : list;
 
   async function ask(handle: string) {
     setBusy(`${handle}:ask`);
@@ -65,9 +43,38 @@ export function Suggestions({
     if (res.ok) setList((all) => all.filter((s) => s.handle !== handle));
     else setError(res.error?.message ?? 'That did not work. Try again.');
   }
+  return { list, asked, busy, error, ask, notNow };
+}
+
+/**
+ * "Pals you may know" (ADR-029): Pals of at least two of my Pals. Neither Ask nor Not now tells them anything beyond what
+ * an ordinary ask does. Only rendered when there is someone.
+ *
+ * `show` keeps the card short (the Friends page on a phone): the first few, and the next one moves up when one is
+ * dismissed; "Show N more" opens the rest in place.
+ */
+export function Suggestions({
+  initial,
+  id = 'suggestions-heading',
+  show,
+  className,
+}: {
+  initial: PalSuggestion[];
+  /** The heading's id; a page that renders the card twice (phone and wide layouts) gives each its own. */
+  id?: string;
+  show?: number;
+  /** Classes for a wrapper around the card (e.g. which screen sizes show it); no wrapper without. Nothing at all when
+   *  there is nobody to suggest, so no empty box takes a gap. */
+  className?: string;
+}) {
+  const { list, asked, busy, error, ask, notNow } = useSuggestionActions(initial);
+  const [expanded, setExpanded] = useState(false);
+  if (list.length === 0) return null;
+  const cut = show !== undefined && !expanded && list.length > show;
+  const visible = cut ? list.slice(0, show) : list;
 
   const card = (
-    <RailCard id={id} title="Friends you may know" {...(cut && more ? { more } : {})}>
+    <RailCard id={id} title="Friends you may know">
       {error && <FormMessage tone="error">{error}</FormMessage>}
       <ul className="-my-2.5 flex flex-col divide-y divide-border">
         {visible.map((s) => (
@@ -109,7 +116,7 @@ export function Suggestions({
           </li>
         ))}
       </ul>
-      {cut && !more && (
+      {cut && (
         <Button variant="link" className="self-start" onClick={() => setExpanded(true)}>
           Show {list.length - visible.length} more
         </Button>

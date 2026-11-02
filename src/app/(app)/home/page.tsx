@@ -19,6 +19,7 @@ import { ChatDockProvider } from './chat-dock';
 import { HomeRail, WhatsNew } from './home-rail';
 import { MemoriesCard } from './memories-card';
 import { StoriesStrip } from './stories-strip';
+import { SuggestionStrip } from './suggestion-strip';
 
 export const metadata = { title: 'Home' };
 
@@ -53,7 +54,7 @@ export default async function HomePage() {
       myCapsules(user.id)
         .then((c) => c.coming)
         .catch(() => null),
-      // "Friends you may know" (ADR-029, on Home since ADR-061): the panel shows three, the rest wait their turn.
+      // "Friends you may know" (ADR-029; on Home since ADR-061): a row of small cards before the posts.
       palSuggestions(user.id).catch(() => []),
     ]);
   // One look-up for every photo on the page, whoever it belongs to.
@@ -115,6 +116,7 @@ export default async function HomePage() {
               feed
               myHandle={user.handle}
               {...(storiesRow ? {} : { composerLead: stories('lead') })}
+              beforePosts={<SuggestionStrip initial={suggestions} />}
               signedIn
               initial={{
                 ...feed,
@@ -144,7 +146,6 @@ export default async function HomePage() {
             myLight={mine ? { untilLabel: clockOf(mine.until) } : null}
             memories={today}
             capsules={capsules}
-            suggestions={suggestions}
             news={announcement}
             handle={user.handle}
           />

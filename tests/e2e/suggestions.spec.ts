@@ -16,7 +16,7 @@ import {
   watchProblems,
 } from './helpers';
 
-/** ADR-029: "Pals you may know" on the Pals page, on a 320 px touch phone; Not now removes it for good. */
+/** ADR-029 / ADR-061: "Friends you may know" on Friends and on Home, on a 320 px touch phone; Not now removes it for good. */
 
 const db = new Pool({ connectionString: parse(readFileSync('.env.local')).E2E_DATABASE_URL, max: 1 });
 test.afterAll(async () => {
@@ -82,6 +82,59 @@ test('Friends you may know: shown with shared friends, asked from the card, or d
   await expect(card).toHaveCount(0);
   await me.page.reload();
   await pageReady(me.page);
+  await expect(me.page.getByRole('region', { name: 'Friends you may know' })).toHaveCount(0);
+  expect(problems).toEqual([]);
+  await me.ctx.close();
+});
+
+test('Home: friends you may know as small cards before the posts; Ask, and the × that dismisses for good', async ({
+  browser,
+}) => {
+  const me = await person(browser, 'hsugme');
+  const problems = await watchProblems(me.page);
+  const [a, b, x, y] = ['hsuga', 'hsugb', 'hsugx', 'hsugy'].map((t) => uniqueAccount(t));
+  for (const p of [a!, b!, x!, y!]) {
+    await db.query(
+      `with u as (insert into users (email, handle, email_verified_at, created_at)
+         values ($1, $2, now(), now() - interval '30 days') returning id)
+       insert into profiles (user_id, display_name) select id, $3 from u`,
+      [p.email, p.handle, `Person ${p.handle}`],
+    );
+  }
+  await pals(me.handle, a!.handle);
+  await pals(me.handle, b!.handle);
+  for (const s of [x!, y!]) {
+    await pals(a!.handle, s.handle);
+    await pals(b!.handle, s.handle);
+  }
+
+  await me.page.goto('/home');
+  await pageReady(me.page);
+  const strip = me.page.getByRole('region', { name: 'Friends you may know' });
+  await expect(strip.getByText('2 mutual friends')).toHaveCount(2);
+  // It comes before the posts.
+  const [stripTop, postsTop] = await Promise.all([
+    strip.boundingBox().then((r) => r!.y),
+    me.page
+      .getByRole('heading', { level: 2, name: 'Posts' })
+      .boundingBox()
+      .then((r) => r!.y),
+  ]);
+  expect(stripTop).toBeLessThan(postsTop);
+  expect(await axeViolations(me.page)).toEqual([]);
+  expect(await smallTargets(me.page)).toEqual([]);
+  expect(await horizontalOverflow(me.page)).toBe(0);
+
+  const xCard = strip.getByRole('listitem').filter({ hasText: `Person ${x!.handle}` });
+  await xCard.getByRole('button', { name: `Ask Person ${x!.handle} to be friends` }).click();
+  await expect(xCard.getByText('Asked')).toBeVisible();
+
+  const yCard = strip.getByRole('listitem').filter({ hasText: `Person ${y!.handle}` });
+  await yCard.getByRole('button', { name: `Not now: stop suggesting Person ${y!.handle}` }).click();
+  await expect(yCard).toHaveCount(0);
+  await me.page.reload();
+  await pageReady(me.page);
+  // Asked and dismissed: nobody left to suggest, so no strip at all.
   await expect(me.page.getByRole('region', { name: 'Friends you may know' })).toHaveCount(0);
   expect(problems).toEqual([]);
   await me.ctx.close();

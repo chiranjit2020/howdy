@@ -12,12 +12,15 @@ would have to be kept in step with blocks, mutes and deletions.
 
 ## Decisions
 
-1. **Home's right panel** (wide screens) gets a "Friends you may know" card after Messages and Friend requests: the top
-   three, and "See all" (to Friends) when there are more. Not now or Ask works from the card; a dismissed person's place
-   goes to the next one. Fetched with the rest of Home, best-effort (no card rather than no Home).
+1. **Home: a row of small cards between "What's on your mind?" and the posts**, on every screen size (revised the same
+   day: the first version, a card in the right panel, made that sticky panel scroll). Up to five cards: photo, name,
+   "N mutual friends", Ask, and a × for Not now; "See all" (to Friends) when there are more. Five across when the
+   column is wide enough (a container query on the column); on a phone a swiped row with the next card peeking in, and
+   no scrollbar drawn. A dismissed person's place goes to the next one. Fetched with the rest of Home, best-effort (no
+   row rather than no Home).
 2. **Friends page on a phone:** the card comes right under the heading, above the list, three at a time with
    "Show N more". On wide screens it stays at the top of the right panel, all of them (up to ten). Only one of the two
    copies is ever displayed (each has its own heading id).
-3. **Home on a phone** has no right panel, and so no card: Friends is one tap away in the bottom bar.
+3. **Home's right panel** stays as it was: no suggestions there.
 4. **Panel cards (RailCard) lose the violet and sunflower diagonal stripes:** a solid 6 px sunflower bar instead. The
    stripes read as "still loading" on a phone.
