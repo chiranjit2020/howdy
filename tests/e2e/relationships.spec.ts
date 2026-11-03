@@ -55,11 +55,13 @@ test.describe('Posse, Block and Flag trouble (production build, real CSP)', () =
     // The Ranch is hidden, so Bob has no button there; he asks by call sign on his Posse page. The answer never says
     // whether the call sign exists. Alice then sees the request on Home and on /pals.
     await b.page.goto('/friends');
-    await b.page.getByLabel('Their username').fill(`@${a.handle}`);
-    await b.page.getByRole('button', { name: 'Ask to be friends' }).click();
+    // The form is on the page twice (phone and wide layouts); only one copy is ever displayed.
+    const askBox = b.page.getByLabel('Their username').filter({ visible: true });
+    await askBox.fill(`@${a.handle}`);
+    await b.page.getByRole('button', { name: 'Send request' }).click();
     await expect(b.page.getByText(`If @${a.handle} is out there`)).toBeVisible();
-    await b.page.getByLabel('Their username').fill('nobody_home_zzz');
-    await b.page.getByRole('button', { name: 'Ask to be friends' }).click();
+    await askBox.fill('nobody_home_zzz');
+    await b.page.getByRole('button', { name: 'Send request' }).click();
     await expect(b.page.getByText('If @nobody_home_zzz is out there')).toBeVisible(); // identical for a call sign that does not exist
     await a.page.goto('/home');
     // Friends in the menu says a request is waiting, and leads to it.

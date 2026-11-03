@@ -11,7 +11,16 @@ import { Button, ConfirmationDialog } from '@/ui/primitives';
  * My personal invite link (ADR-045): share it anywhere. Whoever joins through it sends me a Pal request once they confirm
  * their email — nothing more. Resetting it makes the old link stop working.
  */
-export function InviteCard({ initial, origin }: { initial: MyInvite; origin: string }) {
+export function InviteCard({
+  initial,
+  origin,
+  id = 'invite-friends',
+}: {
+  initial: MyInvite;
+  origin: string;
+  /** The heading's id; a page that renders the card twice (phone and wide layouts) gives each its own. */
+  id?: string;
+}) {
   const [invite, setInvite] = useState(initial);
   const [copied, setCopied] = useState(false);
   const [confirming, setConfirming] = useState(false);
@@ -45,9 +54,9 @@ export function InviteCard({ initial, origin }: { initial: MyInvite; origin: str
   }
 
   return (
-    <RailCard id="invite-friends" title="Invite friends">
+    <RailCard id={id} title="Invite someone new">
       <p className="text-caption text-text-secondary">
-        Whoever joins with your link sends you a friend request once they confirm their email. You decide.
+        Not on Howdy yet? Send them your link. When they join, their friend request comes to you, and you decide.
       </p>
       {error && <FormMessage tone="error">{error}</FormMessage>}
       <p className="rounded-md bg-surface-sunken px-3 py-2 font-mono text-caption [overflow-wrap:anywhere] text-text-primary">

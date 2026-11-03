@@ -12,7 +12,7 @@ import { Button, Input } from '@/ui/primitives';
  * Ask someone to join your Posse by call sign. It works for private Ranches too (which you cannot open), and it always
  * answers the same way, so it never reveals whether a call sign exists.
  */
-export function AskForm() {
+export function AskForm({ id = 'ask-by-username' }: { id?: string }) {
   const router = useRouter();
   const [handle, setHandle] = useState('');
   const [fieldError, setFieldError] = useState<string | undefined>();
@@ -41,7 +41,10 @@ export function AskForm() {
   }
 
   return (
-    <RailCard id="ask-by-username" title="Add by username">
+    <RailCard id={id} title="Send a friend request">
+      <p className="text-caption text-text-secondary">
+        Type their username (it&apos;s under their name, after the @) and we&apos;ll send them a request.
+      </p>
       <form onSubmit={submit} noValidate className="flex flex-col gap-2">
         {formError && <FormMessage tone="error">{formError}</FormMessage>}
         {sent && (
@@ -63,7 +66,7 @@ export function AskForm() {
           hint="Works for private profiles too."
         />
         <Button type="submit" size="sm" loading={busy} fullWidth>
-          Ask to be friends
+          Send request
         </Button>
       </form>
     </RailCard>

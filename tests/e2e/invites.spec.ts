@@ -38,8 +38,8 @@ test.describe('Invite links (production build, real CSP)', () => {
     // My link, on the Pals page.
     await rick.page.goto('/friends');
     await pageReady(rick.page);
-    await expect(rick.page.getByRole('heading', { name: 'Invite friends' })).toBeVisible();
-    const link = (await rick.page.getByText(/\/i\/[A-Za-z0-9]{10}$/).textContent())!.trim();
+    await expect(rick.page.getByRole('heading', { name: 'Invite someone new' })).toBeVisible();
+    const link = (await rick.page.getByText(/\/i\/[A-Za-z0-9]{10}$/).filter({ visible: true }).textContent())!.trim();
     const path = new URL(link).pathname;
     expect(await axeViolations(rick.page)).toEqual([]);
     expect(await smallTargets(rick.page)).toEqual([]);

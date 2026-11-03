@@ -15,12 +15,17 @@ import { Button, ClayCard, ConfirmationDialog, Dropdown, EmptyState } from '@/ui
 const iconButton =
   'inline-flex size-11 items-center justify-center rounded-pill text-title text-text-secondary no-underline hover:bg-surface hover:text-text-primary';
 
+/** How many friends a phone shows before "Show all": the list sits above Following and grows long. */
+const PHONE_FRIENDS = 8;
+
 /** The signed-in person's Posse, requests and scouting. Each button sends one action; the page then reloads from the server. */
 export function PosseLists({ lists }: { lists: RelationshipLists }) {
   const router = useRouter();
   const [busy, setBusy] = useState<string | undefined>();
   const [error, setError] = useState<string | undefined>();
   const [leaving, setLeaving] = useState<PersonEntry | undefined>();
+  const [allFriends, setAllFriends] = useState(false);
+  const friendsCut = !allFriends && lists.posse.length > PHONE_FRIENDS;
 
   async function run(handle: string, action: RelationshipAction) {
     setBusy(`${handle}:${action}`);
@@ -54,7 +59,7 @@ export function PosseLists({ lists }: { lists: RelationshipLists }) {
     title: string,
     people: PersonEntry[],
     empty: string,
-    row: (p: PersonEntry) => ReactNode,
+    row: (p: PersonEntry, i: number) => ReactNode,
     footer?: ReactNode,
   ) => (
     <section aria-labelledby={id} className="flex flex-col gap-2">
@@ -92,13 +97,21 @@ export function PosseLists({ lists }: { lists: RelationshipLists }) {
         </ClayCard>
       )}
 
+      {lists.outgoing.length > 0 && (
+        <ClayCard>
+          {section('waiting', `Sent requests (${lists.outgoing.length})`, lists.outgoing, '', (p) => (
+            <PersonRow key={p.handle} {...p} inlineActions actions={btn(p, 'cancel', 'Cancel', 'ghost')} />
+          ))}
+        </ClayCard>
+      )}
+
       <ClayCard>
         {lists.posse.length === 0 && lists.incoming.length === 0 ? (
           <EmptyState
             as="h2"
             icon="🤝"
             title="No friends yet"
-            description="Visit someone's profile and ask to be friends. Requests are private until they say yes."
+            description="Send a request with their username, or share your invite link with someone new. Requests are private until they say yes."
           />
         ) : (
           section(
@@ -106,11 +119,12 @@ export function PosseLists({ lists }: { lists: RelationshipLists }) {
             `Your friends (${lists.posse.length})`,
             lists.posse,
             'Nobody yet. Accept a request or ask someone.',
-            (p) => (
+            (p, i) => (
               <PersonRow
                 key={p.handle}
                 {...p}
                 inlineActions
+                className={friendsCut && i >= PHONE_FRIENDS ? 'max-xl:hidden' : undefined}
                 {...(p.closeByMe ? { note: 'Close friend' } : {})}
                 actions={
                   <>
@@ -149,21 +163,20 @@ export function PosseLists({ lists }: { lists: RelationshipLists }) {
                 }
               />
             ),
-            <p className="mt-3 border-t border-border pt-3 text-metadata text-text-muted">
-              Close friend is a private label, just for you. Following someone shows their posts on your Home.
-              Nobody is told about either.
-            </p>,
+            <>
+              {friendsCut && (
+                <Button variant="link" className="mt-3 self-start xl:hidden" onClick={() => setAllFriends(true)}>
+                  Show all {lists.posse.length} friends
+                </Button>
+              )}
+              <p className="mt-3 border-t border-border pt-3 text-metadata text-text-muted">
+                Close friend is a private label, just for you. Following someone shows their posts on your Home.
+                Nobody is told about either.
+              </p>
+            </>,
           )
         )}
       </ClayCard>
-
-      {lists.outgoing.length > 0 && (
-        <ClayCard>
-          {section('waiting', `Sent requests (${lists.outgoing.length})`, lists.outgoing, '', (p) => (
-            <PersonRow key={p.handle} {...p} inlineActions actions={btn(p, 'cancel', 'Cancel', 'ghost')} />
-          ))}
-        </ClayCard>
-      )}
 
       {lists.scouting.length > 0 && (
         <ClayCard>

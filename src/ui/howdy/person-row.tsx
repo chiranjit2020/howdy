@@ -19,6 +19,7 @@ export function PersonRow({
   linkToRanch = true,
   verified,
   inlineActions = false,
+  className,
 }: {
   displayName: string;
   handle: string;
@@ -34,6 +35,8 @@ export function PersonRow({
   verified?: boolean | undefined;
   /** Small icon actions: kept on the name's line; a long name wraps beside them instead. */
   inlineActions?: boolean;
+  /** Extra classes for the row (e.g. hiding it on a phone until "Show all"). */
+  className?: string | undefined;
 }) {
   const text = (
     <>
@@ -49,7 +52,7 @@ export function PersonRow({
     </>
   );
   return (
-    <li className={cn('flex items-center gap-3 py-2.5', !inlineActions && 'flex-wrap')}>
+    <li className={cn('flex items-center gap-3 py-2.5', !inlineActions && 'flex-wrap', className)}>
       <Avatar name={displayName} tint={portraitTint} src={portraitUrl} />
       {/* A 12rem floor: when the actions do not fit beside the name, they wrap onto their own line instead of covering it. */}
       <div className={cn('min-w-0', inlineActions ? 'flex-1' : 'flex-[1_1_12rem]')}>
