@@ -27,7 +27,7 @@ export const postCards = pgTable(
     createdAt: tstz('created_at').notNull().defaultNow(),
   },
   (t) => [
-    check('post_cards_body_len', sql`char_length(${t.body}) between 1 and 160`),
+    check('post_cards_body_len', sql`char_length(${t.body}) between 1 and 500`),
     check('post_cards_status_check', sql`${t.status} in ('published', 'pending', 'held')`),
     // Keyset pagination: newest first, ties broken by id.
     index('post_cards_fence_page_idx').on(t.fenceOwnerId, t.status, t.createdAt.desc(), t.id.desc()),
@@ -51,7 +51,7 @@ export const cardReplies = pgTable(
     createdAt: tstz('created_at').notNull().defaultNow(),
   },
   (t) => [
-    check('card_replies_body_len', sql`char_length(${t.body}) between 1 and 80`),
+    check('card_replies_body_len', sql`char_length(${t.body}) between 1 and 280`),
     check('card_replies_status_check', sql`${t.status} in ('published', 'pending', 'held')`),
     index('card_replies_card_idx').on(t.cardId, t.createdAt, t.id),
     index('card_replies_author_idx').on(t.authorId),

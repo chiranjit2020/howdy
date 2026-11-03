@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { FoldedText } from './folded-text';
 import {
   Children,
   createContext,
@@ -163,7 +164,7 @@ const COMPOSER = {
 } as const;
 
 /**
- * Composer for a Post Card (160), a reply (80) or a Town Hall post (280). Limits come from LIMITS; the server is the authority. A card composer
+ * Composer for a Post Card (500), a reply (280) or a Town Hall post (280). Limits come from LIMITS; the server is the authority. A card composer
  * given `onPhoto` also offers one photo (ADR-031): it uploads as soon as it is chosen, shows a local preview, and its id
  * goes with the words when the card is nailed.
  */
@@ -236,7 +237,7 @@ export function PostCardComposer({
     }
   }
 
-  // A reply is one line (80 characters at most): the box and a round Sunflower Send (paper plane) side by side, Enter sends. How much
+  // A reply is one line (280 characters at most): the box and a round Sunflower Send (paper plane) side by side, Enter sends. How much
   // is left shows only near the end.
   if (kind === 'reply') {
     const left = max - body.length;
@@ -576,7 +577,7 @@ export function PostCard({
             {actions}
           </header>
           {attachment}
-          {body && <p className="text-body break-words whitespace-pre-wrap text-text-primary">{body}</p>}
+          {body && <FoldedText className="text-body text-text-primary">{body}</FoldedText>}
           {photo && (
             <PostPhoto
               photo={photo}

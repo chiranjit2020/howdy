@@ -216,12 +216,12 @@ describe('input is validated and the server decides everything else', () => {
     return { owner, writer };
   };
 
-  it('160 characters fit, 161 do not — the length is the visible length after normalising', async () => {
+  it('500 characters fit, 501 do not — the length is the visible length after normalising', async () => {
     const { owner, writer } = await setup();
-    expect((await nail(owner.handle, { body: 'a'.repeat(160) }, as(writer))).status).toBe(201);
-    const long = await nail(owner.handle, { body: 'a'.repeat(161) }, as(writer));
+    expect((await nail(owner.handle, { body: 'a'.repeat(500) }, as(writer))).status).toBe(201);
+    const long = await nail(owner.handle, { body: 'a'.repeat(501) }, as(writer));
     expect(long.status).toBe(422);
-    expect(long.data.error!.fields!.body).toMatch(/at most 160/i);
+    expect(long.data.error!.fields!.body).toMatch(/at most 500/i);
     expect((await nail(owner.handle, { body: `   ${'b '.repeat(70)}   ` }, as(writer))).status).toBe(201);
   });
 

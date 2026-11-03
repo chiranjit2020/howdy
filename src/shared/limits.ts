@@ -3,8 +3,9 @@
  * which is the authority. Values are deliberately small (see PRODUCT_DISCOVERY.md, C1) and may change after testing.
  */
 export const LIMITS = {
-  POST_CARD_MAX: 160,
-  REPLY_MAX: 80,
+  /** Raised from 160 / 80 on 2026-11-03: too tight, above all in Indian scripts, where vowel signs count as characters. */
+  POST_CARD_MAX: 500,
+  REPLY_MAX: 280,
   WHISPER_MAX: 280,
   SIGNAL_MAX: 80,
   BIO_MAX: 150,

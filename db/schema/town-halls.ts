@@ -184,7 +184,7 @@ export const townHallReplies = pgTable(
     createdAt: tstz('created_at').notNull().defaultNow(),
   },
   (t) => [
-    check('town_hall_replies_body_len', sql`char_length(${t.body}) between 1 and 80`),
+    check('town_hall_replies_body_len', sql`char_length(${t.body}) between 1 and 280`),
     check('town_hall_replies_status_check', sql`${t.status} in ('published', 'held')`),
     index('town_hall_replies_post_idx').on(t.postId, t.createdAt, t.id),
     index('town_hall_replies_author_idx').on(t.authorId),

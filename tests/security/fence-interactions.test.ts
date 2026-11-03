@@ -424,16 +424,16 @@ describe('Yo', () => {
 });
 
 describe('replies', () => {
-  it('appear oldest-first under the card; 80 characters fit, 81 do not; links are refused', async () => {
+  it('appear oldest-first under the card; 280 characters fit, 281 do not; links are refused', async () => {
     const { owner, friend } = await wall();
     const id = (await nail(owner.handle, { body: 'a card' }, as(owner))).data.card!.id;
     expect((await replyTo(id, { body: 'first' }, as(friend))).status).toBe(201);
-    expect((await replyTo(id, { body: 'x'.repeat(80) }, as(owner))).status).toBe(201);
-    expect((await replyTo(id, { body: 'x'.repeat(81) }, as(owner))).status).toBe(422);
+    expect((await replyTo(id, { body: 'x'.repeat(280) }, as(owner))).status).toBe(201);
+    expect((await replyTo(id, { body: 'x'.repeat(281) }, as(owner))).status).toBe(422);
     expect((await replyTo(id, { body: 'see www.spam.example' }, as(owner))).status).toBe(422);
     expect((await replyTo(id, { body: '  ' }, as(owner))).status).toBe(422);
     const view = (await fenceOf(owner.handle, as(friend))).data.cards![0]!;
-    expect(view.replies.map((r) => r.body)).toEqual(['first', 'x'.repeat(80)]);
+    expect(view.replies.map((r) => r.body)).toEqual(['first', 'x'.repeat(280)]);
     expect(view.replies[0]).toMatchObject({ mine: true, canRemove: true });
   });
 
@@ -619,7 +619,7 @@ describe('lifecycle and integrity', () => {
         body,
         status,
       ]);
-    await expect(insert('x'.repeat(161))).rejects.toThrow(/post_cards_body_len/);
+    await expect(insert('x'.repeat(501))).rejects.toThrow(/post_cards_body_len/);
     await expect(insert('')).rejects.toThrow(/post_cards_body_len/);
     await expect(insert('ok', 'visible')).rejects.toThrow(/post_cards_status_check/);
     await insert('ok');
@@ -628,7 +628,7 @@ describe('lifecycle and integrity', () => {
       q('insert into card_replies (card_id, author_id, body) values ($1, $2, $3)', [
         cardId,
         id,
-        'x'.repeat(81),
+        'x'.repeat(281),
       ]),
     ).rejects.toThrow(/card_replies_body_len/);
     await q('insert into yos (card_id, user_id) values ($1, $2)', [cardId, id]);

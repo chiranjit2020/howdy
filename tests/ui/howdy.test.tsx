@@ -257,12 +257,12 @@ describe('PostCard', () => {
 });
 
 describe('PostCardComposer', () => {
-  it('uses the product limits: 160 for cards, 80 for replies', () => {
+  it('uses the product limits: 500 for cards, 280 for replies', () => {
     const { unmount } = render(<PostCardComposer kind="card" onSubmit={() => undefined} />);
-    expect(screen.getByRole('textbox')).toHaveAttribute('maxlength', '160');
+    expect(screen.getByRole('textbox')).toHaveAttribute('maxlength', '500');
     unmount();
     render(<PostCardComposer kind="reply" onSubmit={() => undefined} />);
-    expect(screen.getByRole('textbox')).toHaveAttribute('maxlength', '80');
+    expect(screen.getByRole('textbox')).toHaveAttribute('maxlength', '280');
   });
 
   it('cannot submit empty or whitespace-only text', async () => {

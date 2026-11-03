@@ -7,6 +7,7 @@ import type { ReactionKind } from '@/shared/validation/fence';
 import { apiRequest, postJson } from '@/ui/auth/api';
 import { FormMessage } from '@/ui/auth/form-parts';
 import { POST_LIST, PostCard, PostCardComposer, PostCardReply, type PostCardAuthor } from '@/ui/howdy';
+import { FoldedText } from '@/ui/howdy/folded-text';
 import { ReportDialog } from '@/ui/howdy/report-dialog';
 import type { RsvpAnswer } from '@/shared/validation/town-halls';
 import { EventBlock, type WireEvent } from './event-block';
@@ -488,7 +489,7 @@ function HeldTray({ initial, onApproved }: { initial: WireHeld; onApproved: () =
         <RelativeTime date={item.createdAt} />
         {onPost && <> · on “{onPost}”</>}
       </p>
-      <p className="text-body break-words whitespace-pre-wrap text-text-primary">{item.body}</p>
+      <FoldedText className="text-body text-text-primary">{item.body}</FoldedText>
       {item.photo && (
         <Img
           src={item.photo.url}
