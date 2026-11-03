@@ -53,16 +53,31 @@ export function ChimeList({ initial, seenAt }: { initial: Page; seenAt: string }
   const [busy, setBusy] = useState<'more' | 'clear' | undefined>();
   const [clearing, setClearing] = useState(false);
   const [error, setError] = useState<string | undefined>();
-  const marked = useRef(false);
+  const marked = useRef<string | undefined>(undefined);
   const fresh = initial.unread;
 
+  // Opening the page reads what it shows. A notification that arrives while it is open (the page redraws by itself) is
+  // read the same way, once per drawing.
   useEffect(() => {
-    if (fresh === 0 || marked.current) return;
-    marked.current = true;
+    if (fresh === 0 || marked.current === seenAt) return;
+    marked.current = seenAt;
     void postJson('/api/me/chimes/read', { all: true, before: seenAt }).then((res) => {
       if (res.ok) router.refresh(); // the bell lives in the layout, drawn on the server
     });
   }, [fresh, seenAt, router]);
+
+  // The server's newest page, after a redraw: new and bumped notifications go to the top, older pages already loaded stay
+  // below, and anything highlighted as new stays highlighted for this visit.
+  const [shownFirst, setShownFirst] = useState(initial.chimes);
+  if (shownFirst !== initial.chimes) {
+    setShownFirst(initial.chimes);
+    setChimes((all) => {
+      const before = new Map(all.map((c) => [c.id, c]));
+      const top = initial.chimes.map((c) => ({ ...c, unread: c.unread || (before.get(c.id)?.unread ?? false) }));
+      const ids = new Set(top.map((c) => c.id));
+      return [...top, ...all.filter((c) => !ids.has(c.id))];
+    });
+  }
 
   async function more() {
     if (!next) return;

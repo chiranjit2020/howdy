@@ -6,6 +6,7 @@ import { pushTo } from '@/modules/push';
 import { fenceStanding, fenceStandings, hiddenAuthors, posseMembersAmong } from '@/modules/relationships';
 import { decodeCursor, encodeCursor, type Cursor } from '@/platform/cursor';
 import { getDb } from '@/platform/db';
+import { ringLive } from '@/platform/live-ping';
 import { AppError } from '@/platform/errors';
 import type { DomainEvent } from '@/platform/events';
 import { enforceRateLimit, type RateLimitRule } from '@/platform/rate-limit';
@@ -188,6 +189,9 @@ async function pushChime(
   const me = (await getCards([recipientId])).get(recipientId);
   if (!shown || !me) return;
   const { text, href } = describe(recipientId, shown, me.handle);
+  // Their open Howdy tabs redraw at once (ADR-035): a word-free ring, only for a notification they may see.
+  // Rung alongside the push and waited for, so a paused server never drops it. It never throws.
+  const ringing = ringLive([recipientId]);
   await pushTo(recipientId, {
     title: 'Howdy',
     body: text,
@@ -199,6 +203,7 @@ async function pushChime(
         : `${type}:${cardId ?? hallPostId ?? shown.actor.handle}`,
     badge: await unreadCount(recipientId),
   });
+  await ringing;
 }
 
 /** Turn what happened into Chimes. Subscribed to the domain events at start-up (src/instrumentation.ts). */

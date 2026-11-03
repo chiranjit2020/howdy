@@ -15,6 +15,9 @@ import { unreadThreads } from '@/modules/whispers';
 import { clockOf } from '@/shared/calendar';
 import { portraitUrl } from '@/shared/portrait';
 import { attachPortraits } from './social';
+import { liveChannelFor } from '@/platform/live-ping';
+import { LiveRefresh } from '@/ui/live/live-refresh';
+import { LiveProvider } from '@/ui/live/use-live-ring';
 import { PwaBoot } from '@/ui/pwa/pwa-boot';
 import { AppShell } from '@/ui/shell/app-shell';
 
@@ -83,7 +86,9 @@ export async function AppFrame({
   // Only staff can be admins, so everyone else skips the extra lookup.
   const admin = moderator && (await adminStanding(user.id).catch(() => 'not_admin' as const)) !== 'not_admin';
   return (
-    <>
+    <LiveProvider channel={liveChannelFor(user.id)}>
+      {/* New notification or message: the counts beside the menu (and whatever the page draws) catch up by themselves. */}
+      <LiveRefresh />
       <PwaBoot signedIn unread={unread} vapidKey={pushPublicKey()} />
       <AppShell
         me={{
@@ -103,6 +108,6 @@ export async function AppFrame({
       >
         {children}
       </AppShell>
-    </>
+    </LiveProvider>
   );
 }

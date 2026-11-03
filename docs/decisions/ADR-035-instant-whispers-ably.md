@@ -40,3 +40,14 @@ Create an Ably app, copy its Root key (`appId.keyId:secret`), and set `ABLY_API_
 - The self-hosted `pnpm ws` path stays in the code (unused in production) and works alongside.
 - Free-plan limits (≈6 M messages/month, 200 concurrent connections) are far above current use; a ring is 2 messages
   per Whisper at most.
+
+## Amendment (2026-11-03): one bell for the whole tab, and notifications ring too
+
+- **Notifications ring.** When a notification is stored and the read-time filter would show it (the same check the push
+  uses), the recipient's channel is rung. Still word-free. A notification that would be hidden rings nobody.
+- **One connection per tab.** `LiveProvider` in the signed-in shell (`AppFrame`) holds the tab's single Ably connection;
+  the open chat, the chat window and the shell all listen to it (`useLiveRing` falls back to its own connection only
+  outside the shell). Before, Messages could hold two or three per tab, which counts against the 200-connection limit.
+- **Every signed-in page redraws on a ring** (`LiveRefresh` in the shell, 300 ms fold-up, a hidden tab waits until it is
+  looked at): the counts beside the menu, the notifications list and the Messages list catch up without a refresh.
+  `ChimeList` merges the redrawn first page into what it shows; an open chat keeps its own state and catches up itself.

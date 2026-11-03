@@ -3,8 +3,6 @@ import { attachPortraits, withCards } from '@/app/_lib/social';
 import { requireUser } from '@/modules/auth';
 import { listMyRelationships } from '@/modules/relationships';
 import { countHeld, listThreads } from '@/modules/whispers';
-import { liveChannelFor } from '@/platform/live-ping';
-import { LiveRefresh } from '@/ui/live/live-refresh';
 import { ConversationList, ConversationListSkeleton } from './conversation-list';
 import { MessagesFrame } from './messages-frame';
 
@@ -39,11 +37,6 @@ async function Conversations() {
       .catch(() => []),
   ]);
   await attachPortraits(user.id, threads);
-  return (
-    <>
-      <ConversationList threads={threads} held={held} friends={friends} />
-      {/* A new message anywhere refreshes the list (and the open chat catches up on its own). */}
-      <LiveRefresh channel={liveChannelFor(user.id)} />
-    </>
-  );
+  // A new message redraws this list through the shell's live refresh (AppFrame); the open chat catches up on its own.
+  return <ConversationList threads={threads} held={held} friends={friends} />;
 }
