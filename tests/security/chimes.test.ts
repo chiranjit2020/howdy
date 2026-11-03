@@ -4,7 +4,19 @@ import { flushBackground } from '@/platform/background';
 import { getPool } from '@/platform/db';
 import { subscribe } from '@/platform/events';
 import { freshAuthState, signedInUser, stable, uniqueUser, type TestKit } from '../helpers/auth';
-import { bell, chimesOf, clearAll, getPrefs, markRead, patchPrefs, texts, types } from '../helpers/chimes';
+import {
+  bell,
+  chimesOf,
+  clearAll,
+  getPrefs,
+  markRead,
+  markSeen,
+  patchPrefs,
+  removeOne,
+  setRead,
+  texts,
+  types,
+} from '../helpers/chimes';
 import { approve, fenceOf, nail, replyTo, scrape, yo } from '../helpers/fence';
 import { patchRanch } from '../helpers/ranch';
 import { doAct, insertUser, q, userId } from '../helpers/social';
@@ -602,5 +614,58 @@ describe('retention and integrity', () => {
     await expect(ins('yo_given', o, f, card)).rejects.toThrow(/notifications_once_per_card/);
     await ins('posse_requested', o, f, null);
     await expect(ins('posse_requested', o, f, null)).rejects.toThrow(/notifications_once_per_person/);
+  });
+});
+
+describe('read, unread and seen (2026-11-03)', () => {
+  it('opening the page clears the bell but leaves each one unread; a later one rings again', async () => {
+    const { owner, friend } = await wall();
+    await nail(owner.handle, { body: 'first' }, as(friend));
+    await flushBackground();
+    expect(await bell(as(owner))).toBe(1);
+    const seenAt = new Date().toISOString();
+    await new Promise((r) => setTimeout(r, 20));
+    expect((await markSeen({ before: seenAt }, as(owner))).status).toBe(200);
+    expect(await bell(as(owner))).toBe(0);
+    const page = (await chimesOf(as(owner))).data;
+    expect(page.unread).toBe(1);
+    expect(page.chimes![0]!.unread).toBe(true);
+
+    // An older tab cannot move "seen" back in time.
+    await markSeen({ before: new Date(Date.now() - 3_600_000).toISOString() }, as(owner));
+    expect(await bell(as(owner))).toBe(0);
+
+    await replyTo(
+      (await fenceOf(owner.handle, as(owner))).data.cards![0]!.id,
+      { body: 'a reply' },
+      as(friend),
+    );
+    await flushBackground();
+    expect(await bell(as(owner))).toBe(1);
+    expect((await chimesOf(as(owner))).data.unread).toBe(2);
+  });
+
+  it('one can be marked read, unread again, or removed — only your own; anyone else’s is the same 404', async () => {
+    const { owner, friend } = await wall();
+    await nail(owner.handle, { body: 'hello' }, as(friend));
+    const [mine] = (await chimesOf(as(owner))).data.chimes!;
+    expect((await setRead(mine!.id, true, as(owner))).status).toBe(200);
+    expect((await chimesOf(as(owner))).data.chimes![0]!.unread).toBe(false);
+    expect((await setRead(mine!.id, false, as(owner))).status).toBe(200);
+    expect((await chimesOf(as(owner))).data.chimes![0]!.unread).toBe(true);
+
+    expect((await setRead(mine!.id, true, as(friend))).status).toBe(404);
+    expect((await removeOne(mine!.id, as(friend))).status).toBe(404);
+    expect((await setRead('00000000-0000-4000-8000-000000000000', true, as(owner))).status).toBe(404);
+    expect((await setRead('not-an-id', true, as(owner))).status).toBe(404);
+    expect((await setRead(mine!.id, 'yes', as(owner))).status).toBe(422);
+    expect((await setRead(mine!.id, true, {})).status).toBe(401);
+    expect((await removeOne(mine!.id, { ...as(owner), origin: 'https://evil.example' })).status).toBe(403);
+    expect((await markSeen({}, as(owner))).status).toBe(422);
+    expect((await chimesOf(as(owner))).data.chimes![0]!.unread).toBe(true);
+
+    expect((await removeOne(mine!.id, as(owner))).status).toBe(200);
+    expect((await chimesOf(as(owner))).data.chimes).toHaveLength(0);
+    expect((await removeOne(mine!.id, as(owner))).status).toBe(404);
   });
 });

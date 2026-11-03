@@ -372,6 +372,13 @@
       "when": 1793725073761,
       "tag": "0052_pinned_wall_post",
       "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1793726653386,
+      "tag": "0053_notification_seen",
+      "breakpoints": true
     }
   ]
 }

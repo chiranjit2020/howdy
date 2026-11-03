@@ -1,6 +1,6 @@
 import { attachPortraits } from '@/app/_lib/social';
 import { requireUser } from '@/modules/auth';
-import { listChimes } from '@/modules/notifications';
+import { listChimes, unreadCount } from '@/modules/notifications';
 import { pushPublicKey } from '@/modules/push';
 import { PageFrame } from '@/ui/howdy/page-frame';
 import { AppOnPhone } from '@/ui/pwa/app-on-phone';
@@ -15,7 +15,7 @@ export const metadata = { title: 'Notifications' };
 export default async function ChimesPage() {
   const user = await requireUser();
   const seenAt = new Date().toISOString(); // what this page shows; anything newer stays unread
-  const page = await listChimes(user.id, {});
+  const [page, bell] = await Promise.all([listChimes(user.id, {}), unreadCount(user.id)]);
   await attachPortraits(
     user.id,
     page.chimes.map((c) => c.actor),
@@ -29,6 +29,7 @@ export default async function ChimesPage() {
           unread: page.unread,
         }}
         seenAt={seenAt}
+        bell={bell}
       />
       <AppOnPhone vapidKey={pushPublicKey()} />
     </PageFrame>

@@ -1,9 +1,11 @@
 import { GET as chimePrefsGet, PATCH as chimePrefsPatch } from '@/app/api/me/chime-prefs/route';
+import { DELETE as chimeDelete, PATCH as chimePatch } from '@/app/api/me/chimes/[id]/route';
+import { POST as seenRoute } from '@/app/api/me/chimes/seen/route';
 import { POST as markReadRoute } from '@/app/api/me/chimes/read/route';
 import { DELETE as clearRoute, GET as chimesRoute } from '@/app/api/me/chimes/route';
 import { GET as unreadRoute } from '@/app/api/me/chimes/unread/route';
 import { flushBackground } from '@/platform/background';
-import { call } from './auth';
+import { call, request } from './auth';
 
 type Opts = { cookie?: string; ip?: string; origin?: string | null };
 
@@ -66,3 +68,29 @@ export const clearAll = async (body: unknown, opts: Opts) => {
     data: { cleared?: number; error?: { code: string } };
   }>;
 };
+
+/** POST /api/me/chimes/seen: what opening the page does (clears the bell, not the notifications). */
+export const markSeen = async (body: unknown, opts: Opts) => {
+  await flushBackground();
+  return call(seenRoute, 'POST', '/api/me/chimes/seen', body, opts);
+};
+
+async function one(
+  handler: (req: Request, arg?: { params?: Promise<Record<string, string>> }) => Promise<Response>,
+  method: string,
+  id: string,
+  body: unknown,
+  opts: Opts,
+) {
+  await flushBackground();
+  const res = await handler(request(method, `/api/me/chimes/${encodeURIComponent(id)}`, body, opts), {
+    params: Promise.resolve({ id }),
+  });
+  return { status: res.status };
+}
+
+/** PATCH /api/me/chimes/:id {read}. */
+export const setRead = (id: string, read: unknown, opts: Opts) =>
+  one(chimePatch, 'PATCH', id, { read }, opts);
+/** DELETE /api/me/chimes/:id. */
+export const removeOne = (id: string, opts: Opts) => one(chimeDelete, 'DELETE', id, undefined, opts);

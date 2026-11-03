@@ -65,6 +65,18 @@ export const notifications = pgTable(
   ],
 );
 
+/**
+ * When the person last opened their notifications (2026-11-03). The bell counts only unread Chimes newer than this, so
+ * opening the page clears the number while each Chime stays unread until it is opened or marked. No row = never opened
+ * (everything unread counts).
+ */
+export const notificationSeen = pgTable('notification_seen', {
+  userId: uuid('user_id')
+    .primaryKey()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  seenAt: tstz('seen_at').notNull(),
+});
+
 /** Which kinds of Chime a person wants. No row = everything on. */
 export const notificationPrefs = pgTable('notification_prefs', {
   userId: uuid('user_id')

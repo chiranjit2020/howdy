@@ -65,7 +65,8 @@ test.describe('Notifications in a real browser (production build, real CSP)', ()
     await b.page.goto('/home'); // Bob never rings his own bell
     await expect(bellLink(b.page)).toHaveAccessibleName('Notifications');
 
-    // She opens Chimes (which reads it), still sees it marked new for this visit, and following it goes to the Pals page.
+    // She opens Notifications (which clears the bell, not the notification), sees it unread, and following it reads it
+    // and goes to the Friends page.
     await bellLink(a.page).click();
     await expect(a.page.getByRole('heading', { name: 'Notifications', level: 1 })).toBeVisible();
     const item = a.page.getByRole('link', { name: /wants to be your friend/ });
@@ -77,7 +78,8 @@ test.describe('Notifications in a real browser (production build, real CSP)', ()
     await expect(a.page.getByRole('status')).toHaveText('All caught up');
     await expect(bellLink(a.page)).toHaveAccessibleName('Notifications');
 
-    // Alice accepts (Bob is told), Bob nails a card and gives a Yo; opening Chimes reads them and clears the bell.
+    // Alice accepts (Bob is told), Bob nails a card and gives a Yo; opening Notifications clears the bell, and they stay
+    // unread until she marks them.
     expect((await api(a, `/api/relationships/${b.handle}`, { action: 'accept' })).ok()).toBe(true);
     await untilUnread(b, 1);
     const card = await api(b, `/api/porch/${a.handle}/fence`, { body: 'Howdy from Bob' });
@@ -89,11 +91,29 @@ test.describe('Notifications in a real browser (production build, real CSP)', ()
     await a.page.goto('/notifications');
     await expect(a.page.getByText(`${b.handle} posted on your wall.`)).toBeVisible();
     await expect(a.page.getByText(`${b.handle} reacted to your post.`)).toBeVisible();
-    await expect(a.page.getByRole('status')).toHaveText('2 new');
+    await expect(a.page.getByRole('status')).toHaveText('2 unread');
     await expect(bellLink(a.page)).toHaveAccessibleName('Notifications'); // cleared without a reload
     await untilUnread(a, 0);
     await a.page.reload();
+    await expect(a.page.getByRole('status')).toHaveText('2 unread'); // still unread: only the bell was cleared
+
+    // One read from its menu, back to unread, then all read at once; one removed.
+    const posted = a.page.getByRole('listitem').filter({ hasText: `${b.handle} posted on your wall.` });
+    await posted.getByRole('button', { name: /^More about this notification/ }).click();
+    await a.page.getByRole('menuitem', { name: 'Mark as read' }).click();
+    await expect(a.page.getByRole('status')).toHaveText('1 unread');
+    await posted.getByRole('button', { name: /^More about this notification/ }).click();
+    await a.page.getByRole('menuitem', { name: 'Mark as unread' }).click();
+    await expect(a.page.getByRole('status')).toHaveText('2 unread');
+    await a.page.getByRole('button', { name: 'Mark all as read' }).click();
     await expect(a.page.getByRole('status')).toHaveText('All caught up');
+    await a.page.reload();
+    await expect(a.page.getByRole('status')).toHaveText('All caught up');
+    await posted.getByRole('button', { name: /^More about this notification/ }).click();
+    await a.page.getByRole('menuitem', { name: 'Remove' }).click();
+    await expect(posted).toHaveCount(0);
+    await a.page.reload();
+    await expect(a.page.getByText(`${b.handle} posted on your wall.`)).toHaveCount(0);
 
     // Alice mutes Bob: what he rang earlier disappears from her Chimes, without a word to Bob.
     expect((await api(a, `/api/relationships/${b.handle}`, { action: 'mute' })).ok()).toBe(true);

@@ -6,13 +6,14 @@ import type { ChimeType, ChimeView } from '@/modules/notifications';
 import { apiRequest, postJson } from '@/ui/auth/api';
 import { FormMessage } from '@/ui/auth/form-parts';
 import { ChimeItem, type ChimeType as ItemType } from '@/ui/howdy';
-import { BellIcon } from '@/ui/icons';
-import { Button, ClayCard, ConfirmationDialog, EmptyState } from '@/ui/primitives';
+import { BellIcon, MoreIcon } from '@/ui/icons';
+import { Button, ClayCard, ConfirmationDialog, Dropdown, EmptyState, IconButton } from '@/ui/primitives';
 
 type Wire = Omit<ChimeView, 'at'> & { at: string };
 interface Page {
   chimes: Wire[];
   nextCursor: string | null;
+  /** Every unread one the person can see (not only the bell's new ones). */
   unread: number;
 }
 
@@ -42,41 +43,77 @@ const ITEM: Record<ChimeType, ItemType> = {
 };
 
 /**
- * The Chimes page. Opening it counts as reading everything it shows: they are marked read on the server straight away and
- * the page frame is refreshed, so the bell's number clears. What was new stays highlighted for this visit. A Chime that
- * rings after the page was drawn (`seenAt`) is left unread. The server decides what is shown.
+ * The notifications page (2026-11-03). Opening it clears the bell's number (up to what it shows, `seenAt`), but each
+ * notification stays unread (tinted, red dot) until it is opened or marked read from its menu. "Mark all as read" and
+ * "Clear all" sit at the top; each one can also be marked unread again or removed. The server decides what is shown.
  */
-export function ChimeList({ initial, seenAt }: { initial: Page; seenAt: string }) {
+export function ChimeList({ initial, seenAt, bell }: { initial: Page; seenAt: string; bell: number }) {
   const router = useRouter();
   const [chimes, setChimes] = useState<Wire[]>(initial.chimes);
   const [next, setNext] = useState<string | null>(initial.nextCursor);
-  const [busy, setBusy] = useState<'more' | 'clear' | undefined>();
+  const [unreadLeft, setUnreadLeft] = useState(initial.unread);
+  const [busy, setBusy] = useState<'more' | 'clear' | 'read' | undefined>();
   const [clearing, setClearing] = useState(false);
   const [error, setError] = useState<string | undefined>();
-  const marked = useRef<string | undefined>(undefined);
-  const fresh = initial.unread;
+  const seen = useRef<string | undefined>(undefined);
 
-  // Opening the page reads what it shows. A notification that arrives while it is open (the page redraws by itself) is
-  // read the same way, once per drawing.
+  // Opening the page clears the bell. Only when it shows a number, so the redraw this causes does not ask again.
   useEffect(() => {
-    if (fresh === 0 || marked.current === seenAt) return;
-    marked.current = seenAt;
-    void postJson('/api/me/chimes/read', { all: true, before: seenAt }).then((res) => {
+    if (bell === 0 || seen.current === seenAt) return;
+    seen.current = seenAt;
+    void postJson('/api/me/chimes/seen', { before: seenAt }).then((res) => {
       if (res.ok) router.refresh(); // the bell lives in the layout, drawn on the server
     });
-  }, [fresh, seenAt, router]);
+  }, [bell, seenAt, router]);
 
-  // The server's newest page, after a redraw: new and bumped notifications go to the top, older pages already loaded stay
-  // below, and anything highlighted as new stays highlighted for this visit.
+  // The server's newest page, after a redraw: new and bumped notifications go to the top, older pages already loaded
+  // stay below. The server is the truth for read and unread.
   const [shownFirst, setShownFirst] = useState(initial.chimes);
   if (shownFirst !== initial.chimes) {
     setShownFirst(initial.chimes);
+    setUnreadLeft(initial.unread);
     setChimes((all) => {
-      const before = new Map(all.map((c) => [c.id, c]));
-      const top = initial.chimes.map((c) => ({ ...c, unread: c.unread || (before.get(c.id)?.unread ?? false) }));
-      const ids = new Set(top.map((c) => c.id));
-      return [...top, ...all.filter((c) => !ids.has(c.id))];
+      const ids = new Set(initial.chimes.map((c) => c.id));
+      return [...initial.chimes, ...all.filter((c) => !ids.has(c.id))];
     });
+  }
+
+  const patch = (id: string, fn: (c: Wire) => Wire) =>
+    setChimes((all) => all.map((c) => (c.id === id ? fn(c) : c)));
+
+  /** Read or unread, shown at once and put back if the server says no. */
+  async function setRead(c: Wire, read: boolean) {
+    if (c.unread === !read) return;
+    setError(undefined);
+    patch(c.id, (x) => ({ ...x, unread: !read }));
+    setUnreadLeft((n) => Math.max(0, n + (read ? -1 : 1)));
+    const res = await apiRequest('PATCH', `/api/me/chimes/${c.id}`, { read });
+    if (!res.ok && res.status !== 404) {
+      patch(c.id, (x) => ({ ...x, unread: read }));
+      setUnreadLeft((n) => Math.max(0, n + (read ? 1 : -1)));
+      setError(res.error?.message ?? 'That did not work. Try again.');
+    }
+  }
+
+  async function remove(c: Wire) {
+    setError(undefined);
+    const res = await apiRequest('DELETE', `/api/me/chimes/${c.id}`);
+    if (res.ok || res.status === 404) {
+      setChimes((all) => all.filter((x) => x.id !== c.id));
+      if (c.unread) setUnreadLeft((n) => Math.max(0, n - 1));
+    } else setError(res.error?.message ?? 'Could not remove that notification. Try again.');
+  }
+
+  async function readAll() {
+    setBusy('read');
+    setError(undefined);
+    const res = await postJson('/api/me/chimes/read', { all: true, before: seenAt });
+    setBusy(undefined);
+    if (res.ok) {
+      setChimes((all) => all.map((c) => (new Date(c.at) <= new Date(seenAt) ? { ...c, unread: false } : c)));
+      setUnreadLeft(0);
+      router.refresh();
+    } else setError(res.error?.message ?? 'Could not mark them read. Try again.');
   }
 
   async function more() {
@@ -101,28 +138,38 @@ export function ChimeList({ initial, seenAt }: { initial: Page; seenAt: string }
     if (res.ok) {
       setChimes([]);
       setNext(null);
+      setUnreadLeft(0);
       router.refresh(); // the bell's count lives in the layout
     } else setError(res.error?.message ?? 'Could not clear your notifications. Try again.');
   }
 
+  const anyUnread = unreadLeft > 0 || chimes.some((c) => c.unread);
+
   return (
     <>
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
         <div className="flex items-baseline gap-2">
           <h1 className="text-heading text-text-primary">Notifications</h1>
           <p role="status" className="text-caption text-text-secondary">
-            {fresh > 0 && chimes.length > 0 ? (
-              `${fresh > 99 ? '99+' : fresh} new`
+            {unreadLeft > 0 && chimes.length > 0 ? (
+              `${unreadLeft > 99 ? '99+' : unreadLeft} unread`
             ) : (
-              // Nothing new: said to screen readers, not shown (the list itself makes it plain on screen).
+              // Nothing unread: said to screen readers, not shown (the list itself makes it plain on screen).
               <span className="sr-only">All caught up</span>
             )}
           </p>
         </div>
         {chimes.length > 0 && (
-          <Button variant="link" onClick={() => setClearing(true)}>
-            Clear all
-          </Button>
+          <div className="flex items-center gap-4">
+            {anyUnread && (
+              <Button variant="link" loading={busy === 'read'} onClick={readAll}>
+                Mark all as read
+              </Button>
+            )}
+            <Button variant="link" onClick={() => setClearing(true)}>
+              Clear all
+            </Button>
+          </div>
         )}
       </div>
       {error && <FormMessage tone="error">{error}</FormMessage>}
@@ -141,17 +188,39 @@ export function ChimeList({ initial, seenAt }: { initial: Page; seenAt: string }
           className="overflow-hidden rounded-lg border border-border bg-surface"
         >
           <ul className="flex flex-col divide-y divide-border">
-            {chimes.map((c) => (
-              <ChimeItem
-                key={c.id}
-                type={ITEM[c.type]}
-                text={c.text}
-                createdAt={c.at}
-                unread={c.unread}
-                href={c.href}
-                person={{ name: c.actor.displayName, tint: c.actor.portraitTint, src: c.actor.portraitUrl }}
-              />
-            ))}
+            {chimes.map((c) => {
+              const label = `More about this notification: ${c.text}`;
+              return (
+                <ChimeItem
+                  key={c.id}
+                  type={ITEM[c.type]}
+                  text={c.text}
+                  createdAt={c.at}
+                  unread={c.unread}
+                  href={c.href}
+                  // Opening it reads it; the link goes on at once and the mark follows quietly.
+                  onOpen={() => void setRead(c, true)}
+                  person={{ name: c.actor.displayName, tint: c.actor.portraitTint, src: c.actor.portraitUrl }}
+                  menu={
+                    <Dropdown
+                      label={label}
+                      align="end"
+                      items={[
+                        c.unread
+                          ? { id: 'read', label: 'Mark as read', onSelect: () => void setRead(c, true) }
+                          : { id: 'unread', label: 'Mark as unread', onSelect: () => void setRead(c, false) },
+                        { id: 'remove', label: 'Remove', onSelect: () => void remove(c) },
+                      ]}
+                      trigger={(t) => (
+                        <IconButton label={label} {...t}>
+                          <MoreIcon className="size-5" />
+                        </IconButton>
+                      )}
+                    />
+                  }
+                />
+              );
+            })}
           </ul>
         </section>
       )}

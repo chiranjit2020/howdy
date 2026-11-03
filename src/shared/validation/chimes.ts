@@ -50,3 +50,9 @@ export type ChimePrefs = Record<ChimeCategory, boolean>;
 
 /** DELETE /api/me/chimes ("Clear all"): up to what the page showed, so a Chime that rang since is kept. */
 export const clearChimesSchema = z.object({ before: z.iso.datetime().optional() });
+
+/** POST /api/me/chimes/seen: opening the page clears the bell's number up to what it showed. */
+export const markSeenSchema = z.object({ before: z.iso.datetime() });
+
+/** PATCH /api/me/chimes/:id: mark one read or unread. */
+export const chimeReadSchema = z.object({ read: z.boolean() });

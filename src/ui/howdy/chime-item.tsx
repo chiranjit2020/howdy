@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import type { ComponentType } from 'react';
+import type { ComponentType, ReactNode } from 'react';
 import type { IconBaseProps } from 'react-icons';
 import {
   GoCheck,
@@ -70,6 +70,7 @@ export function ChimeItem({
   unread,
   href,
   onOpen,
+  menu,
   person,
 }: {
   type: ChimeType;
@@ -79,6 +80,8 @@ export function ChimeItem({
   href?: string;
   /** Called when the link is followed (e.g. to mark the Chime read). */
   onOpen?: () => void;
+  /** A "more" menu at the end of the row, beside the link (not inside it): mark read or unread, remove. */
+  menu?: ReactNode;
   /** Who it is about. `src` only when the viewer may see their photo; otherwise their initials. */
   person: { name: string; tint?: PortraitTint | undefined; src?: string | undefined };
 }) {
@@ -102,11 +105,11 @@ export function ChimeItem({
     </>
   );
   const row = cn(
-    'flex items-center gap-3 px-4 py-3 no-underline transition-colors hover:bg-surface-sunken hover:no-underline',
-    unread && 'bg-accent-soft',
+    'flex min-w-0 flex-1 items-center gap-3 px-4 py-3 no-underline transition-colors hover:bg-surface-sunken hover:no-underline',
+    menu !== undefined && 'pr-1',
   );
   return (
-    <li>
+    <li className={cn('flex items-center', unread && 'bg-accent-soft')}>
       {href ? (
         <Link href={href} className={row} {...(onOpen ? { onClick: onOpen } : {})}>
           {content}
@@ -114,6 +117,7 @@ export function ChimeItem({
       ) : (
         <div className={row}>{content}</div>
       )}
+      {menu !== undefined && <span className="shrink-0 pr-2">{menu}</span>}
     </li>
   );
 }

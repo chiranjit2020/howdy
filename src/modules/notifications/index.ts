@@ -9,7 +9,10 @@ export {
   handleEvent,
   listChimes,
   markRead,
+  markSeen,
   purgeOldChimes,
+  removeChime,
+  setChimeRead,
   setPrefs,
   unreadCount,
 } from './service';

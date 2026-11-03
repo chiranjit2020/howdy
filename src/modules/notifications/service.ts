@@ -1,4 +1,11 @@
-import { notificationPrefs, notifications, postCards, townHallMembers, townHallPosts } from '@db/schema';
+import {
+  notificationPrefs,
+  notificationSeen,
+  notifications,
+  postCards,
+  townHallMembers,
+  townHallPosts,
+} from '@db/schema';
 import { and, desc, eq, inArray, isNotNull, isNull, lt, lte, or, sql } from 'drizzle-orm';
 import { canFence } from '@/modules/authz';
 import { getCards, getFenceResources, type PersonCard } from '@/modules/profiles';
@@ -17,6 +24,7 @@ import {
   type ChimeCategory,
   type ChimePrefs,
 } from '@/shared/validation/chimes';
+import { idParamSchema } from '@/shared/validation/fence';
 import type { PortraitTint } from '@/shared/validation/profile';
 
 const rule = (limit: number, windowSec: number): RateLimitRule => ({ limit, windowSec });
@@ -518,13 +526,69 @@ const base = () =>
     .leftJoin(postCards, eq(postCards.id, notifications.cardId))
     .leftJoin(townHallPosts, eq(townHallPosts.id, notifications.hallPostId));
 
-/** Unread Chimes the person can see, up to UNREAD_CAP. Uses the same filter as the list, so the two always agree. */
-export async function unreadCount(userId: string): Promise<number> {
+/** Only what rang after the person last opened their notifications (no row: everything). */
+const newerThanSeen = (userId: string) =>
+  sql`${notifications.createdAt} > coalesce((select ${notificationSeen.seenAt} from ${notificationSeen} where ${notificationSeen.userId} = ${userId}), '-infinity'::timestamptz)`;
+
+async function countUnread(userId: string, onlyNew: boolean): Promise<number> {
   const rows: Row[] = await base()
-    .where(and(eq(notifications.recipientId, userId), isNull(notifications.readAt)))
+    .where(
+      and(
+        eq(notifications.recipientId, userId),
+        isNull(notifications.readAt),
+        onlyNew ? newerThanSeen(userId) : undefined,
+      ),
+    )
     .orderBy(desc(notifications.createdAt), desc(notifications.id))
     .limit(UNREAD_CAP + 1);
   return Math.min((await visible(userId, rows)).length, UNREAD_CAP);
+}
+
+/**
+ * The bell's number: unread Chimes the person can see that rang since they last opened their notifications, up to
+ * UNREAD_CAP. Uses the same filter as the list, so the two always agree.
+ */
+export async function unreadCount(userId: string): Promise<number> {
+  return countUnread(userId, true);
+}
+
+/**
+ * Opening the notifications page: the bell's number clears up to `before` (what the page showed), while each Chime stays
+ * unread until it is opened or marked. Never moves back in time (an older tab cannot bring old ones back).
+ */
+export async function markSeen(userId: string, before: string): Promise<void> {
+  await enforceRateLimit(`chimes:mark:${userId}`, RATE.mark);
+  const at = new Date(Math.min(new Date(before).getTime(), Date.now()));
+  await getDb()
+    .insert(notificationSeen)
+    .values({ userId, seenAt: at })
+    .onConflictDoUpdate({
+      target: notificationSeen.userId,
+      set: { seenAt: sql`greatest(${notificationSeen.seenAt}, excluded.seen_at)` },
+    });
+}
+
+/** Mark one of the caller's own Chimes read or unread. Not theirs (or not there): the same 404. */
+export async function setChimeRead(userId: string, id: string, read: boolean): Promise<void> {
+  await enforceRateLimit(`chimes:mark:${userId}`, RATE.mark);
+  if (!idParamSchema.safeParse(id).success) throw new AppError('NOT_FOUND');
+  const rows = await getDb()
+    .update(notifications)
+    .set({ readAt: read ? new Date() : null })
+    .where(and(eq(notifications.id, id), eq(notifications.recipientId, userId)))
+    .returning({ id: notifications.id });
+  if (rows.length === 0) throw new AppError('NOT_FOUND');
+}
+
+/** Remove one of the caller's own Chimes for good. Not theirs (or not there): the same 404. */
+export async function removeChime(userId: string, id: string): Promise<void> {
+  await enforceRateLimit(`chimes:mark:${userId}`, RATE.mark);
+  if (!idParamSchema.safeParse(id).success) throw new AppError('NOT_FOUND');
+  const rows = await getDb()
+    .delete(notifications)
+    .where(and(eq(notifications.id, id), eq(notifications.recipientId, userId)))
+    .returning({ id: notifications.id });
+  if (rows.length === 0) throw new AppError('NOT_FOUND');
 }
 
 /** One page of the person's Chimes, newest first, with the unread count. A bad cursor is a 400. */
@@ -588,7 +652,8 @@ export async function listChimes(
       unread: s.row.readAt === null,
     })),
     nextCursor: next ? encodeCursor(next) : null,
-    unread: await unreadCount(userId),
+    // Every unread one, not only the bell's new ones: the page says how many are left to look at.
+    unread: await countUnread(userId, false),
   };
 }
 

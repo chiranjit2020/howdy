@@ -18,6 +18,8 @@ export function FoldedText({ children, className }: { children: string; classNam
     if (!el || open) return;
     const measure = () => setCut(el.scrollHeight > el.clientHeight + 1);
     measure();
+    // Old browsers (and test pages) have no ResizeObserver: measured once, never a crash.
+    if (typeof ResizeObserver === 'undefined') return;
     const watch = new ResizeObserver(measure);
     watch.observe(el);
     return () => watch.disconnect();
