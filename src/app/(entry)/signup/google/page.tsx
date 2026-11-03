@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 import { getCurrentUser, googleSignupCookieName, pendingGoogleSignup } from '@/modules/auth';
 import { Card } from '@/ui/primitives';
 import { EntryFooter, EntryLogo } from '@/ui/auth/entry-shell';
-import { handleFromText } from '../signup-aids';
+import { handleFromText } from '../handle-suggest';
 import { GoogleFinishForm } from './google-finish-form';
 
 export const metadata = { title: 'Create account' };

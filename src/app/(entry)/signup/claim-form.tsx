@@ -12,7 +12,8 @@ import { Turnstile } from '@/ui/auth/turnstile';
 import { ArrowRightIcon, CheckCircleIcon, XCircleIcon } from '@/ui/icons';
 import { Button, Input, PasswordInput } from '@/ui/primitives';
 import { ConsentBoxes } from './consent-boxes';
-import { PasswordChecklist, suggestHandle, useHandleStatus } from './signup-aids';
+import { suggestHandle } from './handle-suggest';
+import { PasswordChecklist, useHandleStatus } from './signup-aids';
 
 type Fields = { handle: string; email: string; password: string };
 type Errors = Partial<Fields & { acceptTerms: string; age: string }>;
