@@ -13,7 +13,9 @@ export function getPool(): Pool {
       max: 10,
       // A warm server reuses its open connection for the next request instead of paying the TLS + login handshake again.
       idleTimeoutMillis: 30_000,
-      connectionTimeoutMillis: 5_000,
+      // Neon pauses the database when nobody uses it; the first visitor after a quiet night waits for it to wake up
+      // (usually well under a second, now and then several), so 5 seconds was too tight.
+      connectionTimeoutMillis: 10_000,
       statement_timeout: 10_000,
     });
     // On Vercel, keeps the function alive just long enough to close idle connections cleanly when it is paused, so a

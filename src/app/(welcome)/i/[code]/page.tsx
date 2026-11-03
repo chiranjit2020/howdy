@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
-import { inviterName } from '@/modules/invites';
 import { WelcomeStory } from '../../welcome-story';
+import { lookUpInviter } from './inviter';
 
 type Props = { params: Promise<{ code: string }> };
 
@@ -10,8 +10,12 @@ const DESCRIPTION =
 /** Only the inviter's display name is ever shown (ADR-045); a link that does not work reads as the plain welcome. */
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { code } = await params;
-  const name = await inviterName(code);
-  const title = name ? `${name} invited you to Howdy` : 'Howdy — stay close to your people';
+  const name = await lookUpInviter(code);
+  const title = name
+    ? `${name} invited you to Howdy`
+    : name === undefined
+      ? 'You’re invited to Howdy'
+      : 'Howdy — stay close to your people';
   return {
     title: { absolute: title },
     description: DESCRIPTION,
@@ -30,10 +34,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 /**
  * Someone's invite link (ADR-045): the welcome page, naming who invited you; every way in carries the code to sign-up.
- * A made-up, reset or dead link shows the ordinary welcome page — it never says the link is wrong.
+ * A made-up, reset or dead link shows the ordinary welcome page — it never says the link is wrong. If the name cannot be
+ * looked up right now, the page still opens and keeps the code: an invite never fails because of the name.
  */
 export default async function InvitePage({ params }: Props) {
   const { code } = await params;
-  const invitedBy = await inviterName(code);
-  return <WelcomeStory {...(invitedBy ? { invite: { code, invitedBy } } : {})} />;
+  const invitedBy = await lookUpInviter(code);
+  if (invitedBy === null) return <WelcomeStory />;
+  return <WelcomeStory invite={invitedBy ? { code, invitedBy } : { code }} />;
 }

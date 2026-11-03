@@ -172,7 +172,7 @@ function HeroArt() {
  * Shown at /welcome, and at /i/<code> with `invite` (ADR-045): then it names who invited them, and every way in carries
  * the code to sign-up.
  */
-export function WelcomeStory({ invite }: { invite?: { code: string; invitedBy: string } }) {
+export function WelcomeStory({ invite }: { invite?: { code: string; invitedBy?: string } }) {
   const join = invite ? `/signup?invite=${invite.code}` : '/signup';
   return (
     <>
@@ -203,7 +203,9 @@ export function WelcomeStory({ invite }: { invite?: { code: string; invitedBy: s
           <div className="flex flex-col items-start gap-6 motion-safe:animate-rise">
             <p className="flex items-center gap-2 rounded-pill bg-surface px-3 py-1.5 text-caption font-semibold text-text-secondary shadow-clay-sm">
               {invite
-                ? `${invite.invitedBy} invited you to Howdy`
+                ? invite.invitedBy
+                  ? `${invite.invitedBy} invited you to Howdy`
+                  : 'You’re invited to Howdy'
                 : 'Social media for people you actually know'}
             </p>
             <h1 className="font-display text-[clamp(2.6rem,1.6rem+4.6vw,4.75rem)] leading-[1.02] font-semibold tracking-tight text-text-primary">
