@@ -1,4 +1,5 @@
 import { POST as approveCardRoute } from '@/app/api/cards/[id]/approve/route';
+import { DELETE as unpinCardRoute, POST as pinCardRoute } from '@/app/api/cards/[id]/pin/route';
 import { POST as replyRoute } from '@/app/api/cards/[id]/replies/route';
 import { POST as reportCardRoute } from '@/app/api/cards/[id]/report/route';
 import { DELETE as deleteCardRoute } from '@/app/api/cards/[id]/route';
@@ -46,6 +47,8 @@ export interface Card {
   replies: Reply[];
   author: { handle: string; displayName: string };
   photo: { url: string; width: number; height: number } | null;
+  pinned: boolean;
+  canPin: boolean;
 }
 
 async function dynamic(
@@ -92,6 +95,17 @@ export const yo = (cardId: string, on: unknown, opts: Opts = {}, kind?: unknown)
 
 export const scrape = (cardId: string, opts: Opts = {}) =>
   dynamic(deleteCardRoute, 'DELETE', `/api/cards/${enc(cardId)}`, { id: cardId }, undefined, opts);
+
+/** POST (pin) or DELETE (unpin) /api/cards/:id/pin. */
+export const pinOf = (cardId: string, on: boolean, opts: Opts = {}) =>
+  dynamic(
+    on ? pinCardRoute : unpinCardRoute,
+    on ? 'POST' : 'DELETE',
+    `/api/cards/${enc(cardId)}/pin`,
+    { id: cardId },
+    on ? {} : undefined,
+    opts,
+  );
 
 export const approve = (cardId: string, opts: Opts = {}) =>
   dynamic(approveCardRoute, 'POST', `/api/cards/${enc(cardId)}/approve`, { id: cardId }, {}, opts);

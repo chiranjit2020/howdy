@@ -11,12 +11,14 @@ export {
   listFence,
   listFriendsFeed,
   listWaiting,
+  pinCard,
   postCard,
   postReply,
   purgeStaleWaiting,
   removeCard,
   removeReply,
   setYo,
+  unpinCard,
 } from './service';
 export type {
   AuthorRef,

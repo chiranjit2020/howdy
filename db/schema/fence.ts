@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { check, index, pgTable, primaryKey, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { check, index, pgTable, primaryKey, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
 import { users } from './auth';
 
 const tstz = (name: string) => timestamp(name, { withTimezone: true, mode: 'date' });
@@ -25,8 +25,16 @@ export const postCards = pgTable(
     body: text('body').notNull(),
     status: text('status').notNull().default('published'),
     createdAt: tstz('created_at').notNull().defaultNow(),
+    /**
+     * When the wall's owner pinned it to the top of their wall, or null (2026-11-03). At most one per wall (the index
+     * below); only a published card is ever pinned (the service checks). Goes with the card when it is deleted.
+     */
+    pinnedAt: tstz('pinned_at'),
   },
   (t) => [
+    uniqueIndex('post_cards_one_pinned')
+      .on(t.fenceOwnerId)
+      .where(sql`${t.pinnedAt} is not null`),
     check('post_cards_body_len', sql`char_length(${t.body}) between 1 and 500`),
     check('post_cards_status_check', sql`${t.status} in ('published', 'pending', 'held')`),
     // Keyset pagination: newest first, ties broken by id.

@@ -1,0 +1,2 @@
+ALTER TABLE "post_cards" ADD COLUMN "pinned_at" timestamp with time zone;--> statement-breakpoint
+CREATE UNIQUE INDEX "post_cards_one_pinned" ON "post_cards" USING btree ("fence_owner_id") WHERE "post_cards"."pinned_at" is not null;

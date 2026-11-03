@@ -82,7 +82,8 @@ export function FenceSection({
     });
     if (res.ok && res.data) {
       const card = res.data.card;
-      setCards((all) => [card, ...all]);
+      // Under the pinned card, which keeps the top of the wall.
+      setCards((all) => [...all.filter((c) => c.pinned), card, ...all.filter((c) => !c.pinned)]);
       return true;
     }
     setError(
@@ -129,6 +130,28 @@ export function FenceSection({
     }
   }
 
+  /**
+   * Pin it to the top of your wall (the card pinned before goes back to its own place, newest first) or unpin it. Your
+   * own wall only; the server checks.
+   */
+  async function pin(card: WireCard, on: boolean) {
+    setError(undefined);
+    const res = await apiRequest(on ? 'POST' : 'DELETE', `/api/cards/${card.id}/pin`);
+    if (!res.ok) {
+      setError(res.error?.message ?? 'That did not work. Try again.');
+      return;
+    }
+    const newest = (a: WireCard, b: WireCard) =>
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    setCards((all) => {
+      const marked = all.map((c) =>
+        c.id === card.id ? { ...c, pinned: on } : on ? { ...c, pinned: false } : c,
+      );
+      return [...marked.filter((c) => c.pinned), ...marked.filter((c) => !c.pinned).sort(newest)];
+    });
+    toast({ title: on ? 'Pinned to the top of your wall.' : 'Unpinned.', tone: 'success' });
+  }
+
   async function confirmRemoval() {
     if (!removal) return;
     setRemoving(true);
@@ -163,6 +186,10 @@ export function FenceSection({
 
   function cardMenu(c: WireCard) {
     const items = [
+      // Pinning is about your wall, so it is offered there, not in Home's feed.
+      ...(!feed && c.canPin
+        ? [{ id: 'pin', label: c.pinned ? 'Unpin' : 'Pin to top', onSelect: () => void pin(c, !c.pinned) }]
+        : []),
       ...(c.canRemove
         ? [
             {
@@ -255,6 +282,7 @@ export function FenceSection({
             {...(c.waiting
               ? { notice: `Waiting for ${initial.isOwner ? 'you' : ownerName} to approve.` }
               : {})}
+            {...(!feed && c.pinned ? { pinned: true } : {})}
             replyCount={c.replies.length}
             replies={c.replies.map((r) => (
               <PostCardReply

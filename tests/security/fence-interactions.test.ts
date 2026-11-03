@@ -10,6 +10,7 @@ import {
   fenceOf,
   flagCard,
   nail,
+  pinOf,
   removeReplyOf,
   replyTo,
   scrape,
@@ -647,5 +648,54 @@ describe('lifecycle and integrity', () => {
       /@example\.com|authorId|fenceOwnerId|user_id|password|ranchVisibility|fencePosting|"status"/,
     );
     for (const u of [owner, friend]) expect(text).not.toContain(await userId(u.handle));
+  });
+});
+
+describe('pinning a post to the top of your wall', () => {
+  it('the owner pins one card; it leads the first page only, and pinning another replaces it', async () => {
+    const { owner, friend } = await wall();
+    const first = (await nail(owner.handle, { body: 'old news' }, as(owner))).data.card!.id;
+    const second = (await nail(owner.handle, { body: 'from a friend' }, as(friend))).data.card!.id;
+    await nail(owner.handle, { body: 'newest' }, as(owner));
+
+    expect((await pinOf(first, true, as(owner))).status).toBe(200);
+    const page = (await fenceOf(owner.handle, as(friend))).data;
+    expect(page.cards!.map((c) => [c.body, c.pinned])).toEqual([
+      ['old news', true],
+      ['newest', false],
+      ['from a friend', false],
+    ]);
+    // Never repeated further down, across pages.
+    expect(await allBodies(owner.handle, as(friend), 1)).toEqual(['old news', 'newest', 'from a friend']);
+    expect(page.cards!.every((c) => !c.canPin)).toBe(true);
+    expect((await fenceOf(owner.handle, as(owner))).data.cards!.every((c) => c.canPin)).toBe(true);
+
+    // A friend's card can be pinned too; the old one goes back to its own place.
+    expect((await pinOf(second, true, as(owner))).status).toBe(200);
+    expect((await fenceOf(owner.handle, as(owner))).data.cards!.map((c) => [c.body, c.pinned])).toEqual([
+      ['from a friend', true],
+      ['newest', false],
+      ['old news', false],
+    ]);
+    expect((await q('select count(*)::int n from post_cards where pinned_at is not null')).rows[0].n).toBe(1);
+
+    expect((await pinOf(second, false, as(owner))).status).toBe(200);
+    expect((await fenceOf(owner.handle, as(owner))).data.cards!.some((c) => c.pinned)).toBe(false);
+  });
+
+  it('only the wall owner, only a published card; everyone else gets the same 404', async () => {
+    const { owner, friend } = await wall();
+    const id = (await nail(owner.handle, { body: 'mine' }, as(owner))).data.card!.id;
+    const onTheirs = (await nail(owner.handle, { body: 'theirs' }, as(friend))).data.card!.id;
+    expect((await pinOf(id, true, {})).status).toBe(401);
+    expect((await pinOf(id, true, as(friend))).status).toBe(404); // not their wall
+    expect((await pinOf(onTheirs, true, as(friend))).status).toBe(404); // their card, but not their wall
+    expect((await pinOf(id, false, as(friend))).status).toBe(404);
+    expect((await pinOf('not-a-uuid', true, as(owner))).status).toBe(404);
+    expect((await pinOf(id, true, { ...as(owner), origin: 'https://evil.example' })).status).toBe(403);
+
+    await patchRanch({ fenceReview: true }, as(owner));
+    const pending = (await nail(owner.handle, { body: 'waiting' }, as(friend))).data.card!.id;
+    expect((await pinOf(pending, true, as(owner))).status).toBe(404);
   });
 });

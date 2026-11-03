@@ -1,5 +1,5 @@
 import { cardReplies, media, postCards, users, yos } from '@db/schema';
-import { and, asc, count, desc, eq, gt, inArray, isNull, lt, or, sql } from 'drizzle-orm';
+import { and, asc, count, desc, eq, gt, inArray, isNull, lt, ne, or, sql } from 'drizzle-orm';
 import { canFence, holdFor, type Actor, type FenceContext, type FenceResource } from '@/modules/authz';
 import { enforceNewAccountLimit, shouldHoldForOthers } from '@/modules/moderation';
 import {
@@ -123,6 +123,10 @@ export interface CardView {
    * its words; the version in it changes if the photo does, so a browser never shows a stale one.
    */
   photo: { url: string; width: number; height: number } | null;
+  /** Pinned to the top of its wall by the wall's owner. Only ever true on the wall itself, never in Home's feed. */
+  pinned: boolean;
+  /** May the viewer pin it (or unpin it)? The wall's owner, for a published card. */
+  canPin: boolean;
 }
 
 export interface FencePage {
@@ -304,6 +308,8 @@ async function hydrate(
         ...reactionFields(reactionsByCard.get(row.id) ?? emptyReactions(), myReaction.get(row.id) ?? null),
         replies: repliesByCard.get(row.id) ?? [],
         photo: photoOf(row.id, photoByCard.get(row.id)),
+        pinned: false,
+        canPin: isOwner && published,
       },
     ];
   });
@@ -363,6 +369,8 @@ export async function listFence(
           viewerId
             ? or(eq(postCards.status, 'published'), eq(postCards.authorId, viewerId))
             : eq(postCards.status, 'published'),
+          // The pinned card has its own place at the top of the first page; it is not repeated in the list.
+          or(isNull(postCards.pinnedAt), ne(postCards.status, 'published')),
           position
             ? sql`(${postCards.createdAt}, ${postCards.id}) < (${position.at}, ${position.id})`
             : undefined,
@@ -399,8 +407,13 @@ export async function listFence(
     next = position;
   }
 
+  const wall = () => ({ fence, ctx });
+  const [cards, pinned] = await Promise.all([
+    hydrate(viewer, wall, kept, keptAuthors),
+    cursor ? Promise.resolve(null) : pinnedCard(viewer, ownerId, wall),
+  ]);
   return {
-    cards: await hydrate(viewer, () => ({ fence, ctx }), kept, keptAuthors),
+    cards: pinned ? [pinned, ...cards] : cards,
     nextCursor: next ? encodeCursor(next) : null,
     isOwner: viewerId === ownerId,
     canPost: canFence(viewer, 'fence:post', fence, ctx).allow,
@@ -409,6 +422,72 @@ export async function listFence(
       (viewerId === ownerId || ctx.relationship === 'POSSE' || ctx.relationship === 'CLOSE_POSSE'),
     review: fence.fenceReview && viewerId !== ownerId,
   };
+}
+
+/**
+ * The wall's pinned card as this viewer sees it, or null: published, its writer active and not hidden from them (the
+ * same rules as any card in the list).
+ */
+async function pinnedCard(viewer: Actor, ownerId: string, wall: () => Wall): Promise<CardView | null> {
+  const [row] = await getDb()
+    .select()
+    .from(postCards)
+    .where(
+      and(
+        eq(postCards.fenceOwnerId, ownerId),
+        eq(postCards.status, 'published'),
+        sql`${postCards.pinnedAt} is not null`,
+      ),
+    )
+    .limit(1);
+  if (!row) return null;
+  const viewerId = viewer.kind === 'user' ? viewer.id : null;
+  const [authors, hidden] = await Promise.all([
+    authorsFor([row.authorId]),
+    viewerId ? hiddenAuthors(viewerId, [row.authorId]) : Promise.resolve(new Set<string>()),
+  ]);
+  if (hidden.has(row.authorId)) return null;
+  const [view] = await hydrate(viewer, wall, [row], authors);
+  return view ? { ...view, pinned: true } : null;
+}
+
+/**
+ * Pin a card to the top of your own wall, replacing the one pinned before. Your own wall and a published card only; for
+ * anything else the same 404 as a card that is not there. Quiet: nobody is told.
+ */
+export async function pinCard(ownerId: string, cardId: string): Promise<void> {
+  await enforceRateLimit(`fence:manage:${ownerId}`, RATE.manage);
+  if (!idParamSchema.safeParse(cardId).success) throw new AppError('NOT_FOUND');
+  const db = getDb();
+  const [card] = await db
+    .select({ status: postCards.status })
+    .from(postCards)
+    .where(and(eq(postCards.id, cardId), eq(postCards.fenceOwnerId, ownerId)))
+    .limit(1);
+  if (!card || card.status !== 'published') throw new AppError('NOT_FOUND');
+  // One pinned card per wall (a unique index): unpin the old one first, in the same transaction.
+  await db.transaction(async (tx) => {
+    await tx
+      .update(postCards)
+      .set({ pinnedAt: null })
+      .where(and(eq(postCards.fenceOwnerId, ownerId), sql`${postCards.pinnedAt} is not null`));
+    await tx
+      .update(postCards)
+      .set({ pinnedAt: new Date() })
+      .where(and(eq(postCards.id, cardId), eq(postCards.fenceOwnerId, ownerId)));
+  });
+}
+
+/** Unpin it. Your own wall only; unpinning a card that is not pinned does nothing. */
+export async function unpinCard(ownerId: string, cardId: string): Promise<void> {
+  await enforceRateLimit(`fence:manage:${ownerId}`, RATE.manage);
+  if (!idParamSchema.safeParse(cardId).success) throw new AppError('NOT_FOUND');
+  const [card] = await getDb()
+    .update(postCards)
+    .set({ pinnedAt: null })
+    .where(and(eq(postCards.id, cardId), eq(postCards.fenceOwnerId, ownerId)))
+    .returning({ id: postCards.id });
+  if (!card) throw new AppError('NOT_FOUND');
 }
 
 /** A card in Home's feed: a Fence card, plus whose wall it is on. */

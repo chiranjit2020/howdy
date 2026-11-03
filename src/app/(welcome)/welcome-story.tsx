@@ -44,7 +44,11 @@ const FEATURES: { icon: Icon; name: string; text: string }[] = [
     name: 'Friends',
     text: 'Add people you know, meet friends of your friends, follow people you look up to, and invite with your own link.',
   },
-  { icon: GoNote, name: 'Posts', text: 'Write on a friend’s wall, react, reply, and mention with @name.' },
+  {
+    icon: GoNote,
+    name: 'Posts',
+    text: 'Write on a friend’s wall, react, reply, mention with @name, and pin one post to the top of yours.',
+  },
   { icon: GoImage, name: 'Stories', text: 'A photo for your friends or close friends, gone in 12 hours.' },
   {
     icon: GoCommentDiscussion,
