@@ -31,7 +31,7 @@ export function TownHallCard({
 }) {
   const Heading = `h${headingLevel}` as const;
   return (
-    <article className="clay flex flex-col gap-3 p-5">
+    <article className="clay flex flex-col gap-3 rounded-[20px] p-5">
       <div className="flex flex-wrap items-center gap-2">
         <Heading
           className={headingLevel === 1 ? 'text-heading text-text-primary' : 'text-title text-text-primary'}

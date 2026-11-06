@@ -226,7 +226,7 @@ export function FenceSection({
       ref={composerRef}
       id="nail"
       // A card of its own, the same on Home and on a wall, like the posts under it.
-      className="clay flex scroll-mt-24 flex-col gap-2 p-4"
+      className="clay flex scroll-mt-24 flex-col gap-2 rounded-[20px] p-4"
     >
       {initial.review && (
         <p className="text-caption text-text-secondary">
