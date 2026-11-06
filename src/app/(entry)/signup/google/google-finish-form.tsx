@@ -9,6 +9,7 @@ import { FormMessage, focusFirstInvalid } from '@/ui/auth/form-parts';
 import { TermsCheckbox } from '@/ui/auth/terms-checkbox';
 import { Button, Input } from '@/ui/primitives';
 import { useHandleStatus } from '../signup-aids';
+import { landing } from '@/ui/auth/landing';
 
 type Errors = Partial<Record<'handle' | 'acceptTerms', string>>;
 
@@ -55,9 +56,10 @@ export function GoogleFinishForm({ email, suggested }: { email: string; suggeste
     }
     setErrors({});
     setBusy(true);
-    const res = await postJson('/api/auth/google/complete', parsed.data);
+    const res = await postJson<{ next?: string }>('/api/auth/google/complete', parsed.data);
     if (res.ok) {
-      router.push('/home');
+      // A brand-new account: straight to the new profile.
+      router.push(landing(res.data?.next));
       router.refresh();
       return;
     }

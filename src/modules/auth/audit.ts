@@ -1,4 +1,5 @@
 import { auditLog } from '@db/schema';
+import { and, count, eq } from 'drizzle-orm';
 import { getDb } from '@/platform/db';
 import { logger } from '@/platform/logger';
 
@@ -48,5 +49,23 @@ export async function audit(
       });
   } catch (err) {
     logger.error({ event: 'audit.write_failed', audited: event, err });
+  }
+}
+
+/**
+ * Where a person lands after signing in (2026-11-07). The very first time — the end of sign-up, or the first log-in
+ * after confirming the email — it is their own profile, to put a face and a few words on it; every time after, Home.
+ * Called after this sign-in's `login_success` is written, so a count of one means "this is the first". (The trail keeps
+ * a year: someone back after more than a year of silence also lands on their profile once, which suits them too.)
+ */
+export async function landingAfterSignIn(user: { id: string; handle: string }): Promise<string> {
+  try {
+    const [row] = await getDb()
+      .select({ n: count() })
+      .from(auditLog)
+      .where(and(eq(auditLog.userId, user.id), eq(auditLog.event, 'login_success')));
+    return (row?.n ?? 0) <= 1 ? `/profile/${user.handle}` : '/home';
+  } catch {
+    return '/home';
   }
 }

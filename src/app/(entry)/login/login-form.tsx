@@ -15,6 +15,7 @@ import {
 import { KeyIcon } from '@/ui/icons';
 import { Button, Checkbox, Input, PasswordInput } from '@/ui/primitives';
 import { readSuspension, SuspendedNotice, type Suspension } from './suspended-notice';
+import { landing } from '@/ui/auth/landing';
 
 /** "Remember this device": a 30-day session when ticked, one that ends with the browser when not. */
 function RememberDevice({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
@@ -132,8 +133,11 @@ export function LoginForm({ google = false }: { google?: boolean } = {}) {
 
   /** Send a proof and act on the answer. Google's "remember" was chosen before leaving for Google (it is in the cookie). */
   async function submitProof(proof: Proof) {
-    const res = await postJson('/api/auth/login', 'google' in proof ? proof : { ...proof, remember });
-    if (res.ok) return done();
+    const res = await postJson<{ next?: string }>(
+      '/api/auth/login',
+      'google' in proof ? proof : { ...proof, remember },
+    );
+    if (res.ok) return done(res.data?.next);
     setBusy(false);
     if (res.error?.code === 'SECOND_STEP_REQUIRED' && ('password' in proof || 'google' in proof)) {
       const passkey = res.error.data?.passkey === 'yes';
@@ -176,18 +180,19 @@ export function LoginForm({ google = false }: { google?: boolean } = {}) {
       setAttempt((n) => n + 1);
       return;
     }
-    const res = await postJson('/api/auth/passkey/login', {
+    const res = await postJson<{ next?: string }>('/api/auth/passkey/login', {
       challengeId: start.data.challengeId,
       response: answer.response,
       remember,
     });
-    if (res.ok) return done();
+    if (res.ok) return done(res.data?.next);
     setPasskeyBusy(false);
     onFailure(res);
   }
 
-  function done() {
-    router.push('/home');
+  /** Signed in: the server says where (your profile the very first time, Home after that). */
+  function done(next?: string) {
+    router.push(landing(next));
     router.refresh();
   }
 

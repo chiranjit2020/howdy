@@ -39,7 +39,11 @@ test.describe('authentication journey (production build, real CSP, real cookies)
     await expect(page).toHaveURL(/\/login$/);
 
     await confirmEmailVia(page, a.email);
-    await stepInsideVia(page, a.handle, a.password); // by call sign this time
+    await stepInsideVia(page, a.handle, a.password, { stay: true }); // by call sign this time
+    // The very first sign-in lands on your own profile, to put a face and a few words on it (2026-11-07).
+    await expect(page).toHaveURL(new RegExp(`/profile/${a.handle}$`));
+    await expect(page.getByRole('button', { name: 'Change cover' })).toBeVisible();
+    await page.goto('/home');
     await expect(page).toHaveURL(/\/home$/);
     // Home: friends' posts in the middle (a new account has none yet), and the account menu knows who you are.
     await expect(page.getByRole('heading', { level: 1, name: 'Home' })).toBeAttached();

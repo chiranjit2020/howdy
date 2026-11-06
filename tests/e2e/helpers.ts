@@ -171,11 +171,32 @@ export async function confirmEmailVia(page: Page, email: string) {
   await page.getByRole('heading', { name: 'Account created' }).waitFor();
 }
 
-export async function stepInsideVia(page: Page, identifier: string, password: string) {
+/**
+ * Log in through the form. An account's very FIRST sign-in lands on its own profile (2026-11-07); most specs start from
+ * Home, as a returning person does, so after the profile has loaded this goes on to Home. A failed log-in, or one that
+ * asks for a second step, returns as soon as the server has answered. `{ stay: true }` keeps the first-time landing
+ * (to test it).
+ */
+export async function stepInsideVia(
+  page: Page,
+  identifier: string,
+  password: string,
+  opts: { stay?: boolean } = {},
+) {
   await page.goto('/login');
   await page.getByLabel('Email or username').fill(identifier);
   await page.getByLabel('Password', { exact: true }).fill(password);
-  await page.getByRole('button', { name: 'Log in', exact: true }).click();
+  const [answer] = await Promise.all([
+    page.waitForResponse(
+      (r) => new URL(r.url()).pathname === '/api/auth/login' && r.request().method() === 'POST',
+    ),
+    page.getByRole('button', { name: 'Log in', exact: true }).click(),
+  ]);
+  const next = answer.ok() ? ((await answer.json().catch(() => ({}))) as { next?: string }).next : undefined;
+  if (next?.startsWith('/profile/') && !opts.stay) {
+    await page.waitForURL((u) => u.pathname === next);
+    await page.goto('/home');
+  }
 }
 
 /**

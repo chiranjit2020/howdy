@@ -14,6 +14,7 @@ import { Button, Input, PasswordInput } from '@/ui/primitives';
 import { ConsentBoxes } from './consent-boxes';
 import { suggestHandle } from './handle-suggest';
 import { PasswordChecklist, useHandleStatus } from './signup-aids';
+import { landing } from '@/ui/auth/landing';
 
 type Fields = { handle: string; email: string; password: string };
 type Errors = Partial<Fields & { acceptTerms: string; age: string }>;
@@ -173,13 +174,13 @@ export function ClaimForm({
     }
     setCodeError(undefined);
     setBusy(true);
-    const res = await postJson<{ signedIn: boolean }>('/api/auth/verify-email-code', {
+    const res = await postJson<{ signedIn: boolean; next?: string }>('/api/auth/verify-email-code', {
       email: sentTo,
       code: parsed.data,
     });
     if (res.ok) {
-      // Confirmed, and (as a rule) signed in: straight into Howdy. Otherwise log in as usual.
-      router.push(res.data?.signedIn ? '/home' : '/login');
+      // Confirmed, and (as a rule) signed in: straight to your new profile. Otherwise log in as usual.
+      router.push(res.data?.signedIn ? landing(res.data.next) : '/login');
       router.refresh();
       return;
     }

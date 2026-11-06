@@ -24,7 +24,7 @@ import {
   verifyEmailCodeSchema,
   verifyEmailSchema,
 } from '@/shared/validation/auth';
-import { audit } from './audit';
+import { audit, landingAfterSignIn } from './audit';
 import { RATE } from './config';
 import { requestDeletion } from './deletion';
 import {
@@ -140,12 +140,18 @@ export const authHandlers = {
         { googleUserId: proven.userId, code: body.code },
         { ...base, remember: proven.remember },
       );
-      const res = withCookie(json({ user: result.user }), sessionCookie(result.token, result.maxAgeSec));
+      const res = withCookie(
+        json({ user: result.user, next: await landingAfterSignIn(result.user) }),
+        sessionCookie(result.token, result.maxAgeSec),
+      );
       return withCookie(res, clearedGoogleCookie('proven'));
     }
     const { remember, ...proof } = body;
     const result = await login(proof, { ...base, remember });
-    return withCookie(json({ user: result.user }), sessionCookie(result.token, result.maxAgeSec));
+    return withCookie(
+      json({ user: result.user, next: await landingAfterSignIn(result.user) }),
+      sessionCookie(result.token, result.maxAgeSec),
+    );
   }),
 
   /** "Continue with Google" (ADR-048): off to Google, remembering what we asked in a short signed cookie. */
@@ -242,7 +248,10 @@ export const authHandlers = {
     if (previous) await revokeSessionByToken(previous);
     const session = await createSession(userId, req.headers.get('user-agent'));
     await audit('login_success', { userId, requestId, meta: { method: 'google' } });
-    const res = withCookie(json({ ok: true }), sessionCookie(session.token, session.maxAgeSec));
+    const res = withCookie(
+      json({ ok: true, next: await landingAfterSignIn({ id: userId, handle: body.handle }) }),
+      sessionCookie(session.token, session.maxAgeSec),
+    );
     return withCookie(res, clearedGoogleCookie('signup'));
   }),
 
@@ -260,7 +269,10 @@ export const authHandlers = {
       previousToken: sessionTokenFrom(req.headers),
       remember,
     });
-    return withCookie(json({ user: result.user }), sessionCookie(result.token, result.maxAgeSec));
+    return withCookie(
+      json({ user: result.user, next: await landingAfterSignIn(result.user) }),
+      sessionCookie(result.token, result.maxAgeSec),
+    );
   }),
 
   /** A suspended person's one appeal, sent with their sign-in ticket or details (they have no session). ADR-023. */
@@ -335,7 +347,7 @@ export const authHandlers = {
     });
     if (!result) return json({ signedIn: false });
     return withCookie(
-      json({ signedIn: true, user: result.user }),
+      json({ signedIn: true, user: result.user, next: await landingAfterSignIn(result.user) }),
       sessionCookie(result.token, result.maxAgeSec),
     );
   }),
