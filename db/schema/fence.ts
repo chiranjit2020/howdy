@@ -35,7 +35,8 @@ export const postCards = pgTable(
     uniqueIndex('post_cards_one_pinned')
       .on(t.fenceOwnerId)
       .where(sql`${t.pinnedAt} is not null`),
-    check('post_cards_body_len', sql`char_length(${t.body}) between 1 and 500`),
+    // 0 = a photo with no words (2026-11-07: most people post the photo alone). The app requires words OR a photo.
+    check('post_cards_body_len', sql`char_length(${t.body}) between 0 and 500`),
     check('post_cards_status_check', sql`${t.status} in ('published', 'pending', 'held')`),
     // Keyset pagination: newest first, ties broken by id.
     index('post_cards_fence_page_idx').on(t.fenceOwnerId, t.status, t.createdAt.desc(), t.id.desc()),

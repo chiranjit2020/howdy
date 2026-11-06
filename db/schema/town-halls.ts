@@ -160,7 +160,8 @@ export const townHallPosts = pgTable(
     createdAt: tstz('created_at').notNull().defaultNow(),
   },
   (t) => [
-    check('town_hall_posts_body_len', sql`char_length(${t.body}) between 1 and 280`),
+    // 0 = a photo with no words, as on a wall (2026-11-07). The app requires words OR a photo.
+    check('town_hall_posts_body_len', sql`char_length(${t.body}) between 0 and 280`),
     check('town_hall_posts_status_check', sql`${t.status} in ('published', 'held')`),
     // Keyset pagination: newest first, ties broken by id.
     index('town_hall_posts_feed_idx').on(t.townHallId, t.status, t.createdAt.desc(), t.id.desc()),

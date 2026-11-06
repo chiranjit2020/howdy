@@ -611,7 +611,7 @@ describe('lifecycle and integrity', () => {
     expect((await q('select count(*)::int n from yos')).rows[0].n).toBe(0);
   });
 
-  it('the database itself refuses bad rows: over-long text, unknown status, empty text, a second Yo', async () => {
+  it('the database itself refuses bad rows: over-long text, unknown status, an empty reply, a second Yo', async () => {
     const { owner } = await wall();
     const id = await userId(owner.handle);
     const insert = (body: string, status = 'published') =>
@@ -621,7 +621,12 @@ describe('lifecycle and integrity', () => {
         status,
       ]);
     await expect(insert('x'.repeat(501))).rejects.toThrow(/post_cards_body_len/);
-    await expect(insert('')).rejects.toThrow(/post_cards_body_len/);
+    // An empty post is allowed by the database since 2026-11-07 (a photo with no words); the API decides "words OR a
+    // photo", and refuses neither.
+    await insert('');
+    const neither = await nail(owner.handle, { body: '   ' }, as(owner));
+    expect(neither.status).toBe(422);
+    expect(neither.data.error?.fields?.body).toBe('Write something or add a photo.');
     await expect(insert('ok', 'visible')).rejects.toThrow(/post_cards_status_check/);
     await insert('ok');
     const cardId = (await q('select id from post_cards')).rows[0].id;
@@ -631,6 +636,9 @@ describe('lifecycle and integrity', () => {
         id,
         'x'.repeat(281),
       ]),
+    ).rejects.toThrow(/card_replies_body_len/);
+    await expect(
+      q('insert into card_replies (card_id, author_id, body) values ($1, $2, $3)', [cardId, id, '']),
     ).rejects.toThrow(/card_replies_body_len/);
     await q('insert into yos (card_id, user_id) values ($1, $2)', [cardId, id]);
     await expect(q('insert into yos (card_id, user_id) values ($1, $2)', [cardId, id])).rejects.toThrow(

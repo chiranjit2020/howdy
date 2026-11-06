@@ -119,6 +119,17 @@ test('one line until clicked; opens, posts, closes again; a photo from the one-l
   await expect(box).toBeFocused();
   await expect(post).toBeVisible();
 
+  // Most people post the photo alone (2026-11-07): with no caption, Post works once the photo has uploaded, and the
+  // post is just the photo.
+  await expect(post).toBeEnabled();
+  await post.click();
+  const photoPost = page.getByRole('article', { name: /Post from/ }).first();
+  await expect(
+    photoPost.getByRole('button', { name: /^Photo on this (post|card) from/ }).locator('img'),
+  ).toBeVisible();
+  await expect(preview).toHaveCount(0);
+  await expect(box).toHaveValue('');
+
   expect(problems).toEqual([]);
   await me.ctx.close();
 });

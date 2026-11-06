@@ -18,14 +18,14 @@ import './zod-setup'; // jitless Zod (no eval probe under our CSP)
 export const TOWNHALL_VISIBILITIES = ['open', 'invite'] as const;
 export type TownHallVisibility = (typeof TOWNHALL_VISIBILITIES)[number];
 
-const clean = (max: number, emptyMessage: string, what: string) =>
+const clean = (max: number, emptyMessage: string, what: string, allowEmpty = false) =>
   z
     .string()
     .transform(normaliseText)
     .pipe(
       z
         .string()
-        .min(1, emptyMessage)
+        .min(allowEmpty ? 0 : 1, emptyMessage)
         .max(max, `At most ${max} characters.`)
         .refine((s) => !hasDisguisingChars(s), `${what} contains characters that are not allowed.`)
         .refine((s) => !hasLink(s), `Links are not allowed in ${what.toLowerCase()}.`),
@@ -99,8 +99,16 @@ export const MEMBER_MAX_PAGE_SIZE = 100;
  * no disguising characters); replies reuse the Post Card reply rules.
  */
 export const hallPostBodySchema = clean(LIMITS.TOWNHALL_POST_MAX, 'Write something to post.', 'A post');
-/** A post, and optionally one finished photo of mine to go with it (ADR-046). */
-export const hallPostSchema = z.object({ body: hallPostBodySchema, photoId: z.uuid().optional() });
+/** A post, and optionally one finished photo of mine to go with it (ADR-046). Words OR a photo, as on a wall. */
+export const hallPostSchema = z
+  .object({
+    body: clean(LIMITS.TOWNHALL_POST_MAX, 'Write something or add a photo.', 'A post', true).default(''),
+    photoId: z.uuid().optional(),
+  })
+  .refine((p) => p.body !== '' || p.photoId !== undefined, {
+    message: 'Write something or add a photo.',
+    path: ['body'],
+  });
 
 /** An answer to a group event (ADR-056): going, maybe or can't go (`no`). */
 export const RSVP_ANSWERS = ['going', 'maybe', 'no'] as const;

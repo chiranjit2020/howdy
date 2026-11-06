@@ -9,14 +9,14 @@ import './zod-setup'; // jitless Zod (no eval probe under our CSP)
  * no look-alike/bidi/zero-width tricks, and no links (the Fence is for people, not for pushing traffic).
  */
 
-const fenceText = (max: number, emptyMessage: string, what: string) =>
+const fenceText = (max: number, emptyMessage: string, what: string, allowEmpty = false) =>
   z
     .string()
     .transform(normaliseText)
     .pipe(
       z
         .string()
-        .min(1, emptyMessage)
+        .min(allowEmpty ? 0 : 1, emptyMessage)
         .max(max, `At most ${max} characters.`)
         .refine((s) => !hasDisguisingChars(s), `${what} contains characters that are not allowed.`)
         .refine((s) => !hasLink(s), `Links are not allowed in ${what.toLowerCase()}.`),
@@ -25,8 +25,19 @@ const fenceText = (max: number, emptyMessage: string, what: string) =>
 export const cardBodySchema = fenceText(LIMITS.POST_CARD_MAX, 'Write something to post.', 'A post');
 export const replyBodySchema = fenceText(LIMITS.REPLY_MAX, 'Write a reply.', 'A reply');
 
-/** A card's words, and optionally one finished photo of mine (ADR-031) to nail with them. */
-export const postCardSchema = z.object({ body: cardBodySchema, photoId: z.uuid().optional() });
+/** What a post with neither words nor a photo is told. */
+export const EMPTY_POST_MESSAGE = 'Write something or add a photo.';
+
+/**
+ * A card's words, and optionally one finished photo of mine (ADR-031) to nail with them. Words OR a photo: most people
+ * post a photo on its own (2026-11-07), so a photo with no words is a whole post.
+ */
+export const postCardSchema = z
+  .object({
+    body: fenceText(LIMITS.POST_CARD_MAX, EMPTY_POST_MESSAGE, 'A post', true).default(''),
+    photoId: z.uuid().optional(),
+  })
+  .refine((c) => c.body !== '' || c.photoId !== undefined, { message: EMPTY_POST_MESSAGE, path: ['body'] });
 export const postReplySchema = z.object({ body: replyBodySchema });
 
 /** Page size for the Fence. */

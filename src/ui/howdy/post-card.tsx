@@ -239,7 +239,8 @@ export function PostCardComposer({
 
   async function submit(e: FormEvent) {
     e.preventDefault();
-    if (!trimmed || busy || uploading) return;
+    // Words OR a photo: most people post the photo alone (2026-11-07). A reply has no photo, so it needs words.
+    if ((!trimmed && !photo?.id) || busy || uploading) return;
     setBusy(true);
     try {
       const ok = await onSubmit(trimmed, photo?.id);
@@ -376,7 +377,7 @@ export function PostCardComposer({
             type="submit"
             size="sm"
             loading={busy}
-            disabled={disabled || !trimmed || uploading}
+            disabled={disabled || (!trimmed && !photo) || uploading}
             className="self-end"
           >
             <SendIcon className="size-4" />
