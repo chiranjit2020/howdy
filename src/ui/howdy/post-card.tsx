@@ -14,6 +14,7 @@ import {
   useState,
   type ChangeEvent,
   type FormEvent,
+  type MouseEvent,
   type ReactNode,
 } from 'react';
 import { LIMITS } from '@/shared/limits';
@@ -198,9 +199,22 @@ export function PostCardComposer({
   // camera button must stay put while its file picker is open. Focus moving on to the form's own buttons keeps it open.
   // (A reply box is its own one-line design, above.)
   const [focused, setFocused] = useState(false);
+  // The file picker is open. The whole window loses focus while it shows, which would close an empty box and unmount
+  // the file input mid-choice (the photo would be lost), so the box stays open until the window has focus again.
+  const [picking, setPicking] = useState(false);
   const box = useRef<HTMLTextAreaElement>(null);
   const collapsible = kind !== 'reply';
-  const open = !collapsible || focused || body !== '' || photo !== undefined || photoError !== undefined;
+  const open =
+    !collapsible || focused || picking || body !== '' || photo !== undefined || photoError !== undefined;
+
+  function startPicking(e: MouseEvent<HTMLLabelElement>) {
+    setPicking(true);
+    // Back from the picker: a photo chosen (choose() clears it, and the photo keeps the box open by itself), the picker
+    // cancelled (the input's `cancel` event), or, where a browser sends neither, the window getting its focus back.
+    const done = () => setPicking(false);
+    e.currentTarget.querySelector('input')?.addEventListener('cancel', done, { once: true });
+    window.addEventListener('focus', () => setTimeout(done, 500), { once: true });
+  }
 
   // Free the temporary preview address when it is replaced or the composer goes away.
   const previewUrl = photo?.preview;
@@ -209,6 +223,7 @@ export function PostCardComposer({
   async function choose(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     e.target.value = ''; // so choosing the same file again still triggers a change
+    setPicking(false);
     if (!file || !onPhoto) return;
     setPhotoError(undefined);
     const preview = URL.createObjectURL(file);
@@ -277,8 +292,15 @@ export function PostCardComposer({
   }
 
   // A file input can only be opened by its label, so the label wears a button's look.
+  // Pressing it must not take focus from the box: an empty box closes when it loses focus, which would remove this very
+  // button mid-click and the file picker would never open ("Add a photo" only worked after typing something).
+  // Keyboard users are unaffected: tabbing reaches the file input inside the form, which keeps it open.
   const photoPicker = (look: string, children: ReactNode) => (
-    <label className={cn(look, 'cursor-pointer focus-within:outline-2 focus-within:outline-focus')}>
+    <label
+      onMouseDown={(e) => e.preventDefault()}
+      onClick={startPicking}
+      className={cn(look, 'cursor-pointer focus-within:outline-2 focus-within:outline-focus')}
+    >
       <input type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" onChange={choose} />
       {children}
     </label>
