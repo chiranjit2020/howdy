@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { requireUser } from '@/modules/auth';
 import { listAppeals, listQueue, moderatorStanding, STAFF_TWO_STEP_MESSAGE } from '@/modules/moderation';
+import { PageFrame } from '@/ui/howdy/page-frame';
 import { ModerationView } from './moderation-view';
 
 export const metadata = { title: 'Moderation', robots: { index: false, follow: false } };
@@ -17,7 +18,7 @@ export default async function ModerationPage() {
   if (standing === 'not_staff') notFound();
   if (standing === 'needs_two_step') {
     return (
-      <main id="main" className="mx-auto flex max-w-2xl flex-col gap-4 py-4 sm:gap-6 sm:py-8">
+      <PageFrame>
         <h1 className="text-heading text-text-primary">Moderation</h1>
         <section className="flex flex-col gap-3 rounded-md bg-surface-sunken p-4">
           <p className="text-body text-text-primary">{STAFF_TWO_STEP_MESSAGE}</p>
@@ -28,14 +29,14 @@ export default async function ModerationPage() {
             Go to Sign-in security
           </Link>
         </section>
-      </main>
+      </PageFrame>
     );
   }
   const [initial, appeals] = await Promise.all([listQueue(user.id, {}), listAppeals(user.id, {})]);
   return (
-    <main id="main" className="mx-auto flex max-w-2xl flex-col gap-4 py-4 sm:gap-6 sm:py-8">
+    <PageFrame>
       <h1 className="text-heading text-text-primary">Moderation</h1>
       <ModerationView initial={initial} appeals={appeals} />
-    </main>
+    </PageFrame>
   );
 }
