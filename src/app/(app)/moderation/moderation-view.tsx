@@ -290,8 +290,8 @@ function Queue({ initial }: { initial: QueuePage }) {
                           <>
                             Howdy&rsquo;s safety check was not working when{' '}
                             <Person who={r.target} gone="an account that no longer exists" /> added this
-                            photo, so it was hidden from everyone else to be safe. Nothing was found wrong
-                            with it.
+                            photo, so it was hidden from everyone else to be safe. It was never actually
+                            checked.
                           </>
                         ) : (
                           <>
