@@ -24,6 +24,7 @@ import { apiRequest } from '@/ui/auth/api';
 import { FormMessage } from '@/ui/auth/form-parts';
 import { Img } from '@/ui/art/img';
 import { RelativeTime } from '@/ui/howdy';
+import { InboxIcon, ShieldIcon } from '@/ui/icons';
 import { Badge, Button, ClayCard, EmptyState, Input, Select, type Tone } from '@/ui/primitives';
 
 const REASON: Record<QueueItem['reason'], string> = {
@@ -256,7 +257,7 @@ function Queue({ initial }: { initial: QueuePage }) {
         <ClayCard>
           <EmptyState
             as="h3"
-            icon="🛡️"
+            icon={<ShieldIcon className="text-text-muted" />}
             title={open ? 'Nothing waiting' : `No ${STATUS_LABEL[status].toLowerCase()} reports`}
             description={open ? 'Every report has been handled.' : 'Closed reports will show up here.'}
           />
@@ -451,7 +452,7 @@ function Appeals({ initial }: { initial: AppealsPage }) {
         <ClayCard>
           <EmptyState
             as="h3"
-            icon="📨"
+            icon={<InboxIcon className="text-text-muted" />}
             title="No appeals waiting"
             description="When a suspended person appeals, it shows up here."
           />

@@ -16,6 +16,7 @@ import {
   GoHome,
   GoHourglass,
   GoImage,
+  GoInbox,
   GoKebabHorizontal,
   GoKey,
   GoMegaphone,
@@ -101,6 +102,8 @@ export const DevicesIcon = go(GoDeviceMobile);
 export const SignOutIcon = go(GoSignOut);
 // Send feedback about Howdy (ADR-059).
 export const FeedbackIcon = go(GoMegaphone);
+// Moderation: appeals from suspended people waiting to be read.
+export const InboxIcon = go(GoInbox);
 
 /** Octicons has no pause: drawn on the same 16 px grid as GoPlay (a ring with two bars), filled like the rest. */
 export const PauseIcon = (p: IconProps) => (
