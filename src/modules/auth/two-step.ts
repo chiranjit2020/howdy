@@ -1,4 +1,4 @@
-import { credentials, passkeys, recoveryCodes, totpFactors, users } from '@db/schema';
+import { passkeys, recoveryCodes, totpFactors, users } from '@db/schema';
 import { and, asc, count, eq, gt, isNotNull, isNull, lt, or } from 'drizzle-orm';
 import { toDataURL } from 'qrcode';
 import { runAfterResponse } from '@/platform/background';
@@ -6,10 +6,9 @@ import { getDb } from '@/platform/db';
 import { AppError } from '@/platform/errors';
 import { getMailer } from '@/platform/mailer';
 import { enforceRateLimit } from '@/platform/rate-limit';
-import { assertHasPassword } from './no-password';
+import { verifyIdentity, type IdentityProof } from './no-password';
 import { audit } from './audit';
 import { RATE, TOTP_SETUP_TTL_MS } from './config';
-import { verifyPassword } from './crypto';
 import { twoStepChangedMessage, type TwoStepChange } from './emails';
 import {
   RECOVERY_CODE_COUNT,
@@ -146,24 +145,13 @@ async function recoveryCodesLeft(userId: string, db: Conn = getDb()): Promise<nu
 
 // ─── changing it (signed in, password typed again) ───────────────────────────────────────────────────────────────────
 
-const WRONG_PASSWORD = 'That password is not right.';
-
 /**
  * Every change to sign-in security asks for the password again: a session left open on someone else's phone must not be
  * enough to add the thief's own passkey or switch two-step off. Limited per account, spent before the check.
  */
-export async function confirmPassword(userId: string, password: string): Promise<void> {
+export async function confirmPassword(userId: string, proof: IdentityProof): Promise<void> {
   await enforceRateLimit(`auth:security:${userId}`, RATE.securityChange);
-  await assertHasPassword(userId);
-  const [row] = await getDb()
-    .select({ passwordHash: credentials.passwordHash })
-    .from(credentials)
-    .innerJoin(users, eq(users.id, credentials.userId))
-    .where(and(eq(credentials.userId, userId), eq(users.status, 'active')))
-    .limit(1);
-  if (!row || !(await verifyPassword(row.passwordHash, password))) {
-    throw new AppError('BAD_REQUEST', { message: WRONG_PASSWORD, fields: { password: WRONG_PASSWORD } });
-  }
+  await verifyIdentity(userId, proof);
 }
 
 /** Email the owner about a change (after the response; a mail failure never undoes the change). */
@@ -246,8 +234,11 @@ export interface AppSetup {
  * Start linking an authenticator app: a fresh secret, sealed, NOT yet counted (confirmedAt null) until a code from the
  * app proves it was saved. Starting again replaces an unfinished one. Refused if an app is already linked.
  */
-export async function startApp(user: { id: string; handle: string }, password: string): Promise<AppSetup> {
-  await confirmPassword(user.id, password);
+export async function startApp(
+  user: { id: string; handle: string },
+  proof: IdentityProof,
+): Promise<AppSetup> {
+  await confirmPassword(user.id, proof);
   const db = getDb();
   const [existing] = await db
     .select({ confirmedAt: totpFactors.confirmedAt })
@@ -323,8 +314,12 @@ export async function factorAddedIn(
   return firstFactor ? { firstFactor, recoveryCodes: await issueRecoveryCodes(tx, userId) } : { firstFactor };
 }
 
-export async function removeApp(userId: string, password: string, ctx: { requestId: string }): Promise<void> {
-  await confirmPassword(userId, password);
+export async function removeApp(
+  userId: string,
+  proof: IdentityProof,
+  ctx: { requestId: string },
+): Promise<void> {
+  await confirmPassword(userId, proof);
   const result = await getDb().transaction(async (tx) => {
     const gone = await tx
       .delete(totpFactors)
@@ -340,10 +335,10 @@ export async function removeApp(userId: string, password: string, ctx: { request
 /** A fresh set of recovery codes (the old ones stop working). Only while two-step is on. */
 export async function renewRecoveryCodes(
   userId: string,
-  password: string,
+  proof: IdentityProof,
   ctx: { requestId: string },
 ): Promise<string[]> {
-  await confirmPassword(userId, password);
+  await confirmPassword(userId, proof);
   const codes = await getDb().transaction(async (tx) => {
     if (!isOn(await factorsOf(userId, tx))) return null;
     return issueRecoveryCodes(tx, userId);

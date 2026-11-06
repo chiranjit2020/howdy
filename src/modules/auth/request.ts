@@ -1,4 +1,6 @@
 import { getEnv } from '@/platform/config/env';
+import { googleConfirmedFor } from './google';
+import type { IdentityProof } from './no-password';
 import { AppError } from '@/platform/errors';
 import { clientIp } from '@/platform/http/client-ip';
 import { parseCookies, serializeCookie } from '@/platform/http/cookies';
@@ -51,4 +53,19 @@ export async function requireSession(req: Request): Promise<SessionContext> {
   const ctx = token ? await validateSession(token) : null;
   if (!ctx) throw new AppError('UNAUTHENTICATED');
   return ctx;
+}
+
+/**
+ * What a "prove it's you again" request offers: the password typed in the form, and whether THIS session confirmed
+ * with Google a few minutes ago (for an account with no password). verifyIdentity decides which one counts.
+ */
+export function identityProof(
+  req: Request,
+  session: SessionContext,
+  password: string | undefined,
+): IdentityProof {
+  return {
+    password: password || undefined,
+    googleConfirmed: googleConfirmedFor(req.headers.get('cookie'), session),
+  };
 }

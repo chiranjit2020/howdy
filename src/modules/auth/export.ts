@@ -1,12 +1,11 @@
-import { credentials, legalAcceptances, sessions, users } from '@db/schema';
+import { legalAcceptances, sessions, users } from '@db/schema';
 import { and, asc, desc, eq, gt, isNull } from 'drizzle-orm';
 import { getDb } from '@/platform/db';
 import { AppError } from '@/platform/errors';
 import { enforceRateLimit } from '@/platform/rate-limit';
-import { assertHasPassword } from './no-password';
+import { verifyIdentity, type IdentityProof } from './no-password';
 import { audit } from './audit';
 import { RATE } from './config';
-import { verifyPassword } from './crypto';
 import { twoStepSummary } from './two-step';
 
 /**
@@ -16,23 +15,11 @@ import { twoStepSummary } from './two-step';
  */
 export async function verifyForExport(
   userId: string,
-  password: string,
+  proof: IdentityProof,
   ctx: { requestId: string },
 ): Promise<void> {
   await enforceRateLimit(`auth:export-try:${userId}`, RATE.exportAttempt);
-  await assertHasPassword(userId);
-  const [row] = await getDb()
-    .select({ passwordHash: credentials.passwordHash })
-    .from(credentials)
-    .innerJoin(users, eq(users.id, credentials.userId))
-    .where(and(eq(credentials.userId, userId), eq(users.status, 'active')))
-    .limit(1);
-  if (!row || !(await verifyPassword(row.passwordHash, password))) {
-    throw new AppError('BAD_REQUEST', {
-      message: 'That password is not right.',
-      fields: { password: 'That password is not right.' },
-    });
-  }
+  await verifyIdentity(userId, proof);
   await enforceRateLimit(`auth:export:${userId}`, RATE.exportDone);
   await audit('data_exported', { userId, requestId: ctx.requestId });
 }

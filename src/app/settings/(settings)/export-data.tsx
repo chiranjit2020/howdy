@@ -3,7 +3,8 @@
 import { useState, type FormEvent } from 'react';
 import type { ApiError } from '@/ui/auth/api';
 import { FormMessage } from '@/ui/auth/form-parts';
-import { Button, ClayCard, Input } from '@/ui/primitives';
+import { Button, ClayCard } from '@/ui/primitives';
+import { IdentityCheck, identityReady, type IdentityCheckProps } from './identity-check';
 
 /** The file name the server chose (Content-Disposition), or a plain fallback. */
 function fileNameOf(res: Response): string {
@@ -13,9 +14,10 @@ function fileNameOf(res: Response): string {
 
 /**
  * "Download my data" (ADR-037): a ZIP with everything I gave Howdy and what it shows me, built on the spot. Asks for the
- * password again (a phone left signed in must not be enough), then saves the file.
+ * password again, or a Google confirmation for someone with no password (a phone left signed in must not be enough),
+ * then saves the file.
  */
-export function ExportData() {
+export function ExportData({ identity }: { identity: Omit<IdentityCheckProps, 'next'> }) {
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | undefined>();
@@ -23,7 +25,7 @@ export function ExportData() {
 
   async function download(e: FormEvent) {
     e.preventDefault();
-    if (!password) return setError('Enter your password.');
+    if (identity.hasPassword && !password) return setError('Enter your password.');
     setError(undefined);
     setDone(false);
     setBusy(true);
@@ -58,24 +60,25 @@ export function ExportData() {
   }
 
   return (
-    <ClayCard className="flex flex-col gap-3">
+    <ClayCard id="export" className="flex scroll-mt-20 flex-col gap-3">
       <h2 className="text-title text-text-primary">Download my data</h2>
       <p className="text-caption text-text-secondary">
         A ZIP with your account, settings, friends, posts, messages from the last week, testimonials,
         Capsules, group posts and your photos. Other people appear only as Howdy already shows them to you.
       </p>
       <form onSubmit={download} noValidate className="flex flex-col gap-3">
-        <Input
-          label="Your password"
-          type="password"
-          autoComplete="current-password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
+        <IdentityCheck
+          {...identity}
+          next="/settings/account#export"
+          password={password}
+          onPassword={setPassword}
           error={error}
         />
-        <Button type="submit" variant="secondary" loading={busy} className="self-start">
-          Download my data
-        </Button>
+        {identityReady(identity) && (
+          <Button type="submit" variant="secondary" loading={busy} className="self-start">
+            Download my data
+          </Button>
+        )}
       </form>
       {done && <FormMessage tone="success">Your download has started.</FormMessage>}
     </ClayCard>

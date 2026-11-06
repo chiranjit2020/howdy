@@ -30,6 +30,15 @@ const SIGNUP_TTL_MS = 30 * 60_000;
 const FLOW = 'google-flow';
 const PROVEN = 'google-proven';
 const SIGNUP = 'google-signup';
+const CONFIRMED = 'google-confirmed';
+
+/**
+ * How long "I just confirmed it's me with Google" lasts (see startGoogleConfirm): long enough to download the data or
+ * change a few sign-in settings in one go, short enough that a phone left signed in an hour later is not enough.
+ */
+export const CONFIRM_TTL_MS = 10 * 60_000;
+/** Google must say the person signed in again at most this long ago (its `auth_time`), when it says at all. */
+const CONFIRM_MAX_AUTH_AGE_MS = 10 * 60_000;
 
 export function googleEnabled(): boolean {
   const env = getEnv();
@@ -48,8 +57,8 @@ function cookie(label: string, value: string, maxAgeMs: number): string {
     path: '/',
   });
 }
-export const clearedGoogleCookie = (label: 'proven' | 'signup' | 'flow') =>
-  cookie({ proven: PROVEN, signup: SIGNUP, flow: FLOW }[label], '', 0);
+export const clearedGoogleCookie = (label: 'proven' | 'signup' | 'flow' | 'confirmed') =>
+  cookie({ proven: PROVEN, signup: SIGNUP, flow: FLOW, confirmed: CONFIRMED }[label], '', 0);
 
 const redirectUri = () => new URL('/api/auth/google/callback', getEnv().APP_URL).toString();
 
@@ -59,25 +68,23 @@ interface Flow {
   nonce: string;
   remember: boolean;
   invite: string | null;
+  /** Set when this is "confirm it's you" for someone already signed in (startGoogleConfirm), not a sign-in. */
+  confirm?: { userId: string; sessionId: string; next: string };
 }
 
-/** The redirect to Google, and the cookie that remembers what we asked for. */
-export function startGoogle(opts: { remember: boolean; invite: string | null }): {
-  location: string;
-  setCookie: string;
-} {
-  const env = getEnv();
-  if (!env.GOOGLE_CLIENT_ID) throw new AppError('NOT_FOUND');
-  const flow: Flow = {
+function newFlow(extra: Pick<Flow, 'remember' | 'invite' | 'confirm'>): Flow {
+  return {
     state: randomBytes(32).toString('base64url'),
     verifier: randomBytes(48).toString('base64url'),
     nonce: randomBytes(32).toString('base64url'),
-    remember: opts.remember,
-    invite: opts.invite,
+    ...extra,
   };
+}
+
+function authorizeUrl(flow: Flow, extra: Record<string, string>): string {
   const url = new URL(AUTHORIZE_URL);
   url.search = new URLSearchParams({
-    client_id: env.GOOGLE_CLIENT_ID,
+    client_id: getEnv().GOOGLE_CLIENT_ID!,
     redirect_uri: redirectUri(),
     response_type: 'code',
     scope: 'openid email profile',
@@ -85,22 +92,82 @@ export function startGoogle(opts: { remember: boolean; invite: string | null }):
     nonce: flow.nonce,
     code_challenge: createHash('sha256').update(flow.verifier).digest('base64url'),
     code_challenge_method: 'S256',
-    prompt: 'select_account',
+    ...extra,
   }).toString();
+  return url.toString();
+}
+
+/** The redirect to Google, and the cookie that remembers what we asked for. */
+export function startGoogle(opts: { remember: boolean; invite: string | null }): {
+  location: string;
+  setCookie: string;
+} {
+  if (!getEnv().GOOGLE_CLIENT_ID) throw new AppError('NOT_FOUND');
+  const flow = newFlow({ remember: opts.remember, invite: opts.invite });
   return {
-    location: url.toString(),
+    location: authorizeUrl(flow, { prompt: 'select_account' }),
     setCookie: cookie(FLOW, sealPayload(FLOW, flow, FLOW_TTL_MS), FLOW_TTL_MS),
   };
+}
+
+/**
+ * "Confirm it's you" for someone signed in who has no password (they joined with Google): downloading their data,
+ * closing the account and changing sign-in security ask for the password again, and this is their way to answer.
+ * Google is asked to make them sign in again (`prompt=login`, `max_age=0`), on the account with this address
+ * (`login_hint`); the answer comes back to the same callback, which then leaves a short-lived proof for THIS session.
+ */
+export function startGoogleConfirm(
+  session: { sessionId: string; user: { id: string; email: string } },
+  next: string,
+): { location: string; setCookie: string } {
+  if (!getEnv().GOOGLE_CLIENT_ID) throw new AppError('NOT_FOUND');
+  const flow = newFlow({
+    remember: false,
+    invite: null,
+    confirm: { userId: session.user.id, sessionId: session.sessionId, next },
+  });
+  return {
+    location: authorizeUrl(flow, { prompt: 'login', max_age: '0', login_hint: session.user.email }),
+    setCookie: cookie(FLOW, sealPayload(FLOW, flow, FLOW_TTL_MS), FLOW_TTL_MS),
+  };
+}
+
+/** Where a "confirm it's you" round trip should land, read from the flow cookie (null for an ordinary sign-in). */
+export function googleConfirmNext(req: Request): string | null {
+  const flow = openPayload<Flow>(FLOW, parseCookies(req.headers.get('cookie')).get(cookieName(FLOW)));
+  return flow?.confirm?.next ?? null;
+}
+
+/**
+ * Has THIS session confirmed with Google in the last CONFIRM_TTL_MS? The proof is sealed (it cannot be forged or
+ * edited) and names the session and the person, so it is useless on any other session, even the same person's.
+ */
+export function googleConfirmedFor(
+  cookieHeader: string | null,
+  session: { sessionId: string; user: { id: string } },
+): boolean {
+  const proof = openPayload<{ userId: string; sessionId: string }>(
+    CONFIRMED,
+    parseCookies(cookieHeader).get(cookieName(CONFIRMED)),
+  );
+  return proof?.userId === session.user.id && proof.sessionId === session.sessionId;
 }
 
 export type GoogleOutcome =
   /** Existing account: the login endpoint finishes (two-step, suspension …) using this cookie. */
   | { kind: 'existing'; setCookie: string; remember: boolean }
+  /** "Confirm it's you" passed: this cookie is the proof, and `next` is where to go back to. */
+  | { kind: 'confirmed'; setCookie: string; next: string }
   /** New person: the "choose a username" step uses this cookie. */
   | { kind: 'new'; setCookie: string };
 
 /** What Google said, checked. Throws AppError('UNAUTHENTICATED') for anything off. */
-export async function finishGoogle(req: Request, ctx: RequestContext): Promise<GoogleOutcome> {
+export async function finishGoogle(
+  req: Request,
+  ctx: RequestContext,
+  /** The signed-in session, if any (only a "confirm it's you" round trip needs it). */
+  session?: { sessionId: string; user: { id: string; email: string } } | null,
+): Promise<GoogleOutcome> {
   await enforceRateLimit(`auth:google:ip:${ctx.ip}`, RATE.googleIp);
   const env = getEnv();
   const params = new URL(req.url).searchParams;
@@ -144,6 +211,32 @@ export async function finishGoogle(req: Request, ctx: RequestContext): Promise<G
     throw new AppError('UNAUTHENTICATED', { data: { reason: NOT_AUTHORITATIVE } });
   }
 
+  if (flow.confirm) {
+    // Still the same person on the same session that asked, and Google proved THEIR address, just now.
+    if (!session || session.user.id !== flow.confirm.userId || session.sessionId !== flow.confirm.sessionId) {
+      throw fail('confirm_session');
+    }
+    if (email.data !== session.user.email.toLowerCase()) {
+      logger.warn({ event: 'auth.google_failed', requestId: ctx.requestId, why: 'confirm_other_account' });
+      throw new AppError('UNAUTHENTICATED', { data: { reason: OTHER_ACCOUNT } });
+    }
+    if (
+      typeof claims.auth_time === 'number' &&
+      Date.now() - claims.auth_time * 1000 > CONFIRM_MAX_AUTH_AGE_MS
+    ) {
+      throw fail('confirm_stale');
+    }
+    return {
+      kind: 'confirmed',
+      next: flow.confirm.next,
+      setCookie: cookie(
+        CONFIRMED,
+        sealPayload(CONFIRMED, { userId: session.user.id, sessionId: session.sessionId }, CONFIRM_TTL_MS),
+        CONFIRM_TTL_MS,
+      ),
+    };
+  }
+
   const userId = await claimAccountForGoogle(email.data, ctx);
   if (userId) {
     return {
@@ -169,6 +262,8 @@ export async function finishGoogle(req: Request, ctx: RequestContext): Promise<G
 
 /** Why Google could not be used: the address is one Google does not control (see googleIsAuthoritative). */
 export const NOT_AUTHORITATIVE = 'not_authoritative';
+/** "Confirm it's you" was answered with a different Google account from the one this Howdy account uses. */
+export const OTHER_ACCOUNT = 'other_account';
 
 /**
  * Does Google itself control this address, so that "verified" means "owns it NOW"? Only for Gmail, and for a Google

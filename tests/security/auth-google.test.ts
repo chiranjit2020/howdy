@@ -278,3 +278,154 @@ describe('an existing account', () => {
     expect(ok.res.status).toBe(200);
   });
 });
+
+describe('confirm it’s you with Google (no password: download data, close account, sign-in security)', () => {
+  /** Someone who joined with Google and is signed in: their email and session cookie. */
+  async function googleOnlyPerson() {
+    const u = uniqueUser('gconf');
+    const email = `${u.handle}@gmail.com`;
+    const { cb } = await roundTrip({ email, name: 'G Person' });
+    const done = await call(
+      authHandlers.googleComplete,
+      'POST',
+      '/api/auth/google/complete',
+      { handle: u.handle, acceptTerms: true },
+      { cookie: named(cb.res, 'google-signup')! },
+    );
+    return { email, session: cookieFrom(done.res)! };
+  }
+
+  /** Start confirming on `session`, Google answers with `claims`, callback on the same session. */
+  async function confirm(
+    session: string,
+    claims: Record<string, unknown>,
+    next = '/settings/account#delete',
+  ) {
+    const s = await call(
+      authHandlers.googleConfirmStart,
+      'GET',
+      `/api/auth/google/confirm?next=${encodeURIComponent(next)}`,
+      undefined,
+      { cookie: session },
+    );
+    const location = new URL(s.res.headers.get('location')!);
+    const flow = named(s.res, 'google-flow')!;
+    googleAnswers({
+      iss: 'https://accounts.google.com',
+      aud: CLIENT_ID,
+      exp: Math.floor(Date.now() / 1000) + 600,
+      nonce: location.searchParams.get('nonce'),
+      email_verified: true,
+      auth_time: Math.floor(Date.now() / 1000),
+      ...claims,
+    });
+    const cb = await call(
+      authHandlers.googleCallback,
+      'GET',
+      `/api/auth/google/callback?code=c0de&state=${encodeURIComponent(location.searchParams.get('state')!)}`,
+      undefined,
+      { cookie: `${session}; ${flow}` },
+    );
+    return { location, to: cb.res.headers.get('location') ?? '', proof: named(cb.res, 'google-confirmed') };
+  }
+
+  it('Google is made to ask again, for this address; the proof lets this session download and close the account', async () => {
+    const p = await googleOnlyPerson();
+    const { location, to, proof } = await confirm(p.session, { email: p.email });
+    expect(location.searchParams.get('prompt')).toBe('login');
+    expect(location.searchParams.get('max_age')).toBe('0');
+    expect(location.searchParams.get('login_hint')).toBe(p.email);
+    expect(new URL(to).pathname + new URL(to).search + new URL(to).hash).toBe(
+      '/settings/account?google=confirmed#delete',
+    );
+    expect(proof).toBeTruthy();
+
+    // Without the proof: the plain "confirm with Google first" answer, nothing happens.
+    const before = await call(
+      authHandlers.deleteAccount,
+      'POST',
+      '/api/me/delete-account',
+      {},
+      { cookie: p.session },
+    );
+    expect(before.data.error?.message).toBe(NO_PASSWORD_MESSAGE);
+    // With it: closed.
+    const closed = await call(
+      authHandlers.deleteAccount,
+      'POST',
+      '/api/me/delete-account',
+      {},
+      { cookie: `${p.session}; ${proof}` },
+    );
+    expect(closed.res.status).toBe(200);
+  });
+
+  it('the proof belongs to one session: the same person on another session still has to confirm', async () => {
+    const p = await googleOnlyPerson();
+    const { proof } = await confirm(p.session, { email: p.email });
+    const other = await googleOnlyPersonSessionFor(p.email);
+    const r = await call(
+      authHandlers.deleteAccount,
+      'POST',
+      '/api/me/delete-account',
+      {},
+      { cookie: `${other}; ${proof}` },
+    );
+    expect(r.data.error?.message).toBe(NO_PASSWORD_MESSAGE);
+  });
+
+  it('a different Google account, or a sign-in Google says is old, confirms nothing', async () => {
+    const p = await googleOnlyPerson();
+    const wrong = await confirm(p.session, { email: 'someone-else@gmail.com' });
+    expect(wrong.to).toMatch(/\/settings\/account\?google=other-account#delete$/);
+    expect(wrong.proof).toBeUndefined();
+    const stale = await confirm(p.session, {
+      email: p.email,
+      auth_time: Math.floor(Date.now() / 1000) - 3600,
+    });
+    expect(stale.to).toMatch(/\/settings\/account\?google=failed#delete$/);
+    expect(stale.proof).toBeUndefined();
+  });
+
+  it('comes back only to a Settings page of ours, never to another site', async () => {
+    const p = await googleOnlyPerson();
+    for (const next of [
+      'https://evil.example/x',
+      '//evil.example',
+      '/settings/../logout',
+      'javascript:alert(1)',
+    ]) {
+      const { to } = await confirm(p.session, { email: p.email }, next);
+      expect(new URL(to).origin).toBe(new URL(process.env.APP_URL ?? 'http://localhost:3000').origin);
+      expect(new URL(to).pathname).toBe('/settings/account');
+    }
+  });
+
+  it('an account WITH a password still needs the password: a Google confirmation is not a substitute', async () => {
+    const u = await verifiedUser(kit);
+    const session = (await loginAs(u)).cookie!;
+    const { proof } = await confirm(session, { email: u.email, hd: 'example.com' });
+    expect(proof).toBeTruthy();
+    const r = await call(
+      authHandlers.deleteAccount,
+      'POST',
+      '/api/me/delete-account',
+      {},
+      { cookie: `${session}; ${proof}` },
+    );
+    expect(r.data.error?.fields?.password).toBe('That password is not right.');
+  });
+
+  /** A second session for a Google-only person: sign in with Google again. */
+  async function googleOnlyPersonSessionFor(email: string): Promise<string> {
+    const { cb } = await roundTrip({ email });
+    const r = await call(
+      authHandlers.login,
+      'POST',
+      '/api/auth/login',
+      { google: true },
+      { cookie: named(cb.res, 'google-proven')! },
+    );
+    return cookieFrom(r.res)!;
+  }
+});

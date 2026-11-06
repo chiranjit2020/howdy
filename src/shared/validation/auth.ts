@@ -237,9 +237,13 @@ export const loginSchema = z.object({
  */
 export const appealSchema = loginSchema.extend({ text: appealTextSchema });
 
-/** Closing my own account: the password again, so an open session alone is not enough (ADR-027). */
+/**
+ * Closing my own account: the password again, so an open session alone is not enough (ADR-027). Optional here only
+ * because someone who joined with Google has none: they confirm with Google instead, and the server checks which one
+ * applies (an account WITH a password still needs it).
+ */
 export const deleteAccountSchema = z.object({
-  password: z.string().min(1, 'Enter your password.').max(PASSWORD_MAX),
+  password: z.string().max(PASSWORD_MAX).optional(),
 });
 
 /** "Download my data" re-checks the password exactly like deleting the account (ADR-037). */

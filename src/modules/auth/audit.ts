@@ -18,6 +18,8 @@ export type AuditEvent =
   | 'deletion_cancelled'
   | 'account_deleted'
   | 'data_exported'
+  // Someone who joined with Google confirmed it's them before a sensitive change (no password to type).
+  | 'google_confirmed'
   // Two-step sign-in (ADR-040)
   | 'two_step_on'
   | 'two_step_off'

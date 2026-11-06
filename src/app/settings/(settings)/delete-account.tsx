@@ -4,16 +4,18 @@ import Link from 'next/link';
 import { useState, type FormEvent } from 'react';
 import { apiRequest } from '@/ui/auth/api';
 import { FormMessage } from '@/ui/auth/form-parts';
-import { Button, ClayCard, ConfirmationDialog, Input } from '@/ui/primitives';
+import { Button, ClayCard, ConfirmationDialog } from '@/ui/primitives';
+import { IdentityCheck, identityReady, type IdentityCheckProps } from './identity-check';
 
 const longDate = (iso: string) =>
   new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' });
 
 /**
- * "Burn the Deed" (ADR-027): close my account and have it deleted after 14 days. Asks for the password, then confirms
- * once more. Afterwards every session is gone, so this card simply says what happens next.
+ * "Burn the Deed" (ADR-027): close my account and have it deleted after 14 days. Asks for the password (or a Google
+ * confirmation, for someone with no password), then confirms once more. Afterwards every session is gone, so this card
+ * simply says what happens next.
  */
-export function DeleteAccount() {
+export function DeleteAccount({ identity }: { identity: Omit<IdentityCheckProps, 'next'> }) {
   const [password, setPassword] = useState('');
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -22,7 +24,7 @@ export function DeleteAccount() {
 
   function ask(e: FormEvent) {
     e.preventDefault();
-    if (!password) return setError('Enter your password.');
+    if (identity.hasPassword && !password) return setError('Enter your password.');
     setError(undefined);
     setConfirming(true);
   }
@@ -53,7 +55,7 @@ export function DeleteAccount() {
   }
 
   return (
-    <ClayCard className="flex flex-col gap-3">
+    <ClayCard id="delete" className="flex scroll-mt-20 flex-col gap-3">
       <h2 className="text-title text-text-primary">Delete account</h2>
       <p className="text-caption text-text-secondary">
         Delete your account. It closes at once: you are signed out everywhere and your profile disappears.
@@ -61,17 +63,18 @@ export function DeleteAccount() {
         stepping inside lets you keep it.
       </p>
       <form onSubmit={ask} noValidate className="flex flex-col gap-3">
-        <Input
-          label="Your password"
-          type="password"
-          autoComplete="current-password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
+        <IdentityCheck
+          {...identity}
+          next="/settings/account#delete"
+          password={password}
+          onPassword={setPassword}
           error={error}
         />
-        <Button type="submit" variant="danger" className="self-start">
-          Delete my account…
-        </Button>
+        {identityReady(identity) && (
+          <Button type="submit" variant="danger" className="self-start">
+            Delete my account…
+          </Button>
+        )}
       </form>
       <ConfirmationDialog
         open={confirming}

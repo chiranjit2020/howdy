@@ -19,6 +19,7 @@ import type { RequestContext } from './accounts';
 import { audit } from './audit';
 import { MAX_PASSKEYS, RATE, WEBAUTHN_CHALLENGE_TTL_MS } from './config';
 import { keyDigest } from './crypto';
+import type { IdentityProof } from './no-password';
 import { deviceLabel } from './sessions';
 import {
   afterFactorRemoved,
@@ -84,9 +85,9 @@ const EXPIRED = 'That took too long, or the passkey prompt was used already. Try
 
 export async function passkeyRegistrationOptions(
   user: { id: string; handle: string },
-  password: string,
+  proof: IdentityProof,
 ): Promise<{ challengeId: string; options: PublicKeyCredentialCreationOptionsJSON }> {
-  await confirmPassword(user.id, password);
+  await confirmPassword(user.id, proof);
   const db = getDb();
   const existing = await db
     .select({ credentialId: passkeys.credentialId, transports: passkeys.transports })
@@ -182,10 +183,10 @@ export async function addPasskey(
 export async function removePasskey(
   userId: string,
   passkeyId: string,
-  password: string,
+  proof: IdentityProof,
   ctx: { requestId: string },
 ): Promise<void> {
-  await confirmPassword(userId, password);
+  await confirmPassword(userId, proof);
   const result = await getDb().transaction(async (tx) => {
     const gone = await tx
       .delete(passkeys)

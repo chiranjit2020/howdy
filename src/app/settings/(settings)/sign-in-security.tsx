@@ -10,6 +10,7 @@ import {
   type PublicKeyCredentialCreationOptionsJSON,
 } from '@/ui/auth/passkey';
 import { Badge, Button, ClayCard, Input } from '@/ui/primitives';
+import { IdentityCheck, identityReady, type IdentityCheckProps } from './identity-check';
 
 export interface SecurityView {
   on: boolean;
@@ -45,7 +46,13 @@ const failed = (res: ApiResult) =>
  * "Sign-in security" (ADR-040): passkeys, an authenticator app, and recovery codes. Two-step is on while there is an app
  * or a passkey. Every change asks for the password again, and the person is emailed about it.
  */
-export function SignInSecurity({ view }: { view: SecurityView }) {
+export function SignInSecurity({
+  view,
+  identity,
+}: {
+  view: SecurityView;
+  identity: Omit<IdentityCheckProps, 'next'>;
+}) {
   const router = useRouter();
   const canPasskey = usePasskeysSupported();
   const [pending, setPending] = useState<Pending | null>(null);
@@ -69,7 +76,7 @@ export function SignInSecurity({ view }: { view: SecurityView }) {
   async function confirm(e: FormEvent) {
     e.preventDefault();
     if (!pending) return;
-    if (!password) return setError('Enter your password.');
+    if (identity.hasPassword && !password) return setError('Enter your password.');
     setBusy(true);
     setError(undefined);
     const problem = await pending.run(password);
@@ -371,19 +378,19 @@ export function SignInSecurity({ view }: { view: SecurityView }) {
           className="flex flex-col gap-3 rounded-md bg-surface-sunken p-4"
         >
           <p className="text-body font-semibold text-text-primary">{pending.title}</p>
-          <Input
-            label="Your password"
-            type="password"
-            autoComplete="current-password"
-            autoFocus
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
+          <IdentityCheck
+            {...identity}
+            next="/settings/account#sign-in-security"
+            password={password}
+            onPassword={setPassword}
             error={error}
           />
           <div className="flex flex-wrap gap-2">
-            <Button type="submit" variant={pending.danger ? 'danger' : 'primary'} loading={busy}>
-              {pending.confirm}
-            </Button>
+            {identityReady(identity) && (
+              <Button type="submit" variant={pending.danger ? 'danger' : 'primary'} loading={busy}>
+                {pending.confirm}
+              </Button>
+            )}
             <Button variant="ghost" onClick={() => setPending(null)}>
               Cancel
             </Button>

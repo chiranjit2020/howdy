@@ -4,6 +4,7 @@ import { readJson } from '@/platform/http/body';
 import { parseCookies } from '@/platform/http/cookies';
 import { json, route } from '@/platform/http/route';
 import { AppError } from '@/platform/errors';
+import { enforceRateLimit } from '@/platform/rate-limit';
 import { INVITE_CODE_PATTERN } from '@/shared/validation/invites';
 import { displayNameSchema } from '@/shared/validation/profile';
 import {
@@ -24,6 +25,7 @@ import {
   verifyEmailSchema,
 } from '@/shared/validation/auth';
 import { audit } from './audit';
+import { RATE } from './config';
 import { requestDeletion } from './deletion';
 import {
   appealSuspension,
@@ -43,15 +45,20 @@ import {
 import {
   clearedGoogleCookie,
   finishGoogle,
+  googleConfirmNext,
   googleEnabled,
   googleSignupCookieName,
   NOT_AUTHORITATIVE,
+  OTHER_ACCOUNT,
   pendingGoogleSignup,
   provenByGoogle,
   startGoogle,
+  startGoogleConfirm,
 } from './google';
 import {
   clearedSessionCookie,
+  identityProof,
+  optionalSession,
   requestContext,
   requireSession,
   sessionCookie,
@@ -70,6 +77,19 @@ import { confirmApp, removeApp, renewRecoveryCodes, startApp } from './two-step'
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** A browser redirect (the Google round trip is page loads, not fetches). Relative targets stay on our own site. */
+/**
+ * Where "confirm it's you with Google" may come back to: a Settings page of our own (a path, never a full URL, so it
+ * cannot be turned into a redirect to another site). Anything else lands on Settings › Account.
+ */
+const CONFIRM_NEXT = /^\/settings(\/[a-z-]+)*(#[a-z-]+)?$/;
+const confirmNextFrom = (raw: string | null) => (raw && CONFIRM_NEXT.test(raw) ? raw : '/settings/account');
+
+/** Add `google=<outcome>` to a Settings path, before any #section. */
+function withGoogleOutcome(next: string, outcome: string): string {
+  const [path, hash] = next.split('#');
+  return `${path}?google=${outcome}${hash ? `#${hash}` : ''}`;
+}
+
 function redirectTo(to: string, cookies: string[] = []): Response {
   const location = to.startsWith('https://') ? to : new URL(to, getEnv().APP_URL).toString();
   const res = new Response(null, {
@@ -147,20 +167,53 @@ export const authHandlers = {
    */
   googleCallback: route(async ({ req, requestId }) => {
     const done = [clearedGoogleCookie('flow')];
+    // A "confirm it's you" round trip goes back to the Settings page it started from, never to Log in.
+    const confirmNext = googleConfirmNext(req);
+    const back = (outcome: string) =>
+      confirmNext ? withGoogleOutcome(confirmNextFrom(confirmNext), outcome) : `/login?google=${outcome}`;
     if (new URL(req.url).searchParams.get('error') === 'access_denied') {
-      return redirectTo('/login?google=cancelled', done);
+      return redirectTo(back('cancelled'), done);
     }
     try {
-      const outcome = await finishGoogle(req, requestContext(req, requestId));
+      const session = confirmNext ? await optionalSession(req) : null;
+      const outcome = await finishGoogle(req, requestContext(req, requestId), session);
+      if (outcome.kind === 'confirmed') {
+        await audit('google_confirmed', { userId: session!.user.id, requestId });
+        return redirectTo(withGoogleOutcome(confirmNextFrom(outcome.next), 'confirmed'), [
+          ...done,
+          outcome.setCookie,
+        ]);
+      }
       return outcome.kind === 'existing'
         ? redirectTo('/login?google=continue', [...done, outcome.setCookie])
         : redirectTo('/signup/google', [...done, outcome.setCookie]);
     } catch (err) {
       const code = err instanceof AppError ? err.code : 'INTERNAL';
       const reason = err instanceof AppError ? err.data?.reason : undefined;
-      const why = code === 'RATE_LIMITED' ? 'busy' : reason === NOT_AUTHORITATIVE ? 'use-email' : 'failed';
-      return redirectTo(`/login?google=${why}`, done);
+      const why =
+        code === 'RATE_LIMITED'
+          ? 'busy'
+          : reason === NOT_AUTHORITATIVE
+            ? 'use-email'
+            : reason === OTHER_ACCOUNT
+              ? 'other-account'
+              : 'failed';
+      return redirectTo(back(why), done);
     }
+  }),
+
+  /**
+   * "Confirm it's you with Google" (for someone signed in with no password): off to Google, which makes them sign in
+   * again, and back to the Settings page they came from. A page load (a link), so a signed-out visitor goes to Log in.
+   */
+  googleConfirmStart: route(async ({ req }) => {
+    if (!googleEnabled()) return redirectTo('/settings/account');
+    const session = await optionalSession(req);
+    if (!session) return redirectTo('/login');
+    await enforceRateLimit(`auth:google-confirm:${session.user.id}`, RATE.securityChange);
+    const next = confirmNextFrom(new URL(req.url).searchParams.get('next'));
+    const { location, setCookie } = startGoogleConfirm(session, next);
+    return redirectTo(location, [setCookie]);
   }),
 
   /** The last step for someone new from Google: username + the required box, then they are in. */
@@ -233,9 +286,10 @@ export const authHandlers = {
 
   /** Close my account and schedule its deletion (password re-checked). Ends every session, this one included. */
   deleteAccount: route(async ({ req, requestId }) => {
-    const { user } = await requireSession(req);
-    const { password } = await readJson(req, deleteAccountSchema);
-    const { deleteOn } = await requestDeletion(user.id, password, { requestId });
+    const session = await requireSession(req);
+    const { user } = session;
+    const proof = identityProof(req, session, (await readJson(req, deleteAccountSchema)).password);
+    const { deleteOn } = await requestDeletion(user.id, proof, { requestId });
     return withCookie(json({ deleteOn: deleteOn.toISOString() }), clearedSessionCookie());
   }),
 
@@ -323,9 +377,10 @@ export const authHandlers = {
   // ─── two-step sign-in, from the Workshop (ADR-040): every change re-checks the password ─────────────────────────
 
   passkeyAddOptions: route(async ({ req }) => {
-    const { user } = await requireSession(req);
-    const { password } = await readJson(req, passwordOnlySchema);
-    return json(await passkeyRegistrationOptions(user, password));
+    const session = await requireSession(req);
+    const { user } = session;
+    const proof = identityProof(req, session, (await readJson(req, passwordOnlySchema)).password);
+    return json(await passkeyRegistrationOptions(user, proof));
   }),
 
   passkeyAdd: route(async ({ req, requestId }) => {
@@ -340,18 +395,20 @@ export const authHandlers = {
 
   /** Remove one of MY passkeys. Someone else's (or a made-up) id is the same 404. */
   passkeyRemove: route(async ({ req, requestId, params }) => {
-    const { user } = await requireSession(req);
+    const session = await requireSession(req);
+    const { user } = session;
     const { id } = await params;
     if (!id || !UUID.test(id)) throw new AppError('NOT_FOUND');
-    const { password } = await readJson(req, passwordOnlySchema);
-    await removePasskey(user.id, id, password, { requestId });
+    const proof = identityProof(req, session, (await readJson(req, passwordOnlySchema)).password);
+    await removePasskey(user.id, id, proof, { requestId });
     return json(ACCEPTED);
   }),
 
   appStart: route(async ({ req }) => {
-    const { user } = await requireSession(req);
-    const { password } = await readJson(req, passwordOnlySchema);
-    return json(await startApp(user, password));
+    const session = await requireSession(req);
+    const { user } = session;
+    const proof = identityProof(req, session, (await readJson(req, passwordOnlySchema)).password);
+    return json(await startApp(user, proof));
   }),
 
   appConfirm: route(async ({ req, requestId }) => {
@@ -361,15 +418,17 @@ export const authHandlers = {
   }),
 
   appRemove: route(async ({ req, requestId }) => {
-    const { user } = await requireSession(req);
-    const { password } = await readJson(req, passwordOnlySchema);
-    await removeApp(user.id, password, { requestId });
+    const session = await requireSession(req);
+    const { user } = session;
+    const proof = identityProof(req, session, (await readJson(req, passwordOnlySchema)).password);
+    await removeApp(user.id, proof, { requestId });
     return json(ACCEPTED);
   }),
 
   recoveryCodes: route(async ({ req, requestId }) => {
-    const { user } = await requireSession(req);
-    const { password } = await readJson(req, passwordOnlySchema);
-    return json({ recoveryCodes: await renewRecoveryCodes(user.id, password, { requestId }) });
+    const session = await requireSession(req);
+    const { user } = session;
+    const proof = identityProof(req, session, (await readJson(req, passwordOnlySchema)).password);
+    return json({ recoveryCodes: await renewRecoveryCodes(user.id, proof, { requestId }) });
   }),
 };

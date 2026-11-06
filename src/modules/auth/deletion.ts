@@ -1,4 +1,4 @@
-import { credentials, retiredHandles, users } from '@db/schema';
+import { retiredHandles, users } from '@db/schema';
 import { and, eq, inArray, lte } from 'drizzle-orm';
 import { hasLiveSuspension } from '@/modules/moderation';
 import { runAfterResponse } from '@/platform/background';
@@ -8,10 +8,10 @@ import { AppError } from '@/platform/errors';
 import { logger } from '@/platform/logger';
 import { getMailer } from '@/platform/mailer';
 import { enforceRateLimit } from '@/platform/rate-limit';
-import { assertHasPassword } from './no-password';
+import { verifyIdentity, type IdentityProof } from './no-password';
 import { audit } from './audit';
 import { RATE } from './config';
-import { handleDigest, verifyPassword } from './crypto';
+import { handleDigest } from './crypto';
 import { accountDeletedMessage, deletionScheduledMessage } from './emails';
 import { revokeAllSessions } from './sessions';
 
@@ -35,29 +35,19 @@ export const deleteOnFor = (requestedAt: Date): Date =>
 const log = logger.child({ module: 'auth.deletion' });
 
 /**
- * Close my account and schedule its deletion. The password is asked for again: a session left open on a shared device
- * must not be enough to erase someone. Works for an active or a suspended account (deletion is a privacy right; the
+ * Close my account and schedule its deletion. The password is asked for again (or, for someone who joined with Google,
+ * a fresh Google confirmation): a session left open on a shared device must not be enough to erase someone. Works for an active or a suspended account (deletion is a privacy right; the
  * reports about a suspended one stay, with the link removed, for their usual time). Ends every session.
  */
 export async function requestDeletion(
   userId: string,
-  password: string,
+  proof: IdentityProof,
   ctx: { requestId: string },
 ): Promise<{ deleteOn: Date }> {
   await enforceRateLimit(`auth:delete:${userId}`, RATE.deleteAccount);
-  await assertHasPassword(userId);
-  const [row] = await getDb()
-    .select({ email: users.email, status: users.status, passwordHash: credentials.passwordHash })
-    .from(users)
-    .innerJoin(credentials, eq(credentials.userId, users.id))
-    .where(eq(users.id, userId))
-    .limit(1);
-  if (!row || !(await verifyPassword(row.passwordHash, password))) {
-    throw new AppError('BAD_REQUEST', {
-      message: 'That password is not right.',
-      fields: { password: 'That password is not right.' },
-    });
-  }
+  await verifyIdentity(userId, proof);
+  const [row] = await getDb().select({ email: users.email }).from(users).where(eq(users.id, userId)).limit(1);
+  if (!row) throw new AppError('NOT_FOUND');
   return closeAccount(userId, row.email, ctx);
 }
 
