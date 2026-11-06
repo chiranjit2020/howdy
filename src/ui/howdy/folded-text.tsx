@@ -27,7 +27,10 @@ export function FoldedText({ children, className }: { children: string; classNam
 
   return (
     <div className="flex flex-col items-start gap-1">
-      <p ref={ref} className={cn('break-words whitespace-pre-wrap', !open && 'line-clamp-6', className)}>
+      <p
+        ref={ref}
+        className={cn('[overflow-wrap:anywhere] whitespace-pre-wrap', !open && 'line-clamp-6', className)}
+      >
         {children}
       </p>
       {cut && !open && (
