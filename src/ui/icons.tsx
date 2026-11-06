@@ -34,6 +34,7 @@ import {
   GoSearch,
   GoSignOut,
   GoShield,
+  GoShieldCheck,
   GoSmiley,
   GoStar,
   GoX,
@@ -104,6 +105,8 @@ export const SignOutIcon = go(GoSignOut);
 export const FeedbackIcon = go(GoMegaphone);
 // Moderation: appeals from suspended people waiting to be read.
 export const InboxIcon = go(GoInbox);
+// Moderation, all clear: a shield with a tick (the plain shield carries a "!" and reads as a warning).
+export const ShieldCheckIcon = go(GoShieldCheck);
 
 /** Octicons has no pause: drawn on the same 16 px grid as GoPlay (a ring with two bars), filled like the rest. */
 export const PauseIcon = (p: IconProps) => (

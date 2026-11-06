@@ -24,7 +24,7 @@ import { apiRequest } from '@/ui/auth/api';
 import { FormMessage } from '@/ui/auth/form-parts';
 import { Img } from '@/ui/art/img';
 import { RelativeTime } from '@/ui/howdy';
-import { InboxIcon, ShieldIcon } from '@/ui/icons';
+import { InboxIcon, ShieldCheckIcon } from '@/ui/icons';
 import { Badge, Button, ClayCard, EmptyState, Input, Select, type Tone } from '@/ui/primitives';
 
 const REASON: Record<QueueItem['reason'], string> = {
@@ -257,7 +257,7 @@ function Queue({ initial }: { initial: QueuePage }) {
         <ClayCard>
           <EmptyState
             as="h3"
-            icon={<ShieldIcon className="text-text-muted" />}
+            icon={<ShieldCheckIcon className="text-text-muted" />}
             title={open ? 'Nothing waiting' : `No ${STATUS_LABEL[status].toLowerCase()} reports`}
             description={open ? 'Every report has been handled.' : 'Closed reports will show up here.'}
           />
