@@ -29,7 +29,7 @@ export async function shrinkPhoto(file: File, box: { width: number; height: numb
     canvas.height = Math.max(1, Math.round(h * scale));
     const ctx = canvas.getContext('2d');
     if (!ctx) return file;
-    ctx.fillStyle = '#ffffff'; // a transparent PNG would otherwise turn black as a JPEG
+    ctx.fillStyle = 'white'; // a transparent PNG would otherwise turn black as a JPEG
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.imageSmoothingQuality = 'high';
     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
