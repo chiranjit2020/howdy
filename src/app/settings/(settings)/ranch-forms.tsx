@@ -210,7 +210,7 @@ export function BoundaryForm({
       />
       <Switch
         label="Let people find me in search"
-        hint="Anyone signed in can then find you by your name or @username. Off by default. Your friends can always find you, and anyone you have blocked or muted, or who blocked you, never can."
+        hint="Anyone signed in can find you by your name or @username. On for new accounts; turn it off any time. Your friends can always find you, and anyone you have blocked or muted, or who blocked you, never can."
         checked={values.searchable}
         onCheckedChange={(v) => set('searchable', v)}
       />

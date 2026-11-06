@@ -98,7 +98,7 @@ On your friends page we may suggest people who are friends with at least two of 
 
 ## Search
 
-Signed-in people can search for others by name or @username. You are found only if you turn on "Let people find me in search" in Settings; it is **off** unless you do. Your friends can always find you. Nobody you have blocked, muted or restricted (or who did so to you) can find you, and nobody who could not open your profile anyway. A search result shows only your name, @username and profile photo (the photo only to people allowed to see it). Searches are limited per person so they cannot be used to list who is on Howdy. Howdy keeps no record of what people search for; only our host's short-lived request logs may briefly contain it.
+Signed-in people can search for others by name or @username. You are found only while "Let people find me in search" is on in Settings. It is **on** for accounts created from 7 November 2026, so friends can find you when you join; you can turn it off at any time. Accounts created before then keep the setting they had, which was off unless you turned it on. Your friends can always find you. Nobody you have blocked, muted or restricted (or who did so to you) can find you, and nobody who could not open your profile anyway. A search result shows only your name, @username and profile photo (the photo only to people allowed to see it). Searches are limited per person so they cannot be used to list who is on Howdy. Howdy keeps no record of what people search for; only our host's short-lived request logs may briefly contain it.
 
 ## Messages
 

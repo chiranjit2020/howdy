@@ -38,9 +38,16 @@ const search = async (who: P, q: string) => {
 };
 
 describe('people search', () => {
-  it('finds nobody who has not chosen to be found: it is off by default, even for an exact @username', async () => {
+  it('a new account can be found from the start (on by default since 2026-11-07)', async () => {
+    const me = await person('seeker');
+    const fresh = await person('newcomer');
+    expect((await search(me, fresh.handle)).handles).toContain(fresh.handle);
+  });
+
+  it('finds nobody who switched it off, even by an exact @username', async () => {
     const me = await person('seeker');
     const quiet = await person('quietone');
+    await patchRanch({ searchable: false }, as(quiet));
     expect((await search(me, quiet.handle)).handles).toEqual([]);
     expect((await search(me, `@${quiet.handle}`)).handles).toEqual([]);
   });

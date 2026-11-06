@@ -111,13 +111,19 @@ export interface RanchPatch {
   searchable?: boolean | undefined;
 }
 
-/** Create the Ranch for a new account. Called inside the sign-up transaction so every user always has one. */
+/**
+ * Create the Ranch for a new account. Called inside the sign-up transaction so every user always has one.
+ * A NEW account is findable in search from the start (2026-11-07: with search off by default, almost nobody could be
+ * found, so the search bar only ever found friends people already had). Written here rather than as the column's
+ * default on purpose: accounts made before this keep whatever they had, because the Privacy Policy promised them
+ * "off unless you turn it on".
+ */
 export async function createProfile(
   db: Pick<Db, 'insert'>,
   userId: string,
   displayName: string,
 ): Promise<void> {
-  await db.insert(profiles).values({ userId, displayName });
+  await db.insert(profiles).values({ userId, displayName, searchable: true });
 }
 
 interface Row {
