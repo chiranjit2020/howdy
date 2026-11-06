@@ -19,6 +19,7 @@ import {
   type ReportSubject,
   type SuspensionLength,
 } from '@/shared/validation/moderation';
+import { readPhotoCheck } from '@/shared/photo-check-words';
 import { apiRequest } from '@/ui/auth/api';
 import { FormMessage } from '@/ui/auth/form-parts';
 import { Img } from '@/ui/art/img';
@@ -262,108 +263,137 @@ function Queue({ initial }: { initial: QueuePage }) {
         </ClayCard>
       ) : (
         <ul className="flex flex-col gap-4">
-          {items.map((r) => (
-            <li key={r.id}>
-              <ClayCard className="flex flex-col gap-3">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="flex flex-wrap gap-1.5">
-                    <Badge tone="warning">{REASON[r.reason]}</Badge>
-                    <Badge tone="neutral">{SUBJECT[r.subject].label}</Badge>
-                    {open && r.targetHeld && <Badge tone="info">Writing held for review</Badge>}
-                  </span>
-                  <RelativeTime date={r.createdAt} className="text-metadata text-text-secondary" />
-                </div>
-                {r.automatic ? (
-                  <p className="text-body text-text-secondary">
-                    The photo check held a photo by{' '}
-                    <Person who={r.target} gone="an account that no longer exists" />. Only they can see it
-                    until you decide: Dismiss shows it to everyone again.
-                  </p>
-                ) : (
-                  <p className="text-body text-text-secondary">
-                    <Person who={r.reporter} gone="A former member" /> reported{' '}
-                    <Person who={r.target} gone="an account that no longer exists" />
-                  </p>
-                )}
-                {(r.cardHasPhoto || (r.subject === 'card_photo' && r.canRemove)) && (
-                  <Img
-                    src={`/api/moderation/reports/${r.id}/card-photo`}
-                    width={240}
-                    height={240}
-                    alt={`The photo on the reported ${r.subject === 'hall_post' ? 'post' : 'card'} by @${r.target?.handle ?? 'someone'}`}
-                    className="max-h-60 w-auto max-w-full rounded-md object-contain"
-                  />
-                )}
-                {r.subject === 'portrait' && r.canRemove && (
-                  <Img
-                    src={`/api/moderation/reports/${r.id}/portrait`}
-                    width={128}
-                    height={128}
-                    alt={`The reported photo of @${r.target?.handle ?? 'someone'}`}
-                    className="size-32 rounded-md object-cover"
-                  />
-                )}
-                {r.evidenceText && (
-                  <blockquote className="rounded-md border-l-4 border-border bg-surface-sunken px-3 py-2 text-body [overflow-wrap:anywhere] whitespace-pre-wrap text-text-primary">
-                    <span className="sr-only">{SUBJECT[r.subject].said} </span>
-                    {r.evidenceText}
-                  </blockquote>
-                )}
-                {!r.canRemove && SUBJECT[r.subject].remove && (
-                  <p className="text-caption text-text-secondary">{SUBJECT[r.subject].gone}</p>
-                )}
-                {r.details && <p className="text-body text-text-primary">{r.details}</p>}
-                {open ? (
-                  <div className="flex flex-wrap gap-2">
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      loading={busy === `${r.id}:dismiss`}
-                      onClick={() => act(r.id, 'dismiss')}
-                    >
-                      Dismiss
-                    </Button>
-                    {r.canRemove && SUBJECT[r.subject].remove && (
+          {items.map((r) => {
+            // A photo-check card is not a person's complaint: say what the check did, in plain words.
+            const check = r.automatic ? readPhotoCheck(r.details) : null;
+            // Nothing a suspension could be about: the check was down, or the photo is already gone.
+            const noSuspend = check !== null && (check.down || !r.canRemove);
+            return (
+              <li key={r.id}>
+                <ClayCard className="flex flex-col gap-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="flex flex-wrap gap-1.5">
+                      {check ? (
+                        <Badge tone="neutral">Photo check</Badge>
+                      ) : (
+                        <Badge tone="warning">{REASON[r.reason]}</Badge>
+                      )}
+                      <Badge tone="neutral">{SUBJECT[r.subject].label}</Badge>
+                      {open && r.targetHeld && <Badge tone="info">Writing held for review</Badge>}
+                    </span>
+                    <RelativeTime date={r.createdAt} className="text-metadata text-text-secondary" />
+                  </div>
+                  {check ? (
+                    <div className="flex flex-col gap-1">
+                      <p className="text-body text-text-primary">
+                        {check.down ? (
+                          <>
+                            Howdy&rsquo;s safety check was not working when{' '}
+                            <Person who={r.target} gone="an account that no longer exists" /> added this
+                            photo, so it was hidden from everyone else to be safe. Nothing was found wrong
+                            with it.
+                          </>
+                        ) : (
+                          <>
+                            Howdy&rsquo;s safety check thinks this photo by{' '}
+                            <Person who={r.target} gone="an account that no longer exists" /> may show{' '}
+                            {check.saw.length ? check.saw.join(', ') : 'something unsuitable'}. It is hidden
+                            from everyone else until you decide.
+                          </>
+                        )}
+                      </p>
+                      <p className="text-caption text-text-secondary">
+                        {r.canRemove
+                          ? 'If it looks fine, show it. If not, remove it.'
+                          : 'The photo no longer exists (its post was deleted, never shared, or expired), so there is nothing to decide. Clear takes it off this list.'}
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="text-body text-text-secondary">
+                      <Person who={r.reporter} gone="A former member" /> reported{' '}
+                      <Person who={r.target} gone="an account that no longer exists" />
+                    </p>
+                  )}
+                  {(r.cardHasPhoto || (r.subject === 'card_photo' && r.canRemove)) && (
+                    <Img
+                      src={`/api/moderation/reports/${r.id}/card-photo`}
+                      width={240}
+                      height={240}
+                      alt={`The photo on the reported ${r.subject === 'hall_post' ? 'post' : 'card'} by @${r.target?.handle ?? 'someone'}`}
+                      className="max-h-60 w-auto max-w-full rounded-md object-contain"
+                    />
+                  )}
+                  {r.subject === 'portrait' && r.canRemove && (
+                    <Img
+                      src={`/api/moderation/reports/${r.id}/portrait`}
+                      width={128}
+                      height={128}
+                      alt={`The reported photo of @${r.target?.handle ?? 'someone'}`}
+                      className="size-32 rounded-md object-cover"
+                    />
+                  )}
+                  {r.evidenceText && (
+                    <blockquote className="rounded-md border-l-4 border-border bg-surface-sunken px-3 py-2 text-body [overflow-wrap:anywhere] whitespace-pre-wrap text-text-primary">
+                      <span className="sr-only">{SUBJECT[r.subject].said} </span>
+                      {r.evidenceText}
+                    </blockquote>
+                  )}
+                  {!check && !r.canRemove && SUBJECT[r.subject].remove && (
+                    <p className="text-caption text-text-secondary">{SUBJECT[r.subject].gone}</p>
+                  )}
+                  {!check && r.details && <p className="text-body text-text-primary">{r.details}</p>}
+                  {open ? (
+                    <div className="flex flex-wrap gap-2">
                       <Button
                         size="sm"
                         variant="secondary"
-                        loading={busy === `${r.id}:${SUBJECT[r.subject].remove!.action}`}
-                        onClick={() => act(r.id, SUBJECT[r.subject].remove!.action)}
+                        loading={busy === `${r.id}:dismiss`}
+                        onClick={() => act(r.id, 'dismiss')}
                       >
-                        {SUBJECT[r.subject].remove!.label}
+                        {check ? (r.canRemove ? 'Looks fine, show it' : 'Clear') : 'Dismiss'}
                       </Button>
-                    )}
-                    {r.target?.status === 'active' && confirming !== r.id && (
-                      <Button size="sm" variant="danger" onClick={() => setConfirming(r.id)}>
-                        Suspend…
-                      </Button>
-                    )}
-                  </div>
-                ) : null}
-                {open && r.target?.status === 'active' && confirming === r.id ? (
-                  <SuspendStep
-                    handle={r.target.handle}
-                    defaultReason={r.reason}
-                    busy={busy === `${r.id}:suspend`}
-                    onConfirm={(how) => act(r.id, 'suspend', how)}
-                    onCancel={() => setConfirming(undefined)}
-                  />
-                ) : null}
-                {open ? null : (
-                  <p className="text-caption text-text-secondary">
-                    {STATUS_LABEL[r.status]}
-                    {r.reviewedBy && <> by @{r.reviewedBy.handle}</>}
-                    {r.reviewedAt && (
-                      <>
-                        {' '}
-                        <RelativeTime date={r.reviewedAt} />
-                      </>
-                    )}
-                  </p>
-                )}
-              </ClayCard>
-            </li>
-          ))}
+                      {r.canRemove && SUBJECT[r.subject].remove && (
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          loading={busy === `${r.id}:${SUBJECT[r.subject].remove!.action}`}
+                          onClick={() => act(r.id, SUBJECT[r.subject].remove!.action)}
+                        >
+                          {SUBJECT[r.subject].remove!.label}
+                        </Button>
+                      )}
+                      {!noSuspend && r.target?.status === 'active' && confirming !== r.id && (
+                        <Button size="sm" variant="danger" onClick={() => setConfirming(r.id)}>
+                          Suspend…
+                        </Button>
+                      )}
+                    </div>
+                  ) : null}
+                  {open && r.target?.status === 'active' && confirming === r.id ? (
+                    <SuspendStep
+                      handle={r.target.handle}
+                      defaultReason={r.reason}
+                      busy={busy === `${r.id}:suspend`}
+                      onConfirm={(how) => act(r.id, 'suspend', how)}
+                      onCancel={() => setConfirming(undefined)}
+                    />
+                  ) : null}
+                  {open ? null : (
+                    <p className="text-caption text-text-secondary">
+                      {STATUS_LABEL[r.status]}
+                      {r.reviewedBy && <> by @{r.reviewedBy.handle}</>}
+                      {r.reviewedAt && (
+                        <>
+                          {' '}
+                          <RelativeTime date={r.reviewedAt} />
+                        </>
+                      )}
+                    </p>
+                  )}
+                </ClayCard>
+              </li>
+            );
+          })}
         </ul>
       )}
 
