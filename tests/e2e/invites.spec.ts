@@ -39,7 +39,10 @@ test.describe('Invite links (production build, real CSP)', () => {
     await rick.page.goto('/friends');
     await pageReady(rick.page);
     await expect(rick.page.getByRole('heading', { name: 'Invite someone new' })).toBeVisible();
-    const link = (await rick.page.getByText(/\/i\/[A-Za-z0-9]{10}$/).filter({ visible: true }).textContent())!.trim();
+    const link = (await rick.page
+      .getByText(/\/i\/[A-Za-z0-9]{10}$/)
+      .filter({ visible: true })
+      .textContent())!.trim();
     const path = new URL(link).pathname;
     expect(await axeViolations(rick.page)).toEqual([]);
     expect(await smallTargets(rick.page)).toEqual([]);
@@ -83,7 +86,8 @@ test.describe('Invite links (production build, real CSP)', () => {
       await expect(rick.page.getByText(/Requests for you \(1\)/)).toBeVisible({ timeout: 2000 });
     }).toPass({ timeout: 20_000 });
     await expect(rick.page.getByText(`@${friend.handle}`)).toBeVisible();
-    await expect(rick.page.getByText('1 joined with it this week')).toBeVisible();
+    // The invite card is on the page twice (first on phones, in the side column on wide screens): the one showing.
+    await expect(rick.page.getByText('1 joined with it this week').filter({ visible: true })).toBeVisible();
     expect(problems).toEqual([]);
     expect(friendProblems).toEqual([]);
     await ctx.close();
