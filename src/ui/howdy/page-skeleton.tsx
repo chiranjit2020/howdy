@@ -62,8 +62,7 @@ export function SkeletonFramedPage({ children, rail = 2 }: { children: ReactNode
 /** A right-panel card: the stripe along the top, a small title and two lines. */
 export function SkeletonRailCard() {
   return (
-    <div className="relative flex flex-col gap-3 overflow-hidden rounded-lg border border-border bg-surface p-4 pt-6">
-      <Skeleton className="absolute inset-x-0 top-0 h-1.5 rounded-none" />
+    <div className="relative flex flex-col gap-3 overflow-hidden rounded-[20px] border border-border bg-surface p-4">
       <Skeleton className="h-3 w-24" />
       <Skeleton className="h-3 w-full" />
       <Skeleton className="h-3 w-3/4" />

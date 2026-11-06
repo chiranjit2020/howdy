@@ -2,13 +2,11 @@ import Link from 'next/link';
 import type { ReactNode } from 'react';
 
 /**
- * A card in a right panel (Home's, a profile's): white, with a solid 6 px sunflower bar along the top, a small uppercase
- * title, and an optional link or button at the end of the title row. The bar is one flat colour on purpose: the earlier
- * violet-and-sunflower diagonal stripes read as "still loading" on a phone (2026-11-02).
+ * A card in a right panel (Home's, a profile's): white, 20 px rounded corners, a small uppercase title, and an optional
+ * link or button at the end of the title row. (The sunflower bar along the top was removed 2026-11-07.)
  */
 export const RAIL_CARD =
-  'relative flex flex-col gap-3 overflow-hidden rounded-lg border border-border bg-surface p-4 pt-6 ' +
-  'before:absolute before:inset-x-0 before:top-0 before:h-1.5 before:bg-highlight before:content-[""]';
+  'relative flex flex-col gap-3 overflow-hidden rounded-[20px] border border-border bg-surface p-4';
 export const RAIL_TITLE = 'text-metadata font-semibold tracking-wider text-text-secondary uppercase';
 /** 44 px to tap on touch screens, without making the title row any taller (the negative margin takes it back). */
 export const RAIL_MORE =
