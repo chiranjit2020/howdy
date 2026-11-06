@@ -13,7 +13,14 @@ import { logger } from './logger';
  *            waits for a moderator.
  *   ok     — nothing flagged.
  */
-export type PhotoVerdict = { verdict: 'ok' } | { verdict: 'hold' | 'refuse'; summary: string };
+export type PhotoVerdict =
+  | { verdict: 'ok' }
+  | {
+      verdict: 'hold' | 'refuse';
+      summary: string;
+      /** True when the check itself could not run (a bad key, OpenAI down, a timeout): nothing was judged. */
+      unavailable?: boolean;
+    };
 
 /** Above this score the photo is refused outright rather than held for a person to look at. */
 export const REFUSE_AT = 0.9;
@@ -80,7 +87,11 @@ async function checkWithOpenAI(key: string, jpeg: Buffer): Promise<PhotoVerdict>
     });
     if (!res.ok) {
       logger.warn({ event: 'photo_check.failed', status: res.status });
-      return { verdict: 'hold', summary: `Photo check could not run (${res.status}); held to be safe.` };
+      return {
+        verdict: 'hold',
+        summary: `Photo check could not run (${res.status}); held to be safe.`,
+        unavailable: true,
+      };
     }
     const data = (await res.json()) as { results?: ModerationResult[] };
     const result = data.results?.[0];
@@ -88,6 +99,32 @@ async function checkWithOpenAI(key: string, jpeg: Buffer): Promise<PhotoVerdict>
     return verdictFor(result);
   } catch (err) {
     logger.warn({ event: 'photo_check.failed', err });
-    return { verdict: 'hold', summary: 'Photo check could not run; held to be safe.' };
+    return { verdict: 'hold', summary: 'Photo check could not run; held to be safe.', unavailable: true };
+  }
+}
+
+/**
+ * The health watch's probe: can the photo check run right now? Sends one tiny TEXT request to the same (free) moderation
+ * endpoint with the real key, so an expired or revoked key, an account out of credit or an OpenAI outage is noticed
+ * within the half hour, even on a day nobody uploads a photo. The answer is a status code; the key is never echoed.
+ */
+export async function probePhotoCheck(
+  key: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<{ ok: true } | { ok: false; status: number | null; error?: string }> {
+  try {
+    const res = await fetchImpl(URL, {
+      method: 'POST',
+      headers: { authorization: `Bearer ${key}`, 'content-type': 'application/json' },
+      body: JSON.stringify({ model: 'omni-moderation-latest', input: 'health check' }),
+      signal: AbortSignal.timeout(TIMEOUT_MS),
+    });
+    return res.ok ? { ok: true } : { ok: false, status: res.status };
+  } catch (err) {
+    return {
+      ok: false,
+      status: null,
+      error: (err instanceof Error ? err.message : String(err)).slice(0, 160),
+    };
   }
 }

@@ -2,6 +2,7 @@ import { sql } from 'drizzle-orm';
 import journal from '@db/migrations/meta/_journal.json';
 import { getEnv } from '@/platform/config/env';
 import { getDb, getPool } from '@/platform/db';
+import { probePhotoCheck } from '@/platform/photo-check';
 import { getRedis } from '@/platform/redis';
 import { getObjectStore } from '@/platform/storage';
 
@@ -201,6 +202,42 @@ export async function checkEmail(): Promise<CheckResult> {
     detail: prod
       ? 'Resend is not configured: confirmation and reset emails cannot go out.'
       : 'Development transport.',
+  };
+}
+
+/**
+ * The photo check (ADR-039): every uploaded photo is shown to OpenAI's moderation model first. When that cannot run, no
+ * photo is lost, but covers are turned down and Portraits and card photos wait unseen for a moderator, so it is a
+ * failure. Checked for real with the key (see probePhotoCheck): in October 2026 a key with a 7-day expiry lapsed and
+ * nobody noticed for weeks.
+ */
+export async function checkPhotoCheck(fetchImpl: typeof fetch = fetch): Promise<CheckResult> {
+  const env = getEnv();
+  const base = { id: 'photo_check', label: 'Photo check (OpenAI)' } as const;
+  if (!env.OPENAI_API_KEY) {
+    return env.NODE_ENV === 'production'
+      ? { ...base, status: 'warn', detail: 'Not configured: photos go up without the safety check.' }
+      : { ...base, status: 'skip', detail: 'Not configured in development.' };
+  }
+  const start = performance.now();
+  const r = await probePhotoCheck(env.OPENAI_API_KEY, fetchImpl);
+  const ms = since(start);
+  if (r.ok) return { ...base, status: 'ok', detail: `Working (${ms} ms).`, ms };
+  const why =
+    r.status === 401
+      ? 'OpenAI rejected the key (expired or revoked). Make a new key and set OPENAI_API_KEY in Vercel.'
+      : r.status === 403
+        ? 'OpenAI refused the key (no permission for moderation).'
+        : r.status === 429
+          ? 'OpenAI answered 429: out of credit, or rate-limited.'
+          : r.status === null
+            ? `OpenAI not reachable: ${r.error ?? 'no answer'}`
+            : `OpenAI answered ${r.status}.`;
+  return {
+    ...base,
+    status: 'fail',
+    detail: `${why} Until fixed, cover photos are turned down and other photos wait for a moderator.`,
+    ms,
   };
 }
 

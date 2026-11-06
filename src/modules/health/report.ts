@@ -7,6 +7,7 @@ import {
   checkDatabaseSize,
   checkEmail,
   checkMigrations,
+  checkPhotoCheck,
   checkRedis,
   checkSite,
   checkStorage,
@@ -55,17 +56,18 @@ export function overallOf(checks: CheckResult[]): Overall {
 /** Run every check at once and put the answers together. Never throws: a check that breaks is reported as failed. */
 export async function runHealthReport(opts: { fetchImpl?: typeof fetch } = {}): Promise<HealthReport> {
   const start = performance.now();
-  const [database, migrations, size, redis, storage, email, site, activity] = await Promise.all([
+  const [database, migrations, size, redis, storage, email, photoCheck, site, activity] = await Promise.all([
     withTimeout('database', 'Database', checkDatabase),
     withTimeout('migrations', 'Database migrations', checkMigrations),
     withTimeout('database_size', 'Database storage', checkDatabaseSize),
     withTimeout('redis', 'Redis (rate limits)', checkRedis),
     withTimeout('storage', 'Photo storage', checkStorage),
     withTimeout('email', 'Email (Resend)', checkEmail),
+    withTimeout('photo_check', 'Photo check (OpenAI)', () => checkPhotoCheck(opts.fetchImpl)),
     withTimeout('site', 'Website', () => checkSite(opts.fetchImpl)),
     readActivity().catch(() => null),
   ]);
-  const checks = [database, migrations, size, redis, storage, email, site];
+  const checks = [database, migrations, size, redis, storage, email, photoCheck, site];
   if (activity) checks.push(...checkActivity(activity));
   return {
     status: overallOf(checks),

@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { GET as reportRoute } from '@/app/api/health/report/route';
 import { decideEmail, formatReport, overallOf, type HealthReport } from '@/modules/health';
 import { REMIND_EVERY_MS } from '@/modules/health/report';
-import { checkActivity, checkSite, FAILED_LOGINS_PER_HOUR } from '@/modules/health/checks';
+import { checkActivity, checkPhotoCheck, checkSite, FAILED_LOGINS_PER_HOUR } from '@/modules/health/checks';
 import { resetEnvCache } from '@/platform/config/env';
 
 const HOUR = 60 * 60 * 1000;
@@ -67,6 +67,43 @@ describe('website check', () => {
     const r = await checkSite(down);
     expect(r.status).toBe('fail');
     expect(r.detail).toContain('ECONNREFUSED');
+  });
+});
+
+describe('photo check probe', () => {
+  const env = process.env as Record<string, string | undefined>;
+  const saved = env.OPENAI_API_KEY;
+  afterEach(() => {
+    if (saved === undefined) delete env.OPENAI_API_KEY;
+    else env.OPENAI_API_KEY = saved;
+    resetEnvCache();
+  });
+  const answer = (status: number) => (async () => new Response('{}', { status })) as unknown as typeof fetch;
+
+  it('an expired or revoked key (401) is a failure that says what to do, without the key', async () => {
+    env.OPENAI_API_KEY = 'sk-test-SECRETKEY-0123456789abcdef';
+    resetEnvCache();
+    const r = await checkPhotoCheck(answer(401));
+    expect(r.status).toBe('fail');
+    expect(r.detail).toContain('rejected the key');
+    expect(r.detail).not.toContain('SECRETKEY');
+    expect((await checkPhotoCheck(answer(429))).status).toBe('fail');
+    expect((await checkPhotoCheck(answer(200))).status).toBe('ok');
+  });
+  it('no answer at all is a failure', async () => {
+    env.OPENAI_API_KEY = 'sk-test-0123456789abcdefghij';
+    resetEnvCache();
+    const down = (async () => {
+      throw new Error('ECONNRESET');
+    }) as unknown as typeof fetch;
+    const r = await checkPhotoCheck(down);
+    expect(r.status).toBe('fail');
+    expect(r.detail).toContain('ECONNRESET');
+  });
+  it('no key outside production is skipped', async () => {
+    delete env.OPENAI_API_KEY;
+    resetEnvCache();
+    expect((await checkPhotoCheck(answer(200))).status).toBe('skip');
   });
 });
 
