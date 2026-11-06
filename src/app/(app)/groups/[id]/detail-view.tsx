@@ -11,7 +11,7 @@ import { FormMessage } from '@/ui/auth/form-parts';
 import { GROUP_VISIBILITY_LABEL, TownHallCard } from '@/ui/howdy';
 import { PageFrame } from '@/ui/howdy/page-frame';
 import { RailCard } from '@/ui/howdy/rail-card';
-import { MoreIcon } from '@/ui/icons';
+import { MoreIcon, UsersIcon } from '@/ui/icons';
 import { FeedSection, type InitialFeed, type InitialHeld } from './feed-section';
 import { ReportDialog } from '@/ui/howdy/report-dialog';
 import {
@@ -233,7 +233,11 @@ export function TownHallDetailView({
                 <ClayCard className="flex flex-col gap-2">
                   <h2 className="text-title text-text-primary">Members</h2>
                   {members.length === 0 ? (
-                    <EmptyState as="h3" icon="🏛️" title="Just you so far" />
+                    <EmptyState
+                      as="h3"
+                      icon={<UsersIcon className="text-text-muted" />}
+                      title="Just you so far"
+                    />
                   ) : (
                     <ul className="-mb-2.5 flex flex-col divide-y divide-border">
                       {members.map((m) => (

@@ -7,6 +7,7 @@ import { liveChannelFor } from '@/platform/live-ping';
 import { AppError } from '@/platform/errors';
 import { ClayCard, EmptyState } from '@/ui/primitives';
 import { ThreadView } from './thread-view';
+import { ClockIcon } from '@/ui/icons';
 
 export const metadata = { title: 'Message', robots: { index: false, follow: false } };
 
@@ -32,7 +33,7 @@ export default async function ThreadPage({
         <ClayCard className="flex flex-1 items-center justify-center">
           <EmptyState
             as="h1"
-            icon="⏳"
+            icon={<ClockIcon className="text-text-muted" />}
             title="Slow down a little"
             description="Give it a minute and try again."
           />

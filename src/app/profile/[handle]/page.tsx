@@ -35,6 +35,7 @@ import { SignalEditor } from './signal-editor';
 import { PorchLightNotice, PosseCard, TracksCard } from './side-cards';
 import { TributesSection } from './tributes-section';
 import { WaitingQueue } from './waiting-queue';
+import { ClockIcon, LockIcon } from '@/ui/icons';
 
 // Ranches are private by default and never belong in a search index.
 export const metadata = { title: 'Profile', robots: { index: false, follow: false } };
@@ -65,7 +66,7 @@ export default async function RanchPage({ params }: { params: Promise<{ handle: 
           <ClayCard>
             <EmptyState
               as="h1"
-              icon="⏳"
+              icon={<ClockIcon className="text-text-muted" />}
               title="Slow down a little"
               description="You have visited a lot of profiles. Give it a minute and try again."
             />
@@ -287,7 +288,13 @@ export default async function RanchPage({ params }: { params: Promise<{ handle: 
             <ClayCard>
               <EmptyState
                 as="h2"
-                icon="🪵"
+                icon={
+                  fenceBusy ? (
+                    <ClockIcon className="text-text-muted" />
+                  ) : (
+                    <LockIcon className="text-text-muted" />
+                  )
+                }
                 title={fenceBusy ? 'Slow down a little' : 'This wall is private'}
                 description={
                   fenceBusy ? 'Give it a minute and try again.' : 'Only people the owner chose can read it.'

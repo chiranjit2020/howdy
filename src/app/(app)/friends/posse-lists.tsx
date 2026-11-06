@@ -8,7 +8,7 @@ import type { RelationshipAction } from '@/shared/validation/relationships';
 import { apiRequest } from '@/ui/auth/api';
 import { FormMessage } from '@/ui/auth/form-parts';
 import { PersonRow } from '@/ui/howdy';
-import { MoreIcon, WhisperIcon } from '@/ui/icons';
+import { MoreIcon, UsersIcon, WhisperIcon } from '@/ui/icons';
 import { Button, ClayCard, ConfirmationDialog, Dropdown, EmptyState } from '@/ui/primitives';
 
 // A round 44px icon button (or link) for the compact Pals row.
@@ -109,7 +109,7 @@ export function PosseLists({ lists }: { lists: RelationshipLists }) {
         {lists.posse.length === 0 && lists.incoming.length === 0 ? (
           <EmptyState
             as="h2"
-            icon="🤝"
+            icon={<UsersIcon className="text-text-muted" />}
             title="No friends yet"
             description="Send a request with their username, or share your invite link with someone new. Requests are private until they say yes."
           />
@@ -165,13 +165,17 @@ export function PosseLists({ lists }: { lists: RelationshipLists }) {
             ),
             <>
               {friendsCut && (
-                <Button variant="link" className="mt-3 self-start xl:hidden" onClick={() => setAllFriends(true)}>
+                <Button
+                  variant="link"
+                  className="mt-3 self-start xl:hidden"
+                  onClick={() => setAllFriends(true)}
+                >
                   Show all {lists.posse.length} friends
                 </Button>
               )}
               <p className="mt-3 border-t border-border pt-3 text-metadata text-text-muted">
-                Close friend is a private label, just for you. Following someone shows their posts on your Home.
-                Nobody is told about either.
+                Close friend is a private label, just for you. Following someone shows their posts on your
+                Home. Nobody is told about either.
               </p>
             </>,
           )

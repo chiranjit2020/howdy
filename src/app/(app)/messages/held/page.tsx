@@ -4,6 +4,7 @@ import { requireUser } from '@/modules/auth';
 import { listHeld } from '@/modules/whispers';
 import { ClayCard, EmptyState } from '@/ui/primitives';
 import { HeldList } from './held-list';
+import { WhisperIcon } from '@/ui/icons';
 
 export const metadata = { title: 'Held back', robots: { index: false, follow: false } };
 
@@ -35,7 +36,7 @@ export default async function HeldPage() {
         <ClayCard>
           <EmptyState
             as="h2"
-            icon="🤫"
+            icon={<WhisperIcon className="text-text-muted" />}
             title="Nothing held back"
             description="When someone you have restricted messages you, it waits here instead of in your threads."
           />

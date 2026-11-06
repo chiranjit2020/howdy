@@ -7,6 +7,7 @@ import {
   GoBell,
   GoCheck,
   GoCheckCircle,
+  GoClock,
   GoChevronDown,
   GoCommentDiscussion,
   GoDeviceMobile,
@@ -19,6 +20,7 @@ import {
   GoInbox,
   GoKebabHorizontal,
   GoKey,
+  GoLock,
   GoMegaphone,
   GoNote,
   GoOrganization,
@@ -107,6 +109,10 @@ export const FeedbackIcon = go(GoMegaphone);
 export const InboxIcon = go(GoInbox);
 // Moderation, all clear: a shield with a tick (the plain shield carries a "!" and reads as a warning).
 export const ShieldCheckIcon = go(GoShieldCheck);
+// "Slow down, try again in a minute" (the hourglass already means Capsules).
+export const ClockIcon = go(GoClock);
+// Something only certain people can see, such as a private wall.
+export const LockIcon = go(GoLock);
 
 /** Octicons has no pause: drawn on the same 16 px grid as GoPlay (a ring with two bars), filled like the rest. */
 export const PauseIcon = (p: IconProps) => (

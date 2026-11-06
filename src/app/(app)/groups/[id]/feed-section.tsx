@@ -14,7 +14,7 @@ import { EventBlock, type WireEvent } from './event-block';
 import { NewEvent } from './new-event';
 import { NewPoll, PollBlock } from './poll-block';
 import { RelativeTime } from '@/ui/howdy/time';
-import { MoreIcon } from '@/ui/icons';
+import { FenceIcon, MoreIcon } from '@/ui/icons';
 import { Img } from '@/ui/art/img';
 import { uploadPhoto } from '@/ui/media/upload-photo';
 import {
@@ -330,7 +330,7 @@ export function FeedSection({
         {posts.length === 0 && !pinned ? (
           <EmptyState
             as="h3"
-            icon="🏛️"
+            icon={<FenceIcon className="text-text-muted" />}
             title="Nothing posted yet"
             description="Say howdy to the group. Only members can see what is posted here."
           />
