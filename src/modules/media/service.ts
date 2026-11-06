@@ -77,6 +77,8 @@ const shownTo = (viewer: PhotoViewer) =>
       : eq(media.held, false);
 
 const REFUSED = 'We can’t use that photo on Howdy. Please choose a different one.';
+/** A cover cannot wait for review, so when the check could not run it is turned down, without blaming the photo. */
+const CHECK_UNAVAILABLE = 'We couldn’t check your photo just now. Please try again in a few minutes.';
 
 /**
  * The photo check (ADR-039) on the photo we are about to store. Null when the check is not set up. It sees only our
@@ -196,7 +198,8 @@ async function completeProfilePhoto(
   const check = await checkPhoto(processed.data);
   if (check?.verdict === 'refuse') return reject(REFUSED);
   // A cover is never held for review: it is refused instead (see PROFILE_PHOTO).
-  if (check?.verdict === 'hold' && kind === 'cover') return reject(REFUSED);
+  if (check?.verdict === 'hold' && kind === 'cover')
+    return reject(check.unavailable ? CHECK_UNAVAILABLE : REFUSED);
   const held = check?.verdict === 'hold';
 
   const finalKey = `${PROFILE_PHOTO[kind].folder}/${randomUUID()}.webp`;

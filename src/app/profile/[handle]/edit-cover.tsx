@@ -2,13 +2,19 @@
 
 import { useRouter } from 'next/navigation';
 import { useState, type ChangeEvent } from 'react';
-import { PORTRAIT_TYPES, coverUploadSchema } from '@/shared/validation/media';
+import {
+  COVER_HEIGHT_PX,
+  COVER_WIDTH_PX,
+  PORTRAIT_TYPES,
+  coverUploadSchema,
+} from '@/shared/validation/media';
 import { COVER_PRESET_LABEL, COVER_PRESETS, type CoverPreset } from '@/shared/validation/profile';
 import { apiRequest } from '@/ui/auth/api';
 import { FormMessage } from '@/ui/auth/form-parts';
 import { cn } from '@/ui/cn';
 import { CoverSwatch, RanchCover } from '@/ui/howdy';
 import { CameraIcon } from '@/ui/icons';
+import { shrinkPhoto } from '@/ui/media/shrink-photo';
 import { Button, buttonClasses, Modal, useToast } from '@/ui/primitives';
 
 interface StartedUpload {
@@ -29,13 +35,15 @@ export function EditCover({ preset, photoUrl }: { preset: CoverPreset; photoUrl:
   const [error, setError] = useState<string | undefined>();
 
   async function choose(e: ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
+    const picked = e.target.files?.[0];
     e.target.value = ''; // so choosing the same file again still triggers a change
-    if (!file) return;
+    if (!picked) return;
     setError(undefined);
-    const checked = coverUploadSchema.safeParse({ contentType: file.type, size: file.size });
-    if (!checked.success) return setError(checked.error.issues[0]?.message ?? 'We could not use that photo.');
     setBusy('uploading');
+    // Big phone photos are scaled down here first, so the 5 MB limit is rarely met (the server keeps 1600x560 anyway).
+    const file = await shrinkPhoto(picked, { width: COVER_WIDTH_PX, height: COVER_HEIGHT_PX });
+    const checked = coverUploadSchema.safeParse({ contentType: file.type, size: file.size });
+    if (!checked.success) return fail(checked.error.issues[0]?.message ?? 'We could not use that photo.');
     const start = await apiRequest<StartedUpload>('POST', '/api/me/cover', checked.data);
     if (!start.ok || !start.data)
       return fail(start.error?.fields?.contentType ?? start.error?.fields?.size ?? start.error?.message);
@@ -131,7 +139,7 @@ export function EditCover({ preset, photoUrl }: { preset: CoverPreset; photoUrl:
               )}
             </div>
             <p className="text-metadata text-text-muted">
-              JPEG, PNG or WebP up to 5 MB, cropped to a wide banner. Only people who can visit your profile
+              JPEG, PNG or WebP. Large photos are made smaller for you, then cropped to a wide banner. Only people who can visit your profile
               see it; location details are removed.
             </p>
           </section>

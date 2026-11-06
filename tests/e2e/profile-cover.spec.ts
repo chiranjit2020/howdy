@@ -95,3 +95,27 @@ test('pick a Howdy cover, then upload a cover photo a friend also sees; picking 
   expect(problems).toEqual([]);
   for (const p of [owner, friend]) await p.ctx.close();
 });
+
+test('a big camera photo (over 5 MB, over 24 megapixels) is made smaller in the browser and still becomes the cover', async ({
+  browser,
+}) => {
+  const owner = await person(browser, 'bigcover');
+  // Random noise barely compresses, so this 6000x4500 JPEG is well over 5 MB.
+  const width = 6000;
+  const height = 4500;
+  const noise = Buffer.alloc(width * height * 3);
+  for (let i = 0; i < noise.length; i++) noise[i] = (i * 2654435761) >>> 24;
+  const big = await sharp(noise, { raw: { width, height, channels: 3 } }).jpeg({ quality: 100 }).toBuffer();
+  expect(big.length).toBeGreaterThan(5 * 1024 * 1024);
+
+  await owner.page.goto(`/profile/${owner.handle}`);
+  await pageReady(owner.page);
+  await owner.page.getByRole('button', { name: 'Change cover' }).click();
+  const dialog = owner.page.getByRole('dialog', { name: 'Your cover' });
+  await dialog.locator('input[type=file]').setInputFiles({ name: 'camera.jpg', mimeType: 'image/jpeg', buffer: big });
+  await expect(owner.page.getByText('Cover updated.')).toBeVisible();
+  const src = (await owner.page.locator('main img[src^="/api/covers/"]').first().getAttribute('src'))!;
+  const body = await (await owner.page.request.get(src)).body();
+  expect(await sharp(body).metadata()).toMatchObject({ width: 1600, height: 560 });
+  await owner.ctx.close();
+});

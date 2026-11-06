@@ -117,6 +117,15 @@ describe('a cover photo is decoded, cropped to a banner and re-encoded — only 
       { held: true },
     ]);
   });
+
+  it('when the photo check could not run, a cover is turned down without blaming the photo', async () => {
+    setPhotoChecker(async () => ({ verdict: 'hold', summary: 'could not run (401)', unavailable: true }));
+    const a = await person('alice');
+    const cover = await uploadCover(a.cookie, await jpeg());
+    expect(cover.done?.status).toBe(422);
+    expect(cover.done?.data.error?.message).toMatch(/couldn’t check your photo just now/);
+    expect(await live('cover')).toBe(0);
+  });
 });
 
 describe('who may see a cover photo: exactly who may see the profile photo', () => {
