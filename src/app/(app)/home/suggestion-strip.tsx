@@ -46,7 +46,7 @@ export function SuggestionStrip({ initial }: { initial: PalSuggestion[] }) {
         {visible.map((s) => (
           <li
             key={s.handle}
-            className="relative flex w-32 shrink-0 snap-start flex-col items-center gap-2 rounded-card border border-border bg-surface p-3 pt-5 text-center @xl:w-auto"
+            className="relative flex w-32 shrink-0 snap-start flex-col items-center gap-2 rounded-card border border-border bg-surface p-3 pt-5 shadow-clay text-center @xl:w-auto"
           >
             <IconButton
               label={`Not now: stop suggesting ${s.displayName}`}

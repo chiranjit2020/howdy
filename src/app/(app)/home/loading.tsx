@@ -28,8 +28,8 @@ export default function Loading() {
         </div>
       </main>
       <aside aria-hidden="true" className="hidden flex-col gap-4 xl:flex">
-        <Skeleton className="h-36 w-full rounded-card" />
-        <Skeleton className="h-48 w-full rounded-card" />
+        <Skeleton className="h-36 w-full rounded-card shadow-clay" />
+        <Skeleton className="h-48 w-full rounded-card shadow-clay" />
       </aside>
     </div>
   );
