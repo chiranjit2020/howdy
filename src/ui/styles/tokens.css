@@ -23,7 +23,7 @@
   --palette-sunflower: #f8cf35;
   --palette-crimson: #ca054d;
   --palette-ink: #100b00;
-  --palette-ghost-white: #f8f7ff;
+  --palette-ghost-white: #f6f7fb;
 
   /* -- Older brand palette (decorative use only; prefer semantic tokens) -- */
   --palette-canvas-cream: #f8f5ee;
@@ -54,18 +54,19 @@
   --palette-deep-navy-blue: #344b70;
 
   /* -- Semantic colors: light-dark(Daylight, Dusk) -- */
-  --color-background: light-dark(#f8f7ff, #1e1b2e);
-  --color-surface: light-dark(#ffffff, #2a2640);
-  --color-surface-raised: light-dark(#ffffff, #353052);
-  --color-surface-sunken: light-dark(#efedf9, #181526);
-  --color-parchment: light-dark(#fcfbff, #2f2a47);
-  --color-tribute: light-dark(#fef6d7, #3a3352);
-  --color-border: light-dark(#e3e0f0, #3f3a5c);
-  --color-border-strong: light-dark(#7a7590, #8a84a8);
+  /* Neutrals are navy-tinted greys (2026-11-07), matching the Royal Navy accent; they were lavender. */
+  --color-background: light-dark(#f6f7fb, #1b1e2e);
+  --color-surface: light-dark(#ffffff, #262a40);
+  --color-surface-raised: light-dark(#ffffff, #303552);
+  --color-surface-sunken: light-dark(#eceef5, #151826);
+  --color-parchment: light-dark(#fbfbfd, #2a2f47);
+  --color-tribute: light-dark(#fef6d7, #333a52);
+  --color-border: light-dark(#e1e4ee, #3a405c);
+  --color-border-strong: light-dark(#737891, #8489a8);
 
-  --color-text-primary: light-dark(#100b00, #f8f7ff);
-  --color-text-secondary: light-dark(#4a4540, #b9b3d0);
-  --color-text-muted: light-dark(#5e5850, #a29cbd);
+  --color-text-primary: light-dark(#100b00, #f6f7fb);
+  --color-text-secondary: light-dark(#4a4540, #b3b8d0);
+  --color-text-muted: light-dark(#5e5850, #9ca2bd);
   --color-link: light-dark(#2b3278, #b3baf0);
   /*
    * Focus: a deep sunflower gold (the user's call, 2026-10-31: sunflower rings). Pure sunflower is ~1.6:1 on white, too
@@ -131,7 +132,7 @@
 
   /* Shared brand accents, used wherever a page wants the navy "signature" ink or link colour (Ranch header, side cards). */
   --color-auth-link: light-dark(#2b3278, #b3baf0);
-  --color-brand-ink: light-dark(#2b3278, #f8f7ff);
+  --color-brand-ink: light-dark(#2b3278, #f6f7fb);
 
   /* The earned Trusted tick (a gold seal) in the palette's Sunflower: fixed in both schemes, like the team's blue
      Verified artwork. */

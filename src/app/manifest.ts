@@ -14,8 +14,8 @@ export default function manifest(): MetadataRoute.Manifest {
     scope: '/',
     display: 'standalone',
     orientation: 'portrait',
-    background_color: '#f8f7ff',
-    theme_color: '#f8f7ff',
+    background_color: '#f6f7fb',
+    theme_color: '#f6f7fb',
     categories: ['social'],
     icons: [
       { src: '/icons/howdy-h-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },

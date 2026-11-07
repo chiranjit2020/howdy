@@ -57,22 +57,22 @@ test.describe('design kit (production build, real CSP)', () => {
     const light = await browser.newContext({ colorScheme: 'light' });
     const lp = await light.newPage();
     await lp.goto(KIT);
-    expect(await bg(lp)).toBe('rgb(248, 247, 255)'); // the light background (#f8f7ff)
+    expect(await bg(lp)).toBe('rgb(246, 247, 251)'); // the light background (#f6f7fb)
     await light.close();
 
     const dark = await browser.newContext({ colorScheme: 'dark' });
     const dp = await dark.newPage();
     await dp.goto(KIT);
-    expect(await bg(dp)).toBe('rgb(30, 27, 46)'); // Dusk
+    expect(await bg(dp)).toBe('rgb(27, 30, 46)'); // Dusk (#1b1e2e)
     // Force Daylight while the system is dark.
     await dp.getByRole('button', { name: 'Light' }).click();
-    expect(await bg(dp)).toBe('rgb(248, 247, 255)');
+    expect(await bg(dp)).toBe('rgb(246, 247, 251)');
     await dp.reload();
     await expect(dp.locator('html')).toHaveAttribute('data-theme', 'daylight'); // server-rendered from the cookie
-    expect(await bg(dp)).toBe('rgb(248, 247, 255)');
+    expect(await bg(dp)).toBe('rgb(246, 247, 251)');
     await dp.getByRole('button', { name: 'System' }).click();
     await expect(dp.locator('html')).not.toHaveAttribute('data-theme', /.+/);
-    expect(await bg(dp)).toBe('rgb(30, 27, 46)');
+    expect(await bg(dp)).toBe('rgb(27, 30, 46)');
     await dark.close();
   });
 

@@ -31,7 +31,7 @@ const VIOLET = '#2b3278';
 const INK = '#100b00';
 const SLATE = '#4a4540';
 const MUTED = '#5e5850';
-const PAGE = '#f8f7ff';
+const PAGE = '#f6f7fb';
 const VIOLET_SOFT = '#e7e9f5';
 const FONT = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
 
@@ -92,7 +92,7 @@ function renderHtml(c: EmailContent): string {
 <body style="margin:0;padding:0;background:${PAGE};font-family:${FONT}">
 <div style="display:none;max-height:0;overflow:hidden;opacity:0">${escape(c.preheader ?? '')}</div>
 <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" bgcolor="${PAGE}" style="background:${PAGE}"><tr><td align="center" style="padding:24px 16px">
-<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:480px;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e3e0f0">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:480px;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e1e4ee">
 <tr><td align="center" bgcolor="${VIOLET}" style="background:${VIOLET};padding:24px 16px"><img src="${escape(logo)}" width="120" height="37" alt="Howdy" style="display:block;border:0;width:120px;height:37px;color:#ffffff;font-size:24px;font-weight:700"></td></tr>
 <tr><td style="padding:28px 28px 12px;font-family:${FONT}">
 <h1 style="margin:0 0 14px;font-size:20px;line-height:1.3;font-weight:700;color:${INK}">${escape(c.heading)}</h1>
