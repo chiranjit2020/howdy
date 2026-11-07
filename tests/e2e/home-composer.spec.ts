@@ -66,7 +66,7 @@ test('one line until clicked; opens, posts, closes again; a photo from the one-l
   await expect(post).toBeVisible();
   expect(await height()).toBeGreaterThan(44);
   expect(await axeViolations(page)).toEqual([]);
-  await page.getByRole('heading', { name: 'Posts', exact: true }).click();
+  await page.getByRole('heading', { name: 'What’s Going On?', exact: true }).click();
   await expect(post).toHaveCount(0);
 
   // Users' complaint (2026-11-07): open but still empty, "Add a photo" must open the picker. Pressing it used to blur
@@ -86,20 +86,20 @@ test('one line until clicked; opens, posts, closes again; a photo from the one-l
   await page.getByRole('button', { name: 'Remove the photo' }).click();
   // (The Remove button vanishes with the photo while focused, so no blur says we left: step back in, then out.)
   await box.click();
-  await page.getByRole('heading', { name: 'Posts', exact: true }).click();
+  await page.getByRole('heading', { name: 'What’s Going On?', exact: true }).click();
   await expect(post).toHaveCount(0);
 
   // Words keep it open even after leaving it; posting puts the post in the feed.
   await box.click();
   await box.fill('Chai on the balcony');
-  await page.getByRole('heading', { name: 'Posts', exact: true }).click();
+  await page.getByRole('heading', { name: 'What’s Going On?', exact: true }).click();
   await expect(post).toBeVisible();
   await post.click();
   await expect(page.getByRole('article').filter({ hasText: 'Chai on the balcony' })).toBeVisible();
   await expect(box).toHaveValue('');
 
   // Back to one line; a photo chosen from the camera opens it, with the words box ready for a caption.
-  await page.getByRole('heading', { name: 'Posts', exact: true }).click();
+  await page.getByRole('heading', { name: 'What’s Going On?', exact: true }).click();
   await expect(post).toHaveCount(0);
   const preview = page.getByAltText('The photo you chose for this card');
   await expect(async () => {

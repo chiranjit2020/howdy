@@ -47,7 +47,7 @@ test.describe('authentication journey (production build, real CSP, real cookies)
     await expect(page).toHaveURL(/\/home$/);
     // Home: friends' posts in the middle (a new account has none yet), and the account menu knows who you are.
     await expect(page.getByRole('heading', { level: 1, name: 'Home' })).toBeAttached();
-    await expect(page.getByRole('region', { name: 'Posts', exact: true })).toBeVisible();
+    await expect(page.getByRole('region', { name: 'What’s Going On?', exact: true })).toBeVisible();
     await page.getByRole('button', { name: 'Your account' }).click();
     await expect(
       page.getByRole('region', { name: 'Your account' }).getByText(`@${a.handle}`, { exact: true }),
@@ -68,7 +68,7 @@ test.describe('authentication journey (production build, real CSP, real cookies)
 
     // Persistence: a reload, and visiting signed-out pages, keep you inside.
     await page.reload();
-    await expect(page.getByRole('region', { name: 'Posts', exact: true })).toBeVisible();
+    await expect(page.getByRole('region', { name: 'What’s Going On?', exact: true })).toBeVisible();
     await page.goto('/login');
     await expect(page).toHaveURL(/\/home$/);
 
@@ -282,7 +282,7 @@ test.describe('authentication journey (production build, real CSP, real cookies)
     await p2.reload();
     await expect(p2).toHaveURL(/\/login$/);
     await p1.goto('/home');
-    await expect(p1.getByRole('region', { name: 'Posts', exact: true })).toBeVisible(); // this device stays inside
+    await expect(p1.getByRole('region', { name: 'What’s Going On?', exact: true })).toBeVisible(); // this device stays inside
     await first.close();
     await second.close();
   });

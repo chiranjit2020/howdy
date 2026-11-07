@@ -64,7 +64,7 @@ test('follow someone from their profile: their own posts reach Home, and only th
 
   await fan.page.goto('/home');
   await pageReady(fan.page);
-  const posts = fan.page.getByRole('region', { name: 'Posts', exact: true });
+  const posts = fan.page.getByRole('region', { name: 'What’s Going On?', exact: true });
   await expect(posts.getByText('Morning nets, then breakfast.')).toBeVisible();
   await expect(posts.getByText('Great knock yesterday!')).toHaveCount(0);
 

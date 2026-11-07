@@ -116,7 +116,7 @@ test('Home: friends you may know as small cards before the posts; Ask, and the Ã
   const [stripTop, postsTop] = await Promise.all([
     strip.boundingBox().then((r) => r!.y),
     me.page
-      .getByRole('heading', { level: 2, name: 'Posts' })
+      .getByRole('heading', { level: 2, name: 'Whatâ€™s Going On?' })
       .boundingBox()
       .then((r) => r!.y),
   ]);
