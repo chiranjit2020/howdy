@@ -14,7 +14,7 @@ import { FormMessage } from '@/ui/auth/form-parts';
 import { cn } from '@/ui/cn';
 import { CoverSwatch, RanchCover } from '@/ui/howdy';
 import { CameraIcon } from '@/ui/icons';
-import { shrinkPhoto } from '@/ui/media/shrink-photo';
+import { CoverCropper } from '@/ui/media/cover-cropper';
 import { UploadBar } from '@/ui/media/upload-bar';
 import { putWithProgress, usePhotoArrival, type SignedUpload } from '@/ui/media/upload-progress';
 import { Button, buttonClasses, Modal, useToast } from '@/ui/primitives';
@@ -25,17 +25,18 @@ interface StartedUpload {
 }
 
 /**
- * An upload's steps, as for a profile photo: `preparing` (a big photo is made smaller here first), `sending` (the bar
- * fills with the real progress), `finishing` (the server crops it), `loading` (the stored cover is being fetched, so the
- * preview stays until it can replace it without a blank flash).
+ * An upload's steps, as for a profile photo: `sending` (the bar fills with the real progress), `finishing` (the server
+ * checks and stores it), `loading` (the stored cover is being fetched, so the preview stays until it can replace it
+ * without a blank flash).
  */
-type Uploading = 'preparing' | 'sending' | 'finishing' | 'loading';
-const UPLOADING: readonly string[] = ['preparing', 'sending', 'finishing', 'loading'] satisfies Uploading[];
+type Uploading = 'sending' | 'finishing' | 'loading';
+const UPLOADING: readonly string[] = ['sending', 'finishing', 'loading'] satisfies Uploading[];
 
 /**
- * Your cover (ADR-051), changed on your profile: upload a photo (the same steps and checks as a profile photo, cropped to
- * a wide banner) or pick one of Howdy's covers. Picking a Howdy cover while you have a photo removes the photo, so what
- * you picked is what shows.
+ * Your cover (ADR-051), changed on your profile: upload a photo or pick one of Howdy's covers. A chosen photo first opens
+ * in a frame of the cover's shape, where you drag and zoom it to choose what shows (2026-11-07: people could not move or
+ * resize it, and the server's centre crop cut off faces); Save cover sends exactly that frame. Picking a Howdy cover while
+ * you have a photo removes the photo, so what you picked is what shows.
  */
 export function EditCover({ preset, photoUrl }: { preset: CoverPreset; photoUrl: string | null }) {
   const router = useRouter();
@@ -43,6 +44,8 @@ export function EditCover({ preset, photoUrl }: { preset: CoverPreset; photoUrl:
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState<Uploading | 'removing' | CoverPreset | undefined>();
   const [progress, setProgress] = useState(0);
+  // A chosen photo being placed in the frame, before anything is sent.
+  const [adjusting, setAdjusting] = useState<File | undefined>();
   const [error, setError] = useState<string | undefined>();
   // The chosen file, shown at once, and the cover's address when it was chosen (see usePhotoArrival).
   const [preview, setPreview] = useState<{ url: string; against: string | null } | undefined>();
@@ -57,22 +60,28 @@ export function EditCover({ preset, photoUrl }: { preset: CoverPreset; photoUrl:
     toast({ title: 'Cover updated.', tone: 'success' });
   });
 
-  async function choose(e: ChangeEvent<HTMLInputElement>) {
+  function choose(e: ChangeEvent<HTMLInputElement>) {
     const picked = e.target.files?.[0];
     e.target.value = ''; // so choosing the same file again still triggers a change
     if (!picked) return;
     setError(undefined);
+    if (!(PORTRAIT_TYPES as readonly string[]).includes(picked.type))
+      return setError('Choose a JPEG, PNG or WebP photo.');
+    setAdjusting(picked);
+  }
+
+  /** Save cover: the framed photo (a 1600 × 560 JPEG, so already small) goes up the usual way. */
+  async function upload(photo: Blob) {
+    const file = new File([photo], 'cover.jpg', { type: 'image/jpeg' });
+    setAdjusting(undefined);
     setProgress(0);
-    setBusy('preparing');
-    setPreview({ url: URL.createObjectURL(picked), against: photoUrl });
-    // Big phone photos are scaled down here first, so the 5 MB limit is rarely met (the server keeps 1600x560 anyway).
-    const file = await shrinkPhoto(picked, { width: COVER_WIDTH_PX, height: COVER_HEIGHT_PX });
+    setBusy('sending');
+    setPreview({ url: URL.createObjectURL(file), against: photoUrl });
     const checked = coverUploadSchema.safeParse({ contentType: file.type, size: file.size });
     if (!checked.success) return fail(checked.error.issues[0]?.message ?? 'We could not use that photo.');
     const start = await apiRequest<StartedUpload>('POST', '/api/me/cover', checked.data);
     if (!start.ok || !start.data)
       return fail(start.error?.fields?.contentType ?? start.error?.fields?.size ?? start.error?.message);
-    setBusy('sending');
     try {
       if (!(await putWithProgress(start.data.upload, file, setProgress)))
         return fail('The photo did not upload. Please try again.');
@@ -120,15 +129,15 @@ export function EditCover({ preset, photoUrl }: { preset: CoverPreset; photoUrl:
   const uploading = busy !== undefined && UPLOADING.includes(busy);
   const shown = preview ? preview.url : photoUrl;
   const label =
-    busy === 'preparing'
-      ? 'Preparing…'
-      : busy === 'sending'
-        ? `Uploading ${Math.round(progress * 100)}%`
-        : busy === 'finishing' || busy === 'loading'
-          ? 'Finishing…'
-          : photoUrl
-            ? 'Change photo'
-            : 'Upload a photo';
+    busy === 'sending'
+      ? `Uploading ${Math.round(progress * 100)}%`
+      : busy === 'finishing' || busy === 'loading'
+        ? 'Finishing…'
+        : photoUrl
+          ? 'Change photo'
+          : 'Upload a photo';
+  // While a photo is being placed, the Howdy covers wait too: one choice at a time.
+  const locked = Boolean(busy) || adjusting !== undefined;
 
   return (
     <>
@@ -146,45 +155,60 @@ export function EditCover({ preset, photoUrl }: { preset: CoverPreset; photoUrl:
           {error && <FormMessage tone="error">{error}</FormMessage>}
           <section className="flex flex-col gap-3">
             <h3 className="text-body font-semibold text-text-primary">Your photo</h3>
-            {shown && (
-              <div className="relative overflow-hidden rounded-md">
-                <RanchCover photoUrl={shown} />
-                {uploading && (
-                  <UploadBar label="Uploading your cover" progress={busy === 'sending' ? progress : null} />
+            {adjusting ? (
+              <CoverCropper
+                file={adjusting}
+                width={COVER_WIDTH_PX}
+                height={COVER_HEIGHT_PX}
+                onCancel={() => setAdjusting(undefined)}
+                onSave={(photo) => void upload(photo)}
+              />
+            ) : (
+              <>
+                {shown && (
+                  <div className="relative overflow-hidden rounded-md">
+                    <RanchCover photoUrl={shown} />
+                    {uploading && (
+                      <UploadBar
+                        label="Uploading your cover"
+                        progress={busy === 'sending' ? progress : null}
+                      />
+                    )}
+                  </div>
                 )}
-              </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  {/* A real file input (keyboard and screen-reader friendly), dressed as a button. */}
+                  <label
+                    className={`${buttonClasses({ variant: 'secondary', size: 'sm' })} cursor-pointer tabular-nums has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-focus aria-disabled:cursor-not-allowed`}
+                    aria-disabled={busy ? true : undefined}
+                  >
+                    <input
+                      type="file"
+                      accept={PORTRAIT_TYPES.join(',')}
+                      onChange={choose}
+                      disabled={Boolean(busy)}
+                      className="sr-only"
+                    />
+                    {label}
+                  </label>
+                  {photoUrl && !uploading && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={removePhoto}
+                      loading={busy === 'removing'}
+                      disabled={Boolean(busy)}
+                    >
+                      Remove photo
+                    </Button>
+                  )}
+                </div>
+                <p className="text-metadata text-text-muted">
+                  JPEG, PNG or WebP. You choose which part shows before it is saved. Only people who can visit
+                  your profile see it; location details are removed.
+                </p>
+              </>
             )}
-            <div className="flex flex-wrap items-center gap-2">
-              {/* A real file input (keyboard and screen-reader friendly), dressed as a button. */}
-              <label
-                className={`${buttonClasses({ variant: 'secondary', size: 'sm' })} cursor-pointer tabular-nums has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-focus aria-disabled:cursor-not-allowed`}
-                aria-disabled={busy ? true : undefined}
-              >
-                <input
-                  type="file"
-                  accept={PORTRAIT_TYPES.join(',')}
-                  onChange={choose}
-                  disabled={Boolean(busy)}
-                  className="sr-only"
-                />
-                {label}
-              </label>
-              {photoUrl && !uploading && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={removePhoto}
-                  loading={busy === 'removing'}
-                  disabled={Boolean(busy)}
-                >
-                  Remove photo
-                </Button>
-              )}
-            </div>
-            <p className="text-metadata text-text-muted">
-              JPEG, PNG or WebP. Large photos are made smaller for you, then cropped to a wide banner. Only
-              people who can visit your profile see it; location details are removed.
-            </p>
           </section>
           <section className="flex flex-col gap-3 border-t border-border pt-5">
             <h3 id="howdy-covers" className="text-body font-semibold text-text-primary">
@@ -204,9 +228,9 @@ export function EditCover({ preset, photoUrl }: { preset: CoverPreset; photoUrl:
                     type="button"
                     role="radio"
                     aria-checked={current}
-                    disabled={Boolean(busy)}
+                    disabled={locked}
                     onClick={() => void pick(p)}
-                    className="flex flex-col gap-1.5 rounded-md text-left disabled:cursor-wait"
+                    className="flex flex-col gap-1.5 rounded-md text-left disabled:cursor-not-allowed"
                   >
                     <span
                       className={cn(

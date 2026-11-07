@@ -67,6 +67,10 @@ test('pick a Howdy cover, then upload a cover photo a friend also sees; picking 
     mimeType: 'image/jpeg',
     buffer: await photo(),
   });
+  // It opens in the frame first (drag and zoom to choose what shows); nothing is sent until Save cover.
+  await expect(dialog.getByRole('slider', { name: 'Zoom' })).toBeVisible();
+  await expect(dialog.getByRole('radio', { name: 'Meadow' })).toBeDisabled();
+  await dialog.getByRole('button', { name: 'Save cover' }).click();
   await expect(owner.page.getByText('Cover updated.')).toBeVisible();
   const coverImg = (p: typeof owner) => p.page.locator('main img[src^="/api/covers/"]').first();
   await expect(coverImg(owner)).toBeVisible();
@@ -105,14 +109,20 @@ test('a big camera photo (over 5 MB, over 24 megapixels) is made smaller in the 
   const height = 4500;
   const noise = Buffer.alloc(width * height * 3);
   for (let i = 0; i < noise.length; i++) noise[i] = (i * 2654435761) >>> 24;
-  const big = await sharp(noise, { raw: { width, height, channels: 3 } }).jpeg({ quality: 100 }).toBuffer();
+  const big = await sharp(noise, { raw: { width, height, channels: 3 } })
+    .jpeg({ quality: 100 })
+    .toBuffer();
   expect(big.length).toBeGreaterThan(5 * 1024 * 1024);
 
   await owner.page.goto(`/profile/${owner.handle}`);
   await pageReady(owner.page);
   await owner.page.getByRole('button', { name: 'Change cover' }).click();
   const dialog = owner.page.getByRole('dialog', { name: 'Your cover' });
-  await dialog.locator('input[type=file]').setInputFiles({ name: 'camera.jpg', mimeType: 'image/jpeg', buffer: big });
+  await dialog
+    .locator('input[type=file]')
+    .setInputFiles({ name: 'camera.jpg', mimeType: 'image/jpeg', buffer: big });
+  // The frame sends only what it shows, as a 1600x560 JPEG: well under 5 MB whatever the camera took.
+  await dialog.getByRole('button', { name: 'Save cover' }).click();
   await expect(owner.page.getByText('Cover updated.')).toBeVisible();
   const src = (await owner.page.locator('main img[src^="/api/covers/"]').first().getAttribute('src'))!;
   const body = await (await owner.page.request.get(src)).body();
