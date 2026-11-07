@@ -2,8 +2,7 @@
 
 import Link from 'next/link';
 import { createContext, useContext, useState, type ReactNode } from 'react';
-import { PortraitForm } from '@/app/settings/(settings)/portrait-form';
-import { TendForm } from '@/app/settings/(settings)/ranch-forms';
+import { ProfileEditor } from '@/app/settings/(settings)/profile-editor';
 import type { PortraitTint } from '@/shared/validation/profile';
 import { CameraIcon } from '@/ui/icons';
 import { Button, Modal } from '@/ui/primitives';
@@ -36,22 +35,14 @@ export function EditProfile({
       {children}
       <Modal open={open} onClose={() => setOpen(false)} title="Edit your profile">
         <div className="flex flex-col gap-5">
-          <PortraitForm
-            bare
+          <ProfileEditor
             displayName={displayName}
+            bio={bio}
             portraitTint={portraitTint}
+            handle={handle}
             portraitSrc={portraitSrc}
+            onSaved={() => setOpen(false)}
           />
-          <div className="border-t border-border pt-5">
-            <TendForm
-              bare
-              displayName={displayName}
-              bio={bio}
-              portraitTint={portraitTint}
-              handle={handle}
-              onSaved={() => setOpen(false)}
-            />
-          </div>
           <p className="text-caption text-text-secondary">
             Who can see your profile, and everything else, is in{' '}
             <Link href="/settings/privacy" className="font-semibold">

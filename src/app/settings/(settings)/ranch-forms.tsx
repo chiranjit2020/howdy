@@ -39,6 +39,7 @@ export function TendForm({
   handle,
   bare = false,
   onSaved,
+  waitingForPhoto = false,
 }: {
   displayName: string;
   bio: string;
@@ -48,6 +49,8 @@ export function TendForm({
   bare?: boolean;
   /** Called after a successful save (the dialog closes). */
   onSaved?: () => void;
+  /** A new photo is still on its way (the photo form above): Save waits for it, and says so. */
+  waitingForPhoto?: boolean;
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -149,7 +152,11 @@ export function TendForm({
         </div>
         <p className="text-metadata text-text-muted">Shown whenever you have no photo.</p>
       </fieldset>
-      <Button type="submit" loading={busy}>
+      {/* Polite live region: it is announced when the wait starts and ends, without moving focus. */}
+      <p aria-live="polite" className="-mb-1 text-metadata text-text-secondary empty:hidden">
+        {waitingForPhoto ? 'Save will be ready as soon as your new photo has finished uploading.' : ''}
+      </p>
+      <Button type="submit" loading={busy} disabled={waitingForPhoto}>
         Save
       </Button>
     </form>

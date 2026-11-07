@@ -3,8 +3,7 @@ import { getPortraitVersion } from '@/modules/media';
 import { getOwnRanch } from '@/modules/profiles';
 import { portraitUrl } from '@/shared/portrait';
 import { ClayCard } from '@/ui/primitives';
-import { PortraitForm } from './portrait-form';
-import { TendForm } from './ranch-forms';
+import { ProfileEditor } from './profile-editor';
 
 export const metadata = { title: 'Settings' };
 
@@ -21,21 +20,13 @@ export default async function ProfileSettingsPage() {
   return (
     <ClayCard className="flex flex-col gap-5">
       <h2 className="text-title text-text-primary">Your profile</h2>
-      <PortraitForm
-        bare
+      <ProfileEditor
         displayName={ranch.displayName}
+        bio={ranch.bio ?? ''}
         portraitTint={ranch.portraitTint}
+        handle={user.handle}
         portraitSrc={photo ? portraitUrl(user.handle, photo) : null}
       />
-      <div className="border-t border-border pt-5">
-        <TendForm
-          bare
-          displayName={ranch.displayName}
-          bio={ranch.bio ?? ''}
-          portraitTint={ranch.portraitTint}
-          handle={user.handle}
-        />
-      </div>
     </ClayCard>
   );
 }
