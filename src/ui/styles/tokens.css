@@ -254,6 +254,8 @@
   --animate-emoji-in: emoji-in 0.22s var(--ease-spring) both;
   --animate-shimmer: shimmer 1.6s ease-in-out infinite;
   --animate-spin-slow: spin 0.9s linear infinite;
+  /* A third-wide segment sliding along a progress bar: "working on it", with no percentage to show. */
+  --animate-bar-slide: bar-slide 1.2s ease-in-out infinite;
   --animate-loader-spin: spin 1.8s linear infinite;
   /* The sign-in card's tabs: the new form slides in from the side of the tab that was picked. */
   --animate-slide-from-right: slide-from-right 0.25s ease-out;
@@ -416,6 +418,14 @@
     to {
       opacity: 1;
       transform: none;
+    }
+  }
+  @keyframes bar-slide {
+    from {
+      transform: translateX(-100%);
+    }
+    to {
+      transform: translateX(300%);
     }
   }
   @keyframes shimmer {

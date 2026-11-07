@@ -6,11 +6,12 @@ import type { PortraitTint } from '@/shared/validation/profile';
 import { PORTRAIT_MAX_BYTES, PORTRAIT_TYPES, portraitUploadSchema } from '@/shared/validation/media';
 import { apiRequest } from '@/ui/auth/api';
 import { FormMessage } from '@/ui/auth/form-parts';
+import { putWithProgress, usePhotoArrival, type SignedUpload } from '@/ui/media/upload-progress';
 import { Avatar, Button, buttonClasses, ClayCard, useToast } from '@/ui/primitives';
 
 interface StartedUpload {
   mediaId: string;
-  upload: { url: string; method: 'PUT'; headers: Record<string, string> };
+  upload: SignedUpload;
 }
 
 /**
@@ -19,25 +20,6 @@ interface StartedUpload {
  * fetching it, so the preview stays up until the real photo can replace it without a blank flash.
  */
 type Busy = 'sending' | 'finishing' | 'loading' | 'removing';
-
-/** If the new photo never reports loaded (a dropped connection), stop waiting after this and let Save work again. */
-const LOAD_WAIT_MS = 10_000;
-
-/** Send the file with XHR rather than fetch: only XHR reports upload progress. Resolves true when storage said yes. */
-function put(upload: StartedUpload['upload'], file: File, onProgress: (share: number) => void) {
-  return new Promise<boolean>((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    xhr.open(upload.method, upload.url);
-    for (const [name, value] of Object.entries(upload.headers)) xhr.setRequestHeader(name, value);
-    xhr.upload.onprogress = (e) => {
-      if (e.lengthComputable && e.total > 0) onProgress(e.loaded / e.total);
-    };
-    xhr.onload = () => resolve(xhr.status >= 200 && xhr.status < 300);
-    xhr.onerror = () => reject(new Error('network'));
-    xhr.onabort = () => reject(new Error('aborted'));
-    xhr.send(file);
-  });
-}
 
 // The ring is drawn in a 76 × 76 box around the 64 px picture (6 px each side, outside its white edge).
 const RING_R = 36;
@@ -114,44 +96,12 @@ export function PortraitForm({
 
   useEffect(() => onBusyChange?.(busy !== undefined), [busy, onBusyChange]);
 
-  // The last step: the refreshed page brought the new address. Fetch it in the background and swap the preview out only
-  // when it has arrived, so the picture never goes blank between the two.
-  const newSrc = busy === 'loading' && preview && portraitSrc !== preview.against ? portraitSrc : undefined;
-  useEffect(() => {
-    if (newSrc === undefined) return;
-    let settled = false;
-    const done = () => {
-      if (settled) return;
-      settled = true;
-      setPreview(undefined);
-      setBusy(undefined);
-      toast({ title: 'Profile photo updated.', tone: 'success' });
-    };
-    const timer = window.setTimeout(done, LOAD_WAIT_MS);
-    if (newSrc === null) done();
-    else {
-      const img = new Image();
-      img.onload = done;
-      img.onerror = done; // the real <img> will show its own fallback; Save must not stay locked
-      img.src = newSrc;
-    }
-    return () => {
-      settled = true;
-      window.clearTimeout(timer);
-    };
-  }, [newSrc, toast]);
-
-  // And if the refreshed page never brings a new address at all (its photo lookup failed), stop waiting too: the photo
-  // is saved on the server either way.
-  const waitingForPage = busy === 'loading';
-  useEffect(() => {
-    if (!waitingForPage) return;
-    const timer = window.setTimeout(() => {
-      setPreview(undefined);
-      setBusy(undefined);
-    }, LOAD_WAIT_MS * 2);
-    return () => window.clearTimeout(timer);
-  }, [waitingForPage]);
+  // The last step: swap the preview for the stored photo only once it has loaded, so the picture never goes blank.
+  usePhotoArrival(busy === 'loading', preview?.against, portraitSrc, () => {
+    setPreview(undefined);
+    setBusy(undefined);
+    toast({ title: 'Profile photo updated.', tone: 'success' });
+  });
 
   async function choose(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -172,7 +122,7 @@ export function PortraitForm({
       return fail(start.error?.fields?.contentType ?? start.error?.fields?.size ?? start.error?.message);
 
     try {
-      if (!(await put(start.data.upload, file, setProgress)))
+      if (!(await putWithProgress(start.data.upload, file, setProgress)))
         return fail('The photo did not upload. Please try again.');
     } catch {
       return fail('Could not reach the photo store. Check your connection and try again.');

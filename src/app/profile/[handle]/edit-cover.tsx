@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState, type ChangeEvent } from 'react';
+import { useEffect, useState, type ChangeEvent } from 'react';
 import {
   COVER_HEIGHT_PX,
   COVER_WIDTH_PX,
@@ -15,12 +15,22 @@ import { cn } from '@/ui/cn';
 import { CoverSwatch, RanchCover } from '@/ui/howdy';
 import { CameraIcon } from '@/ui/icons';
 import { shrinkPhoto } from '@/ui/media/shrink-photo';
+import { UploadBar } from '@/ui/media/upload-bar';
+import { putWithProgress, usePhotoArrival, type SignedUpload } from '@/ui/media/upload-progress';
 import { Button, buttonClasses, Modal, useToast } from '@/ui/primitives';
 
 interface StartedUpload {
   mediaId: string;
-  upload: { url: string; method: 'PUT'; headers: Record<string, string> };
+  upload: SignedUpload;
 }
+
+/**
+ * An upload's steps, as for a profile photo: `preparing` (a big photo is made smaller here first), `sending` (the bar
+ * fills with the real progress), `finishing` (the server crops it), `loading` (the stored cover is being fetched, so the
+ * preview stays until it can replace it without a blank flash).
+ */
+type Uploading = 'preparing' | 'sending' | 'finishing' | 'loading';
+const UPLOADING: readonly string[] = ['preparing', 'sending', 'finishing', 'loading'] satisfies Uploading[];
 
 /**
  * Your cover (ADR-051), changed on your profile: upload a photo (the same steps and checks as a profile photo, cropped to
@@ -31,15 +41,30 @@ export function EditCover({ preset, photoUrl }: { preset: CoverPreset; photoUrl:
   const router = useRouter();
   const toast = useToast();
   const [open, setOpen] = useState(false);
-  const [busy, setBusy] = useState<'uploading' | 'removing' | CoverPreset | undefined>();
+  const [busy, setBusy] = useState<Uploading | 'removing' | CoverPreset | undefined>();
+  const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | undefined>();
+  // The chosen file, shown at once, and the cover's address when it was chosen (see usePhotoArrival).
+  const [preview, setPreview] = useState<{ url: string; against: string | null } | undefined>();
+
+  // Free the temporary preview address when it is replaced or the editor goes away.
+  useEffect(() => () => (preview ? URL.revokeObjectURL(preview.url) : undefined), [preview]);
+
+  // Everything else in the dialog (Remove, Howdy covers) waits until the stored cover has loaded and replaced the preview.
+  usePhotoArrival(busy === 'loading', preview?.against, photoUrl, () => {
+    setPreview(undefined);
+    setBusy(undefined);
+    toast({ title: 'Cover updated.', tone: 'success' });
+  });
 
   async function choose(e: ChangeEvent<HTMLInputElement>) {
     const picked = e.target.files?.[0];
     e.target.value = ''; // so choosing the same file again still triggers a change
     if (!picked) return;
     setError(undefined);
-    setBusy('uploading');
+    setProgress(0);
+    setBusy('preparing');
+    setPreview({ url: URL.createObjectURL(picked), against: photoUrl });
     // Big phone photos are scaled down here first, so the 5 MB limit is rarely met (the server keeps 1600x560 anyway).
     const file = await shrinkPhoto(picked, { width: COVER_WIDTH_PX, height: COVER_HEIGHT_PX });
     const checked = coverUploadSchema.safeParse({ contentType: file.type, size: file.size });
@@ -47,24 +72,22 @@ export function EditCover({ preset, photoUrl }: { preset: CoverPreset; photoUrl:
     const start = await apiRequest<StartedUpload>('POST', '/api/me/cover', checked.data);
     if (!start.ok || !start.data)
       return fail(start.error?.fields?.contentType ?? start.error?.fields?.size ?? start.error?.message);
+    setBusy('sending');
     try {
-      const sent = await fetch(start.data.upload.url, {
-        method: start.data.upload.method,
-        headers: start.data.upload.headers,
-        body: file,
-      });
-      if (!sent.ok) return fail('The photo did not upload. Please try again.');
+      if (!(await putWithProgress(start.data.upload, file, setProgress)))
+        return fail('The photo did not upload. Please try again.');
     } catch {
       return fail('Could not reach the photo store. Check your connection and try again.');
     }
+    setBusy('finishing');
     const done = await apiRequest('PUT', '/api/me/cover', { mediaId: start.data.mediaId });
     if (!done.ok) return fail(done.error?.fields?.file ?? done.error?.message);
-    setBusy(undefined);
-    toast({ title: 'Cover updated.', tone: 'success' });
+    setBusy('loading');
     router.refresh();
   }
 
   function fail(message: string | undefined) {
+    setPreview(undefined);
     setBusy(undefined);
     setError(message ?? 'That did not work. Please try again.');
   }
@@ -94,6 +117,19 @@ export function EditCover({ preset, photoUrl }: { preset: CoverPreset; photoUrl:
     router.refresh();
   }
 
+  const uploading = busy !== undefined && UPLOADING.includes(busy);
+  const shown = preview ? preview.url : photoUrl;
+  const label =
+    busy === 'preparing'
+      ? 'Preparing…'
+      : busy === 'sending'
+        ? `Uploading ${Math.round(progress * 100)}%`
+        : busy === 'finishing' || busy === 'loading'
+          ? 'Finishing…'
+          : photoUrl
+            ? 'Change photo'
+            : 'Upload a photo';
+
   return (
     <>
       <button
@@ -110,11 +146,18 @@ export function EditCover({ preset, photoUrl }: { preset: CoverPreset; photoUrl:
           {error && <FormMessage tone="error">{error}</FormMessage>}
           <section className="flex flex-col gap-3">
             <h3 className="text-body font-semibold text-text-primary">Your photo</h3>
-            {photoUrl && <RanchCover photoUrl={photoUrl} className="rounded-md" />}
+            {shown && (
+              <div className="relative overflow-hidden rounded-md">
+                <RanchCover photoUrl={shown} />
+                {uploading && (
+                  <UploadBar label="Uploading your cover" progress={busy === 'sending' ? progress : null} />
+                )}
+              </div>
+            )}
             <div className="flex flex-wrap items-center gap-2">
               {/* A real file input (keyboard and screen-reader friendly), dressed as a button. */}
               <label
-                className={`${buttonClasses({ variant: 'secondary', size: 'sm' })} cursor-pointer has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-focus aria-disabled:cursor-not-allowed`}
+                className={`${buttonClasses({ variant: 'secondary', size: 'sm' })} cursor-pointer tabular-nums has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-focus aria-disabled:cursor-not-allowed`}
                 aria-disabled={busy ? true : undefined}
               >
                 <input
@@ -124,9 +167,9 @@ export function EditCover({ preset, photoUrl }: { preset: CoverPreset; photoUrl:
                   disabled={Boolean(busy)}
                   className="sr-only"
                 />
-                {busy === 'uploading' ? 'Uploading…' : photoUrl ? 'Change photo' : 'Upload a photo'}
+                {label}
               </label>
-              {photoUrl && (
+              {photoUrl && !uploading && (
                 <Button
                   variant="ghost"
                   size="sm"
@@ -139,8 +182,8 @@ export function EditCover({ preset, photoUrl }: { preset: CoverPreset; photoUrl:
               )}
             </div>
             <p className="text-metadata text-text-muted">
-              JPEG, PNG or WebP. Large photos are made smaller for you, then cropped to a wide banner. Only people who can visit your profile
-              see it; location details are removed.
+              JPEG, PNG or WebP. Large photos are made smaller for you, then cropped to a wide banner. Only
+              people who can visit your profile see it; location details are removed.
             </p>
           </section>
           <section className="flex flex-col gap-3 border-t border-border pt-5">
@@ -153,7 +196,8 @@ export function EditCover({ preset, photoUrl }: { preset: CoverPreset; photoUrl:
               className="grid grid-cols-2 gap-3 sm:grid-cols-3"
             >
               {COVER_PRESETS.map((p) => {
-                const current = !photoUrl && p === preset;
+                // While a photo is on its way (shown as the preview), no Howdy cover is the current one.
+                const current = !shown && p === preset;
                 return (
                   <button
                     key={p}
