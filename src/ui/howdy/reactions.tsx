@@ -21,7 +21,7 @@ const STAR_PATH =
 
 /**
  * A given Star, a little shiny: light Sunflower at the top to deep gold at the foot, and a soft white highlight near its
- * top left, as if lit from above. No outline.
+ * top left (a radial glow over the same shape, so it blends with no edge), as if lit from above. No outline.
  */
 function ShinyStar() {
   // An id fit for url(#…): React's ids can hold characters that break it.
@@ -33,21 +33,15 @@ function ShinyStar() {
           <stop offset="0" stopColor="var(--color-star-light)" />
           <stop offset="1" stopColor="var(--color-star)" />
         </linearGradient>
-        <clipPath id={`${id}c`}>
-          <path d={STAR_PATH} />
-        </clipPath>
+        {/* A soft glow, not a shape: white fading to nothing, so the highlight melts into the gold with no edge. */}
+        <radialGradient id={`${id}h`} cx="0.36" cy="0.3" r="0.42">
+          <stop offset="0" stopColor="white" stopOpacity="0.85" />
+          <stop offset="0.45" stopColor="white" stopOpacity="0.35" />
+          <stop offset="1" stopColor="white" stopOpacity="0" />
+        </radialGradient>
       </defs>
       <path d={STAR_PATH} fill={`url(#${id}g)`} />
-      <ellipse
-        cx="9.4"
-        cy="8.2"
-        rx="2.6"
-        ry="1.5"
-        transform="rotate(-30 9.4 8.2)"
-        fill="white"
-        opacity="0.75"
-        clipPath={`url(#${id}c)`}
-      />
+      <path d={STAR_PATH} fill={`url(#${id}h)`} />
     </svg>
   );
 }
