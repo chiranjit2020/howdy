@@ -621,7 +621,8 @@ export function PostCard({
               <Button
                 variant="ghost"
                 size="sm"
-                className="ml-auto"
+                // -mr-3: the word ends on the card's padding edge, level with the photo; the hover pill keeps its padding.
+                className="-mr-3 ml-auto"
                 aria-expanded={open}
                 aria-controls={repliesId}
                 onClick={startReply}

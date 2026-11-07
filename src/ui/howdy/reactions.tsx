@@ -49,7 +49,7 @@ export function LoveButton({
     return (
       <span
         role="img"
-        className={cn(look, 'px-3 text-text-secondary')}
+        className={cn(look, 'text-text-secondary')}
         aria-label={`${total} ${total === 1 ? 'Love' : 'Loves'}`}
       >
         {heart}
@@ -66,8 +66,9 @@ export function LoveButton({
       onClick={() => onReact(given ? null : 'love')}
       className={cn(
         look,
-        // Same size and shape as Reply: a ghost pill that greys on hover.
-        'min-h-11 rounded-pill px-3 transition-colors duration-150 hover:bg-surface-sunken pointer-fine:min-h-8',
+        // Same size and shape as Reply: a ghost pill that greys on hover. -ml-3 puts the heart on the text edge above it;
+        // the hover pill still has its padding, reaching into the card's margin.
+        '-ml-3 min-h-11 rounded-pill px-3 transition-colors duration-150 hover:bg-surface-sunken pointer-fine:min-h-8',
         given ? 'text-love' : 'text-text-primary',
       )}
     >
