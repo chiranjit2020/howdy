@@ -36,7 +36,14 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   // Theme is read on the server so the first paint is already correct — no inline script (CSP-safe).
   const theme = parseTheme((await cookies()).get(THEME_COOKIE)?.value);
   return (
-    <html lang="en" data-theme={theme} className={`${googleSans.variable} ${jetbrains.variable}`}>
+    // suppressHydrationWarning: extensions (Claude in Chrome, dark-mode tools) add classes to <html> before React loads;
+    // like <body> below, only this tag's own attributes are ignored.
+    <html
+      lang="en"
+      data-theme={theme}
+      className={`${googleSans.variable} ${jetbrains.variable}`}
+      suppressHydrationWarning
+    >
       {/* Extensions (Grammarly, etc.) add attributes to <body> before React loads; this ignores only <body>'s own
           attributes, so real mismatches inside the page still warn. */}
       <body suppressHydrationWarning>
