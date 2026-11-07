@@ -14,8 +14,6 @@ import {
   GoEye,
   GoEyeClosed,
   GoGear,
-  GoHeart,
-  GoHeartFill,
   GoHome,
   GoHourglass,
   GoImage,
@@ -39,8 +37,8 @@ import {
   GoSignOut,
   GoShield,
   GoShieldCheck,
-  GoSmiley,
   GoStar,
+  GoStarFill,
   GoX,
   GoXCircle,
 } from 'react-icons/go';
@@ -69,11 +67,8 @@ export const HomeIcon = go(GoHome);
 export const FenceIcon = go(GoNote);
 // Visitors: an eye (who looked at my profile).
 export const TracksIcon = go(GoEye);
-// "Pick a reaction".
-export const ReactIcon = go(GoSmiley);
-// A post's one reaction (2026-11-07): outline = not given yet, filled = you gave it.
-export const HeartIcon = go(GoHeart);
-export const HeartFillIcon = go(GoHeartFill);
+// The one reaction on posts and Stories (2026-11-07): outline = not given yet, filled = you gave it.
+export const StarFillIcon = go(GoStarFill);
 export const WhisperIcon = go(GoCommentDiscussion);
 export const BellIcon = go(GoBell);
 export const SearchIcon = go(GoSearch);

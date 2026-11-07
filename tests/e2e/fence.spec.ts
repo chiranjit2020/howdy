@@ -59,16 +59,16 @@ test.describe('The wall in a real browser (production build, real CSP)', () => {
     await nailVia(a.page, 'Howdy from the ranch');
     await expect(a.page.getByLabel('Write a post', { exact: true })).toHaveValue(''); // cleared after posting
 
-    // A Posse friend sees it, writes on the Fence, gives a Love and scribbles a reply.
+    // A Posse friend sees it, writes on the Fence, gives a Star and scribbles a reply.
     await b.page.goto(`/profile/${a.handle}`);
     await expect(cardWith(b.page, 'Howdy from the ranch')).toBeVisible();
     await nailVia(b.page, 'Hi from Bob');
     const owners = cardWith(b.page, 'Howdy from the ranch');
-    const love = owners.getByRole('button', { name: /^Love/ });
-    await expect(love).toHaveAttribute('aria-pressed', 'false');
-    await love.click();
-    await expect(love).toHaveAttribute('aria-pressed', 'true');
-    await expect(owners.getByRole('button', { name: 'Love, 1' })).toBeVisible();
+    const star = owners.getByRole('button', { name: /^Star/ });
+    await expect(star).toHaveAttribute('aria-pressed', 'false');
+    await star.click();
+    await expect(star).toHaveAttribute('aria-pressed', 'true');
+    await expect(owners.getByRole('button', { name: 'Star, 1' })).toBeVisible();
     await owners.getByRole('button', { name: 'Reply', exact: true }).click();
     await expect(b.page.getByLabel('Write a reply')).toBeFocused();
     await b.page.getByLabel('Write a reply').fill('Nice ranch!');
@@ -78,8 +78,8 @@ test.describe('The wall in a real browser (production build, real CSP)', () => {
     // A refresh keeps everything (it really was saved), and the owner sees the reaction count.
     await a.page.reload();
     await expect(cardWith(a.page, 'Hi from Bob')).toBeVisible();
-    await expect(cardWith(a.page, 'Howdy from the ranch').getByRole('img', { name: '1 Love' })).toBeVisible(); // own card: count, no button
-    await expect(cardWith(a.page, 'Howdy from the ranch').getByRole('button', { name: /^Love/ })).toHaveCount(
+    await expect(cardWith(a.page, 'Howdy from the ranch').getByRole('img', { name: '1 Star' })).toBeVisible(); // own card: count, no button
+    await expect(cardWith(a.page, 'Howdy from the ranch').getByRole('button', { name: /^Star/ })).toHaveCount(
       0,
     );
 

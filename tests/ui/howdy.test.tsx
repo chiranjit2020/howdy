@@ -188,7 +188,7 @@ describe('PostCard', () => {
   it('one row: the heart with its count and Reply sit together; the reply count is not repeated above it', () => {
     render(card());
     const row = screen.getByRole('button', { name: /^Reply$/ }).closest('footer')!;
-    expect(row).toContainElement(screen.getByRole('button', { name: 'Love, 3' }));
+    expect(row).toContainElement(screen.getByRole('button', { name: 'Star, 3' }));
     expect(screen.queryByRole('button', { name: '1 reply' })).not.toBeInTheDocument();
   });
 
@@ -197,40 +197,41 @@ describe('PostCard', () => {
     expect(document.body).toHaveFocus();
   });
 
-  it('double-click gives a Love once, but never removes or replaces a reaction', async () => {
+  it('double-click gives a Star once, but never removes or replaces a reaction', async () => {
     const user = userEvent.setup();
     const onReact = vi.fn();
     const { rerender } = render(card({ onReact }));
     await user.dblClick(screen.getByText('Late-night canteen run?'));
     expect(onReact).toHaveBeenCalledTimes(1);
-    expect(onReact).toHaveBeenLastCalledWith('love');
+    expect(onReact).toHaveBeenLastCalledWith('love'); // a Star is saved as the existing 'love' kind
     rerender(card({ onReact, myReaction: 'laugh' }));
     await user.dblClick(screen.getByText('Late-night canteen run?'));
     expect(onReact).toHaveBeenCalledTimes(1);
   });
 
-  it('reactions: one heart with the count; a tap gives a Love, a tap on yours takes it back', async () => {
+  it('reactions: one Star with the count; a tap gives one, a tap on yours takes it back', async () => {
     const user = userEvent.setup();
     const onReact = vi.fn();
     const { rerender } = render(card({ onReact }));
-    const heart = screen.getByRole('button', { name: 'Love, 3' }); // every kind counts toward the one number
-    expect(heart).toHaveAttribute('aria-pressed', 'false');
-    expect(heart).toHaveTextContent('3');
-    await user.click(heart);
-    expect(onReact).toHaveBeenLastCalledWith('love');
+    const star = screen.getByRole('button', { name: 'Star, 3' }); // every kind counts toward the one number
+    expect(star).toHaveAttribute('aria-pressed', 'false');
+    expect(star).toHaveTextContent('3');
+    await user.click(star);
+    expect(onReact).toHaveBeenLastCalledWith('love'); // a Star is saved as the existing 'love' kind
     expect(screen.queryByRole('button', { name: 'More reactions' })).not.toBeInTheDocument();
 
-    rerender(card({ onReact, myReaction: 'laugh' })); // an older kind still shows as your heart
-    const mine = screen.getByRole('button', { name: 'Love, 3' });
+    rerender(card({ onReact, myReaction: 'laugh' })); // an older kind still shows as your Star
+    const mine = screen.getByRole('button', { name: 'Star, 3' });
     expect(mine).toHaveAttribute('aria-pressed', 'true');
+    expect(mine).toHaveTextContent('You and 2 others'); // once given, you see you are part of it
     await user.click(mine);
     expect(onReact).toHaveBeenLastCalledWith(null);
   });
 
   it('without the right to react, only the count shows', () => {
     render(card({ canReact: false }));
-    expect(screen.queryByRole('button', { name: /^Love/ })).not.toBeInTheDocument();
-    expect(screen.getByRole('img', { name: '3 Loves' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^Star/ })).not.toBeInTheDocument();
+    expect(screen.getByRole('img', { name: '3 Stars' })).toBeInTheDocument();
   });
 
   it('renders the message as text — markup in a body is never interpreted', () => {

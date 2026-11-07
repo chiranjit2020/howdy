@@ -2,14 +2,14 @@
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import type { StoryItem, StoryRingItem } from '@/modules/stories';
-import { REACTION_KINDS, type ReactionKind } from '@/shared/validation/fence';
+import type { ReactionKind } from '@/shared/validation/fence';
 import { apiRequest, postJson } from '@/ui/auth/api';
 import { Img } from '@/ui/art/img';
 import { cn } from '@/ui/cn';
-import { REACTION_LABEL, ReactionArt } from '@/ui/howdy';
+import { STAR_KIND, StarMark } from '@/ui/howdy';
 import { ReportDialog } from '@/ui/howdy/report-dialog';
 import { RelativeTime } from '@/ui/howdy/time';
-import { CloseIcon, EyeIcon, MoreIcon, PauseIcon, PlayIcon, PlusIcon, ReactIcon, StarIcon } from '@/ui/icons';
+import { CloseIcon, EyeIcon, MoreIcon, PauseIcon, PlayIcon, PlusIcon, UsersIcon } from '@/ui/icons';
 import { Avatar, ConfirmationDialog, Dropdown, useToast } from '@/ui/primitives';
 
 /** A round control on the dark Story backdrop (44 px: thumb-sized). */
@@ -40,7 +40,8 @@ export function StoryViewer({
   const [error, setError] = useState<string | undefined>();
   const [paused, setPaused] = useState(false);
   const [holding, setHolding] = useState(false);
-  const [tray, setTray] = useState(false);
+  // Grows with each Star you give, to replay its burst (0 on open: a Star given earlier does not burst).
+  const [burst, setBurst] = useState(0);
   const [sheet, setSheet] = useState(false);
   const [reporting, setReporting] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -93,22 +94,22 @@ export function StoryViewer({
   const go = useCallback(
     (step: 1 | -1) => {
       if (!items) return;
-      setTray(false);
       if (step === 1 && index + 1 >= items.length) return close();
       setIndex(Math.max(0, index + step));
     },
     [index, items, close],
   );
 
-  const stopped = paused || holding || tray || sheet || reporting || deleting;
+  const stopped = paused || holding || sheet || reporting || deleting;
 
-  async function react(kind: ReactionKind) {
+  /** One tap gives a Star; a tap on yours (any older kind too) takes it back. */
+  async function toggleStar() {
     if (!story) return;
-    const to = story.myReaction === kind ? null : kind;
+    const to = story.myReaction ? null : STAR_KIND;
+    if (to) setBurst((b) => b + 1);
     const res = await postJson<{ myReaction: ReactionKind | null }>(`/api/stories/${story.id}/react`, {
       kind: to,
     });
-    setTray(false);
     if (res.ok && res.data) {
       const mine = res.data.myReaction;
       setItems((all) => all && all.map((s) => (s.id === story.id ? { ...s, myReaction: mine } : s)));
@@ -235,7 +236,8 @@ export function StoryViewer({
                     {story.audience === 'close' && (
                       <>
                         <span aria-hidden="true">·</span>
-                        <StarIcon className="text-metadata" />
+                        {/* People, not a star: the Star is Howdy's reaction, so it means only that. */}
+                        <UsersIcon className="text-metadata" />
                         Close friends
                       </>
                     )}
@@ -310,29 +312,6 @@ export function StoryViewer({
 
             {!story.mine && (
               <>
-                {tray && (
-                  <div
-                    role="group"
-                    aria-label="React to this Story"
-                    className="flex items-center justify-between self-stretch rounded-pill bg-island-raised px-1 shadow-float"
-                  >
-                    {REACTION_KINDS.map((k) => (
-                      <button
-                        key={k}
-                        type="button"
-                        onClick={() => react(k)}
-                        aria-pressed={story.myReaction === k}
-                        aria-label={REACTION_LABEL[k]}
-                        className={cn(
-                          'inline-flex size-11 items-center justify-center rounded-pill transition',
-                          story.myReaction === k ? 'bg-on-island/20' : 'hover:bg-on-island/10',
-                        )}
-                      >
-                        <ReactionArt kind={k} className="size-7" />
-                      </button>
-                    ))}
-                  </div>
-                )}
                 <div className="flex items-center gap-2">
                   <a
                     href={replyHref}
@@ -342,18 +321,12 @@ export function StoryViewer({
                   </a>
                   <button
                     type="button"
-                    onClick={() => setTray((t) => !t)}
-                    aria-expanded={tray}
-                    aria-label={
-                      story.myReaction ? `You reacted ${REACTION_LABEL[story.myReaction]}. Change` : 'React'
-                    }
-                    className={cn(ROUND, story.myReaction && 'bg-on-island/15')}
+                    onClick={toggleStar}
+                    aria-pressed={story.myReaction !== null}
+                    aria-label={story.myReaction ? 'Take back your Star' : 'Give a Star'}
+                    className={ROUND}
                   >
-                    {story.myReaction ? (
-                      <ReactionArt kind={story.myReaction} className="size-7" />
-                    ) : (
-                      <ReactIcon />
-                    )}
+                    <StarMark given={story.myReaction !== null} burst={burst} />
                   </button>
                 </div>
               </>
@@ -402,8 +375,8 @@ export function StoryViewer({
                 </span>
                 {v.reaction && (
                   <>
-                    <ReactionArt kind={v.reaction} className="size-6" />
-                    <span className="sr-only">reacted {REACTION_LABEL[v.reaction]}</span>
+                    <StarMark given className="text-title" />
+                    <span className="sr-only">gave a Star</span>
                   </>
                 )}
               </li>

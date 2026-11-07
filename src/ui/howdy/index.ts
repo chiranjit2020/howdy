@@ -9,7 +9,7 @@ export {
   type PostCardAuthor,
 } from './post-card';
 export { YoButton, type YoButtonProps } from './yo-button';
-export { REACTION_LABEL, ReactionArt, LoveButton } from './reactions';
+export { StarButton, StarMark, STAR_KIND } from './reactions';
 export { TipHatButton, type TipHatButtonProps } from './tip-hat-button';
 export { TrackItem, type TrackVisitor } from './track-item';
 export { TributeCard, type TributeCardProps } from './tribute-card';

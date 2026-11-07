@@ -110,12 +110,8 @@ test('a Story: shared from Home on a phone, opened by a friend who reacts and re
   expect((await got.body()).includes(Buffer.from('SECRET-STORY-NOTE'))).toBe(false);
 
   await pal.page.screenshot({ path: '.dev/story-viewer-pal.png' });
-  await viewer.getByRole('button', { name: 'React' }).tap();
-  await viewer
-    .getByRole('group', { name: 'React to this Story' })
-    .getByRole('button', { name: 'Fire' })
-    .tap();
-  await expect(viewer.getByRole('button', { name: 'You reacted Fire. Change' })).toBeVisible();
+  await viewer.getByRole('button', { name: 'Give a Star' }).tap();
+  await expect(viewer.getByRole('button', { name: 'Take back your Star', pressed: true })).toBeVisible();
   expect(await axeViolations(pal.page)).toEqual([]);
   expect(await smallTargets(pal.page)).toEqual([]);
   expect(await horizontalOverflow(pal.page)).toBe(0);
