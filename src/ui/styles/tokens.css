@@ -117,6 +117,8 @@
   --color-danger: light-dark(#ca054d, #ff8fb1);
   --color-on-danger: light-dark(#ffffff, #2b0013);
   --color-danger-soft: light-dark(#fce4ee, #4a1a2e);
+  /* A filled heart (your reaction on a post): a warm rose, its own token so it never reads as an error. */
+  --color-love: light-dark(#e0245e, #ff7aa2);
   --color-info: #bee1e6;
   --color-on-info: #2b2d42;
   --color-mystery: #d8b4e2;

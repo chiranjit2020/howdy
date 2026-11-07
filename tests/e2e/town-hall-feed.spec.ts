@@ -74,15 +74,12 @@ test.describe('Group feed (production build, real CSP, phone)', () => {
     await ann.page.getByRole('button', { name: 'Post', exact: true }).tap();
     await expect(postFrom(ann.page, ann.handle)).toContainText('Who is up for chai on Sunday?');
 
-    // The owner sees it, gives it a Yo and scribbles a reply on its back.
+    // The owner sees it, gives it a Love and scribbles a reply on its back.
     await openByTapping(owner, name, id);
     const theirPost = postFrom(owner.page, ann.handle);
     await expect(theirPost).toContainText('Who is up for chai on Sunday?');
-    await theirPost.getByRole('button', { name: 'Wave', exact: true }).tap();
-    await expect(theirPost.getByRole('button', { name: 'Wave', exact: true })).toHaveAttribute(
-      'aria-pressed',
-      'true',
-    );
+    await theirPost.getByRole('button', { name: /^Love/ }).tap();
+    await expect(theirPost.getByRole('button', { name: /^Love/ })).toHaveAttribute('aria-pressed', 'true');
     await theirPost.getByRole('button', { name: 'Reply', exact: true }).tap();
     await owner.page.getByLabel('Write a reply').fill('Count me in!');
     await theirPost.getByRole('button', { name: 'Send' }).tap();

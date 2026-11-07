@@ -59,21 +59,16 @@ test.describe('The wall in a real browser (production build, real CSP)', () => {
     await nailVia(a.page, 'Howdy from the ranch');
     await expect(a.page.getByLabel('Write a post', { exact: true })).toHaveValue(''); // cleared after posting
 
-    // A Posse friend sees it, writes on the Fence, gives a Yo and scribbles a reply.
+    // A Posse friend sees it, writes on the Fence, gives a Love and scribbles a reply.
     await b.page.goto(`/profile/${a.handle}`);
     await expect(cardWith(b.page, 'Howdy from the ranch')).toBeVisible();
     await nailVia(b.page, 'Hi from Bob');
     const owners = cardWith(b.page, 'Howdy from the ranch');
-    const yo = owners.getByRole('button', { name: /^Wave/ });
-    await expect(yo).toHaveAttribute('aria-pressed', 'false');
-    await yo.click();
-    await expect(yo).toHaveAttribute('aria-pressed', 'true');
-    await expect(owners.getByRole('img', { name: '1 reaction: 1 Wave' })).toBeVisible();
-    // The picker switches it to another reaction: still one per person.
-    await owners.getByRole('button', { name: 'More reactions' }).click();
-    await b.page.getByRole('dialog', { name: 'Reactions' }).getByRole('button', { name: 'Laugh' }).click();
-    await expect(owners.getByRole('button', { name: 'Laugh', pressed: true })).toBeVisible();
-    await expect(owners.getByRole('img', { name: '1 reaction: 1 Laugh' })).toBeVisible();
+    const love = owners.getByRole('button', { name: /^Love/ });
+    await expect(love).toHaveAttribute('aria-pressed', 'false');
+    await love.click();
+    await expect(love).toHaveAttribute('aria-pressed', 'true');
+    await expect(owners.getByRole('button', { name: 'Love, 1' })).toBeVisible();
     await owners.getByRole('button', { name: 'Reply', exact: true }).click();
     await expect(b.page.getByLabel('Write a reply')).toBeFocused();
     await b.page.getByLabel('Write a reply').fill('Nice ranch!');
@@ -83,10 +78,8 @@ test.describe('The wall in a real browser (production build, real CSP)', () => {
     // A refresh keeps everything (it really was saved), and the owner sees the reaction count.
     await a.page.reload();
     await expect(cardWith(a.page, 'Hi from Bob')).toBeVisible();
-    await expect(
-      cardWith(a.page, 'Howdy from the ranch').getByRole('img', { name: '1 reaction: 1 Laugh' }),
-    ).toBeVisible(); // own card: count, no button
-    await expect(cardWith(a.page, 'Howdy from the ranch').getByRole('button', { name: /^Wave/ })).toHaveCount(
+    await expect(cardWith(a.page, 'Howdy from the ranch').getByRole('img', { name: '1 Love' })).toBeVisible(); // own card: count, no button
+    await expect(cardWith(a.page, 'Howdy from the ranch').getByRole('button', { name: /^Love/ })).toHaveCount(
       0,
     );
 

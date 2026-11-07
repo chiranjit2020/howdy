@@ -33,7 +33,7 @@ import { FormMessage } from '../auth/form-parts';
 import type { PhotoUpload } from '../media/upload-photo';
 import { RelativeTime } from './time';
 import { NameBadge } from './verified-badge';
-import { ReactionBar, ReactionSummary } from './reactions';
+import { LoveButton } from './reactions';
 
 /** A person's name as a link to their profile: reads as a name, underlines on hover. */
 const NAME_LINK = 'font-semibold text-text-primary no-underline hover:underline';
@@ -444,7 +444,7 @@ function PostPhoto({ photo, alt }: { photo: { url: string; width: number; height
         type="button"
         onClick={() => setOpen(true)}
         aria-label={`${alt}. Show the whole photo`}
-        // A double-click here opens the photo, nothing else (on the rest of the post it gives a Wave).
+        // A double-click here opens the photo, nothing else (on the rest of the post it gives a Love).
         onDoubleClick={(e) => e.stopPropagation()}
         className="block w-full cursor-zoom-in overflow-hidden rounded-card-inset"
       >
@@ -550,7 +550,7 @@ export function PostCard({
     <ReplyTo.Provider value={replyComposer ? { replyTo, draft: draft.text } : null}>
       <article aria-label={`${noun} from ${author.name}`} className="clay flex flex-col">
         <div
-          onDoubleClick={() => canReact && !myReaction && onReact('yo')}
+          onDoubleClick={() => canReact && !myReaction && onReact('love')}
           // With a reaction row under it, the post keeps only 4 px below so the row reads as part of the post.
           className={cn('flex flex-col gap-3 p-4', hasActions && 'pb-1')}
         >
@@ -612,11 +612,11 @@ export function PostCard({
           // stopped before reacting. The row sits right under the post instead, as part of it.
           // 12 px below (plus the buttons' own inner space) so the card's bottom edge breathes like its 16 px top.
           <footer className="mx-4 flex items-center gap-1 pb-3">
-            {canReact || myReaction ? (
-              <ReactionBar reactions={reactions} mine={myReaction} onReact={onReact} />
-            ) : (
-              totalReactions > 0 && <ReactionSummary reactions={reactions} />
-            )}
+            <LoveButton
+              reactions={reactions}
+              mine={myReaction}
+              {...(canReact || myReaction ? { onReact } : {})}
+            />
             {replyComposer && (
               <Button
                 variant="ghost"

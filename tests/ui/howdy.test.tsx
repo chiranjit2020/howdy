@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { render, screen, within } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { RELATIONSHIP_STATES } from '@/shared/relationship';
@@ -185,11 +185,10 @@ describe('PostCard', () => {
     expect(screen.getByText('Late-night canteen run?')).toBeInTheDocument();
   });
 
-  it('one row: your reaction, the counts and Reply sit together; the reply count is not repeated above it', () => {
+  it('one row: the heart with its count and Reply sit together; the reply count is not repeated above it', () => {
     render(card());
     const row = screen.getByRole('button', { name: /^Reply$/ }).closest('footer')!;
-    expect(row).toContainElement(screen.getByRole('button', { name: 'Wave' }));
-    expect(row).toContainElement(screen.getByRole('img', { name: /3 reactions/ }));
+    expect(row).toContainElement(screen.getByRole('button', { name: 'Love, 3' }));
     expect(screen.queryByRole('button', { name: '1 reply' })).not.toBeInTheDocument();
   });
 
@@ -198,49 +197,40 @@ describe('PostCard', () => {
     expect(document.body).toHaveFocus();
   });
 
-  it('double-click drops a Yo once, but never removes or replaces a reaction', async () => {
+  it('double-click gives a Love once, but never removes or replaces a reaction', async () => {
     const user = userEvent.setup();
     const onReact = vi.fn();
     const { rerender } = render(card({ onReact }));
     await user.dblClick(screen.getByText('Late-night canteen run?'));
     expect(onReact).toHaveBeenCalledTimes(1);
-    expect(onReact).toHaveBeenLastCalledWith('yo');
+    expect(onReact).toHaveBeenLastCalledWith('love');
     rerender(card({ onReact, myReaction: 'laugh' }));
     await user.dblClick(screen.getByText('Late-night canteen run?'));
     expect(onReact).toHaveBeenCalledTimes(1);
   });
 
-  it('reactions: one tap gives a Yo, the picker switches or takes back, and the summary reads out the counts', async () => {
+  it('reactions: one heart with the count; a tap gives a Love, a tap on yours takes it back', async () => {
     const user = userEvent.setup();
     const onReact = vi.fn();
     const { rerender } = render(card({ onReact }));
-    expect(screen.getByRole('img', { name: '3 reactions: 2 Wave, 1 Laugh' })).toBeInTheDocument();
-    const main = screen.getByRole('button', { name: 'Wave' });
-    expect(main).toHaveAttribute('aria-pressed', 'false');
-    await user.click(main);
-    expect(onReact).toHaveBeenLastCalledWith('yo');
+    const heart = screen.getByRole('button', { name: 'Love, 3' }); // every kind counts toward the one number
+    expect(heart).toHaveAttribute('aria-pressed', 'false');
+    expect(heart).toHaveTextContent('3');
+    await user.click(heart);
+    expect(onReact).toHaveBeenLastCalledWith('love');
+    expect(screen.queryByRole('button', { name: 'More reactions' })).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: 'More reactions' }));
-    await user.click(screen.getByRole('button', { name: 'Popcorn' }));
-    expect(onReact).toHaveBeenLastCalledWith('popcorn');
-    expect(screen.queryByRole('dialog', { name: 'Reactions' })).not.toBeInTheDocument(); // a pick closes the picker
-
-    rerender(card({ onReact, myReaction: 'popcorn' }));
-    const mine = screen.getByRole('button', { name: 'Popcorn' }); // the main button now shows your reaction
+    rerender(card({ onReact, myReaction: 'laugh' })); // an older kind still shows as your heart
+    const mine = screen.getByRole('button', { name: 'Love, 3' });
     expect(mine).toHaveAttribute('aria-pressed', 'true');
-    await user.click(mine); // tapping it takes yours back
-    expect(onReact).toHaveBeenLastCalledWith(null);
-    await user.click(screen.getByRole('button', { name: 'More reactions' }));
-    const picker = screen.getByRole('dialog', { name: 'Reactions' });
-    await user.click(within(picker).getByRole('button', { name: 'Popcorn', pressed: true }));
+    await user.click(mine);
     expect(onReact).toHaveBeenLastCalledWith(null);
   });
 
-  it('without the right to react, only the summary shows', () => {
+  it('without the right to react, only the count shows', () => {
     render(card({ canReact: false }));
-    expect(screen.queryByRole('button', { name: 'Wave' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'More reactions' })).not.toBeInTheDocument();
-    expect(screen.getByRole('img', { name: /3 reactions/ })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^Love/ })).not.toBeInTheDocument();
+    expect(screen.getByRole('img', { name: '3 Loves' })).toBeInTheDocument();
   });
 
   it('renders the message as text — markup in a body is never interpreted', () => {
