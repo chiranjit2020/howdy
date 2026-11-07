@@ -63,7 +63,14 @@ export function StoriesStrip({
         type="button"
         onClick={() => (mine ? setOpen(mine) : startAdding())}
         aria-label={mine ? 'Your Story' : 'Add to your Story'}
-        className={cn('block rounded-pill p-0.5', mine ? 'bg-border-strong' : 'bg-transparent')}
+        className={cn(
+          // flex, not block: an inline picture in a block leaves a gap under it for text that is not there.
+          'flex rounded-pill p-0.5',
+          // Beside "What's on your mind?": the 2 px ring room is taken back, so the picture sits on the card's own 16 px
+          // padding, level with the pictures on the posts below (the button stays 44 px to tap).
+          lead && '-m-0.5',
+          mine ? 'bg-border-strong' : 'bg-transparent',
+        )}
       >
         <Avatar name={me.displayName} tint={me.portraitTint} src={me.portraitUrl} size={lead ? 'md' : 'lg'} />
       </button>
