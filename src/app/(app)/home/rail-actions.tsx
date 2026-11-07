@@ -6,7 +6,8 @@ import { focusPeopleSearch, openFreeToTalk } from '@/ui/shell/shell-events';
 /** Free now, when nobody is: open the top bar's Free to talk panel. */
 export function SwitchYoursOn() {
   return (
-    <Button size="sm" variant="secondary" className="self-start" onClick={openFreeToTalk}>
+    // A small action at the card's foot: words that act, not a boxed button.
+    <Button size="sm" variant="link" className="-mx-1 self-start" onClick={openFreeToTalk}>
       Tell friends you’re free
     </Button>
   );

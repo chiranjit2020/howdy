@@ -8,7 +8,7 @@ import type { PortraitTint } from '@/shared/validation/profile';
 import { cn } from '@/ui/cn';
 import { formatRelative, VerifiedBadge } from '@/ui/howdy';
 import type { LitPalRow } from '@/ui/howdy/free-to-talk';
-import { PulseDot, RAIL_CARD, RailCard } from '@/ui/howdy/rail-card';
+import { PulseDot, RAIL_CARD, RAIL_TEXT, RailCard } from '@/ui/howdy/rail-card';
 import { WhisperIcon } from '@/ui/icons';
 import { Avatar, buttonClasses } from '@/ui/primitives';
 import { ChatLink } from './chat-dock';
@@ -37,15 +37,15 @@ function FriendLine({
   line: string;
 }) {
   return (
-    <li className="flex items-center gap-2.5">
-      <Avatar name={person.displayName} tint={person.portraitTint} src={person.portraitUrl} size="sm" />
+    <li className="flex items-center gap-3">
+      <Avatar name={person.displayName} tint={person.portraitTint} src={person.portraitUrl} />
       <div className="min-w-0 flex-1">
-        <p className="truncate text-caption">
+        <p className="truncate text-card">
           <Link href={`/profile/${person.handle}`} className={NAME_LINK}>
             {person.displayName}
           </Link>
         </p>
-        <p className="truncate text-metadata text-text-secondary">{line}</p>
+        <p className="truncate text-metadata text-text-muted">{line}</p>
       </div>
       <ChatLink
         // Only what the window needs crosses to the browser.
@@ -73,14 +73,21 @@ export interface Announcement {
 /** The team's current "what's new" note: in the right panel on wide screens, above the feed on narrower ones. */
 export function WhatsNew({ news, id }: { news: Announcement; id: string }) {
   return (
-    <RailCard id={id} title="What’s new" lead={<PulseDot />}>
-      <p className="text-caption break-words text-text-primary">{news.text}</p>
-      <p className="text-metadata text-text-secondary">
-        <Link href={`/profile/${news.author.handle}`} className="font-semibold">
-          {news.author.displayName}
-        </Link>
-        {news.author.verified && <VerifiedBadge className="ml-1" />}
-      </p>
+    <RailCard
+      id={id}
+      title="What’s new"
+      lead={<PulseDot />}
+      foot={
+        <p>
+          From{' '}
+          <Link href={`/profile/${news.author.handle}`} className="font-semibold">
+            {news.author.displayName}
+          </Link>
+          {news.author.verified && <VerifiedBadge className="ml-1" />}
+        </p>
+      }
+    >
+      <p className={cn(RAIL_TEXT, 'break-words')}>{news.text}</p>
     </RailCard>
   );
 }
@@ -96,22 +103,27 @@ function CapsulesCard({ coming }: { coming: ComingCapsule[] }) {
       id="rail-capsules"
       title="Time Capsules"
       {...(next ? { more: { href: '/capsules', label: 'See all' } } : {})}
+      {...(next
+        ? coming.length > 1
+          ? { foot: <p>{coming.length - 1} more after that.</p> }
+          : {}
+        : {
+            foot: (
+              <Link href="/capsules" className={cn(buttonClasses({ variant: 'link' }), '-mx-1')}>
+                Seal a Time Capsule
+              </Link>
+            ),
+          })}
     >
       {next ? (
-        <p className="text-caption text-text-secondary">
+        <p className={RAIL_TEXT}>
           One {next.from ? `from ${next.from.displayName}` : 'from your past self'} opens on{' '}
-          <strong className="font-semibold text-text-primary">{longDay(next.openOn)}</strong>.
-          {coming.length > 1 && ` ${coming.length - 1} more after that.`}
+          <strong className="font-semibold">{longDay(next.openOn)}</strong>.
         </p>
       ) : (
-        <>
-          <p className="text-caption text-text-secondary">
-            Seal a few words for your future self or a friend. Nobody can read them until the day they open.
-          </p>
-          <Link href="/capsules" className={cn(buttonClasses({ variant: 'link' }), 'self-start')}>
-            Seal a Time Capsule
-          </Link>
-        </>
+        <p className={RAIL_TEXT}>
+          Seal a few words for your future self or a friend. Nobody can read them until the day they open.
+        </p>
       )}
     </RailCard>
   );
@@ -119,8 +131,8 @@ function CapsulesCard({ coming }: { coming: ComingCapsule[] }) {
 
 /**
  * Home's right panel (wide screens only): your circle right now. The friends who switched Free to talk on (their own
- * choice; Howdy has no automatic "online" dot), your latest messages, friend requests waiting for you, then "On this day",
- * Time Capsules and the team's note. Everything in it is already filtered for this person by
+ * choice; Howdy has no automatic "online" dot), your latest messages, friend requests waiting for you, then "On this day"
+ * and Time Capsules. The team's note, when there is one, comes first. Everything in it is already filtered for this person by
  * the server.
  */
 export function HomeRail({
@@ -149,28 +161,30 @@ export function HomeRail({
 }) {
   return (
     <>
+      {/* The team's note leads the panel (2026-11-07): news is read first, then your circle. */}
+      {news && <WhatsNew news={news} id="rail-whats-new" />}
       {friends.length === 0 ? (
         <RailCard id="rail-find" title="Find your friends">
-          <p className="text-caption text-text-secondary">Look people up, or send them your link.</p>
+          <p className={RAIL_TEXT}>Look people up, or send them your link.</p>
           <FindFriendsActions handle={handle} />
         </RailCard>
       ) : (
-        <RailCard id="rail-free" title="Free now">
+        <RailCard
+          id="rail-free"
+          title="Free now"
+          {...(free.length === 0 && !myLight ? { foot: <SwitchYoursOn /> } : {})}
+        >
           {free.length === 0 ? (
             myLight ? (
-              <p className="text-caption text-text-secondary">
-                You’re free until{' '}
-                <strong className="font-semibold text-text-primary">{myLight.untilLabel}</strong>. No one else
+              <p className={RAIL_TEXT}>
+                You’re free until <strong className="font-semibold">{myLight.untilLabel}</strong>. No one else
                 yet.
               </p>
             ) : (
-              <>
-                <p className="text-caption text-text-secondary">No one’s free right now.</p>
-                <SwitchYoursOn />
-              </>
+              <p className={RAIL_TEXT}>No one’s free right now.</p>
             )
           ) : (
-            <ul aria-label="Friends free to talk" className="-my-1 flex flex-col">
+            <ul aria-label="Friends free to talk" className="flex flex-col gap-3">
               {free.slice(0, SHOW.free).map((p) => (
                 <FriendLine
                   key={p.handle}
@@ -188,8 +202,8 @@ export function HomeRail({
         <RailCard id="rail-messages" title="Messages" more={{ href: '/messages', label: 'See all' }}>
           {threads.length === 0 ? (
             <>
-              <p className="text-caption text-text-secondary">Say hi to a friend.</p>
-              <ul aria-label="Friends to message" className="-my-1 flex flex-col">
+              <p className={RAIL_TEXT}>Say hi to a friend.</p>
+              <ul aria-label="Friends to message" className="flex flex-col gap-3">
                 {friends.slice(0, SHOW.sayHi).map((p) => (
                   <FriendLine key={p.handle} person={p} line={`@${p.handle}`} />
                 ))}
@@ -206,14 +220,14 @@ export function HomeRail({
                       portraitTint: t.portraitTint,
                       portraitUrl: t.portraitUrl,
                     }}
-                    className="flex min-h-11 items-center gap-2.5 rounded-md px-2 py-1.5 no-underline hover:bg-surface-sunken hover:no-underline"
+                    className="flex min-h-11 items-center gap-3 rounded-lg px-2 py-1.5 no-underline hover:bg-surface-sunken hover:no-underline"
                   >
-                    <Avatar name={t.displayName} tint={t.portraitTint} src={t.portraitUrl} size="sm" />
+                    <Avatar name={t.displayName} tint={t.portraitTint} src={t.portraitUrl} />
                     <span className="min-w-0 flex-1">
                       <span className="flex items-baseline gap-2">
                         <span
                           className={
-                            'min-w-0 flex-1 truncate text-caption text-text-primary ' +
+                            'min-w-0 flex-1 truncate text-card text-text-primary ' +
                             (t.unread > 0 ? 'font-bold' : 'font-semibold')
                           }
                         >
@@ -262,7 +276,6 @@ export function HomeRail({
         <MemoriesCard memories={memories} handle={handle} className={RAIL_CARD} headingId="rail-memories" />
       )}
       {capsules && <CapsulesCard coming={capsules} />}
-      {news && <WhatsNew news={news} id="rail-whats-new" />}
     </>
   );
 }

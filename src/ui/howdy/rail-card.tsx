@@ -3,11 +3,16 @@ import type { ReactNode } from 'react';
 
 /**
  * A card in a right panel (Home's, a profile's): white, the shared card corners (20 px), a 16 px title, and an optional
- * link or button at the end of the title row. (The sunflower bar along the top was removed 2026-11-07.)
+ * link or button at the end of the title row, and an optional foot under a dashed rule. Inside: 40 px avatars, 14 px
+ * words, 12 px meta, 12 px gaps (2026-11-07, the mock cards). (The sunflower bar along the top was removed 2026-11-07.)
  */
 export const RAIL_CARD =
   'relative flex flex-col gap-3 overflow-hidden rounded-card border border-border bg-surface p-4 shadow-clay';
 export const RAIL_TITLE = 'text-title font-semibold text-text-primary capitalize';
+/** A card's main words: 14 px ink (secondary grey is for the extra line under the dashed rule, not the point). */
+export const RAIL_TEXT = 'text-card text-text-primary';
+/** The extra line at a card's foot (an action, who wrote it): set off by a subtle dashed rule, 13 px grey. */
+export const RAIL_FOOT = 'border-t border-dashed border-border pt-3 text-caption text-text-secondary';
 /** 44 px to tap on touch screens, without making the title row any taller (the negative margin takes it back). */
 export const RAIL_MORE =
   '-my-3 inline-flex min-h-11 items-center text-caption font-semibold pointer-fine:my-0 pointer-fine:min-h-0';
@@ -31,6 +36,7 @@ export function RailCard({
   more,
   action,
   lead,
+  foot,
   children,
 }: {
   id: string;
@@ -41,6 +47,8 @@ export function RailCard({
   more?: { href: string; label: string };
   /** Or anything else there (a button). */
   action?: ReactNode;
+  /** Extra info or a small action, under a subtle dashed rule at the card's foot. */
+  foot?: ReactNode;
   children: ReactNode;
 }) {
   return (
@@ -66,6 +74,7 @@ export function RailCard({
         {action}
       </div>
       {children}
+      {foot && <div className={RAIL_FOOT}>{foot}</div>}
     </section>
   );
 }

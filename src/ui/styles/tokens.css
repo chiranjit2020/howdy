@@ -171,6 +171,13 @@
   --text-body: 0.9375rem;
   --text-body--line-height: 1.6;
   --text-body--font-weight: 400;
+  /*
+   * Text inside a card (2026-11-07, from the mock cards the user loved): 14 px, so a name line plus a 12 px meta line is
+   * as tall as a 40 px avatar beside them. Everything in a card sits on 40 / 14 / 12 and 12 px gaps.
+   */
+  --text-card: 0.875rem;
+  --text-card--line-height: 1.43;
+  --text-card--font-weight: 400;
   --text-caption: 0.8125rem;
   --text-caption--line-height: 1.5385;
   /* Regular: caption is also running text (replies, notes). A label that needs weight says so (font-medium/semibold). */
