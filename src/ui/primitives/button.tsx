@@ -38,7 +38,7 @@ export function buttonClasses(
 ): string {
   const { variant = 'primary', size = 'md', fullWidth, compact } = opts;
   return cn(
-    'inline-flex items-center justify-center gap-2 rounded-md font-semibold select-none no-underline',
+    'inline-flex items-center justify-center gap-2 rounded-pill font-semibold select-none no-underline',
     'transition-colors duration-150 ease-out active:shadow-clay-pressed',
     // pointer-events-none: no hover colour on a disabled button (it would bring the brand colour back).
     'disabled:pointer-events-none disabled:text-text-muted aria-disabled:pointer-events-none aria-disabled:text-text-muted',

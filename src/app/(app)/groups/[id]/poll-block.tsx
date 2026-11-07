@@ -57,7 +57,7 @@ export function PollBlock({
   return (
     <section
       aria-label={`Poll: ${question}`}
-      className="flex flex-col gap-2 rounded-lg border border-border bg-surface-sunken/50 p-3"
+      className="flex flex-col gap-2 rounded-card border border-border bg-surface-sunken/50 p-3"
     >
       <p className="font-semibold break-words text-text-primary">{question}</p>
       <ul className="flex flex-col gap-2">
