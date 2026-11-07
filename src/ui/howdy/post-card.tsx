@@ -610,7 +610,8 @@ export function PostCard({
         {hasActions && (
           // No dividing line (2026-11-07): a rule between the post and its reactions read as "end of post", and people
           // stopped before reacting. The row sits right under the post instead, as part of it.
-          <footer className="mx-4 flex items-center gap-1 pb-2">
+          // 12 px below (plus the buttons' own inner space) so the card's bottom edge breathes like its 16 px top.
+          <footer className="mx-4 flex items-center gap-1 pb-3">
             {canReact || myReaction ? (
               <ReactionBar reactions={reactions} mine={myReaction} onReact={onReact} />
             ) : (
