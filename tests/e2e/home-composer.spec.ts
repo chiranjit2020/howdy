@@ -13,8 +13,8 @@ import {
 } from './helpers';
 
 /**
- * Home's "What's on your mind?": one line with a camera button until you click in, then the full box with Add a photo
- * and Post; it closes again when you leave it empty, and stays open while it holds words or a photo.
+ * Home's "What's on your mind?": one borderless line until you click in, then the full box with Add a photo and Post;
+ * it closes again when you leave it empty, and stays open while it holds words or a photo.
  */
 
 async function person(browser: Browser, tag: string) {
@@ -34,7 +34,7 @@ const photo = () =>
     .jpeg()
     .toBuffer();
 
-test('one line until clicked; opens, posts, closes again; a photo from the one-line camera opens it', async ({
+test('one line until clicked; opens, posts, closes again; a photo alone is a post', async ({
   browser,
 }) => {
   const me = await person(browser, 'mind');
@@ -46,10 +46,12 @@ test('one line until clicked; opens, posts, closes again; a photo from the one-l
   const post = page.getByRole('button', { name: 'Post', exact: true });
   const height = async () => (await box.boundingBox())!.height;
 
-  // One line, the question inside it, and a camera button beside it; no Post button yet.
+  // One line, the question inside it with no border round it, and nothing beside it (2026-11-07: the camera beside the
+  // closed line repeated the open box's Add a photo); no Post button yet.
   await expect(box).toHaveAttribute('placeholder', 'What’s on your mind?');
   expect(await height()).toBeLessThanOrEqual(44);
-  await expect(page.locator('label').filter({ hasText: 'Add a photo' })).toBeVisible();
+  expect(await box.evaluate((el) => getComputedStyle(el).borderTopWidth)).toBe('0px');
+  await expect(page.locator('form').filter({ has: box }).locator('label').filter({ hasText: 'Add a photo' })).toHaveCount(0);
   await expect(post).toHaveCount(0);
 
   // No friend has a Story, so there is no row for one lonely circle: my Story button leads the line, on its level.
@@ -98,13 +100,14 @@ test('one line until clicked; opens, posts, closes again; a photo from the one-l
   await expect(page.getByRole('article').filter({ hasText: 'Chai on the balcony' })).toBeVisible();
   await expect(box).toHaveValue('');
 
-  // Back to one line; a photo chosen from the camera opens it, with the words box ready for a caption.
+  // Back to one line; open it again and choose a photo: the words box is ready for a caption.
   await page.getByRole('heading', { name: 'What’s Going On?', exact: true }).click();
   await expect(post).toHaveCount(0);
   const preview = page.getByAltText('The photo you chose for this card');
   await expect(async () => {
     // Retried: a file picked before the page has hydrated fires no React handler.
     // This form's own picker (Home also has the Stories one).
+    await box.click();
     await page
       .locator('form')
       .filter({ has: box })

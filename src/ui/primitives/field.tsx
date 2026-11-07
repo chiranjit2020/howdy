@@ -93,6 +93,11 @@ const CONTROL =
   'focus:border-focus focus:ring-3 focus:ring-primary/45 focus:outline-none ' +
   'aria-invalid:border-danger aria-invalid:focus:ring-danger/20';
 
+// A textarea with no box (see `bare`): 16 px words, a washed-out question, no border, no ring.
+const BARE_CONTROL =
+  'w-full bg-transparent px-0 py-2 text-title font-normal text-text-primary placeholder:text-text-muted/70 ' +
+  'focus:outline-none disabled:cursor-not-allowed disabled:text-text-muted';
+
 // Sign-up's boxes are the same white boxes as Log in (2026-10-30: the tinted ones made the two pages look unrelated).
 const CONTROLS: Record<FieldLook, string> = { default: CONTROL, entry: CONTROL };
 
@@ -260,6 +265,11 @@ export interface TextareaProps extends FieldProps, ComponentProps<'textarea'> {
   hideLabel?: boolean;
   /** May be one line tall (`rows={1}`), as tall as an Input; otherwise never less than two lines. */
   oneLine?: boolean;
+  /**
+   * No box of its own: words straight on the card it sits in, with a larger, paler question (the post box, 2026-11-07).
+   * The card around it is the box; it opens when clicked in, which is the cue that you are typing there.
+   */
+  bare?: boolean;
 }
 
 export function Textarea({
@@ -269,6 +279,7 @@ export function Textarea({
   showCount,
   hideLabel,
   oneLine,
+  bare,
   className,
   id,
   maxLength,
@@ -302,7 +313,11 @@ export function Textarea({
         <>
           <textarea
             // As tall as its `rows`, never less than two lines (no fixed 96 px box) unless it may be one.
-            className={cn(CONTROL, 'resize-none', oneLine ? 'min-h-11 pointer-fine:min-h-9' : 'min-h-16')}
+            className={cn(
+              bare ? BARE_CONTROL : CONTROL,
+              'resize-none',
+              oneLine ? 'min-h-11 pointer-fine:min-h-9' : 'min-h-16',
+            )}
             maxLength={maxLength}
             onChange={handleChange}
             {...(value !== undefined ? { value } : { defaultValue })}

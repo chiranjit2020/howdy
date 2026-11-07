@@ -63,8 +63,9 @@ test('a photo in a group post: chosen on a phone, seen by another member, no hid
   await owner.page.goto(url);
   await pageReady(owner.page);
   const chooser = owner.page.locator('input[type=file]').first();
-  // Retried: a file picked before the page has hydrated fires no React handler.
+  // Retried: a file picked before the page has hydrated fires no React handler. "Add a photo" is in the open box only.
   await expect(async () => {
+    await owner.page.getByLabel('Post to this group').click();
     await chooser.setInputFiles({ name: 'garden.jpg', mimeType: 'image/jpeg', buffer: await photo() });
     await expect(owner.page.getByAltText('The photo you chose for this post')).toBeVisible({ timeout: 1000 });
   }).toPass({ timeout: 15_000 });

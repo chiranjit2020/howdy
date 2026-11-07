@@ -47,8 +47,9 @@ test('Add a photo → preview → Nail: the card shows it, fits the phone, and t
   await pageReady(me.page);
 
   const chooser = me.page.locator('#nail input[type=file]');
-  // Retried: a file picked before the page has hydrated fires no React handler.
+  // Retried: a file picked before the page has hydrated fires no React handler. "Add a photo" is in the open box only.
   await expect(async () => {
+    await me.page.getByLabel('Write a post', { exact: true }).click();
     await chooser.setInputFiles({ name: 'sunset.jpg', mimeType: 'image/jpeg', buffer: await photo() });
     await expect(me.page.getByAltText('The photo you chose for this card')).toBeVisible({ timeout: 1000 });
   }).toPass({ timeout: 15_000 });

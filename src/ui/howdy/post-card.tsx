@@ -194,9 +194,10 @@ export function PostCardComposer({
   const [photoError, setPhotoError] = useState<string | undefined>();
   const uploading = photo !== undefined && photo.id === undefined;
   const trimmed = body.trim();
-  // Every post box (Home, a wall, a group) is one line (with a camera button) until you click in; it stays open while it
-  // holds words, a photo or a photo error, and closes again when you leave it empty. Only the box opens it: the one-line
-  // camera button must stay put while its file picker is open. Focus moving on to the form's own buttons keeps it open.
+  // Every post box (Home, a wall, a group) is one borderless line until you click in; it stays open while it holds
+  // words, a photo or a photo error, and closes again when you leave it empty. "Add a photo" lives in the open box only
+  // (2026-11-07: a camera beside the closed line did the same job twice). Focus moving on to the form's own buttons
+  // keeps it open.
   // (A reply box is its own one-line design, above.)
   const [focused, setFocused] = useState(false);
   // The file picker is open. The whole window loses focus while it shows, which would close an empty box and unmount
@@ -228,7 +229,7 @@ export function PostCardComposer({
     setPhotoError(undefined);
     const preview = URL.createObjectURL(file);
     setPhoto({ preview });
-    if (collapsible) box.current?.focus(); // from the one-line camera: straight on to the words
+    if (collapsible) box.current?.focus(); // straight on to the words, for a caption
     const res = await onPhoto(file);
     if (res.ok) setPhoto((p) => (p?.preview === preview ? { preview, id: res.mediaId } : p));
     else {
@@ -322,6 +323,7 @@ export function PostCardComposer({
         label={label}
         hideLabel={collapsible}
         oneLine={collapsible}
+        bare={collapsible}
         value={body}
         onChange={(e) => setBody(e.target.value)}
         maxLength={max}
@@ -330,15 +332,6 @@ export function PostCardComposer({
         placeholder={placeholder}
         className={open ? undefined : 'min-w-0 flex-1'}
       />
-      {!open &&
-        onPhoto &&
-        photoPicker(
-          'inline-flex size-11 shrink-0 items-center justify-center rounded-pill text-text-primary hover:bg-surface-sunken pointer-fine:size-9',
-          <>
-            <CameraIcon className="size-5" />
-            <span className="sr-only">Add a photo</span>
-          </>,
-        )}
       {photoError && <FormMessage tone="error">{photoError}</FormMessage>}
       {photo && (
         <div className="relative self-start">
