@@ -27,12 +27,12 @@ export interface EmailContent {
 }
 
 // The palette (tokens.css), repeated here because email cannot read CSS variables.
-const VIOLET = '#260959';
+const VIOLET = '#2b3278';
 const INK = '#100b00';
 const SLATE = '#4a4540';
 const MUTED = '#5e5850';
 const PAGE = '#f8f7ff';
-const VIOLET_SOFT = '#ebe6f8';
+const VIOLET_SOFT = '#e7e9f5';
 const FONT = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
 
 const escape = (s: string) =>

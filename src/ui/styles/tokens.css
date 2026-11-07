@@ -16,10 +16,10 @@
 
   /*
    * -- Howdy palette (2026-10-29, the user's pick): the five colours the semantic tokens below are built from. --
-   * Sunflower is the primary (buttons, current nav item; 2026-10-30), Royal Violet the accent (links, focus, marks),
+   * Sunflower is the primary (buttons, current nav item; 2026-10-30), Royal Navy the accent (links, focus, marks),
    * Crimson errors, Ink the body text, Ghost White the page.
    */
-  --palette-royal-violet: #260959;
+  --palette-royal-navy: #2b3278;
   --palette-sunflower: #f8cf35;
   --palette-crimson: #ca054d;
   --palette-ink: #100b00;
@@ -66,7 +66,7 @@
   --color-text-primary: light-dark(#100b00, #f8f7ff);
   --color-text-secondary: light-dark(#4a4540, #b9b3d0);
   --color-text-muted: light-dark(#5e5850, #a29cbd);
-  --color-link: light-dark(#260959, #c4b2f5);
+  --color-link: light-dark(#2b3278, #b3baf0);
   /*
    * Focus: a deep sunflower gold (the user's call, 2026-10-31: sunflower rings). Pure sunflower is ~1.6:1 on white, too
    * faint to find; this gold keeps 3:1 on every surface. Dusk can use sunflower itself.
@@ -74,45 +74,45 @@
   --color-focus: light-dark(#a07800, #f8cf35);
 
   /*
-   * Theme colour: Royal Violet #260959 (2026-10-29, the user's pick). Marks, ticks, dots, rings, bars, and the fill of
+   * Theme colour: Royal Navy #2b3278 (2026-11-07, the user's pick; it replaced Royal Violet #260959). Marks, ticks, dots, rings, bars, and the fill of
    * buttons and the current nav item; white on it is 16.6:1. `accent-strong` is a shade deeper for badges, counts and
    * message bubbles; buttons LIGHTEN to `accent-hover` (the base is too dark for a darker hover to show). Dusk swaps in
    * a light violet with ink on it, so marks stay visible on dark surfaces.
    */
-  --color-accent: light-dark(#260959, #c4b2f5);
-  --color-accent-strong: light-dark(#1a063f, #d6c9f8);
-  --color-accent-hover: light-dark(#3d1a80, #a990ec);
-  --color-accent-soft: light-dark(#ebe6f8, #2d2150);
+  --color-accent: light-dark(#2b3278, #b3baf0);
+  --color-accent-strong: light-dark(#1e2457, #cdd2f6);
+  --color-accent-hover: light-dark(#3b4396, #959fe6);
+  --color-accent-soft: light-dark(#e7e9f5, #22274d);
   --color-on-accent: light-dark(#ffffff, #100b00);
 
   /*
    * Primary: Sunflower (the user's pick 2026-10-30, "more freshness"), the fill of main buttons and the current nav
-   * item, with Royal Violet on it (11:1). Hover deepens the yellow. Violet stays the accent (links, focus, marks), so
+   * item, with Royal Navy on it (11:1). Hover deepens the yellow. Violet stays the accent (links, focus, marks), so
    * the two always appear together. Disabled buttons never use it: they turn neutral grey.
    */
   --color-primary: #f8cf35;
   --color-primary-hover: #efbf12;
-  --color-on-primary: #260959;
+  --color-on-primary: #2b3278;
   /* Behind a photo shown full screen: neutral near-black (ink reads brown this dark), so the photo is all you see. */
   --color-scrim: rgb(0 0 0 / 0.92);
   --color-on-scrim: #ffffff;
   /* A whisper of Sunflower for quiet surfaces (reply bubbles): ink and violet both read on it. */
   --color-primary-soft: light-dark(#fef6d8, #3a3220);
   /* The icon of the current nav item, and a count badge on it (violet, so it never melts into the yellow). */
-  --color-primary-mark: #260959;
+  --color-primary-mark: #2b3278;
 
   /*
    * Sunflower #f8cf35: the second brand colour, for highlights (text selection, "new" marks). Whatever sits ON sunflower
-   * is Royal Violet (the user's rule, 2026-10-30): 11:1.
+   * is Royal Navy (the user's rule, 2026-10-30): 11:1.
    */
   --color-highlight: #f8cf35;
-  --color-on-highlight: #260959;
+  --color-on-highlight: #2b3278;
 
   --color-success: #b7e4c7;
   --color-on-success: #100b00;
   --color-success-text: light-dark(#23694a, #8fdcb0);
   --color-warning: #f8cf35;
-  --color-on-warning: #260959;
+  --color-on-warning: #2b3278;
   /* Crimson #ca054d for errors: 5.4:1 as text on the page, 5.8:1 under white. */
   --color-danger: light-dark(#ca054d, #ff8fb1);
   --color-on-danger: light-dark(#ffffff, #2b0013);
@@ -130,14 +130,14 @@
   --color-on-mystery: #2b2d42;
 
   /* Shared brand accents, used wherever a page wants the navy "signature" ink or link colour (Ranch header, side cards). */
-  --color-auth-link: light-dark(#260959, #c4b2f5);
-  --color-brand-ink: light-dark(#260959, #f8f7ff);
+  --color-auth-link: light-dark(#2b3278, #b3baf0);
+  --color-brand-ink: light-dark(#2b3278, #f8f7ff);
 
   /* The earned Trusted tick (a gold seal) in the palette's Sunflower: fixed in both schemes, like the team's blue
      Verified artwork. */
   --color-trusted: #f8cf35;
   --color-trusted-edge: #8a5a12;
-  --color-trusted-ink: #260959;
+  --color-trusted-ink: #2b3278;
   /* The Dynamic Island: a near-black pill in both themes (it reads as hardware, like the phone's own). */
   --color-island: #17161f;
   --color-island-raised: #2a2836;
@@ -547,7 +547,7 @@
 
 /*
  * A real tick for a checked checkbox (the box itself turns Sunflower). The stroke is the on-primary colour (Royal
- * Violet #260959, the same in both themes), drawn as an SVG so it is a check mark at every size, not a slash.
+ * Violet #2b3278, the same in both themes), drawn as an SVG so it is a check mark at every size, not a slash.
  */
 @utility checkbox-tick {
   background-position: center;

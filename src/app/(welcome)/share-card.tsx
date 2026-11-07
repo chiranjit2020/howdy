@@ -14,9 +14,9 @@ const SURFACE = '#ffffff';
 const INK = '#100b00';
 const SLATE = '#4a4540';
 const PRIMARY_SOFT = '#fef6d8';
-// The primary button: Sunflower with Royal Violet on it, like every primary button in the app.
+// The primary button: Sunflower with Royal Navy on it, like every primary button in the app.
 const PRIMARY = '#f8cf35';
-const ON_PRIMARY = '#260959';
+const ON_PRIMARY = '#2b3278';
 
 const font = (file: string) => readFile(path.join(process.cwd(), 'assets', 'fonts', file));
 

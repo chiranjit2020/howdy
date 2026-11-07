@@ -115,7 +115,7 @@ describe('the confirmation email itself', () => {
     const u = uniqueUser();
     await signUpUser(kit, u);
     const mail = kit.mailer.lastTo(u.email)!;
-    expect(mail.html).toContain('#260959');
+    expect(mail.html).toContain('#2b3278');
     expect(mail.html).toContain('/brand/howdy-wordmark-white.png');
     expect(mail.text).toContain(`@${u.handle}`);
     expect(mail.text).toContain('/verify?token=');
