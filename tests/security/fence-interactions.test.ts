@@ -338,22 +338,30 @@ describe('closing gaps found by the mutation check', () => {
 });
 
 describe('Yo', () => {
-  it('one per person, idempotent both ways, counted, and never on your own card', async () => {
+  it('one per person, idempotent both ways, counted; the writer may star their own card, silently', async () => {
     const { owner, friend } = await wall();
     const id = (await nail(owner.handle, { body: 'a card' }, as(owner))).data.card!.id;
     expect((await yo(id, true, as(friend))).data).toMatchObject({ yoByMe: true });
     expect((await yo(id, true, as(friend))).status).toBe(200);
-    expect((await yo(id, true, as(owner))).status).toBe(400);
+    expect((await yo(id, true, as(owner), 'love')).data).toMatchObject({ yoByMe: true, myReaction: 'love' });
     const view = (await fenceOf(owner.handle, as(friend))).data.cards![0]!;
-    expect(view).toMatchObject({ yoCount: 1, yoByMe: true, canYo: true });
+    expect(view).toMatchObject({ yoCount: 2, yoByMe: true, canYo: true });
     expect((await fenceOf(owner.handle, as(owner))).data.cards![0]).toMatchObject({
-      yoCount: 1,
-      yoByMe: false,
-      canYo: false,
+      yoCount: 2,
+      yoByMe: true,
+      canYo: true,
     });
+    // Nobody is notified about their own Star.
+    expect(
+      (
+        await q(`select count(*)::int n from notifications where recipient_id = $1 and actor_id = $1`, [
+          await userId(owner.handle),
+        ])
+      ).rows[0].n,
+    ).toBe(0);
     expect((await yo(id, false, as(friend))).data).toMatchObject({ yoByMe: false });
     expect((await yo(id, false, as(friend))).status).toBe(200);
-    expect((await q('select count(*)::int n from yos')).rows[0].n).toBe(0);
+    expect((await q('select count(*)::int n from yos')).rows[0].n).toBe(1);
   });
 
   it('reactions: Yo by default, one per person whatever the kind, switching kind recounts, only counts are shown', async () => {

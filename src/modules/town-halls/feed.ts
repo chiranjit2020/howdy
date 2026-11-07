@@ -353,7 +353,7 @@ async function hydrate(
         author: toAuthor(author),
         mine: row.authorId === viewerId,
         canRemove: mayRemove(row.authorId),
-        canReact: published && row.authorId !== viewerId,
+        canReact: published, // your own too (2026-11-07); nobody is notified of their own Star
         canReply: published,
         canPin: published && isStaff(hall.myRole),
         event: events.get(row.id) ?? null,
@@ -668,9 +668,6 @@ export async function setReaction(
   }
   const loaded = await loadPost(userId, postId);
   if (!loaded || loaded.post.status !== 'published') throw new AppError('NOT_FOUND');
-  if (loaded.post.authorId === userId) {
-    throw new AppError('BAD_REQUEST', { message: 'You cannot react to your own post.' });
-  }
   const db = getDb();
   const made = await db
     .insert(townHallReactions)

@@ -303,7 +303,7 @@ async function hydrate(
         mine: row.authorId === viewerId,
         waiting: row.authorId === viewerId && row.status === 'pending',
         canRemove: isOwner || row.authorId === viewerId,
-        canYo: published && canReactHere && row.authorId !== viewerId,
+        canYo: published && canReactHere,
         canReply: published && canPostHere,
         ...reactionFields(reactionsByCard.get(row.id) ?? emptyReactions(), myReaction.get(row.id) ?? null),
         replies: repliesByCard.get(row.id) ?? [],
@@ -803,8 +803,8 @@ export async function postReply(userId: string, cardId: string, body: string): P
 }
 
 /**
- * Give, change or take back your reaction (Yo by default). Giving needs the right to read the Fence and a published card
- * that is not your own. Taking one back always works (undoing is never gated) and reveals nothing about the card. Only a
+ * Give, change or take back your reaction (Yo by default). Giving needs the right to read the Fence and a published card;
+ * your own counts too (2026-11-07: starring what you posted is a natural "I'm proud of this", and nobody is notified). Taking one back always works (undoing is never gated) and reveals nothing about the card. Only a
  * brand-new reaction rings the author's bell: switching kind, or switching off and on, never does twice.
  */
 export async function setYo(
@@ -825,9 +825,6 @@ export async function setYo(
   const loaded = await loadCard(userId, cardId);
   if (!loaded || loaded.card.status !== 'published') throw new AppError('NOT_FOUND');
   if (!canFence(loaded.actor, 'fence:react', loaded.fence, loaded.ctx).allow) throw new AppError('NOT_FOUND');
-  if (loaded.card.authorId === userId) {
-    throw new AppError('BAD_REQUEST', { message: 'You cannot wave at your own post.' });
-  }
   const db = getDb();
   const made = await db
     .insert(yos)

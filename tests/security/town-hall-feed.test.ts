@@ -68,7 +68,7 @@ describe('who can read and write the feed', () => {
       body: 'Howdy, folks!',
       mine: true,
       canRemove: true,
-      canReact: false,
+      canReact: true, // your own post too: you may star it
     });
     await post(id, { body: 'Welcome in.' }, as(owner));
     const page = await feed(id, as(ann));
@@ -147,7 +147,7 @@ describe('who can read and write the feed', () => {
 });
 
 describe('replies and reactions', () => {
-  it('members reply and react; one reaction per person, switchable; never on your own post', async () => {
+  it('members reply and react; one reaction per person, switchable; the writer may star their own post', async () => {
     const owner = await person('owner');
     const ann = await person('ann');
     const bob = await person('bob');
@@ -158,10 +158,11 @@ describe('replies and reactions', () => {
     expect((await react(p.id, { on: true }, as(bob))).data.myReaction).toBe('yo');
     expect((await react(p.id, { on: true, kind: 'fire' }, as(bob))).data.myReaction).toBe('fire');
     expect((await react(p.id, { on: true, kind: 'love' }, as(owner))).status).toBe(200);
-    expect((await react(p.id, { on: true }, as(ann))).status).toBe(400);
+    expect((await react(p.id, { on: true, kind: 'love' }, as(ann))).status).toBe(200);
 
     const seen = (await feed(id, as(ann))).data.posts![0]!;
-    expect(seen.reactions).toMatchObject({ yo: 0, fire: 1, love: 1 });
+    expect(seen.reactions).toMatchObject({ yo: 0, fire: 1, love: 2 });
+    expect(seen).toMatchObject({ canReact: true, myReaction: 'love' });
     expect(seen.replies.map((r) => r.body)).toEqual(['Me!']);
     expect((await react(p.id, { on: false }, as(bob))).data.myReaction).toBeNull();
     expect((await feed(id, as(ann))).data.posts![0]!.reactions.fire).toBe(0);

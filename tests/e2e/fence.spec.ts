@@ -78,10 +78,10 @@ test.describe('The wall in a real browser (production build, real CSP)', () => {
     // A refresh keeps everything (it really was saved), and the owner sees the reaction count.
     await a.page.reload();
     await expect(cardWith(a.page, 'Hi from Bob')).toBeVisible();
-    await expect(cardWith(a.page, 'Howdy from the ranch').getByRole('img', { name: '1 Star' })).toBeVisible(); // own card: count, no button
-    await expect(cardWith(a.page, 'Howdy from the ranch').getByRole('button', { name: /^Star/ })).toHaveCount(
-      0,
-    );
+    // Own card: the count, and a Star of their own to give (not given yet).
+    await expect(
+      cardWith(a.page, 'Howdy from the ranch').getByRole('button', { name: 'Star, 1', pressed: false }),
+    ).toBeVisible();
 
     // A stranger reads the wall (members can) but the composer is not offered: only the Posse may write.
     await c.page.goto(`/profile/${a.handle}`);
