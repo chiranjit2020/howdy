@@ -133,10 +133,12 @@ export default async function HomePage() {
           )}
         </main>
 
-        {/* top-18 clears the sticky top bar (3.5rem) plus the page's own 16 px top padding. */}
+        {/* top-18 clears the sticky top bar (3.5rem) plus the page's own 16 px top padding. It scrolls on its own, and a
+          scroll box cuts off whatever is drawn outside it: 8 px of room inside (taken back by the negative margin, so
+          the cards stay where they were) keeps the cards' shadows whole. */}
         <aside
           aria-label="Your circle"
-          className="sticky top-18 hidden max-h-[calc(100dvh-5.5rem)] flex-col gap-4 overflow-y-auto xl:flex [&>*]:shrink-0"
+          className="sticky top-18 -mx-2 hidden max-h-[calc(100dvh-5.5rem)] flex-col gap-4 overflow-y-auto px-2 pb-2 xl:flex [&>*]:shrink-0"
         >
           <HomeRail
             free={free}

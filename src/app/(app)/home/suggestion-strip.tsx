@@ -38,9 +38,10 @@ export function SuggestionStrip({ initial }: { initial: PalSuggestion[] }) {
       {error && <FormMessage tone="error">{error}</FormMessage>}
       <ul
         className={
-          // Phone: a swiped row, edge to edge of the column. Wide column: five equal cards, nothing to scroll.
-          'flex snap-x snap-mandatory gap-3 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ' +
-          '@xl:grid @xl:grid-cols-5 @xl:overflow-visible'
+          // Phone: a swiped row, edge to edge of the column, with 8 px of room inside it (taken back by the negative
+          // margin) so the scroll box does not cut off the cards' shadows. Wide column: five equal cards, nothing to scroll.
+          '-mx-2 flex snap-x snap-mandatory scroll-px-2 gap-3 overflow-x-auto px-2 pb-2 [scrollbar-width:none] ' +
+          '[&::-webkit-scrollbar]:hidden @xl:mx-0 @xl:grid @xl:grid-cols-5 @xl:overflow-visible @xl:px-0 @xl:pb-0'
         }
       >
         {visible.map((s) => (
