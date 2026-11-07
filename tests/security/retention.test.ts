@@ -52,12 +52,12 @@ describe('Signal retention (master prompt §54: ephemeral data is not kept forev
     });
   });
 
-  it('respects the supplied clock (a Signal is kept until its exact expiry)', async () => {
+  it('never clears the team’s note on its own: it stays until removed (2026-11-07)', async () => {
     const a = await signedInUser(kit);
     await sql("update users set role = 'admin' where handle = $1", [a.handle]);
     await setSignal('hello', { cookie: a.cookie });
-    expect(await clearExpiredSignals(new Date(Date.now() + 11 * 3_600_000))).toBe(0);
-    expect(await clearExpiredSignals(new Date(Date.now() + 13 * 3_600_000))).toBe(1);
+    expect(await clearExpiredSignals(new Date(Date.now() + 13 * 3_600_000))).toBe(0);
+    expect(await clearExpiredSignals(new Date(Date.now() + 365 * 24 * 3_600_000))).toBe(0);
   });
 });
 

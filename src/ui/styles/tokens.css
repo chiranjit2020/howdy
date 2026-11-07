@@ -244,6 +244,20 @@
   /* A Story's bar fills while it shows; the viewer moves on when the fill ends (ADR-047). */
   --animate-story-fill: story-fill 6s linear forwards;
 
+  /* A ring spreading out of a dot and fading, again and again: "look here" (the What's new note, 2026-11-07). */
+  --animate-ripple: ripple 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
+
+  @keyframes ripple {
+    from {
+      transform: scale(1);
+      opacity: 0.6;
+    }
+    to {
+      transform: scale(3);
+      opacity: 0;
+    }
+  }
+
   @keyframes story-fill {
     from {
       transform: scaleX(0);

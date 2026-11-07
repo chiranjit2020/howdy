@@ -155,7 +155,6 @@ describe('the legal documents', () => {
   it('the Privacy Policy states the retention periods the code enforces', async () => {
     const text = read('privacy');
     const day = 24 * 60 * 60 * 1000;
-    const { SIGNAL_TTL_MS } = await import('@/shared/validation/profile');
     const { WHISPER_RETENTION_DAYS } = await import('@/shared/validation/whispers');
     const { RETENTION_DAYS: TRACK_DAYS } = await import('@/modules/tracks/service');
     const { READ_RETENTION_MS, UNREAD_RETENTION_MS } = await import('@/modules/notifications/service');
@@ -163,7 +162,7 @@ describe('the legal documents', () => {
     expect(AUDIT_RETENTION_DAYS).toBe(365);
     expect(text).toContain('**Security records:** 12 months, then deleted.');
     expect(text).not.toContain('fixed retention period for security records');
-    expect(text).toContain(`**Status:** ${SIGNAL_TTL_MS / 3_600_000} hours`);
+    expect(text).toContain('**Status:** members no longer set one. The Howdy team’s “What’s new” note stays up until');
     expect(text).toContain(`**Messages:** ${WHISPER_RETENTION_DAYS} days`);
     expect(text).toContain(`**Profile visits:** ${TRACK_DAYS} days`);
     expect(text).toContain(

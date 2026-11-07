@@ -8,7 +8,7 @@ import type { PortraitTint } from '@/shared/validation/profile';
 import { cn } from '@/ui/cn';
 import { formatRelative, VerifiedBadge } from '@/ui/howdy';
 import type { LitPalRow } from '@/ui/howdy/free-to-talk';
-import { RAIL_CARD, RailCard } from '@/ui/howdy/rail-card';
+import { PulseDot, RAIL_CARD, RailCard } from '@/ui/howdy/rail-card';
 import { WhisperIcon } from '@/ui/icons';
 import { Avatar, buttonClasses } from '@/ui/primitives';
 import { ChatLink } from './chat-dock';
@@ -73,7 +73,7 @@ export interface Announcement {
 /** The team's current "what's new" note: in the right panel on wide screens, above the feed on narrower ones. */
 export function WhatsNew({ news, id }: { news: Announcement; id: string }) {
   return (
-    <RailCard id={id} title="What’s new">
+    <RailCard id={id} title="What’s new" lead={<PulseDot />}>
       <p className="text-caption break-words text-text-primary">{news.text}</p>
       <p className="text-metadata text-text-secondary">
         <Link href={`/profile/${news.author.handle}`} className="font-semibold">

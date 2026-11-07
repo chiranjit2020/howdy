@@ -110,7 +110,7 @@ Signed-in people can search for others by name or @username. You are found only 
 
 ## How long we keep things
 
-- **Status:** 12 hours after you set it.
+- **Status:** members no longer set one. The Howdy team’s “What’s new” note stays up until the team removes it.
 - **Free to talk:** until you switch it off, and within a day of it going out on its own.
 - **Stories:** shown for 12 hours (or until you take one down), with who viewed and reacted; all of it is deleted within a day of the 12 hours ending.
 - **Time Capsules:** until the day they open (or until you take one back); after that, until the person it was for deletes it.

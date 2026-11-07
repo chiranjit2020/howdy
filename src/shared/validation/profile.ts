@@ -35,8 +35,11 @@ export const FENCE_POSTING_LEVELS = ['members', 'posse', 'nobody'] as const;
 export type FencePosting = (typeof FENCE_POSTING_LEVELS)[number];
 
 export const DISPLAY_NAME_MAX = 50;
-/** A Signal lives for this long after it is set. */
-export const SIGNAL_TTL_MS = 12 * 60 * 60 * 1000;
+/**
+ * The team's "What's new" note (its Signal) stays up until the team removes it (2026-11-07; it used to fade after 12
+ * hours). Stored as an end date far in the future, so every read that asks "is it still up?" keeps working unchanged.
+ */
+export const SIGNAL_UNTIL_REMOVED = new Date('9999-12-31T00:00:00.000Z');
 
 /**
  * Characters that can disguise text: C0/C1 controls, soft hyphen, zero-width space, left/right marks, bidi embeddings

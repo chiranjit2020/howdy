@@ -8,7 +8,7 @@ import { emit } from '@/platform/events';
 import { enforceRateLimit, type RateLimitRule } from '@/platform/rate-limit';
 import {
   handleParamSchema,
-  SIGNAL_TTL_MS,
+  SIGNAL_UNTIL_REMOVED,
   type CoverPreset,
   type FencePosting,
   type PortraitTint,
@@ -495,7 +495,7 @@ async function assertTeamAccount(userId: string): Promise<void> {
   }
 }
 
-/** Set the team's "What's new" note (its Signal); it expires after 12 hours. The Howdy team account only. */
+/** Set the team's "What's new" note (its Signal); it stays until removed. The Howdy team account only. */
 export async function setSignal(userId: string, text: string, now: Date = new Date()): Promise<OwnRanch> {
   await assertMayEditOwn(userId, 'signal:set');
   await assertTeamAccount(userId);
@@ -505,7 +505,7 @@ export async function setSignal(userId: string, text: string, now: Date = new Da
     .set({
       signal: text,
       signalSetAt: now,
-      signalExpiresAt: new Date(now.getTime() + SIGNAL_TTL_MS),
+      signalExpiresAt: SIGNAL_UNTIL_REMOVED,
       updatedAt: now,
     })
     .where(eq(profiles.userId, userId));

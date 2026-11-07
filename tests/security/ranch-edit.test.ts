@@ -2,7 +2,7 @@ import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { getPool } from '@/platform/db';
 import { setRateLimiter } from '@/platform/rate-limit';
 import { RATE } from '@/modules/profiles/service';
-import { SIGNAL_TTL_MS } from '@/shared/validation/profile';
+import { SIGNAL_UNTIL_REMOVED } from '@/shared/validation/profile';
 import { call, freshAuthState, me, signedInUser, uniqueUser, type TestKit } from '../helpers/auth';
 import { clearSignal, myRanch, patchRanch, setSignal, sql, viewRanch } from '../helpers/ranch';
 import { PATCH as patchRanchRoute } from '@/app/api/me/porch/route';
@@ -179,15 +179,14 @@ describe('Tend the Ranch: validation is enforced on the server', () => {
 });
 
 describe('the Signal', () => {
-  it('lasts 12 hours, can be replaced, and can be cleared', async () => {
+  it('stays until removed, can be replaced, and can be cleared', async () => {
     const a = await signedInUser(kit);
     await sql("update users set role = 'admin' where handle = $1", [a.handle]); // the team's note
-    const before = Date.now();
     const set = await setSignal('  Writing   code. Send chai.  ', { cookie: a.cookie });
     expect(set.status).toBe(200);
     const s = (set.data.ranch as { signal: { text: string; expiresAt: string } }).signal;
     expect(s.text).toBe('Writing code. Send chai.');
-    expect(Math.abs(new Date(s.expiresAt).getTime() - (before + SIGNAL_TTL_MS))).toBeLessThan(10_000);
+    expect(new Date(s.expiresAt).getTime()).toBe(SIGNAL_UNTIL_REMOVED.getTime());
 
     expect((await setSignal('Second thought', { cookie: a.cookie })).data.ranch).toMatchObject({
       signal: { text: 'Second thought' },

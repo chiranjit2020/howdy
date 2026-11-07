@@ -342,7 +342,7 @@ and name only, and only if Howdy would show them to you today.
 
 What is not: anyone else's email or private choices, who gave which Mark (Howdy never says),
 the words of sealed Time Capsules (sealed until their day), and things that have already
-faded (Messages after 7 days, Tracks after 7 days, Signals after 12 hours).
+faded (Messages after 7 days, Tracks after 7 days).
 
 Questions, or want a correction? Write to the address in the Privacy Policy.
 `;

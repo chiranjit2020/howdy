@@ -10,7 +10,7 @@ import { Button, ClayCard, Textarea } from '@/ui/primitives';
 
 /**
  * The Howdy team account only: write or remove the "What's new" note that everyone sees on Home (stored as the team
- * account's Signal; members no longer have one). It lasts 12 hours. The box is for a new note: it starts empty and
+ * account's Signal; members no longer have one). It stays until removed. The box is for a new note: it starts empty and
  * empties again once one is posted; the live note is shown above it.
  */
 export function SignalEditor({ current }: { current: string | undefined }) {
@@ -66,7 +66,7 @@ export function SignalEditor({ current }: { current: string | undefined }) {
           showCount
           rows={2}
           error={fieldError}
-          hint="Shown on everyone’s Home for 12 hours. Plain text only, no links."
+          hint="Shown on everyone’s Home until you remove it. Plain text only, no links."
         />
         <div className="flex flex-wrap gap-3">
           <Button type="submit" loading={busy === 'set'}>

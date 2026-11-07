@@ -4,7 +4,7 @@ import { readJson } from '@/platform/http/body';
 import { json, route } from '@/platform/http/route';
 import { setSignalSchema } from '@/shared/validation/profile';
 
-/** Set my Signal. It expires after 12 hours. */
+/** Set the team's "What's new" note. It stays until removed. */
 export const PUT = route(async ({ req }) => {
   const { user } = await requireSession(req);
   const { text } = await readJson(req, setSignalSchema);
