@@ -4,7 +4,7 @@ import { useState } from 'react';
 import type { MyInvite } from '@/modules/invites';
 import { apiRequest } from '@/ui/auth/api';
 import { FormMessage } from '@/ui/auth/form-parts';
-import { RailCard } from '@/ui/howdy/rail-card';
+import { RAIL_TEXT, RailCard } from '@/ui/howdy/rail-card';
 import { Button, ConfirmationDialog } from '@/ui/primitives';
 
 /**
@@ -54,9 +54,16 @@ export function InviteCard({
   }
 
   return (
-    <RailCard id={id} title="Invite someone new">
-      <p className="text-caption text-text-secondary">
-        Not on Howdy yet? Send them your link. When they join, their friend request comes to you, and you decide.
+    <RailCard
+      id={id}
+      title="Invite someone new"
+      {...(invite.joinedThisWeek > 0
+        ? { foot: <p>{invite.joinedThisWeek} joined with it this week</p> }
+        : {})}
+    >
+      <p className={RAIL_TEXT}>
+        Not on Howdy yet? Send them your link. When they join, their friend request comes to you, and you
+        decide.
       </p>
       {error && <FormMessage tone="error">{error}</FormMessage>}
       <p className="rounded-md bg-surface-sunken px-3 py-2 font-mono text-caption [overflow-wrap:anywhere] text-text-primary">
@@ -69,11 +76,6 @@ export function InviteCard({
         <Button size="sm" variant="ghost" onClick={() => setConfirming(true)}>
           Reset link…
         </Button>
-        {invite.joinedThisWeek > 0 && (
-          <span className="text-caption text-text-secondary">
-            {invite.joinedThisWeek} joined with it this week
-          </span>
-        )}
       </div>
       <ConfirmationDialog
         open={confirming}

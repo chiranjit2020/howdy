@@ -5,7 +5,8 @@ import { getOwnRanch } from '@/modules/profiles';
 import { listTracks, newVisits } from '@/modules/tracks';
 import { COARSE_LABEL, TrackItem, type CoarseWhen } from '@/ui/howdy';
 import { EyeOffIcon, TracksIcon, WhisperIcon } from '@/ui/icons';
-import { RailCard } from '@/ui/howdy/rail-card';
+import { cn } from '@/ui/cn';
+import { RAIL_TEXT, RailCard } from '@/ui/howdy/rail-card';
 import { ClayCard, EmptyState } from '@/ui/primitives';
 import { MarkVisitsSeen } from './mark-seen';
 import { ShadowWalk } from './shadow-walk';
@@ -98,7 +99,7 @@ export default async function TracksPage() {
       >
         <ShadowWalk initial={ranch.shadowWalk} />
         <RailCard id="how-visits-work" title="How visits work">
-          <ul className="flex list-disc flex-col gap-1.5 pl-4 text-caption text-text-secondary">
+          <ul className={cn(RAIL_TEXT, 'flex list-disc flex-col gap-2 pl-4')}>
             <li>Friends who stop by are named. Anyone else is only a count.</li>
             <li>A visit stays {tracks.days} days and only says Today, Yesterday or This week.</li>
             <li>Your friends see your visits too, unless you turn on Private browsing.</li>

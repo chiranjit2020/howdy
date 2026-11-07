@@ -69,23 +69,20 @@ export function CapsulesView({
               {coming.map((c, i) => (
                 <li key={`${c.from?.handle ?? 'me'}-${c.openOn}-${i}`} className="flex items-center gap-3">
                   {c.from ? (
-                    <Avatar
-                      name={c.from.displayName}
-                      tint={c.from.portraitTint}
-                      src={c.from.portraitUrl}
-                      size="sm"
-                    />
+                    <Avatar name={c.from.displayName} tint={c.from.portraitTint} src={c.from.portraitUrl} />
                   ) : (
                     <span
                       aria-hidden="true"
-                      className="grid size-8 shrink-0 place-items-center rounded-pill bg-surface-sunken text-text-secondary"
+                      className="grid size-10 shrink-0 place-items-center rounded-pill bg-surface-sunken text-title text-text-secondary"
                     >
                       <CapsuleIcon />
                     </span>
                   )}
-                  <p className="min-w-0 text-caption [overflow-wrap:anywhere] text-text-primary">
+                  <p className="min-w-0 text-card font-semibold [overflow-wrap:anywhere] text-text-primary">
                     {c.from ? `From ${c.from.displayName}` : 'From your past self'}
-                    <span className="block text-text-secondary">Opens {longDay(c.openOn)}</span>
+                    <span className="block text-metadata font-normal text-text-muted">
+                      Opens {longDay(c.openOn)}
+                    </span>
                   </p>
                 </li>
               ))}
@@ -94,12 +91,14 @@ export function CapsulesView({
         )}
         {sealed.length > 0 && (
           <RailCard id="sealed-heading" title="Sealed by you">
-            <ul className="-my-1 flex flex-col divide-y divide-border">
+            <ul className="flex flex-col gap-3">
               {sealed.map((c) => (
-                <li key={c.id} className="flex items-center justify-between gap-2 py-1">
-                  <p className="min-w-0 text-caption [overflow-wrap:anywhere] text-text-primary">
+                <li key={c.id} className="flex items-center justify-between gap-3">
+                  <p className="min-w-0 text-card font-semibold [overflow-wrap:anywhere] text-text-primary">
                     For {c.to ? c.to.displayName : 'your future self'}
-                    <span className="block text-text-secondary">Opens {longDay(c.openOn)}</span>
+                    <span className="block text-metadata font-normal text-text-muted">
+                      Opens {longDay(c.openOn)}
+                    </span>
                   </p>
                   <Button
                     size="sm"

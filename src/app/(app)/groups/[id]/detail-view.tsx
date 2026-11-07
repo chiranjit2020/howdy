@@ -10,7 +10,8 @@ import { apiRequest, postJson } from '@/ui/auth/api';
 import { FormMessage } from '@/ui/auth/form-parts';
 import { GROUP_VISIBILITY_LABEL, TownHallCard } from '@/ui/howdy';
 import { PageFrame } from '@/ui/howdy/page-frame';
-import { RailCard } from '@/ui/howdy/rail-card';
+import { cn } from '@/ui/cn';
+import { RAIL_TEXT, RailCard } from '@/ui/howdy/rail-card';
 import { MoreIcon, UsersIcon } from '@/ui/icons';
 import { FeedSection, type InitialFeed, type InitialHeld } from './feed-section';
 import { ReportDialog } from '@/ui/howdy/report-dialog';
@@ -137,12 +138,26 @@ export function TownHallDetailView({
 
   const member = townHall.membership === 'active';
   const about = (
-    <RailCard id="about-group" title="About this group">
-      <ul className="flex flex-col gap-1.5 text-caption text-text-secondary">
+    <RailCard
+      id="about-group"
+      title="About this group"
+      {...(!owner
+        ? {
+            foot: (
+              <button
+                type="button"
+                onClick={() => setReporting(true)}
+                className="inline-flex min-h-11 items-center font-semibold text-text-secondary hover:underline pointer-fine:min-h-0"
+              >
+                Flag this group…
+              </button>
+            ),
+          }
+        : {})}
+    >
+      <ul className={cn(RAIL_TEXT, 'flex flex-col gap-2')}>
         <li>
-          <span className="font-semibold text-text-primary">
-            {GROUP_VISIBILITY_LABEL[townHall.visibility]}
-          </span>
+          <span className="font-semibold">{GROUP_VISIBILITY_LABEL[townHall.visibility]}</span>
           {townHall.visibility === 'invite'
             ? ': only people invited can see it or join.'
             : ': friends of its members can find it, and anyone with its link can join.'}
@@ -167,15 +182,6 @@ export function TownHallDetailView({
         )}
       </ul>
       {member && townHall.visibility !== 'invite' && <CopyLink townHallId={townHall.id} />}
-      {!owner && (
-        <button
-          type="button"
-          onClick={() => setReporting(true)}
-          className="inline-flex min-h-11 items-center self-start text-caption font-semibold text-text-secondary hover:underline pointer-fine:min-h-0"
-        >
-          Flag this group…
-        </button>
-      )}
     </RailCard>
   );
 

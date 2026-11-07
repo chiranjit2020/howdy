@@ -7,7 +7,7 @@ import type { DirectoryItem, DirectoryPage, InviteSummary, MineItem } from '@/mo
 import { apiRequest } from '@/ui/auth/api';
 import { FormMessage } from '@/ui/auth/form-parts';
 import { GROUP_VISIBILITY_LABEL } from '@/ui/howdy';
-import { RailCard } from '@/ui/howdy/rail-card';
+import { RAIL_TEXT, RailCard } from '@/ui/howdy/rail-card';
 import { GroupIcon } from '@/ui/icons';
 import { Badge, Button, ClayCard, EmptyState } from '@/ui/primitives';
 
@@ -161,19 +161,35 @@ export function FriendsGroups({ initial }: { initial: DirectoryPage }) {
   }
 
   return (
-    <RailCard id="friends-groups" title="Groups your friends are in">
+    <RailCard
+      id="friends-groups"
+      title="Groups your friends are in"
+      {...(next
+        ? {
+            foot: (
+              <Button
+                variant="link"
+                size="sm"
+                className="-mx-1"
+                loading={busy === '__more__'}
+                onClick={loadMore}
+              >
+                More groups
+              </Button>
+            ),
+          }
+        : {})}
+    >
       {error && <FormMessage tone="error">{error}</FormMessage>}
       {items.length === 0 ? (
-        <p className="text-caption text-text-secondary">
-          When your friends are in groups that can be found, they show here.
-        </p>
+        <p className={RAIL_TEXT}>When your friends are in groups that can be found, they show here.</p>
       ) : (
-        <ul className="-my-2.5 flex flex-col divide-y divide-border">
+        <ul className="flex flex-col gap-4">
           {items.map((t) => (
-            <li key={t.id} className="flex flex-col gap-1.5 py-2.5">
+            <li key={t.id} className="flex flex-col gap-1.5">
               <Link href={`/groups/${t.id}`} className="block min-h-11 min-w-0 no-underline hover:underline">
-                <span className="block truncate font-semibold text-text-primary">{t.name}</span>
-                <span className="block text-caption text-text-secondary">
+                <span className="block truncate text-card font-semibold text-text-primary">{t.name}</span>
+                <span className="block text-metadata font-normal text-text-muted">
                   {t.friendsHere === 1 ? '1 friend is here' : `${t.friendsHere} friends are here`}
                 </span>
               </Link>
@@ -203,11 +219,6 @@ export function FriendsGroups({ initial }: { initial: DirectoryPage }) {
             </li>
           ))}
         </ul>
-      )}
-      {next && (
-        <Button variant="secondary" size="sm" loading={busy === '__more__'} onClick={loadMore}>
-          More groups
-        </Button>
       )}
     </RailCard>
   );

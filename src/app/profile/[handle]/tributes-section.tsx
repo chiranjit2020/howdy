@@ -5,7 +5,8 @@ import type { TributePage, TributeView } from '@/modules/tributes';
 import { LIMITS } from '@/shared/limits';
 import { apiRequest, postJson } from '@/ui/auth/api';
 import { FormMessage } from '@/ui/auth/form-parts';
-import { RailCard } from '@/ui/howdy/rail-card';
+import { cn } from '@/ui/cn';
+import { RAIL_TEXT, RailCard } from '@/ui/howdy/rail-card';
 import { Button, ConfirmationDialog, Textarea, useToast } from '@/ui/primitives';
 
 type WireTribute = Omit<TributeView, 'createdAt'> & { createdAt: Date | string };
@@ -122,10 +123,41 @@ export function TributesSection({
           </Button>
         ) : undefined
       }
+      // Writing one is the extra at the card's foot, under the dashed rule.
+      {...(initial.canGive
+        ? {
+            foot: writing ? (
+              <div className="flex flex-col gap-2">
+                <Textarea
+                  label={`Your testimonial for ${ownerName}`}
+                  value={body}
+                  onChange={(e) => setBody(e.target.value)}
+                  maxLength={LIMITS.TRIBUTE_MAX}
+                  showCount
+                  rows={3}
+                  placeholder="What makes them good people…"
+                  hint={`${ownerName} approves it before anyone else can read it.`}
+                />
+                <div className="flex items-center justify-end gap-2">
+                  <Button variant="ghost" size="sm" onClick={() => setWriting(false)}>
+                    Cancel
+                  </Button>
+                  <Button size="sm" loading={giving} disabled={!body.trim()} onClick={give}>
+                    Send
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <Button variant="link" size="sm" onClick={() => setWriting(true)} className="-mx-1 self-start">
+                Write a testimonial for {ownerName}
+              </Button>
+            ),
+          }
+        : {})}
     >
       {error && <FormMessage tone="error">{error}</FormMessage>}
       {tributes.length === 0 && initial.isOwner && (
-        <p className="text-caption text-text-secondary">
+        <p className={RAIL_TEXT}>
           None yet. Friends can write you one; you approve each before anyone sees it.
         </p>
       )}
@@ -133,10 +165,8 @@ export function TributesSection({
         <ul className="flex flex-col gap-3">
           {shown.map((t) => (
             <li key={t.id} className="flex flex-col gap-1">
-              <blockquote className="text-caption break-words text-text-primary italic">
-                “{t.body}”
-              </blockquote>
-              <p className="flex flex-wrap items-center gap-x-2 text-metadata text-text-secondary">
+              <blockquote className={cn(RAIL_TEXT, 'break-words')}>“{t.body}”</blockquote>
+              <p className="flex flex-wrap items-center gap-x-2 text-metadata font-normal text-text-muted">
                 <span>— @{t.author.handle}</span>
                 {t.pinned && <span className="font-semibold text-text-primary">· Pinned</span>}
                 {t.waiting && <span>· Waiting for approval</span>}
@@ -156,37 +186,16 @@ export function TributesSection({
         </ul>
       )}
       {all && next && (
-        <Button variant="link" size="sm" loading={loadingMore} onClick={loadMore} className="self-start">
+        <Button
+          variant="link"
+          size="sm"
+          loading={loadingMore}
+          onClick={loadMore}
+          className="-mx-1 self-start"
+        >
           Older testimonials
         </Button>
       )}
-      {initial.canGive &&
-        (writing ? (
-          <div className="flex flex-col gap-2 border-t border-border pt-3">
-            <Textarea
-              label={`Your testimonial for ${ownerName}`}
-              value={body}
-              onChange={(e) => setBody(e.target.value)}
-              maxLength={LIMITS.TRIBUTE_MAX}
-              showCount
-              rows={3}
-              placeholder="What makes them good people…"
-              hint={`${ownerName} approves it before anyone else can read it.`}
-            />
-            <div className="flex items-center justify-end gap-2">
-              <Button variant="ghost" size="sm" onClick={() => setWriting(false)}>
-                Cancel
-              </Button>
-              <Button size="sm" loading={giving} disabled={!body.trim()} onClick={give}>
-                Send
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <Button variant="link" size="sm" onClick={() => setWriting(true)} className="self-start">
-            Write a testimonial for {ownerName}
-          </Button>
-        ))}
       <ConfirmationDialog
         open={removal !== undefined}
         destructive

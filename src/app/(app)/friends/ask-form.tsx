@@ -5,7 +5,7 @@ import { useState, type FormEvent } from 'react';
 import { handleParamSchema } from '@/shared/validation/profile';
 import { postJson } from '@/ui/auth/api';
 import { FormMessage } from '@/ui/auth/form-parts';
-import { RailCard } from '@/ui/howdy/rail-card';
+import { RAIL_TEXT, RailCard } from '@/ui/howdy/rail-card';
 import { Button, Input } from '@/ui/primitives';
 
 /**
@@ -42,7 +42,7 @@ export function AskForm({ id = 'ask-by-username' }: { id?: string }) {
 
   return (
     <RailCard id={id} title="Send a friend request">
-      <p className="text-caption text-text-secondary">
+      <p className={RAIL_TEXT}>
         Type their username (it&apos;s under their name, after the @) and we&apos;ll send them a request.
       </p>
       <form onSubmit={submit} noValidate className="flex flex-col gap-2">

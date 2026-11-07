@@ -74,20 +74,34 @@ export function Suggestions({
   const visible = cut ? list.slice(0, show) : list;
 
   const card = (
-    <RailCard id={id} title="Friends you may know">
+    <RailCard
+      id={id}
+      title="Friends you may know"
+      {...(cut
+        ? {
+            foot: (
+              <Button variant="link" size="sm" className="-mx-1" onClick={() => setExpanded(true)}>
+                Show {list.length - visible.length} more
+              </Button>
+            ),
+          }
+        : {})}
+    >
       {error && <FormMessage tone="error">{error}</FormMessage>}
-      <ul className="-my-2.5 flex flex-col divide-y divide-border">
+      <ul className="flex flex-col gap-4">
         {visible.map((s) => (
-          <li key={s.handle} className="flex gap-3 py-2.5">
-            <Avatar name={s.displayName} tint={s.portraitTint} src={s.portraitUrl} size="sm" />
+          <li key={s.handle} className="flex gap-3">
+            <Avatar name={s.displayName} tint={s.portraitTint} src={s.portraitUrl} />
             <div className="flex min-w-0 flex-1 flex-col gap-1.5">
               {/* The name and why are one link: a 44 px target that reads as "Dev · Friends with Bikram". */}
               <Link
                 href={`/profile/${s.handle}`}
                 className="block min-h-11 min-w-0 no-underline hover:underline"
               >
-                <span className="block truncate font-semibold">{s.displayName}</span>
-                <span className="line-clamp-2 text-caption text-text-secondary">{why(s)}</span>
+                <span className="block truncate text-card font-semibold text-text-primary">
+                  {s.displayName}
+                </span>
+                <span className="line-clamp-2 text-metadata font-normal text-text-muted">{why(s)}</span>
               </Link>
               {asked.has(s.handle) ? (
                 <span className="text-caption text-text-secondary">Asked</span>
@@ -116,11 +130,6 @@ export function Suggestions({
           </li>
         ))}
       </ul>
-      {cut && (
-        <Button variant="link" className="self-start" onClick={() => setExpanded(true)}>
-          Show {list.length - visible.length} more
-        </Button>
-      )}
     </RailCard>
   );
   return className ? <div className={className}>{card}</div> : card;

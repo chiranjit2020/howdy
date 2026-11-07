@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { PersonEntry } from '@/app/_lib/social';
-import { RailCard } from '@/ui/howdy/rail-card';
+import { RAIL_TEXT, RailCard } from '@/ui/howdy/rail-card';
+import { cn } from '@/ui/cn';
 import { Avatar } from '@/ui/primitives';
 
 /**
@@ -29,12 +30,12 @@ export function PorchLightNotice({
       more={
         owner ? { href: '/home', label: 'Change on Home' } : { href: `/messages/${handle}`, label: 'Message' }
       }
+      {...(note ? { foot: <p className="break-words">“{note}”</p> } : {})}
     >
-      <p className="text-caption break-words text-text-primary">
+      <p className={cn(RAIL_TEXT, 'break-words')}>
         {owner
           ? `Your light is on until ${untilLabel}, for ${audience === 'close' ? 'your close friends' : 'all your friends'}.`
           : `${displayName} is free to talk until ${untilLabel}.`}
-        {note && <span className="mt-1 block text-text-secondary">“{note}”</span>}
       </p>
     </RailCard>
   );
@@ -47,7 +48,7 @@ export function PorchLightNotice({
 export function TracksCard() {
   return (
     <RailCard id="profile-visitors" title="Profile visitors" more={{ href: '/visitors', label: 'Open' }}>
-      <p className="text-caption text-text-secondary">See who stopped by your profile this week.</p>
+      <p className={RAIL_TEXT}>See who stopped by your profile this week.</p>
     </RailCard>
   );
 }
@@ -79,12 +80,12 @@ export function PosseCard({ members }: { members: PersonEntry[] }) {
               </li>
             )}
           </ul>
-          <p className="text-caption text-text-secondary">
+          <p className={RAIL_TEXT}>
             {members.length} {members.length === 1 ? 'friend' : 'friends'}
           </p>
         </div>
       ) : (
-        <p className="text-caption text-text-secondary">Nobody yet. Ask someone from the friends page.</p>
+        <p className={RAIL_TEXT}>Nobody yet. Ask someone from the friends page.</p>
       )}
     </RailCard>
   );
