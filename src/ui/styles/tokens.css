@@ -122,6 +122,8 @@
    * out on white without an outline. The sparks that burst from it stay brand Sunflower, like the logo's.
    */
   --color-star: #f2b100;
+  /* The top of the given Star's gradient: light Sunflower, so it looks lit from above. */
+  --color-star-light: #ffe177;
   --color-info: #bee1e6;
   --color-on-info: #2b2d42;
   --color-mystery: #d8b4e2;

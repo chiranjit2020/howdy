@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { REACTION_KINDS, type ReactionKind } from '@/shared/validation/fence';
 import { cn } from '../cn';
-import { StarFillIcon, StarIcon } from '../icons';
+import { StarIcon } from '../icons';
 
 /** The kind a Star is saved as. The database keeps its five kinds (no migration); Howdy shows every one as a Star. */
 export const STAR_KIND: ReactionKind = 'love';
@@ -15,8 +15,45 @@ const SPARKS = [
   { cx: 20.25, cy: -0.25, ry: 2.6, turn: 45 },
 ];
 
+// Octicons' filled star (24-unit box), drawn by hand so it can carry a gradient and a highlight.
+const STAR_PATH =
+  'm12.672.668 3.059 6.197 6.838.993a.75.75 0 0 1 .416 1.28l-4.948 4.823 1.168 6.812a.75.75 0 0 1-1.088.79L12 18.347l-6.116 3.216a.75.75 0 0 1-1.088-.791l1.168-6.811-4.948-4.823a.749.749 0 0 1 .416-1.279l6.838-.994L11.327.668a.75.75 0 0 1 1.345 0Z';
+
 /**
- * The Star itself: an outline when not given, filled deep Sunflower when given. `burst` (a number that grows with each
+ * A given Star, a little shiny: light Sunflower at the top to deep gold at the foot, and a soft white highlight near its
+ * top left, as if lit from above. No outline.
+ */
+function ShinyStar() {
+  // An id fit for url(#…): React's ids can hold characters that break it.
+  const id = useId().replace(/[^a-zA-Z0-9_-]/g, '');
+  return (
+    <svg viewBox="0 0 24 24" className="size-full">
+      <defs>
+        <linearGradient id={`${id}g`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="var(--color-star-light)" />
+          <stop offset="1" stopColor="var(--color-star)" />
+        </linearGradient>
+        <clipPath id={`${id}c`}>
+          <path d={STAR_PATH} />
+        </clipPath>
+      </defs>
+      <path d={STAR_PATH} fill={`url(#${id}g)`} />
+      <ellipse
+        cx="9.4"
+        cy="8.2"
+        rx="2.6"
+        ry="1.5"
+        transform="rotate(-30 9.4 8.2)"
+        fill="white"
+        opacity="0.75"
+        clipPath={`url(#${id}c)`}
+      />
+    </svg>
+  );
+}
+
+/**
+ * The Star itself: an outline when not given, a shiny Sunflower star when given. `burst` (a number that grows with each
  * new give) replays the pop and the sparks; it stays 0 on load, so stars you gave earlier do not all burst at once.
  */
 export function StarMark({
@@ -28,18 +65,10 @@ export function StarMark({
   burst?: number;
   className?: string;
 }) {
-  const Icon = given ? StarFillIcon : StarIcon;
   return (
     <span aria-hidden="true" className={cn('relative inline-flex size-[1.25em]', className)}>
-      <span
-        key={burst}
-        className={cn(
-          'inline-flex size-full',
-          given && 'text-star',
-          given && burst > 0 && 'animate-star-pop',
-        )}
-      >
-        <Icon className="size-full" />
+      <span key={burst} className={cn('inline-flex size-full', given && burst > 0 && 'animate-star-pop')}>
+        {given ? <ShinyStar /> : <StarIcon className="size-full" />}
       </span>
       {given && burst > 0 && (
         <svg

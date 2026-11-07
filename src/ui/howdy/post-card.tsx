@@ -23,7 +23,7 @@ import type { ReactionKind } from '@/shared/validation/fence';
 import type { PortraitTint } from '@/shared/validation/profile';
 import { Img } from '../art/img';
 import { cn } from '../cn';
-import { CameraIcon, PinIcon, ReplyIcon, SendIcon } from '../icons';
+import { CameraIcon, CommentIcon, PinIcon, ReplyIcon, SendIcon } from '../icons';
 import { Avatar } from '../primitives/avatar';
 import { PhotoViewer } from '../primitives/dialog';
 import { Button, buttonClasses } from '../primitives/button';
@@ -543,7 +543,7 @@ export function PostCard({
   const hidden = all.length - shown.length;
   const totalReactions = Object.values(reactions).reduce((a, b) => a + b, 0);
   const repliesLabel = `${replyCount} ${replyCount === 1 ? 'reply' : 'replies'}`;
-  const hasActions = canReact || !!myReaction || !!replyComposer || totalReactions > 0;
+  const hasActions = canReact || !!myReaction || !!replyComposer || totalReactions > 0 || replyCount > 0;
 
   return (
     // The Reply links under replies exist only where this viewer may reply.
@@ -605,8 +605,7 @@ export function PostCard({
           {notice && <p className="text-caption font-semibold text-text-secondary">{notice}</p>}
         </div>
 
-        {/* One row: your reaction, the picker and everyone's counts on the left, Reply on the right. How many replies
-          there are is said once, by "View all" under the post. */}
+        {/* One row: the Star and how many replies on the left, Reply on the right. */}
         {hasActions && (
           // No dividing line (2026-11-07): a rule between the post and its reactions read as "end of post", and people
           // stopped before reacting. The row sits right under the post instead, as part of it.
@@ -617,6 +616,19 @@ export function PostCard({
               mine={myReaction}
               {...(canReact || myReaction ? { onReact } : {})}
             />
+            {replyCount > 0 && (
+              // How many replies, beside the Star (2026-11-07): a lively thread draws people in. A tap shows them all.
+              <button
+                type="button"
+                onClick={() => setOpen(true)}
+                aria-label={`${repliesLabel}, show them`}
+                aria-controls={repliesId}
+                className="inline-flex min-h-11 items-center gap-1.5 rounded-pill px-3 text-caption font-semibold text-text-primary tabular-nums transition-colors duration-150 hover:bg-surface-sunken pointer-fine:min-h-8"
+              >
+                <CommentIcon aria-hidden="true" className="text-[1.25rem]" />
+                {replyCount}
+              </button>
+            )}
             {replyComposer && (
               <Button
                 variant="ghost"

@@ -9,6 +9,7 @@ import {
   GoCheckCircle,
   GoClock,
   GoChevronDown,
+  GoComment,
   GoCommentDiscussion,
   GoDeviceMobile,
   GoEye,
@@ -38,7 +39,6 @@ import {
   GoShield,
   GoShieldCheck,
   GoStar,
-  GoStarFill,
   GoX,
   GoXCircle,
 } from 'react-icons/go';
@@ -67,8 +67,8 @@ export const HomeIcon = go(GoHome);
 export const FenceIcon = go(GoNote);
 // Visitors: an eye (who looked at my profile).
 export const TracksIcon = go(GoEye);
-// The one reaction on posts and Stories (2026-11-07): outline = not given yet, filled = you gave it.
-export const StarFillIcon = go(GoStarFill);
+// How many replies a post has, beside its Star (2026-11-07).
+export const CommentIcon = go(GoComment);
 export const WhisperIcon = go(GoCommentDiscussion);
 export const BellIcon = go(GoBell);
 export const SearchIcon = go(GoSearch);
