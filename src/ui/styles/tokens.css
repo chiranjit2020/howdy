@@ -189,6 +189,12 @@
   --radius-xl: 0.75rem;
   /* Every card's corners (2026-11-07): one size, so cards across Howdy match. */
   --radius-card: 20px;
+  /*
+   * Anything inset in a card (a post's photo), chosen 2026-11-07: the radius equals the card's padding (p-4, 16px),
+   * a step under the card's 20px. Deliberately softer than the strict concentric 4px (20 − 16) so photos read as
+   * Howdy's own rounded look, not a sharp-cornered feed photo. If the card padding changes, change this with it.
+   */
+  --radius-card-inset: 1rem;
   --radius-pill: 9999px;
 
   /*

@@ -340,7 +340,7 @@ export function PostCardComposer({
           <img
             src={photo.preview}
             alt={`The photo you chose for this ${kind === 'post' ? 'post' : 'card'}`}
-            className={cn('max-h-40 rounded-md object-contain', uploading && 'opacity-60')}
+            className={cn('max-h-40 rounded-card-inset object-contain', uploading && 'opacity-60')}
           />
           {uploading && <p className="text-metadata text-text-secondary">Uploading…</p>}
           <Button
@@ -446,7 +446,7 @@ function PostPhoto({ photo, alt }: { photo: { url: string; width: number; height
         aria-label={`${alt}. Show the whole photo`}
         // A double-click here opens the photo, nothing else (on the rest of the post it gives a Wave).
         onDoubleClick={(e) => e.stopPropagation()}
-        className="block w-full cursor-zoom-in overflow-hidden rounded-md"
+        className="block w-full cursor-zoom-in overflow-hidden rounded-card-inset"
       >
         <Img
           src={photo.url}

@@ -15,7 +15,7 @@ export function PostSkeleton({ photo = false }: { photo?: boolean }) {
         </div>
       </div>
       <Skeleton className="h-4 w-4/5" />
-      {photo && <Skeleton className="aspect-[3/2] w-full rounded-md" />}
+      {photo && <Skeleton className="aspect-[3/2] w-full rounded-card-inset" />}
       <div className="flex items-center justify-between border-t border-border pt-3">
         <Skeleton className="h-6 w-24 rounded-pill" />
         <Skeleton className="h-6 w-16 rounded-pill" />
