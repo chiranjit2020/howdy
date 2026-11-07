@@ -108,7 +108,7 @@ export function ChatDockProvider({
             if (inLayer || windowRef.current?.querySelector('[aria-expanded="true"]')) return;
             close();
           }}
-          className="fixed right-4 bottom-4 z-40 flex h-[30rem] max-h-[calc(100dvh-5rem)] w-[22rem] flex-col gap-2 rounded-lg border border-border bg-surface p-3 shadow-float"
+          className="fixed right-4 bottom-4 z-40 flex h-[30rem] max-h-[calc(100dvh-5rem)] w-[22rem] flex-col gap-2 rounded-card border border-border bg-surface p-3 shadow-float"
         >
           {state.status === 'ready' ? (
             <ThreadView

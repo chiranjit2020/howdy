@@ -554,7 +554,7 @@ export function PostCard({
   return (
     // The Reply links under replies exist only where this viewer may reply.
     <ReplyTo.Provider value={replyComposer ? { replyTo, draft: draft.text } : null}>
-      <article aria-label={`${noun} from ${author.name}`} className="clay flex flex-col rounded-[20px]">
+      <article aria-label={`${noun} from ${author.name}`} className="clay flex flex-col">
         <div
           onDoubleClick={() => canReact && !myReaction && onReact('yo')}
           className="flex flex-col gap-3 p-4"

@@ -3,7 +3,7 @@ import { cn } from '../cn';
 
 /** Flat surface: for dense lists and secondary grouping. */
 export function Card({ className, ...rest }: ComponentProps<'div'>) {
-  return <div className={cn('rounded-lg border border-border bg-surface p-4', className)} {...rest} />;
+  return <div className={cn('rounded-card border border-border bg-surface p-4', className)} {...rest} />;
 }
 
 /** Tactile clay surface. `interactive` adds the press micro-interaction (use on clickable cards). */

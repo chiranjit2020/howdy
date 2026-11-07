@@ -5,7 +5,7 @@ export default function Loading() {
   return (
     <SkeletonFramedPage rail={0}>
       <SkeletonTitle width="w-36" hint={false} />
-      <div className="flex flex-col divide-y divide-border overflow-hidden rounded-lg border border-border bg-surface">
+      <div className="flex flex-col divide-y divide-border overflow-hidden rounded-card border border-border bg-surface">
         {Array.from({ length: 5 }, (_, i) => (
           <div key={i} className="px-4 py-3">
             <SkeletonRow />
