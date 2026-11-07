@@ -79,7 +79,7 @@ export function ShellSidebarNav({ items }: { items: ShellNavItem[] }) {
                 href={it.href}
                 aria-current={current ? 'page' : undefined}
                 className={cn(
-                  'flex min-h-11 items-center gap-2.5 rounded-md px-3 text-caption font-medium no-underline transition-colors pointer-fine:min-h-9',
+                  'flex min-h-11 items-center gap-2.5 rounded-pill px-3 text-caption font-medium no-underline transition-colors pointer-fine:min-h-9',
                   // The current page: the primary fill, with its icon in the other palette colour (the two together).
                   current
                     ? 'bg-primary font-semibold text-on-primary hover:no-underline'
