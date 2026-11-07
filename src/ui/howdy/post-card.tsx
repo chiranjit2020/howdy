@@ -568,12 +568,13 @@ export function PostCard({
                 <NameBadge verified={author.verified} trusted={author.trusted} className="ml-1" />
               </p>
               {/* The username stays in sight: names are not unique, the username is (and a name may not hold "@"). */}
-              <p className="text-metadata [overflow-wrap:anywhere] text-text-muted">
+              {/* Quiet like the mock cards: 12 px, regular weight, grey, so the name leads and this reads as a footnote. */}
+              <p className="text-metadata font-normal [overflow-wrap:anywhere] text-text-muted">
                 @{author.handle} · <RelativeTime date={createdAt} />
                 {wall && (
                   <>
                     {' · on '}
-                    <Link href={`/profile/${wall.handle}`} className="font-semibold text-text-secondary">
+                    <Link href={`/profile/${wall.handle}`} className="font-medium text-text-secondary">
                       {wall.name}
                     </Link>
                     ’s wall
