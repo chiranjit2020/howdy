@@ -19,6 +19,7 @@ export function PersonRow({
   linkToRanch = true,
   verified,
   inlineActions = false,
+  card = false,
   className,
 }: {
   displayName: string;
@@ -35,24 +36,36 @@ export function PersonRow({
   verified?: boolean | undefined;
   /** Small icon actions: kept on the name's line; a long name wraps beside them instead. */
   inlineActions?: boolean;
+  /** The mock-card proportions (2026-11-07): 14 px name, quiet 12 px handle, no padding of its own. Put these rows in
+   *  a `gap-3` list inside a card instead of a divided one. */
+  card?: boolean;
   /** Extra classes for the row (e.g. hiding it on a phone until "Show all"). */
   className?: string | undefined;
 }) {
   const text = (
     <>
-      <span className="block truncate text-body font-semibold text-text-primary">
+      <span
+        className={cn('block truncate font-semibold text-text-primary', card ? 'text-card' : 'text-body')}
+      >
         {displayName}
         {verified && <VerifiedBadge className="ml-1" />}
       </span>
       {/* The handle gives way first: a short note ("Close friend") always stays whole. */}
-      <span className="flex min-w-0 text-caption text-text-secondary">
+      <span
+        className={cn(
+          'flex min-w-0 text-text-secondary',
+          card ? 'text-metadata font-normal tracking-normal' : 'text-caption',
+        )}
+      >
         <span className="truncate">@{handle}</span>
         {note && <span className="shrink-0 whitespace-pre text-text-muted"> · {note}</span>}
       </span>
     </>
   );
   return (
-    <li className={cn('flex items-center gap-3 py-2.5', !inlineActions && 'flex-wrap', className)}>
+    <li
+      className={cn('flex items-center gap-3', !card && 'py-2.5', !inlineActions && 'flex-wrap', className)}
+    >
       <Avatar name={displayName} tint={portraitTint} src={portraitUrl} />
       {/* A 12rem floor: when the actions do not fit beside the name, they wrap onto their own line instead of covering it. */}
       <div className={cn('min-w-0', inlineActions ? 'flex-1' : 'flex-[1_1_12rem]')}>

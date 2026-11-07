@@ -8,12 +8,13 @@ import type { RelationshipAction } from '@/shared/validation/relationships';
 import { apiRequest } from '@/ui/auth/api';
 import { FormMessage } from '@/ui/auth/form-parts';
 import { PersonRow } from '@/ui/howdy';
+import { RAIL_CARD, RAIL_TEXT, RailCard } from '@/ui/howdy/rail-card';
 import { MoreIcon, UsersIcon, WhisperIcon } from '@/ui/icons';
-import { Button, ClayCard, ConfirmationDialog, Dropdown, EmptyState } from '@/ui/primitives';
+import { Button, ConfirmationDialog, Dropdown, EmptyState } from '@/ui/primitives';
 
-// A round 44px icon button (or link) for the compact Pals row.
+// A round 44px icon button (or link) for the compact Pals row. The card is white, so the hover is the sunken grey.
 const iconButton =
-  'inline-flex size-11 items-center justify-center rounded-pill text-title text-text-secondary no-underline hover:bg-surface hover:text-text-primary';
+  'inline-flex size-11 items-center justify-center rounded-pill text-title text-text-secondary no-underline hover:bg-surface-sunken hover:text-text-primary';
 
 /** How many friends a phone shows before "Show all": the list sits above Following and grows long. */
 const PHONE_FRIENDS = 8;
@@ -54,25 +55,25 @@ export function PosseLists({ lists }: { lists: RelationshipLists }) {
     </Button>
   );
 
+  // One card per list, in the side cards' proportions (2026-11-07): 16 px title, 40 px avatars, 14 px names, 12 px
+  // gaps between people (no lines: the gap already separates them), and the small print under a dashed rule.
   const section = (
     id: string,
     title: string,
     people: PersonEntry[],
     empty: string,
     row: (p: PersonEntry, i: number) => ReactNode,
-    footer?: ReactNode,
+    more?: ReactNode,
+    foot?: ReactNode,
   ) => (
-    <section aria-labelledby={id} className="flex flex-col gap-2">
-      <h2 id={id} className="text-title text-text-primary">
-        {title}
-      </h2>
+    <RailCard id={id} title={title} {...(foot ? { foot } : {})}>
       {people.length === 0 ? (
-        <p className="text-caption text-text-secondary">{empty}</p>
+        <p className={RAIL_TEXT}>{empty}</p>
       ) : (
-        <ul className="-mb-2.5 flex flex-col divide-y divide-border">{people.map(row)}</ul>
+        <ul className="flex flex-col gap-3">{people.map(row)}</ul>
       )}
-      {footer}
-    </section>
+      {more}
+    </RailCard>
   );
 
   return (
@@ -80,115 +81,110 @@ export function PosseLists({ lists }: { lists: RelationshipLists }) {
       {error && <FormMessage tone="error">{error}</FormMessage>}
       {lists.truncated && <FormMessage tone="info">Showing the first 100 in each list.</FormMessage>}
 
-      {lists.incoming.length > 0 && (
-        <ClayCard>
-          {section('requests', `Requests for you (${lists.incoming.length})`, lists.incoming, '', (p) => (
-            <PersonRow
-              key={p.handle}
-              {...p}
-              actions={
-                <>
-                  {btn(p, 'accept', 'Accept', 'primary')}
-                  {btn(p, 'decline', 'Decline')}
-                </>
-              }
-            />
-          ))}
-        </ClayCard>
-      )}
+      {lists.incoming.length > 0 &&
+        section('requests', `Requests for you (${lists.incoming.length})`, lists.incoming, '', (p) => (
+          <PersonRow
+            key={p.handle}
+            {...p}
+            card
+            actions={
+              <>
+                {btn(p, 'accept', 'Accept', 'primary')}
+                {btn(p, 'decline', 'Decline')}
+              </>
+            }
+          />
+        ))}
 
-      {lists.outgoing.length > 0 && (
-        <ClayCard>
-          {section('waiting', `Sent requests (${lists.outgoing.length})`, lists.outgoing, '', (p) => (
-            <PersonRow key={p.handle} {...p} inlineActions actions={btn(p, 'cancel', 'Cancel', 'ghost')} />
-          ))}
-        </ClayCard>
-      )}
+      {lists.outgoing.length > 0 &&
+        section('waiting', `Sent requests (${lists.outgoing.length})`, lists.outgoing, '', (p) => (
+          <PersonRow key={p.handle} {...p} card inlineActions actions={btn(p, 'cancel', 'Cancel', 'ghost')} />
+        ))}
 
-      <ClayCard>
-        {lists.posse.length === 0 && lists.incoming.length === 0 ? (
+      {lists.posse.length === 0 && lists.incoming.length === 0 ? (
+        <div className={RAIL_CARD}>
           <EmptyState
             as="h2"
             icon={<UsersIcon className="text-text-muted" />}
             title="No friends yet"
             description="Send a request with their username, or share your invite link with someone new. Requests are private until they say yes."
           />
-        ) : (
-          section(
-            'posse',
-            `Your friends (${lists.posse.length})`,
-            lists.posse,
-            'Nobody yet. Accept a request or ask someone.',
-            (p, i) => (
-              <PersonRow
-                key={p.handle}
-                {...p}
-                inlineActions
-                className={friendsCut && i >= PHONE_FRIENDS ? 'max-xl:hidden' : undefined}
-                {...(p.closeByMe ? { note: 'Close friend' } : {})}
-                actions={
-                  <>
-                    <Link
-                      href={`/messages/${p.handle}`}
-                      aria-label={`Message to ${p.displayName}`}
-                      title="Message"
-                      className={iconButton}
-                    >
-                      <WhisperIcon className="size-5" />
-                    </Link>
-                    <Dropdown
-                      label={`More about ${p.displayName}`}
-                      align="end"
-                      trigger={(t) => (
-                        <button
-                          type="button"
-                          aria-label={`More about ${p.displayName}`}
-                          className={iconButton}
-                          {...t}
-                        >
-                          <MoreIcon />
-                        </button>
-                      )}
-                      items={[
-                        {
-                          id: 'close',
-                          label: p.closeByMe ? 'Remove from close friends' : 'Add to close friends',
-                          disabled: busy !== undefined,
-                          onSelect: () => run(p.handle, p.closeByMe ? 'unclose' : 'close'),
-                        },
-                        { id: 'leave', label: 'Stop being friends…', onSelect: () => setLeaving(p) },
-                      ]}
-                    />
-                  </>
-                }
-              />
-            ),
-            <>
-              {friendsCut && (
-                <Button
-                  variant="link"
-                  className="mt-3 self-start xl:hidden"
-                  onClick={() => setAllFriends(true)}
-                >
-                  Show all {lists.posse.length} friends
-                </Button>
-              )}
-              <p className="mt-3 border-t border-border pt-3 text-metadata text-text-muted">
-                Close friend is a private label, just for you. Following someone shows their posts on your
-                Home. Nobody is told about either.
-              </p>
-            </>,
-          )
-        )}
-      </ClayCard>
-
-      {lists.scouting.length > 0 && (
-        <ClayCard>
-          {section('scouting', 'Following', lists.scouting, '', (p) => (
-            <PersonRow key={p.handle} {...p} inlineActions actions={btn(p, 'unscout', 'Unfollow', 'ghost')} />
-          ))}
-        </ClayCard>
+        </div>
+      ) : (
+        section(
+          'posse',
+          `Your friends (${lists.posse.length})`,
+          lists.posse,
+          'Nobody yet. Accept a request or ask someone.',
+          (p, i) => (
+            <PersonRow
+              key={p.handle}
+              {...p}
+              card
+              inlineActions
+              className={friendsCut && i >= PHONE_FRIENDS ? 'max-xl:hidden' : undefined}
+              {...(p.closeByMe ? { note: 'Close friend' } : {})}
+              actions={
+                <>
+                  <Link
+                    href={`/messages/${p.handle}`}
+                    aria-label={`Message to ${p.displayName}`}
+                    title="Message"
+                    className={iconButton}
+                  >
+                    <WhisperIcon className="size-5" />
+                  </Link>
+                  <Dropdown
+                    label={`More about ${p.displayName}`}
+                    align="end"
+                    trigger={(t) => (
+                      <button
+                        type="button"
+                        aria-label={`More about ${p.displayName}`}
+                        className={iconButton}
+                        {...t}
+                      >
+                        <MoreIcon />
+                      </button>
+                    )}
+                    items={[
+                      {
+                        id: 'close',
+                        label: p.closeByMe ? 'Remove from close friends' : 'Add to close friends',
+                        disabled: busy !== undefined,
+                        onSelect: () => run(p.handle, p.closeByMe ? 'unclose' : 'close'),
+                      },
+                      { id: 'leave', label: 'Stop being friends…', onSelect: () => setLeaving(p) },
+                    ]}
+                  />
+                </>
+              }
+            />
+          ),
+          friendsCut && (
+            <Button
+              variant="link"
+              size="sm"
+              className="-mx-1 self-start xl:hidden"
+              onClick={() => setAllFriends(true)}
+            >
+              Show all {lists.posse.length} friends
+            </Button>
+          ),
+          'Close friend is a private label, just for you. Following someone shows their posts on your Home. Nobody is told about either.',
+        )
       )}
+
+      {lists.scouting.length > 0 &&
+        section('scouting', 'Following', lists.scouting, '', (p) => (
+          <PersonRow
+            key={p.handle}
+            {...p}
+            card
+            inlineActions
+            actions={btn(p, 'unscout', 'Unfollow', 'ghost')}
+          />
+        ))}
 
       <ConfirmationDialog
         open={leaving !== undefined}
