@@ -543,6 +543,7 @@ export function PostCard({
   const hidden = all.length - shown.length;
   const totalReactions = Object.values(reactions).reduce((a, b) => a + b, 0);
   const repliesLabel = `${replyCount} ${replyCount === 1 ? 'reply' : 'replies'}`;
+  const hasActions = canReact || !!myReaction || !!replyComposer || totalReactions > 0;
 
   return (
     // The Reply links under replies exist only where this viewer may reply.
@@ -550,7 +551,8 @@ export function PostCard({
       <article aria-label={`${noun} from ${author.name}`} className="clay flex flex-col">
         <div
           onDoubleClick={() => canReact && !myReaction && onReact('yo')}
-          className="flex flex-col gap-3 p-4"
+          // With a reaction row under it, the post keeps only 4 px below so the row reads as part of the post.
+          className={cn('flex flex-col gap-3 p-4', hasActions && 'pb-1')}
         >
           <header className="flex items-start gap-3">
             <Avatar
@@ -605,9 +607,10 @@ export function PostCard({
 
         {/* One row: your reaction, the picker and everyone's counts on the left, Reply on the right. How many replies
           there are is said once, by "View all" under the post. */}
-        {(canReact || myReaction || replyComposer || totalReactions > 0) && (
-          // 16 px of post above the line, 8 px around the row below it: the buttons' own 32 px fills the rest.
-          <footer className="mx-4 flex items-center gap-1 border-t border-border py-2">
+        {hasActions && (
+          // No dividing line (2026-11-07): a rule between the post and its reactions read as "end of post", and people
+          // stopped before reacting. The row sits right under the post instead, as part of it.
+          <footer className="mx-4 flex items-center gap-1 pb-2">
             {canReact || myReaction ? (
               <ReactionBar reactions={reactions} mine={myReaction} onReact={onReact} />
             ) : (

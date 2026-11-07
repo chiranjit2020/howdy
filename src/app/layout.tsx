@@ -37,7 +37,9 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   const theme = parseTheme((await cookies()).get(THEME_COOKIE)?.value);
   return (
     <html lang="en" data-theme={theme} className={`${googleSans.variable} ${jetbrains.variable}`}>
-      <body>
+      {/* Extensions (Grammarly, etc.) add attributes to <body> before React loads; this ignores only <body>'s own
+          attributes, so real mismatches inside the page still warn. */}
+      <body suppressHydrationWarning>
         <a
           href="#main"
           className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:rounded-pill focus:bg-accent-strong focus:px-4 focus:py-2 focus:text-on-accent"
