@@ -7,7 +7,7 @@ import type { ReactNode } from 'react';
  */
 export const RAIL_CARD =
   'relative flex flex-col gap-3 overflow-hidden rounded-card border border-border bg-surface p-4 shadow-clay';
-export const RAIL_TITLE = 'text-metadata font-semibold tracking-wider text-text-secondary uppercase';
+export const RAIL_TITLE = 'text-caption font-bold tracking-wider text-text-secondary uppercase';
 /** 44 px to tap on touch screens, without making the title row any taller (the negative margin takes it back). */
 export const RAIL_MORE =
   '-my-3 inline-flex min-h-11 items-center text-caption font-semibold pointer-fine:my-0 pointer-fine:min-h-0';

@@ -26,7 +26,7 @@ export function MemoriesCard({
   if (cards.length + pals.length + tributes.length === 0) return null;
   return (
     <section aria-labelledby={headingId} className={cn('flex flex-col gap-3', className)}>
-      <h2 id={headingId} className="text-metadata font-semibold tracking-wider text-text-secondary uppercase">
+      <h2 id={headingId} className="text-caption font-bold tracking-wider text-text-secondary uppercase">
         On this day
       </h2>
       <ul className="flex flex-col gap-3">
