@@ -105,9 +105,7 @@ function DiwaliLights({ size }: { size: keyof typeof SIZE }) {
             className={cn(
               'absolute top-0 left-1/2 -translate-x-1/2 animate-twinkle rounded-pill',
               dot,
-              i % 2 === 0
-                ? 'bg-diwali-gold shadow-[0_0_4px_var(--color-diwali-gold)]'
-                : 'bg-diwali-red shadow-[0_0_4px_var(--color-diwali-red)] [animation-delay:0.8s]',
+              i % 2 === 0 ? 'bg-diwali-gold' : 'bg-diwali-red [animation-delay:0.8s]',
             )}
           />
         </span>
