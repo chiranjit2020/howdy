@@ -16,7 +16,12 @@ import {
   watchProblems,
 } from './helpers';
 
-/** ADR-029 / ADR-061: "Friends you may know" on Friends and on Home, on a 320 px touch phone; Not now removes it for good. */
+/**
+ * ADR-029 / ADR-061: "Friends you may know" on Friends and on Home, on a 320 px touch phone; Not now removes it for good.
+ * Early days (under EARLY_DAYS_UNTIL active people) also suggest people with fewer shared friends, so this shared e2e
+ * database may show others in the row: every check is about the people made here, never "the row is empty".
+ * The early-days rules themselves are tested in tests/security/suggestions.test.ts.
+ */
 
 const db = new Pool({ connectionString: parse(readFileSync('.env.local')).E2E_DATABASE_URL, max: 1 });
 test.afterAll(async () => {
@@ -79,10 +84,11 @@ test('Friends you may know: shown with shared friends, asked from the card, or d
   expect(await horizontalOverflow(me.page)).toBe(0);
 
   await row.getByRole('button', { name: /^Not now/ }).click();
-  await expect(card).toHaveCount(0);
+  await expect(row).toHaveCount(0);
   await me.page.reload();
   await pageReady(me.page);
-  await expect(me.page.getByRole('region', { name: 'Friends you may know' })).toHaveCount(0);
+  // Gone for good (the card itself may stay, with other people in it).
+  await expect(me.page.getByText(`Person ${x!.handle}`)).toHaveCount(0);
   expect(problems).toEqual([]);
   await me.ctx.close();
 });
@@ -134,8 +140,9 @@ test('Home: friends you may know as small cards before the posts; Ask, and the Ã
   await expect(yCard).toHaveCount(0);
   await me.page.reload();
   await pageReady(me.page);
-  // Asked and dismissed: nobody left to suggest, so no strip at all.
-  await expect(me.page.getByRole('region', { name: 'Friends you may know' })).toHaveCount(0);
+  // Asked and dismissed: neither is suggested again (the row may stay, with other people in it).
+  await expect(me.page.getByText(`Person ${x!.handle}`)).toHaveCount(0);
+  await expect(me.page.getByText(`Person ${y!.handle}`)).toHaveCount(0);
   expect(problems).toEqual([]);
   await me.ctx.close();
 });
