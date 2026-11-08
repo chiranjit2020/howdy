@@ -11,7 +11,9 @@ import { Avatar, Button } from '@/ui/primitives';
 const why = (s: PalSuggestion) => {
   const names = s.via.map((v) => v.displayName);
   const others = s.shared - names.length;
-  if (names.length === 0) return `${s.shared} shared friends`;
+  // Early days suggest people I share no friends with too (EARLY_DAYS_UNTIL).
+  if (s.shared === 0) return 'New on Howdy';
+  if (names.length === 0) return `${s.shared} shared ${s.shared === 1 ? 'friend' : 'friends'}`;
   return others > 0
     ? `Friends with ${names.join(', ')} and ${others} more of yours`
     : `Friends with ${names.join(' and ')}`;

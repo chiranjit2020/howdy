@@ -1,6 +1,7 @@
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { POST as dismissRoute } from '@/app/api/pals/suggestions/dismiss/route';
 import { GET as listRoute } from '@/app/api/pals/suggestions/route';
+import { EARLY_DAYS_UNTIL, setEarlyDaysUntil } from '@/modules/suggestions';
 import { getPool } from '@/platform/db';
 import { setRateLimiter } from '@/platform/rate-limit';
 import { call, freshAuthState, settledUser, uniqueUser, type TestKit } from '../helpers/auth';
@@ -13,8 +14,11 @@ beforeEach(async () => {
   kit = await freshAuthState();
   // Many sign-ups per test: this is about suggestions, not limits.
   setRateLimiter({ consume: async () => ({ allowed: true, remaining: 999, retryAfterSec: 0 }) });
+  // The strict rules (2 shared friends) are what Howdy runs past its early days; early days have their own tests below.
+  setEarlyDaysUntil(0);
 });
 afterAll(async () => {
+  setEarlyDaysUntil(EARLY_DAYS_UNTIL);
   await getPool().end();
 });
 
@@ -125,6 +129,50 @@ describe('who is suggested', () => {
     const { PATCH } = await import('@/app/api/me/porch/route');
     expect((await call(PATCH, 'PATCH', '/api/me/porch', { discoverable: false }, as(x))).status).toBe(200);
     expect(await handles(me)).toEqual([]);
+  });
+});
+
+describe('early days (fewer active people than EARLY_DAYS_UNTIL)', () => {
+  beforeEach(() => setEarlyDaysUntil(EARLY_DAYS_UNTIL));
+
+  it('anyone eligible: one shared friend, or none ("New on Howdy"), most shared first', async () => {
+    const { me, x, y } = await world();
+    const stranger = await person('sam');
+    const s = await suggested(me);
+    // x shares 2, y shares 1, the stranger none; a and b are already my friends.
+    expect(s.map((v) => v.handle)).toEqual([x.handle, y.handle, stranger.handle]);
+    expect(s.map((v) => v.shared)).toEqual([2, 1, 0]);
+    expect(s[2]!.via).toEqual([]);
+  });
+
+  it('someone with no friends at all still gets suggestions', async () => {
+    const { me, a, b, x, y } = await world();
+    const lonely = await person('lou');
+    expect((await handles(lonely)).sort()).toEqual(
+      [me.handle, a.handle, b.handle, x.handle, y.handle].sort(),
+    );
+  });
+
+  it('every exclusion still applies to people with no shared friends', async () => {
+    const me = await person('me');
+    const asked = await person('ask');
+    const blocked = await person('blk');
+    const off = await person('off');
+    const dismissed = await person('dis');
+    const ok = await person('ok');
+    await doAct(asked.handle, 'request', as(me));
+    await doAct(me.handle, 'block', as(blocked));
+    await q('update profiles set discoverable = false where user_id = $1', [await userId(off.handle)]);
+    await call(dismissRoute, 'POST', '/api/pals/suggestions/dismiss', { handle: dismissed.handle }, as(me));
+    expect(await handles(me)).toEqual([ok.handle]);
+  });
+
+  it('switches itself off at the threshold: back to two shared friends', async () => {
+    const { me, x } = await world();
+    await person('sam');
+    // 6 active people: a threshold of 6 means Howdy is past its early days.
+    setEarlyDaysUntil(6);
+    expect(await handles(me)).toEqual([x.handle]);
   });
 });
 

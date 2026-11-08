@@ -7,7 +7,8 @@ import { enforceRateLimit, type RateLimitRule } from '@/platform/rate-limit';
 import type { PortraitTint } from '@/shared/validation/profile';
 
 /**
- * "Pals you may know" (Phase 13, ADR-029): people who are Pals with at least two of my Pals, most shared Pals first.
+ * "Pals you may know" (Phase 13, ADR-029): people who are Pals with at least two of my Pals, most shared Pals first
+ * (in early days, anyone eligible: see EARLY_DAYS_UNTIL).
  * Worked out in Postgres from the Pal links, when asked — no stored graph, no model. Nobody is suggested who:
  *  - is me, already my Pal, or has any Pal link with me at all (an ask either way, or one declined — ever);
  *  - has any block, mute or restrict with me, in either direction;
@@ -18,8 +19,19 @@ import type { PortraitTint } from '@/shared/validation/profile';
 
 const READ: RateLimitRule = { limit: 60, windowSec: 60 };
 const MANAGE: RateLimitRule = { limit: 60, windowSec: 3600 };
-/** At least this many shared Pals before anyone is suggested. */
+/** At least this many shared Pals before anyone is suggested (once Howdy is past its early days). */
 export const MIN_SHARED = 2;
+/**
+ * Early days (2026-11-08, the user's call): while fewer people than this are active, the shared-Pals rule is lifted.
+ * Anyone eligible may be suggested: people I share Pals with first, then the rest in a fresh random order each time,
+ * so a small network still fills the row. Every exclusion below still applies. It switches itself off at this size.
+ */
+export const EARLY_DAYS_UNTIL = 1000;
+let earlyDaysUntil = EARLY_DAYS_UNTIL;
+/** Tests only: the strict rules are tested with early days off (0), early days with it on. */
+export function setEarlyDaysUntil(n: number): void {
+  earlyDaysUntil = n;
+}
 const SHOWN = 10;
 const CANDIDATES = 40;
 
@@ -29,7 +41,7 @@ export interface PalSuggestion {
   portraitTint: PortraitTint;
   /** Filled in by the app layer only when the viewer may see it. */
   portraitUrl?: string;
-  /** How many of my Pals are their Pals too. */
+  /** How many of my Pals are their Pals too (0 only in early days: "New on Howdy"). */
   shared: number;
   /** Up to two of those shared Pals, to say why. They are my own Pals, so I may see them. */
   via: { handle: string; displayName: string }[];
@@ -45,20 +57,26 @@ export async function palSuggestions(userId: string): Promise<PalSuggestion[]> {
     fof as (
       select case when l.user_low = m.pal then l.user_high else l.user_low end as cand, m.pal as via
       from mine m join posse_links l on l.status = 'accepted' and m.pal in (l.user_low, l.user_high)
-    )
-    select f.cand, count(distinct f.via)::int as shared, (array_agg(distinct f.via))[1:2] as vias
-    from fof f
-    join users u on u.id = f.cand and u.status = 'active'
-    join profiles p on p.user_id = f.cand and p.discoverable
-    where f.cand <> ${userId}
+    ),
+    shared as (
+      select cand, count(distinct via)::int as n, (array_agg(distinct via))[1:2] as vias from fof group by cand
+    ),
+    early as (select count(*) < ${earlyDaysUntil} as on from users where status = 'active')
+    select u.id as cand, coalesce(s.n, 0) as shared, coalesce(s.vias, '{}') as vias
+    from users u
+    join profiles p on p.user_id = u.id and p.discoverable
+    left join shared s on s.cand = u.id
+    cross join early
+    where u.status = 'active'
+      and u.id <> ${userId}
+      and (early.on or coalesce(s.n, 0) >= ${MIN_SHARED})
       and not exists (select 1 from posse_links x
-        where x.user_low = least(${userId}::uuid, f.cand) and x.user_high = greatest(${userId}::uuid, f.cand))
+        where x.user_low = least(${userId}::uuid, u.id) and x.user_high = greatest(${userId}::uuid, u.id))
       and not exists (select 1 from user_controls c
-        where (c.actor_id = ${userId} and c.target_id = f.cand) or (c.actor_id = f.cand and c.target_id = ${userId}))
-      and not exists (select 1 from suggestion_dismissals d where d.user_id = ${userId} and d.dismissed_id = f.cand)
-    group by f.cand
-    having count(distinct f.via) >= ${MIN_SHARED}
-    order by shared desc, f.cand
+        where (c.actor_id = ${userId} and c.target_id = u.id) or (c.actor_id = u.id and c.target_id = ${userId}))
+      and not exists (select 1 from suggestion_dismissals d where d.user_id = ${userId} and d.dismissed_id = u.id)
+    -- Most shared Pals first; within the same count, a fresh shuffle each time (early days) or a stable order.
+    order by shared desc, case when early.on then random() end, u.id
     limit ${CANDIDATES}`);
   const rows = result.rows as { cand: string; shared: number; vias: string[] }[];
   if (rows.length === 0) return [];
