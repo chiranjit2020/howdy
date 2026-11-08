@@ -452,6 +452,65 @@ async function pinnedCard(viewer: Actor, ownerId: string, wall: () => Wall): Pro
 }
 
 /**
+ * One card on a wall, by itself (its own page, where a notification about it leads), or null when this viewer may not
+ * see it: the wall is hidden from them, the card is not on that wall, it is someone else's card still waiting, or its
+ * writer is inactive or hidden from them. Exactly the rules of the wall's own list, so the page never shows more than the
+ * wall would; missing and hidden look the same. `isOwner`, `canPost` and friends describe the wall, as on its page.
+ */
+export async function getFenceCard(
+  viewer: Actor,
+  handle: string,
+  cardId: string,
+  opts: { rateKey: string },
+): Promise<FencePage | null> {
+  await enforceRateLimit(
+    `fence:read:${opts.rateKey}`,
+    viewer.kind === 'user' ? RATE.readUser : RATE.readAnonymous,
+  );
+  // Spent before any lookup (as in listFence), so a real card, a hidden one and a missing one cost the same.
+  if (!idParamSchema.safeParse(cardId).success) return null;
+  const owner = await resolveHandle(handle);
+  if (!owner) return null;
+  const ownerId = owner.userId;
+  const acc = await access(viewer, ownerId);
+  if (!acc) return null;
+  const { fence, ctx } = acc;
+  const viewerId = viewer.kind === 'user' ? viewer.id : null;
+
+  const [row] = await getDb()
+    .select()
+    .from(postCards)
+    .where(
+      and(
+        eq(postCards.id, cardId),
+        eq(postCards.fenceOwnerId, ownerId),
+        viewerId
+          ? or(eq(postCards.status, 'published'), eq(postCards.authorId, viewerId))
+          : eq(postCards.status, 'published'),
+      ),
+    )
+    .limit(1);
+  if (!row) return null;
+  const [authors, hidden] = await Promise.all([
+    authorsFor([row.authorId]),
+    viewerId ? hiddenAuthors(viewerId, [row.authorId]) : Promise.resolve(new Set<string>()),
+  ]);
+  if (hidden.has(row.authorId)) return null;
+  const [view] = await hydrate(viewer, () => ({ fence, ctx }), [row], authors);
+  if (!view) return null;
+  return {
+    cards: [{ ...view, pinned: row.status === 'published' && row.pinnedAt !== null }],
+    nextCursor: null,
+    isOwner: viewerId === ownerId,
+    canPost: canFence(viewer, 'fence:post', fence, ctx).allow,
+    canAddPhoto:
+      canFence(viewer, 'fence:post', fence, ctx).allow &&
+      (viewerId === ownerId || ctx.relationship === 'POSSE' || ctx.relationship === 'CLOSE_POSSE'),
+    review: fence.fenceReview && viewerId !== ownerId,
+  };
+}
+
+/**
  * Pin a card to the top of your own wall, replacing the one pinned before. Your own wall and a published card only; for
  * anything else the same 404 as a card that is not there. Quiet: nobody is told.
  */

@@ -434,17 +434,19 @@ async function hallsIAmIn(userId: string, hallIds: string[]): Promise<Set<string
 function describe(userId: string, s: Shown, myHandle: string): { text: string; href: string } {
   const name = s.actor.displayName;
   const fence = s.ownerHandle ? `/profile/${s.ownerHandle}` : `/profile/${myHandle}`;
+  // The post itself, on its own page (2026-11-08): the top of the wall did not say which post a Star or reply was on.
+  const post = s.row.cardId && s.ownerHandle ? `/profile/${s.ownerHandle}/post/${s.row.cardId}` : fence;
   switch (s.row.type as ChimeType) {
     case 'posse_requested':
       return { text: `${name} wants to be your friend.`, href: '/friends' };
     case 'posse_accepted':
       return { text: `${name} said yes. You are friends now.`, href: `/profile/${s.actor.handle}` };
     case 'card_created':
-      return { text: `${name} posted on your wall.`, href: fence };
+      return { text: `${name} posted on your wall.`, href: post };
     case 'card_waiting':
       return { text: `A post from ${name} is waiting for your approval.`, href: `/profile/${myHandle}` };
     case 'card_approved':
-      return { text: `${name} approved your post. It is on the wall now.`, href: fence };
+      return { text: `${name} approved your post. It is on the wall now.`, href: post };
     case 'reply_created':
       return {
         text:
@@ -454,12 +456,12 @@ function describe(userId: string, s: Shown, myHandle: string): { text: string; h
               ? `${name} replied to a post on your wall.`
               : // Neither the post nor the wall is theirs: they were @mentioned in a reply.
                 `${name} replied to you on a post.`,
-        href: fence,
+        href: post,
       };
     case 'reply_waiting':
       return { text: `A reply from ${name} is waiting for your approval.`, href: `/profile/${myHandle}` };
     case 'yo_given':
-      return { text: `${name} reacted to your post.`, href: fence };
+      return { text: `${name} reacted to your post.`, href: post };
     case 'whisper_received':
       return { text: `${name} sent you a message.`, href: `/messages/${s.actor.handle}` };
     case 'tribute_waiting':

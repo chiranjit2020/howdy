@@ -130,13 +130,29 @@ describe('Wall notifications', () => {
     const { owner, friend } = await wall();
     await nail(owner.handle, { body: 'mine' }, as(owner));
     expect(await bell(as(owner))).toBe(0);
-    await nail(owner.handle, { body: 'hello' }, as(friend));
+    const id = (await nail(owner.handle, { body: 'hello' }, as(friend))).data.card!.id;
+    // It leads to the post itself, not the top of the wall (2026-11-08).
     expect((await chimesOf(as(owner))).data.chimes![0]).toMatchObject({
       type: 'card_created',
       text: `${friend.handle} posted on your wall.`,
-      href: `/profile/${owner.handle}`,
+      href: `/profile/${owner.handle}/post/${id}`,
     });
     expect(await bell(as(friend))).toBe(0);
+  });
+
+  it('a reaction and a reply lead to the post they are on', async () => {
+    const { owner, friend } = await wall();
+    const id = (await nail(owner.handle, { body: 'react to me' }, as(owner))).data.card!.id;
+    await yo(id, true, as(friend));
+    await replyTo(id, { body: 'nice one' }, as(friend));
+    await flushBackground();
+    const hrefs = (await chimesOf(as(owner))).data.chimes!.map((c) => [c.type, c.href]);
+    expect(hrefs).toEqual(
+      expect.arrayContaining([
+        ['yo_given', `/profile/${owner.handle}/post/${id}`],
+        ['reply_created', `/profile/${owner.handle}/post/${id}`],
+      ]),
+    );
   });
 
   it('a reply rings the card’s writer and the wall owner, never the person who replied', async () => {
@@ -419,14 +435,17 @@ describe('reading, paging and counting', () => {
     expect(seen).toHaveLength(3);
   });
 
-  it('needs a session; responses carry no ids of people, emails or card ids', async () => {
+  it('needs a session; responses carry no ids of people or emails, and a card id only in the link to that card', async () => {
     const { owner, friend } = await wall();
     await nail(owner.handle, { body: 'hello' }, as(friend));
     expect((await chimesOf({})).status).toBe(401);
     const text = (await chimesOf(as(owner))).text;
     expect(text).not.toMatch(/@example\.com|actorId|recipientId|cardId|user_id/);
     for (const u of [owner, friend]) expect(text).not.toContain(await userId(u.handle));
-    expect(text).not.toContain((await q('select id from post_cards')).rows[0].id);
+    // Since 2026-11-08 a card's notification links to the card's own page, which the recipient may open (the wall's own
+    // list already gives them its id). Anywhere else, the id must not appear.
+    const cardId = (await q('select id from post_cards')).rows[0].id as string;
+    expect(text.replaceAll(`/profile/${owner.handle}/post/${cardId}`, '')).not.toContain(cardId);
   });
 
   it('reading is limited per person and fails closed', async () => {

@@ -29,7 +29,8 @@ type Removal = { kind: 'card' | 'reply'; id: string };
  * mind?") posts to your own wall, `myHandle`.
  */
 type Source =
-  | { handle: string; ownerName: string }
+  /** `single`: one post on its own page (where a notification about it leads): no composer, every reply shown. */
+  | { handle: string; ownerName: string; single?: boolean }
   | {
       feed: true;
       myHandle: string;
@@ -52,6 +53,7 @@ export function FenceSection({
   // The wall new posts go on: this one, or (in the feed) your own.
   const handle = feed ? source.myHandle : source.handle;
   const ownerName = feed ? '' : source.ownerName;
+  const single = !feed && source.single === true;
   const toast = useToast();
   const composerRef = useRef<HTMLDivElement>(null);
   // "Write a post" (the phone's Create sheet) opens Home with ?nail=<a fresh value>: bring the composer into view and put
@@ -221,26 +223,29 @@ export function FenceSection({
     );
   }
 
-  const composer = initial.canPost ? (
-    <div
-      ref={composerRef}
-      id="nail"
-      // A card of its own, the same on Home and on a wall, like the posts under it.
-      className="clay flex scroll-mt-24 flex-col gap-2 p-3 sm:p-4"
-    >
-      {initial.review && (
-        <p className="text-caption text-text-secondary">
-          Posts on this wall wait for {ownerName} to approve them before others see them.
-        </p>
-      )}
-      <PostCardComposer
-        kind={feed ? 'home' : 'card'}
-        onSubmit={nail}
-        {...('feed' in source && source.composerLead ? { lead: source.composerLead } : {})}
-        {...(initial.canAddPhoto ? { onPhoto: (file: File) => uploadPhoto('/api/me/card-photo', file) } : {})}
-      />
-    </div>
-  ) : undefined;
+  const composer =
+    initial.canPost && !single ? (
+      <div
+        ref={composerRef}
+        id="nail"
+        // A card of its own, the same on Home and on a wall, like the posts under it.
+        className="clay flex scroll-mt-24 flex-col gap-2 p-3 sm:p-4"
+      >
+        {initial.review && (
+          <p className="text-caption text-text-secondary">
+            Posts on this wall wait for {ownerName} to approve them before others see them.
+          </p>
+        )}
+        <PostCardComposer
+          kind={feed ? 'home' : 'card'}
+          onSubmit={nail}
+          {...('feed' in source && source.composerLead ? { lead: source.composerLead } : {})}
+          {...(initial.canAddPhoto
+            ? { onPhoto: (file: File) => uploadPhoto('/api/me/card-photo', file) }
+            : {})}
+        />
+      </div>
+    ) : undefined;
 
   return (
     <>
@@ -253,13 +258,15 @@ export function FenceSection({
         hasMore={next !== null}
         onLoadMore={loadMore}
         loadingMore={loadingMore}
-        {...(feed ? { title: 'What’s Going On?' } : {})}
+        {...(feed ? { title: 'What’s Going On?' } : single ? { title: `On ${ownerName}’s wall` } : {})}
         emptyHint={
           feed
             ? 'Nothing from your friends or people you follow yet. Write on a friend’s wall to get things going.'
-            : initial.canPost
-              ? 'The wall is quiet. Write the first post.'
-              : 'The wall is quiet for now.'
+            : single
+              ? 'This post was taken down.'
+              : initial.canPost
+                ? 'The wall is quiet. Write the first post.'
+                : 'The wall is quiet for now.'
         }
       >
         {cards.map((c) => (
@@ -283,6 +290,7 @@ export function FenceSection({
               ? { notice: `Waiting for ${initial.isOwner ? 'you' : ownerName} to approve.` }
               : {})}
             {...(!feed && c.pinned ? { pinned: true } : {})}
+            {...(single ? { startOpen: true } : {})}
             replyCount={c.replies.length}
             replies={c.replies.map((r) => (
               <PostCardReply

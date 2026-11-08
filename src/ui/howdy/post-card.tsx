@@ -425,6 +425,8 @@ export interface PostCardProps {
   noun?: string;
   /** Whose wall it is on, when that is not plain from the page (Home's feed): "on Priya's wall", linked. */
   wall?: { name: string; handle: string };
+  /** Start with every reply shown and the reply box open (a post on its own page, opened from a notification). */
+  startOpen?: boolean;
 }
 
 /** The list posts go in: each post its own card, 10 px apart (the user's call: merged posts hid who wrote what). */
@@ -504,8 +506,9 @@ export function PostCard({
   photo,
   noun = 'Post',
   wall,
+  startOpen = false,
 }: PostCardProps) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(startOpen);
   const wantsFocus = useRef(false);
   const repliesRef = useRef<HTMLDivElement>(null);
   const repliesId = useId();
