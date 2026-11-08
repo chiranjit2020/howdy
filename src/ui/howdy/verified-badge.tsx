@@ -26,7 +26,7 @@ export function VerifiedBadge({ className }: { className?: string }) {
         <path
           d="M7.8 12.3l2.8 2.8 5.6-5.8"
           fill="none"
-          className="stroke-white"
+          className="stroke-on-header"
           strokeWidth="2.2"
           strokeLinecap="round"
           strokeLinejoin="round"

@@ -139,6 +139,8 @@
   --color-star-light: #ffe177;
   /* The top bar (TRIAL, 2026-11-08): a bright sky blue behind the white-and-yellow logo. Same in both themes. */
   --color-header: #0187df;
+  /* White on that blue (the Verified badge's tick). The theme has no built-in white, so it is named here. */
+  --color-on-header: #ffffff;
   /* Diwali lights round every avatar (TEMPORARY, Diwali 2026): deep Sunflower and a warm diya red, alternating. */
   --color-diwali-gold: #f2b100;
   --color-diwali-red: #e0301e;
