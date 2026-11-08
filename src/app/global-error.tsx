@@ -1,7 +1,7 @@
 'use client';
 
 import { Google_Sans } from 'next/font/google';
-import { GoAlert } from 'react-icons/go';
+import { PiWarning } from 'react-icons/pi';
 import { StatusPage } from '@/ui/howdy/status-page';
 import { Button, buttonClasses } from '@/ui/primitives';
 import './globals.css';
@@ -25,7 +25,7 @@ export default function GlobalError({
       <body>
         <title>Something went wrong · Howdy</title>
         <StatusPage
-          Icon={GoAlert}
+          Icon={PiWarning}
           title="Something went wrong"
           reference={error.digest}
           actions={

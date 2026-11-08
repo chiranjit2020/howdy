@@ -41,7 +41,7 @@ export function Fence({
       {cards.length === 0 ? (
         <EmptyState
           // The same muted line icon as every other empty list (the clay picture and the log emoji predate the flat look).
-          icon={<FenceIcon className="text-text-muted" />}
+          icon={<FenceIcon className="text-text-primary" />}
           title="No posts yet"
           description={emptyHint}
         />

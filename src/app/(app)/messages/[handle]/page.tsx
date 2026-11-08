@@ -33,7 +33,7 @@ export default async function ThreadPage({
         <ClayCard className="flex flex-1 items-center justify-center">
           <EmptyState
             as="h1"
-            icon={<ClockIcon className="text-text-muted" />}
+            icon={<ClockIcon className="text-text-primary" />}
             title="Slow down a little"
             description="Give it a minute and try again."
           />

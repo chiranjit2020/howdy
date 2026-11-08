@@ -32,7 +32,7 @@ const ROLE_LABEL = { owner: 'Owner', deputy: 'Deputy', member: undefined } as co
 
 // A round 44px icon button, like the Pals rows.
 const iconButton =
-  'inline-flex size-11 items-center justify-center rounded-pill text-title text-text-secondary hover:bg-surface hover:text-text-primary';
+  'inline-flex size-11 items-center justify-center rounded-pill text-title text-text-primary hover:bg-surface hover:text-text-primary';
 
 export function TownHallDetailView({
   townHall,
@@ -241,7 +241,7 @@ export function TownHallDetailView({
                   {members.length === 0 ? (
                     <EmptyState
                       as="h3"
-                      icon={<UsersIcon className="text-text-muted" />}
+                      icon={<UsersIcon className="text-text-primary" />}
                       title="Just you so far"
                     />
                   ) : (

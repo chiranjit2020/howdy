@@ -12,7 +12,7 @@ export default function MessagesHome() {
     <div className="clay flex flex-1 items-center justify-center">
       <EmptyState
         as="h2"
-        icon={<WhisperIcon className="text-text-muted" />}
+        icon={<WhisperIcon className="text-text-primary" />}
         title="Pick a conversation"
         description="Choose someone on the left, or start a new message with the pencil."
       />

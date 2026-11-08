@@ -14,7 +14,7 @@ import { Button, ConfirmationDialog, Dropdown, EmptyState } from '@/ui/primitive
 
 // A round 44px icon button (or link) for the compact Pals row. The card is white, so the hover is the sunken grey.
 const iconButton =
-  'inline-flex size-11 items-center justify-center rounded-pill text-title text-text-secondary no-underline hover:bg-surface-sunken hover:text-text-primary';
+  'inline-flex size-11 items-center justify-center rounded-pill text-title text-text-primary no-underline hover:bg-surface-sunken hover:text-text-primary';
 
 /** How many friends a phone shows before "Show all": the list sits above Following and grows long. */
 const PHONE_FRIENDS = 8;
@@ -105,7 +105,7 @@ export function PosseLists({ lists }: { lists: RelationshipLists }) {
         <div className={RAIL_CARD}>
           <EmptyState
             as="h2"
-            icon={<UsersIcon className="text-text-muted" />}
+            icon={<UsersIcon className="text-text-primary" />}
             title="No friends yet"
             description="Send a request with their username, or share your invite link with someone new. Requests are private until they say yes."
           />

@@ -4,7 +4,7 @@ import { EntryFooter, EntryLogo } from '../auth/entry-shell';
 import { Card } from '../primitives';
 
 /**
- * What a "page not found" / "something went wrong" page says, without the frame around it: an Octicon in a sunflower
+ * What a "page not found" / "something went wrong" page says, without the frame around it: an icon in a sunflower
  * circle, the heading (the page's h1), one or two plain sentences and the way out. No hooks, so the error pages (client
  * components) can use it as well as the 404 (a server component).
  */

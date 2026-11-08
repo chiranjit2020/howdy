@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { GoAlert } from 'react-icons/go';
+import { PiWarning } from 'react-icons/pi';
 import { PageFrame } from '@/ui/howdy/page-frame';
 import { StatusMessage } from '@/ui/howdy/status-page';
 import { Button, buttonClasses, Card } from '@/ui/primitives';
@@ -22,7 +22,7 @@ export default function AppError({
       <title>Something went wrong · Howdy</title>
       <Card className="p-5 sm:p-7">
         <StatusMessage
-          Icon={GoAlert}
+          Icon={PiWarning}
           title="Something went wrong"
           reference={error.digest}
           actions={

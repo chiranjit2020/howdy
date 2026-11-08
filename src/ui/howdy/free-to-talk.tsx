@@ -34,7 +34,7 @@ export interface MyLightState {
 const MINUTES_LABEL: Record<LightMinutes, string> = { 30: '30 min', 60: '1 hour', 120: '2 hours' };
 const AUDIENCE_LABEL: Record<LightAudience, string> = { pals: 'All friends', close: 'Close friends' };
 const iconButton =
-  'inline-flex size-11 shrink-0 items-center justify-center rounded-pill text-text-secondary no-underline hover:bg-surface-sunken hover:text-text-primary';
+  'inline-flex size-11 shrink-0 items-center justify-center rounded-pill text-text-primary no-underline hover:bg-surface-sunken hover:text-text-primary';
 const chip =
   'cursor-pointer rounded-pill border border-border px-3 py-1.5 text-caption text-text-primary transition-colors ' +
   'hover:bg-surface-sunken has-[:checked]:border-accent has-[:checked]:bg-accent has-[:checked]:text-on-accent ' +

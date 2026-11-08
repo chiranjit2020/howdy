@@ -19,7 +19,7 @@ function RowIcon({ children }: { children: ReactNode }) {
   return (
     <span
       aria-hidden="true"
-      className="grid size-9 shrink-0 place-items-center rounded-md bg-surface-sunken text-title text-text-secondary"
+      className="grid size-9 shrink-0 place-items-center rounded-md bg-surface-sunken text-title text-text-primary"
     >
       {children}
     </span>

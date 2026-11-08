@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { GoMilestone } from 'react-icons/go';
+import { PiSignpost } from 'react-icons/pi';
 import { StatusPage } from '@/ui/howdy/status-page';
 import { buttonClasses } from '@/ui/primitives';
 
@@ -13,7 +13,7 @@ export const metadata = { title: 'Page not found' };
 export default function NotFound() {
   return (
     <StatusPage
-      Icon={GoMilestone}
+      Icon={PiSignpost}
       title="Page not found"
       actions={
         <Link href="/" className={buttonClasses()}>

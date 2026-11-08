@@ -87,7 +87,7 @@ export function MyGroups({ mine }: { mine: MineItem[] }) {
       <ClayCard>
         <EmptyState
           as="h2"
-          icon={<GroupIcon className="text-text-muted" />}
+          icon={<GroupIcon className="text-text-primary" />}
           title="No groups yet"
           description="Start one for your batch, family, society or team, and invite them. Groups your friends are in show on the right."
         />

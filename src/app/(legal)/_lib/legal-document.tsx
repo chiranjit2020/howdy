@@ -2,17 +2,17 @@ import Link from 'next/link';
 import { Fragment, type ComponentType } from 'react';
 import type { IconBaseProps } from 'react-icons';
 import {
-  GoAlert,
-  GoBlocked,
-  GoCircleSlash,
-  GoEyeClosed,
-  GoHeart,
-  GoLaw,
-  GoPeople,
-  GoPerson,
-  GoShield,
-  GoStop,
-} from 'react-icons/go';
+  PiWarning,
+  PiProhibit,
+  PiProhibitInset,
+  PiEyeSlash,
+  PiHeart,
+  PiScales,
+  PiUsers,
+  PiUser,
+  PiShield,
+  PiHandPalm,
+} from 'react-icons/pi';
 import { formatLegalDate, LEGAL_DOCS, LEGAL_SLUGS, type LegalSlug } from '@/shared/legal';
 import type { Block, Inline } from '@/shared/legal-markdown';
 import { cn } from '@/ui/cn';
@@ -20,18 +20,18 @@ import { Badge, ClayCard } from '@/ui/primitives';
 import { loadLegal } from './load';
 import { LegalContents, ReadingProgress } from './reading-aids';
 
-/** A line icon per Community Guidelines rule (Octicons, like the app), so the rules read as a set of cards. */
+/** A line icon per Community Guidelines rule (Phosphor, like the app), so the rules read as a set of cards. */
 const CAMPFIRE_ICON: Record<string, ComponentType<IconBaseProps>> = {
-  'respect-the-campfire': GoHeart,
-  'no-harassment': GoShield,
-  'no-hate': GoStop,
-  'no-doxxing': GoEyeClosed,
-  'no-spam': GoCircleSlash,
-  'no-impersonation': GoPerson,
-  'respect-boundaries': GoBlocked,
-  'keep-it-safe-and-legal': GoLaw,
-  'look-after-each-other': GoPeople,
-  'when-rules-are-broken': GoAlert,
+  'respect-the-campfire': PiHeart,
+  'no-harassment': PiShield,
+  'no-hate': PiHandPalm,
+  'no-doxxing': PiEyeSlash,
+  'no-spam': PiProhibitInset,
+  'no-impersonation': PiUser,
+  'respect-boundaries': PiProhibit,
+  'keep-it-safe-and-legal': PiScales,
+  'look-after-each-other': PiUsers,
+  'when-rules-are-broken': PiWarning,
 };
 
 const LINK = 'font-medium text-link underline underline-offset-4 hover:text-text-primary';

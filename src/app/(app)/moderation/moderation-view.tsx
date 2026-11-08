@@ -257,7 +257,7 @@ function Queue({ initial }: { initial: QueuePage }) {
         <ClayCard>
           <EmptyState
             as="h3"
-            icon={<ShieldCheckIcon className="text-text-muted" />}
+            icon={<ShieldCheckIcon className="text-text-primary" />}
             title={open ? 'Nothing waiting' : `No ${STATUS_LABEL[status].toLowerCase()} reports`}
             description={open ? 'Every report has been handled.' : 'Closed reports will show up here.'}
           />
@@ -452,7 +452,7 @@ function Appeals({ initial }: { initial: AppealsPage }) {
         <ClayCard>
           <EmptyState
             as="h3"
-            icon={<InboxIcon className="text-text-muted" />}
+            icon={<InboxIcon className="text-text-primary" />}
             title="No appeals waiting"
             description="When a suspended person appeals, it shows up here."
           />

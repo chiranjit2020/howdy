@@ -36,7 +36,7 @@ export default async function HeldPage() {
         <ClayCard>
           <EmptyState
             as="h2"
-            icon={<WhisperIcon className="text-text-muted" />}
+            icon={<WhisperIcon className="text-text-primary" />}
             title="Nothing held back"
             description="When someone you have restricted messages you, it waits here instead of in your threads."
           />

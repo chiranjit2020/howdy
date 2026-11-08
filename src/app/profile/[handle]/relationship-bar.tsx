@@ -118,7 +118,7 @@ export function RelationshipBar({
             <button
               type="button"
               aria-label="More"
-              className="-mr-2 inline-flex size-11 shrink-0 items-center justify-center rounded-pill text-title text-text-secondary hover:bg-surface-sunken"
+              className="-mr-2 inline-flex size-11 shrink-0 items-center justify-center rounded-pill text-title text-text-primary hover:bg-surface-sunken"
               {...p}
             >
               <MoreIcon />

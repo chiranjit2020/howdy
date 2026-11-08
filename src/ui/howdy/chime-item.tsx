@@ -2,21 +2,21 @@ import Link from 'next/link';
 import type { ComponentType, ReactNode } from 'react';
 import type { IconBaseProps } from 'react-icons';
 import {
-  GoCheck,
-  GoClock,
-  GoComment,
-  GoCommentDiscussion,
-  GoEye,
-  GoHeart,
-  GoHourglass,
-  GoNote,
-  GoOrganization,
-  GoPeople,
-  GoPersonAdd,
-  GoQuote,
-  GoReply,
-  GoTag,
-} from 'react-icons/go';
+  PiCheck,
+  PiClock,
+  PiChatCircle,
+  PiChatsCircle,
+  PiEye,
+  PiHeart,
+  PiHourglass,
+  PiNote,
+  PiBuildings,
+  PiUsers,
+  PiUserPlus,
+  PiQuotes,
+  PiArrowBendUpLeft,
+  PiTag,
+} from 'react-icons/pi';
 import type { PortraitTint } from '@/shared/validation/profile';
 import { cn } from '../cn';
 import { Avatar } from '../primitives/avatar';
@@ -39,23 +39,23 @@ export type ChimeType =
   | 'TOWNHALL_ACCEPTED'
   | 'CAPSULE_OPENED';
 
-/** What happened, as a line icon (Octicons, like the rest of the app) in the sunflower badge on the person's photo. */
+/** What happened, as a line icon (Phosphor, like the rest of the app) in the sunflower badge on the person's photo. */
 const ICON: Record<ChimeType, ComponentType<IconBaseProps>> = {
-  POST_CARD_CREATED: GoNote,
-  POST_CARD_REPLIED: GoReply,
-  TRACK_CREATED: GoEye,
-  YO_DROPPED: GoHeart,
-  MARK_AWARDED: GoTag,
-  TRIBUTE_CREATED: GoQuote,
-  WHISPER_RECEIVED: GoCommentDiscussion,
-  POSSE_REQUESTED: GoPersonAdd,
-  POSSE_ACCEPTED: GoPeople,
-  CARD_WAITING: GoClock,
-  REPLY_WAITING: GoComment,
-  CARD_APPROVED: GoCheck,
-  TOWNHALL_INVITED: GoOrganization,
-  TOWNHALL_ACCEPTED: GoOrganization,
-  CAPSULE_OPENED: GoHourglass,
+  POST_CARD_CREATED: PiNote,
+  POST_CARD_REPLIED: PiArrowBendUpLeft,
+  TRACK_CREATED: PiEye,
+  YO_DROPPED: PiHeart,
+  MARK_AWARDED: PiTag,
+  TRIBUTE_CREATED: PiQuotes,
+  WHISPER_RECEIVED: PiChatsCircle,
+  POSSE_REQUESTED: PiUserPlus,
+  POSSE_ACCEPTED: PiUsers,
+  CARD_WAITING: PiClock,
+  REPLY_WAITING: PiChatCircle,
+  CARD_APPROVED: PiCheck,
+  TOWNHALL_INVITED: PiBuildings,
+  TOWNHALL_ACCEPTED: PiBuildings,
+  CAPSULE_OPENED: PiHourglass,
 };
 
 /**

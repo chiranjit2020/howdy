@@ -1,149 +1,133 @@
 import type { ComponentProps, ComponentType } from 'react';
 import type { IconBaseProps } from 'react-icons';
 import {
-  GoAlert,
-  GoArrowLeft,
-  GoArrowRight,
-  GoBell,
-  GoCheck,
-  GoCheckCircle,
-  GoClock,
-  GoChevronDown,
-  GoComment,
-  GoCommentDiscussion,
-  GoDeviceMobile,
-  GoEye,
-  GoEyeClosed,
-  GoGear,
-  GoHome,
-  GoHourglass,
-  GoImage,
-  GoInbox,
-  GoKebabHorizontal,
-  GoKey,
-  GoLock,
-  GoMegaphone,
-  GoNote,
-  GoOrganization,
-  GoPaperAirplane,
-  GoPencil,
-  GoPeople,
-  GoPerson,
-  GoPin,
-  GoPlay,
-  GoPlus,
-  GoReply,
-  GoScreenFull,
-  GoSearch,
-  GoSignOut,
-  GoShield,
-  GoShieldCheck,
-  GoStar,
-  GoX,
-  GoXCircle,
-} from 'react-icons/go';
-import { PiChatsCircle, PiChatsCircleFill, PiHouse, PiHouseFill, PiUsers, PiUsersFill } from 'react-icons/pi';
+  PiArrowBendUpLeft,
+  PiArrowLeft,
+  PiArrowRight,
+  PiArrowsOut,
+  PiBell,
+  PiBuildings,
+  PiCamera,
+  PiCaretDown,
+  PiChatCircle,
+  PiChatsCircle,
+  PiChatsCircleFill,
+  PiCheck,
+  PiCheckCircle,
+  PiClock,
+  PiDeviceMobile,
+  PiDotsThree,
+  PiEye,
+  PiEyeSlash,
+  PiGear,
+  PiHourglass,
+  PiHouse,
+  PiHouseFill,
+  PiKey,
+  PiLock,
+  PiMagnifyingGlass,
+  PiMegaphone,
+  PiNote,
+  PiPaperPlaneRight,
+  PiPauseCircle,
+  PiPencilSimple,
+  PiPlayCircle,
+  PiPlus,
+  PiPushPin,
+  PiShield,
+  PiShieldCheck,
+  PiSignOut,
+  PiStar,
+  PiTray,
+  PiUser,
+  PiUsers,
+  PiUsersFill,
+  PiWarning,
+  PiX,
+  PiXCircle,
+} from 'react-icons/pi';
 
 type IconProps = Omit<ComponentProps<'svg'>, 'children'>;
 
 /**
- * Every icon is GitHub's Octicons (react-icons/go, 2026-11-01): crisp filled shapes on a 16 px grid, 1em square so they
- * take the size of the text around them. Always decorative: a label or an aria-label beside it says what it means.
- * The names stay Howdy's own, so a page never knows which set draws them.
+ * Every icon is Phosphor Regular (react-icons/pi; 2026-11-08, the user's pick after the phone tab bar, replacing
+ * Octicons): thin, rounded outlines, 1em square so they take the size of the text around them. Drawn in black wherever
+ * they stand on their own. Always decorative: a label or an aria-label beside it says what it means. The names stay
+ * Howdy's own, so a page never knows which set draws them.
  */
 const go = (Icon: ComponentType<IconBaseProps>) =>
   function HowdyIcon(p: IconProps) {
     return <Icon aria-hidden="true" focusable="false" {...(p as IconBaseProps)} />;
   };
 
-export const CloseIcon = go(GoX);
-export const MoreIcon = go(GoKebabHorizontal);
-export const StarIcon = go(GoStar);
-export const ChevronDownIcon = go(GoChevronDown);
+export const CloseIcon = go(PiX);
+export const MoreIcon = go(PiDotsThree);
+export const StarIcon = go(PiStar);
+export const ChevronDownIcon = go(PiCaretDown);
 // Open in full (the chat window's "open the full chat").
-export const ExpandIcon = go(GoScreenFull);
-export const ReplyIcon = go(GoReply);
-export const PencilIcon = go(GoPencil);
-export const HomeIcon = go(GoHome);
-export const FenceIcon = go(GoNote);
+export const ExpandIcon = go(PiArrowsOut);
+export const ReplyIcon = go(PiArrowBendUpLeft);
+export const PencilIcon = go(PiPencilSimple);
+export const HomeIcon = go(PiHouse);
+export const FenceIcon = go(PiNote);
 // Visitors: an eye (who looked at my profile).
-export const TracksIcon = go(GoEye);
+export const TracksIcon = go(PiEye);
 // How many replies a post has, beside its Star (2026-11-07).
-export const CommentIcon = go(GoComment);
-export const WhisperIcon = go(GoCommentDiscussion);
-export const BellIcon = go(GoBell);
-export const SearchIcon = go(GoSearch);
-export const UsersIcon = go(GoPeople);
+export const CommentIcon = go(PiChatCircle);
+export const WhisperIcon = go(PiChatsCircle);
+export const BellIcon = go(PiBell);
+export const SearchIcon = go(PiMagnifyingGlass);
+export const UsersIcon = go(PiUsers);
 // Next to an error message, so it is not told by colour alone.
-export const AlertIcon = go(GoAlert);
-export const CheckCircleIcon = go(GoCheckCircle);
-export const XCircleIcon = go(GoXCircle);
-export const ArrowRightIcon = go(GoArrowRight);
+export const AlertIcon = go(PiWarning);
+export const CheckCircleIcon = go(PiCheckCircle);
+export const XCircleIcon = go(PiXCircle);
+export const ArrowRightIcon = go(PiArrowRight);
 // Back to the list (a conversation on a phone).
-export const BackIcon = go(GoArrowLeft);
-export const UserIcon = go(GoPerson);
+export const BackIcon = go(PiArrowLeft);
+export const UserIcon = go(PiUser);
 // Groups: a building, so it never reads like Friends' two people.
-export const GroupIcon = go(GoOrganization);
-export const SettingsIcon = go(GoGear);
+export const GroupIcon = go(PiBuildings);
+export const SettingsIcon = go(PiGear);
 // Time Capsules: words sealed until a day comes.
-export const CapsuleIcon = go(GoHourglass);
-export const ShieldIcon = go(GoShield);
-export const EyeIcon = go(GoEye);
-export const EyeOffIcon = go(GoEyeClosed);
-export const KeyIcon = go(GoKey);
-export const PlusIcon = go(GoPlus);
+export const CapsuleIcon = go(PiHourglass);
+export const ShieldIcon = go(PiShield);
+export const EyeIcon = go(PiEye);
+export const EyeOffIcon = go(PiEyeSlash);
+export const KeyIcon = go(PiKey);
+export const PlusIcon = go(PiPlus);
 // A group's pinned notice.
-export const PinIcon = go(GoPin);
-export const PlayIcon = go(GoPlay);
-// Add or change a photo (Octicons has no camera).
-export const CameraIcon = go(GoImage);
+export const PinIcon = go(PiPushPin);
+export const PlayIcon = go(PiPlayCircle);
+// Add or change a photo.
+export const CameraIcon = go(PiCamera);
 // Post, Reply, Send.
-export const SendIcon = go(GoPaperAirplane);
+export const SendIcon = go(PiPaperPlaneRight);
 // Your signed-in devices, and signing out (the phone's You sheet).
 // The chosen one in a set (a Describe word).
-export const CheckIcon = go(GoCheck);
-export const DevicesIcon = go(GoDeviceMobile);
-export const SignOutIcon = go(GoSignOut);
+export const CheckIcon = go(PiCheck);
+export const DevicesIcon = go(PiDeviceMobile);
+export const SignOutIcon = go(PiSignOut);
 // Send feedback about Howdy (ADR-059).
-export const FeedbackIcon = go(GoMegaphone);
+export const FeedbackIcon = go(PiMegaphone);
 // Moderation: appeals from suspended people waiting to be read.
-export const InboxIcon = go(GoInbox);
+export const InboxIcon = go(PiTray);
 // Moderation, all clear: a shield with a tick (the plain shield carries a "!" and reads as a warning).
-export const ShieldCheckIcon = go(GoShieldCheck);
+export const ShieldCheckIcon = go(PiShieldCheck);
 // "Slow down, try again in a minute" (the hourglass already means Capsules).
-export const ClockIcon = go(GoClock);
+export const ClockIcon = go(PiClock);
 // Something only certain people can see, such as a private wall.
-export const LockIcon = go(GoLock);
+export const LockIcon = go(PiLock);
+export const PauseIcon = go(PiPauseCircle);
 
-/** Octicons has no pause: drawn on the same 16 px grid as GoPlay (a ring with two bars), filled like the rest. */
-export const PauseIcon = (p: IconProps) => (
-  <svg
-    viewBox="0 0 16 16"
-    width="1em"
-    height="1em"
-    fill="currentColor"
-    aria-hidden="true"
-    focusable="false"
-    {...p}
-  >
-    <path
-      fillRule="evenodd"
-      d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0ZM6 5h1.5v6H6Zm2.5 0H10v6H8.5Z"
-    />
-  </svg>
-);
-
-/** A turning arc for "loading" (Octicons has none that spins); the caller adds `animate-spin`. */
+/** A turning arc for "loading"; the caller adds `animate-spin`. */
 export const SpinnerIcon = (p: IconProps) => (
   <svg viewBox="0 0 16 16" width="1em" height="1em" fill="none" aria-hidden="true" focusable="false" {...p}>
     <path d="M8 1.5A6.5 6.5 0 1 0 14.5 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
   </svg>
 );
 
-/*
- * The phone tab bar's icons only (2026-11-08, the user's pick): Phosphor (react-icons/pi), because each has an outline
- * (Regular) and a Fill version, and the current tab shows the filled one. Octicons has no filled People or Messages.
- */
+/* The phone tab bar: outline, and the filled one on the current tab. */
 export const TabHomeIcon = go(PiHouse);
 export const TabHomeFillIcon = go(PiHouseFill);
 export const TabFriendsIcon = go(PiUsers);

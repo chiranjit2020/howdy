@@ -66,7 +66,7 @@ export default async function RanchPage({ params }: { params: Promise<{ handle: 
           <ClayCard>
             <EmptyState
               as="h1"
-              icon={<ClockIcon className="text-text-muted" />}
+              icon={<ClockIcon className="text-text-primary" />}
               title="Slow down a little"
               description="You have visited a lot of profiles. Give it a minute and try again."
             />
@@ -290,9 +290,9 @@ export default async function RanchPage({ params }: { params: Promise<{ handle: 
                 as="h2"
                 icon={
                   fenceBusy ? (
-                    <ClockIcon className="text-text-muted" />
+                    <ClockIcon className="text-text-primary" />
                   ) : (
-                    <LockIcon className="text-text-muted" />
+                    <LockIcon className="text-text-primary" />
                   )
                 }
                 title={fenceBusy ? 'Slow down a little' : 'This wall is private'}

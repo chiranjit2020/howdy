@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { GoAlert } from 'react-icons/go';
+import { PiWarning } from 'react-icons/pi';
 import { StatusPage } from '@/ui/howdy/status-page';
 import { Button, buttonClasses } from '@/ui/primitives';
 
@@ -21,7 +21,7 @@ export default function ErrorPage({
     <>
       <title>Something went wrong · Howdy</title>
       <StatusPage
-        Icon={GoAlert}
+        Icon={PiWarning}
         title="Something went wrong"
         reference={error.digest}
         actions={

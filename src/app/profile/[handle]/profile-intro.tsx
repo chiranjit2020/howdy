@@ -2,19 +2,19 @@ import type { ComponentType } from 'react';
 import type { IconBaseProps } from 'react-icons';
 import { FaFacebook, FaInstagram, FaLinkedin, FaXTwitter, FaYoutube } from 'react-icons/fa6';
 import {
-  GoBriefcase,
-  GoComment,
-  GoDeviceMobile,
-  GoGift,
-  GoHeart,
-  GoHome,
-  GoLink,
-  GoLocation,
-  GoLock,
-  GoMail,
-  GoMortarBoard,
-  GoPeople,
-} from 'react-icons/go';
+  PiBriefcase,
+  PiChatCircle,
+  PiDeviceMobile,
+  PiGift,
+  PiHeart,
+  PiHouse,
+  PiLink,
+  PiMapPin,
+  PiLock,
+  PiEnvelopeSimple,
+  PiGraduationCap,
+  PiUsers,
+} from 'react-icons/pi';
 import type { DetailLine, LineKey, MyDetails } from '@/modules/profiles';
 import { DETAIL_AUDIENCE_LABEL, SOCIAL_LABEL, type DetailAudience } from '@/shared/validation/details';
 import { TrustedBadge, VerifiedBadge } from '@/ui/howdy';
@@ -26,16 +26,16 @@ import { EditDetails } from './edit-details';
  * readers.
  */
 const SHOWN: Record<LineKey, { Icon: ComponentType<IconBaseProps>; lead?: string; site?: string }> = {
-  livesIn: { Icon: GoLocation, lead: 'Lives in' },
-  hometown: { Icon: GoHome, lead: 'From' },
-  work: { Icon: GoBriefcase },
-  education: { Icon: GoMortarBoard, lead: 'Studied at' },
-  birthday: { Icon: GoGift, lead: 'Birthday' },
-  languages: { Icon: GoComment, lead: 'Speaks' },
-  relationship: { Icon: GoHeart },
-  website: { Icon: GoLink },
-  email: { Icon: GoMail },
-  phone: { Icon: GoDeviceMobile },
+  livesIn: { Icon: PiMapPin, lead: 'Lives in' },
+  hometown: { Icon: PiHouse, lead: 'From' },
+  work: { Icon: PiBriefcase },
+  education: { Icon: PiGraduationCap, lead: 'Studied at' },
+  birthday: { Icon: PiGift, lead: 'Birthday' },
+  languages: { Icon: PiChatCircle, lead: 'Speaks' },
+  relationship: { Icon: PiHeart },
+  website: { Icon: PiLink },
+  email: { Icon: PiEnvelopeSimple },
+  phone: { Icon: PiDeviceMobile },
   instagram: { Icon: FaInstagram, site: SOCIAL_LABEL.instagram },
   linkedin: { Icon: FaLinkedin, site: SOCIAL_LABEL.linkedin },
   x: { Icon: FaXTwitter, site: SOCIAL_LABEL.x },
@@ -54,8 +54,8 @@ const OUT = 'noopener noreferrer nofollow ugc';
  * on every line read as noise, 2026-11-01).
  */
 const AUDIENCE_ICON: Partial<Record<DetailAudience, ComponentType<IconBaseProps>>> = {
-  posse: GoPeople,
-  only_me: GoLock,
+  posse: PiUsers,
+  only_me: PiLock,
 };
 
 /**

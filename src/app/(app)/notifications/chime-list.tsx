@@ -177,7 +177,7 @@ export function ChimeList({ initial, seenAt, bell }: { initial: Page; seenAt: st
         <ClayCard>
           <EmptyState
             as="h2"
-            icon={<BellIcon className="text-text-muted" />}
+            icon={<BellIcon className="text-text-primary" />}
             title="No notifications"
             description="When a friend posts on your wall, replies, reacts, sends you a message or invites you to a group, it shows here."
           />

@@ -3,7 +3,7 @@ import { cn } from '../cn';
 import { ReactionEmoji } from './emoji';
 
 /*
- * The clay artwork (public/art) was removed on 2026-11-01: the app is flat now, with Octicons for its own icons. Emoji are
+ * The clay artwork (public/art) was removed on 2026-11-01: the app is flat now, with Phosphor for its own icons (Octicons until 2026-11-08). Emoji are
  * the device's own, except the reaction emoji, which stay Microsoft's flat Fluent set (./emoji.tsx).
  */
 

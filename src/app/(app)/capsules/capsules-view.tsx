@@ -73,7 +73,7 @@ export function CapsulesView({
                   ) : (
                     <span
                       aria-hidden="true"
-                      className="grid size-10 shrink-0 place-items-center rounded-pill bg-surface-sunken text-title text-text-secondary"
+                      className="grid size-10 shrink-0 place-items-center rounded-pill bg-surface-sunken text-title text-text-primary"
                     >
                       <CapsuleIcon />
                     </span>
@@ -136,7 +136,7 @@ export function CapsulesView({
           <ClayCard>
             <EmptyState
               as="h3"
-              icon={<CapsuleIcon className="text-text-muted" />}
+              icon={<CapsuleIcon className="text-text-primary" />}
               title="Nothing opened yet"
               description="When a Time Capsule for you opens, you can read it here."
             />

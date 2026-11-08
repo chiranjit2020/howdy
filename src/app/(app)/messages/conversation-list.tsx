@@ -53,7 +53,7 @@ export function ConversationList({
         <div className="flex flex-1 flex-col items-center justify-center gap-3 px-4 pb-6">
           <EmptyState
             as="h2"
-            icon={<WhisperIcon className="text-text-muted" />}
+            icon={<WhisperIcon className="text-text-primary" />}
             title="No messages yet"
             description="Messages are private, just between you and a friend, and vanish after 7 days."
           />

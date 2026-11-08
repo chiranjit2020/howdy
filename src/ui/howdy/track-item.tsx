@@ -50,7 +50,7 @@ export function TrackItem({
       ) : (
         <span
           aria-hidden="true"
-          className="inline-flex size-11 shrink-0 items-center justify-center rounded-pill bg-surface-sunken text-title text-text-secondary"
+          className="inline-flex size-11 shrink-0 items-center justify-center rounded-pill bg-surface-sunken text-title text-text-primary"
         >
           <UsersIcon />
         </span>

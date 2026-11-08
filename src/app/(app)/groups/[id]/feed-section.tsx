@@ -330,7 +330,7 @@ export function FeedSection({
         {posts.length === 0 && !pinned ? (
           <EmptyState
             as="h3"
-            icon={<FenceIcon className="text-text-muted" />}
+            icon={<FenceIcon className="text-text-primary" />}
             title="Nothing posted yet"
             description="Say howdy to the group. Only members can see what is posted here."
           />

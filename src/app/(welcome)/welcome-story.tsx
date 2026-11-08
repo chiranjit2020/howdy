@@ -2,97 +2,97 @@ import Link from 'next/link';
 import type { ComponentType, ReactNode } from 'react';
 import type { IconBaseProps } from 'react-icons';
 import {
-  GoBell,
-  GoBellSlash,
-  GoBlocked,
-  GoCircleSlash,
-  GoCommentDiscussion,
-  GoDownload,
-  GoEye,
-  GoHeart,
-  GoHourglass,
-  GoImage,
-  GoInfinity,
-  GoKey,
-  GoLaw,
-  GoNote,
-  GoOrganization,
-  GoPeople,
-  GoPerson,
-  GoQuote,
-  GoShieldCheck,
-  GoVideo,
-} from 'react-icons/go';
+  PiBell,
+  PiBellSlash,
+  PiProhibit,
+  PiProhibitInset,
+  PiChatsCircle,
+  PiDownloadSimple,
+  PiEye,
+  PiHeart,
+  PiHourglass,
+  PiCamera,
+  PiInfinity,
+  PiKey,
+  PiScales,
+  PiNote,
+  PiBuildings,
+  PiUsers,
+  PiUser,
+  PiQuotes,
+  PiShieldCheck,
+  PiVideoCamera,
+} from 'react-icons/pi';
 import { Img } from '@/ui/art/img';
 import { cn } from '@/ui/cn';
 import { buttonClasses } from '@/ui/primitives';
 import { ShareButton } from './welcome/share-button';
 
-/** Every icon tile: sunflower with a violet line icon (Octicons, like the app). The page is white and light sunflower. */
+/** Every icon tile: sunflower with a violet line icon (Phosphor, like the app). The page is white and light sunflower. */
 const TILE = 'bg-primary text-on-primary';
 
 type Icon = ComponentType<IconBaseProps>;
 
 const FEATURES: { icon: Icon; name: string; text: string }[] = [
   {
-    icon: GoPerson,
+    icon: PiUser,
     name: 'Your profile',
     text: 'Your photo, cover, a few words and the details you choose to share, each with its own audience.',
   },
   {
-    icon: GoPeople,
+    icon: PiUsers,
     name: 'Friends',
     text: 'Add people you know, meet friends of your friends, follow people you look up to, and invite with your own link.',
   },
   {
-    icon: GoNote,
+    icon: PiNote,
     name: 'Posts',
     text: 'Write on a friend’s wall, react, reply, mention with @name, and pin one post to the top of yours.',
   },
-  { icon: GoImage, name: 'Stories', text: 'A photo for your friends or close friends, gone in 12 hours.' },
+  { icon: PiCamera, name: 'Stories', text: 'A photo for your friends or close friends, gone in 12 hours.' },
   {
-    icon: GoCommentDiscussion,
+    icon: PiChatsCircle,
     name: 'Messages',
     text: 'Private chats with friends, with “Seen” only if you both want it.',
   },
   {
-    icon: GoOrganization,
+    icon: PiBuildings,
     name: 'Groups',
     text: 'Circles for your batch, family or team, with events, polls and a pinned notice.',
   },
-  { icon: GoEye, name: 'Profile visitors', text: 'See who stopped by, or browse privately.' },
+  { icon: PiEye, name: 'Profile visitors', text: 'See who stopped by, or browse privately.' },
   {
-    icon: GoQuote,
+    icon: PiQuotes,
     name: 'Testimonials & Describe',
     text: 'Kind words you approve, and the word friends pick for you.',
   },
-  { icon: GoHourglass, name: 'Time Capsules', text: 'Words that open on a day you choose.' },
-  { icon: GoBell, name: 'Notifications', text: 'On your phone too, plus “On this day” memories.' },
+  { icon: PiHourglass, name: 'Time Capsules', text: 'Words that open on a day you choose.' },
+  { icon: PiBell, name: 'Notifications', text: 'On your phone too, plus “On this day” memories.' },
 ];
 
 const SAFETY: { icon: Icon; text: string }[] = [
-  { icon: GoLaw, text: 'Community Guidelines everyone agrees to before they join' },
-  { icon: GoBlocked, text: 'Block, restrict and report quietly. Saying no is never announced' },
-  { icon: GoKey, text: 'Passkeys and two-step sign-in keep your account yours' },
-  { icon: GoShieldCheck, text: 'Every photo is checked before anyone sees it' },
-  { icon: GoDownload, text: 'Download everything you have shared, any time' },
-  { icon: GoCircleSlash, text: 'No ads, no tracking, and your data is never sold' },
+  { icon: PiScales, text: 'Community Guidelines everyone agrees to before they join' },
+  { icon: PiProhibit, text: 'Block, restrict and report quietly. Saying no is never announced' },
+  { icon: PiKey, text: 'Passkeys and two-step sign-in keep your account yours' },
+  { icon: PiShieldCheck, text: 'Every photo is checked before anyone sees it' },
+  { icon: PiDownloadSimple, text: 'Download everything you have shared, any time' },
+  { icon: PiProhibitInset, text: 'No ads, no tracking, and your data is never sold' },
 ];
 
 /** Honest limits, said up front: small on purpose. */
 const GOOD_TO_KNOW: { icon: Icon; name: string; text: string }[] = [
   {
-    icon: GoVideo,
+    icon: PiVideoCamera,
     name: 'Photos, not videos (for now)',
     text: 'Howdy is run by one person on a small budget, and videos take a lot of storage. You can share photos in posts, groups and Stories. Video isn’t supported yet.',
   },
   {
-    icon: GoCommentDiscussion,
+    icon: PiChatsCircle,
     name: 'Friends only for messages',
     text: 'You can only message people who are your friends, which keeps strangers out of your inbox.',
   },
   {
-    icon: GoHeart,
+    icon: PiHeart,
     name: 'No ads, ever',
     text: 'Howdy is free and does not sell your data. It grows slowly, by invitation.',
   },
@@ -244,17 +244,17 @@ export function WelcomeStory({ invite }: { invite?: { code: string; invitedBy?: 
               {(
                 [
                   [
-                    GoInfinity,
+                    PiInfinity,
                     'No feed to get lost in',
                     'You open a friend’s wall or a group on purpose. Nothing is ranked, nothing autoplays, and there’s no end to scroll to.',
                   ],
                   [
-                    GoPeople,
+                    PiUsers,
                     'No follower race',
                     'Friends are friends both ways. Nobody sees counts, so nobody competes for them.',
                   ],
                   [
-                    GoBellSlash,
+                    PiBellSlash,
                     'Quiet by design',
                     'Saying no is never announced, blocks never show, and read receipts are your choice.',
                   ],

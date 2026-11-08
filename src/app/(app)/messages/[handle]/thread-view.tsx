@@ -358,7 +358,7 @@ export function ThreadView({
             href="/messages"
             aria-label="Back to messages"
             title="Back"
-            className="-ml-1 inline-flex size-11 shrink-0 items-center justify-center rounded-pill text-title text-text-secondary no-underline hover:bg-surface-sunken hover:text-text-primary lg:hidden"
+            className="-ml-1 inline-flex size-11 shrink-0 items-center justify-center rounded-pill text-title text-text-primary no-underline hover:bg-surface-sunken hover:text-text-primary lg:hidden"
           >
             <BackIcon />
           </Link>
@@ -394,7 +394,7 @@ export function ThreadView({
               aria-label="Thread options"
               title="Thread options"
               className={cn(
-                'inline-flex size-11 shrink-0 items-center justify-center rounded-pill text-title text-text-secondary hover:bg-surface-sunken',
+                'inline-flex size-11 shrink-0 items-center justify-center rounded-pill text-title text-text-primary hover:bg-surface-sunken',
                 dock ? 'pointer-fine:size-8' : '-mr-1',
               )}
               {...p}
@@ -422,7 +422,7 @@ export function ThreadView({
               href={`/messages/${handle}`}
               aria-label={`Open the full chat with ${displayName}`}
               title="Open full chat"
-              className="inline-flex size-11 shrink-0 items-center justify-center rounded-pill text-text-secondary no-underline hover:bg-surface-sunken hover:text-text-primary pointer-fine:size-8"
+              className="inline-flex size-11 shrink-0 items-center justify-center rounded-pill text-text-primary no-underline hover:bg-surface-sunken hover:text-text-primary pointer-fine:size-8"
             >
               <ExpandIcon className="size-4" />
             </Link>
@@ -431,7 +431,7 @@ export function ThreadView({
               aria-label={`Close the chat with ${displayName}`}
               title="Close"
               onClick={dock.onClose}
-              className="inline-flex size-11 shrink-0 items-center justify-center rounded-pill text-text-secondary hover:bg-surface-sunken hover:text-text-primary pointer-fine:size-8"
+              className="inline-flex size-11 shrink-0 items-center justify-center rounded-pill text-text-primary hover:bg-surface-sunken hover:text-text-primary pointer-fine:size-8"
             >
               <CloseIcon className="size-4" />
             </button>

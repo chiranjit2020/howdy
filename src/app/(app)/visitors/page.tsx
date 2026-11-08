@@ -44,7 +44,7 @@ export default async function TracksPage() {
           <ClayCard>
             <EmptyState
               as="h2"
-              icon={<EyeOffIcon className="text-text-muted" />}
+              icon={<EyeOffIcon className="text-text-primary" />}
               title="Your visitor list is paused"
               description="Turn off Private browsing to see who has stopped by. While it is on, your own visits stay hidden too."
             />
@@ -53,7 +53,7 @@ export default async function TracksPage() {
           <ClayCard>
             <EmptyState
               as="h2"
-              icon={<TracksIcon className="text-text-muted" />}
+              icon={<TracksIcon className="text-text-primary" />}
               title="No visitors this week"
               description="When someone stops by your profile, it shows here for a few days."
             />
@@ -77,7 +77,7 @@ export default async function TracksPage() {
                           href={`/messages/${p.handle}`}
                           aria-label={`Message to ${p.displayName}`}
                           title="Message"
-                          className="inline-flex size-11 shrink-0 items-center justify-center rounded-pill text-title text-text-secondary hover:bg-surface-sunken hover:text-text-primary"
+                          className="inline-flex size-11 shrink-0 items-center justify-center rounded-pill text-title text-text-primary hover:bg-surface-sunken hover:text-text-primary"
                         >
                           <WhisperIcon />
                         </Link>

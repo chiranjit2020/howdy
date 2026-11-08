@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useState, type ComponentType, type FormEvent } from 'react';
 import type { IconBaseProps } from 'react-icons';
-import { GoBug, GoComment, GoLightBulb } from 'react-icons/go';
+import { PiBug, PiChatCircle, PiLightbulb } from 'react-icons/pi';
 import {
   FEEDBACK_KIND_LABEL,
   FEEDBACK_KINDS,
@@ -17,9 +17,9 @@ import { CheckCircleIcon } from '@/ui/icons';
 import { Button, ClayCard, Textarea, buttonClasses } from '@/ui/primitives';
 
 const KIND_ICON: Record<FeedbackKind, ComponentType<IconBaseProps>> = {
-  idea: GoLightBulb,
-  broken: GoBug,
-  other: GoComment,
+  idea: PiLightbulb,
+  broken: PiBug,
+  other: PiChatCircle,
 };
 
 const PLACEHOLDER: Record<FeedbackKind, string> = {

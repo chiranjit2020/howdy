@@ -18,7 +18,7 @@ import { RailRequests } from './rail-requests';
 
 export const NAME_LINK = 'font-semibold text-text-primary no-underline hover:underline';
 const iconButton =
-  'inline-flex size-11 shrink-0 items-center justify-center rounded-pill text-text-secondary no-underline hover:bg-surface-sunken hover:text-text-primary';
+  'inline-flex size-11 shrink-0 items-center justify-center rounded-pill text-text-primary no-underline hover:bg-surface-sunken hover:text-text-primary';
 
 /** How many of each the panel shows; the full lists are a link away. */
 const SHOW = { free: 6, threads: 5, requests: 3, sayHi: 3 };
