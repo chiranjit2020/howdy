@@ -72,4 +72,40 @@ describe('Content-Security-Policy', () => {
     expect(nonce(a)).toBeTruthy();
     expect(nonce(a)).not.toBe(nonce(b));
   });
+
+  describe('opening screen (once per visit, no script)', () => {
+    const page = (headers: Record<string, string> = {}) =>
+      new NextRequest('http://localhost:3000/home', {
+        headers: { 'sec-fetch-dest': 'document', ...headers },
+      });
+    // What the page will see: NextResponse.next passes rewritten request headers along like this.
+    const marked = (r: Response) => r.headers.get('x-middleware-request-x-howdy-splash');
+    const setsCookie = (r: Response) => (r.headers.get('set-cookie') ?? '').includes('howdy_hello=1');
+
+    it('the first page load of a visit is marked, and a session cookie (no expiry) is set', () => {
+      const r = proxy(page());
+      expect(marked(r)).toBe('1');
+      const cookie = r.headers.get('set-cookie') ?? '';
+      expect(cookie).toMatch(/howdy_hello=1/);
+      expect(cookie).toMatch(/HttpOnly/i);
+      expect(cookie).not.toMatch(/Max-Age|Expires/i);
+    });
+
+    it('not again once the cookie is there', () => {
+      const r = proxy(page({ cookie: 'howdy_hello=1' }));
+      expect(marked(r)).toBeNull();
+      expect(setsCookie(r)).toBe(false);
+    });
+
+    it('never for a client navigation, a fetch or an asset', () => {
+      expect(marked(proxy(page({ rsc: '1' })))).toBeNull();
+      expect(marked(proxy(page({ 'sec-fetch-dest': 'empty' })))).toBeNull();
+      expect(marked(proxy(page({ 'sec-fetch-dest': 'image' })))).toBeNull();
+    });
+
+    it('a client cannot turn it on by sending the header itself', () => {
+      const r = proxy(page({ cookie: 'howdy_hello=1', 'x-howdy-splash': '1' }));
+      expect(marked(r)).toBeNull();
+    });
+  });
 });

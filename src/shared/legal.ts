@@ -64,10 +64,10 @@ export const LEGAL_DOCS: Record<LegalSlug, LegalDoc> = {
     slug: 'cookies',
     title: 'Cookie Policy',
     short: 'Cookies',
-    description: 'The two small cookies Howdy uses, what each one is for, and how to control them.',
-    version: '1.2.0',
-    effective: '2026-10-29',
-    updated: '2026-10-29',
+    description: 'The three small cookies Howdy uses, what each one is for, and how to control them.',
+    version: '1.3.0',
+    effective: '2026-11-08',
+    updated: '2026-11-08',
   },
 };
 

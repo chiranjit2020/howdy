@@ -1,7 +1,8 @@
 import type { Metadata, Viewport } from 'next';
 import { Google_Sans, JetBrains_Mono } from 'next/font/google';
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import type { ReactNode } from 'react';
+import { SPLASH_HEADER } from '@/shared/splash';
 import { ToastProvider } from '@/ui/primitives';
 import { LaunchScreen } from '@/ui/pwa/launch-screen';
 import { parseTheme, THEME_COOKIE } from '@/ui/theme';
@@ -59,6 +60,8 @@ export const viewport: Viewport = {
 export default async function RootLayout({ children }: { children: ReactNode }) {
   // Theme is read on the server so the first paint is already correct — no inline script (CSP-safe).
   const theme = parseTheme((await cookies()).get(THEME_COOKIE)?.value);
+  // The first page load of a visit (set by the proxy): desktop browsers get the opening screen.
+  const firstLoad = (await headers()).get(SPLASH_HEADER) === '1';
   return (
     // suppressHydrationWarning: extensions (Claude in Chrome, dark-mode tools) add classes to <html> before React loads;
     // like <body> below, only this tag's own attributes are ignored.
@@ -77,7 +80,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         >
           Skip to content
         </a>
-        <LaunchScreen />
+        <LaunchScreen firstLoad={firstLoad} />
         <ToastProvider>{children}</ToastProvider>
       </body>
     </html>

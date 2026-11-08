@@ -1,4 +1,4 @@
-A cookie is a small piece of text that a website asks your browser to keep, and to send back on your next visit. Howdy uses only **two** cookies, and both exist only to make Howdy itself work the way you asked. There are no advertising, analytics or tracking cookies, and no cookies from anyone else.
+A cookie is a small piece of text that a website asks your browser to keep, and to send back on your next visit. Howdy uses only **three** cookies, and all of them exist only to make Howdy itself work the way you asked. There are no advertising, analytics or tracking cookies, and no cookies from anyone else.
 
 ## The cookies we use
 
@@ -16,6 +16,13 @@ A cookie is a small piece of text that a website asks your browser to keep, and 
 - **What it does:** remembers whether you chose the light or dark theme, so that the page opens in the right colours. It holds only the word `daylight` or `dusk`.
 - **When it is set:** only if you pick a theme yourself. If you follow your device's setting, there is no theme cookie.
 - **How long it lasts:** one year, or until you choose "follow my device" again.
+
+### Your visit (functional)
+
+- **Name:** `howdy_hello`
+- **What it does:** on a computer, Howdy opens with a short welcome screen (the blue with our logo) once each time you visit. This cookie remembers that you have already seen it during this visit, so it does not come back on every page. It holds only the number `1`.
+- **How it is protected:** it is sent only over an encrypted connection and only to Howdy, and the page's own code cannot read it.
+- **How long it lasts:** until you close your browser. It is never kept longer.
 
 ## Analytics and advertising
 

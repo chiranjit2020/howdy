@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { uploadOrigin } from './platform/storage/origin';
+import { SPLASH_COOKIE, SPLASH_HEADER } from './shared/splash';
 
 /**
  * Build the CSP header. Exported for tests. `wsOrigin` is the one WebSocket origin pages may connect to (WS_PUBLIC_URL) and
@@ -69,9 +70,25 @@ export function proxy(request: NextRequest): NextResponse {
   requestHeaders.set('Content-Security-Policy', csp);
   // Never trust a client-supplied request id at the edge; route handlers validate the format and mint their own.
   requestHeaders.set('x-request-id', crypto.randomUUID());
+  // The opening screen: only a real page load (not a client navigation, a fetch or an asset), once per visit.
+  requestHeaders.delete(SPLASH_HEADER);
+  const firstLoad =
+    request.method === 'GET' &&
+    request.headers.get('sec-fetch-dest') === 'document' &&
+    !request.headers.has('rsc') &&
+    !request.cookies.has(SPLASH_COOKIE);
+  if (firstLoad) requestHeaders.set(SPLASH_HEADER, '1');
 
   const response = NextResponse.next({ request: { headers: requestHeaders } });
   response.headers.set('Content-Security-Policy', csp);
+  if (firstLoad) {
+    response.cookies.set(SPLASH_COOKIE, '1', {
+      path: '/',
+      sameSite: 'lax',
+      httpOnly: true,
+      secure: process.env.NODE_ENV !== 'development',
+    });
+  }
   return response;
 }
 
