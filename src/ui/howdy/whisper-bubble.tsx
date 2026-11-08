@@ -39,7 +39,7 @@ export function WhisperBubble({
           'relative max-w-[85%] rounded-lg px-3 py-1.5',
           out
             ? // Mine: the theme's Sunflower with black words (the user's call, 2026-11-08; was navy).
-              'rounded-br-sm bg-primary text-on-bubble shadow-bubble'
+              'rounded-br-sm bg-primary text-on-primary shadow-bubble'
             : 'rounded-bl-sm bg-surface text-text-primary shadow-bubble',
         )}
       >
@@ -58,7 +58,7 @@ export function WhisperBubble({
         <p
           className={cn(
             'absolute right-3 bottom-1 text-tab whitespace-nowrap',
-            out ? 'text-on-bubble' : 'text-text-muted',
+            out ? 'text-on-primary' : 'text-text-muted',
             shown === 'failed' && 'font-bold',
           )}
         >

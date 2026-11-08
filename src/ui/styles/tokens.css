@@ -99,10 +99,11 @@
    * Primary: Sunflower (the user's pick 2026-10-30, "more freshness"), the fill of main buttons and the current nav
    * item, with Royal Navy on it (11:1). Hover deepens the yellow. Violet stays the accent (links, focus, marks), so
    * the two always appear together. Disabled buttons never use it: they turn neutral grey.
+    * Since 2026-11-08 everything ON Sunflower is black ink (the user's call; it was Royal Navy): words, icons, bubbles (14:1).
    */
   --color-primary: #f8cf35;
   --color-primary-hover: #efbf12;
-  --color-on-primary: #2b3278;
+  --color-on-primary: #100b00;
   /* Behind a photo shown full screen: neutral near-black (ink reads brown this dark), so the photo is all you see. */
   --color-scrim: rgb(0 0 0 / 0.92);
   --color-on-scrim: #ffffff;
@@ -110,17 +111,15 @@
   --color-primary-soft: light-dark(#fef6d8, #3a3220);
   /* Ghost white (#f8f8ff), the chat surface behind message bubbles (2026-11-08, the user's call; it was primary-soft). */
   --color-chat: light-dark(#f8f8ff, #1f2336);
-  /* Black ink on Sunflower for my message bubbles and round icon buttons (Send), both themes (2026-11-08, the user's call; was Royal Navy). */
-  --color-on-bubble: #100b00;
-  /* The icon of the current nav item, and a count badge on it (violet, so it never melts into the yellow). */
+  /* A count badge on the current (yellow) nav item: navy, so it never melts into the yellow. */
   --color-primary-mark: #2b3278;
 
   /*
    * Sunflower #f8cf35: the second brand colour, for highlights (text selection, "new" marks). Whatever sits ON sunflower
-   * is Royal Navy (the user's rule, 2026-10-30): 11:1.
+   * is black ink (2026-11-08; Royal Navy before, the 2026-10-30 rule): 14:1.
    */
   --color-highlight: #f8cf35;
-  --color-on-highlight: #2b3278;
+  --color-on-highlight: #100b00;
 
   --color-success: #b7e4c7;
   --color-on-success: #100b00;

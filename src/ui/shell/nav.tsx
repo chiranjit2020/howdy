@@ -93,7 +93,7 @@ export function ShellSidebarNav({ items }: { items: ShellNavItem[] }) {
               >
                 <span
                   aria-hidden="true"
-                  className={cn('flex text-title', current ? 'text-primary-mark' : 'text-text-secondary')}
+                  className={cn('flex text-title', current ? 'text-on-primary' : 'text-text-primary')}
                 >
                   {ICON[it.key]}
                 </span>

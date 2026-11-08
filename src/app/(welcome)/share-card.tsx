@@ -14,9 +14,11 @@ const SURFACE = '#ffffff';
 const INK = '#100b00';
 const SLATE = '#4a4540';
 const PRIMARY_SOFT = '#fef6d8';
-// The primary button: Sunflower with Royal Navy on it, like every primary button in the app.
+// The primary button: Sunflower with black ink on it, like every primary button in the app (2026-11-08; was navy).
 const PRIMARY = '#f8cf35';
-const ON_PRIMARY = '#2b3278';
+const ON_PRIMARY = INK;
+// The headline's second line, on white: Royal Navy, the accent.
+const ACCENT = '#2b3278';
 
 const font = (file: string) => readFile(path.join(process.cwd(), 'assets', 'fonts', file));
 
@@ -80,7 +82,7 @@ export async function shareCard(
         }}
       >
         <span>Stay close</span>
-        <span style={{ display: 'flex', color: ON_PRIMARY }}>to your people.</span>
+        <span style={{ display: 'flex', color: ACCENT }}>to your people.</span>
       </div>
       <div
         style={{
