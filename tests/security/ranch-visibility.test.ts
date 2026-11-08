@@ -230,7 +230,7 @@ describe('data integrity is enforced by the database too', () => {
     ['empty display name', "display_name = ''", /profiles_display_name_len/],
     ['51-char display name', `display_name = '${'x'.repeat(51)}'`, /profiles_display_name_len/],
     ['control character in name', "display_name = E'bad\\tname'", /profiles_display_name_clean/],
-    ['81-char signal', `signal = '${'s'.repeat(81)}', signal_expires_at = now()`, /profiles_signal_len/],
+    ['281-char signal', `signal = '${'s'.repeat(281)}', signal_expires_at = now()`, /profiles_signal_len/],
     ['signal without expiry', "signal = 'hello'", /profiles_signal_pair/],
     ['expiry without signal', 'signal_expires_at = now()', /profiles_signal_pair/],
   ])('rejects %s', async (_n, set, constraint) => {

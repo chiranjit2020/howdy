@@ -65,7 +65,7 @@ export function SignalEditor({ current }: { current: string | undefined }) {
           onChange={(e) => setText(e.target.value)}
           maxLength={LIMITS.SIGNAL_MAX}
           showCount
-          rows={2}
+          rows={4}
           error={fieldError}
           hint="Shown on everyone’s Home until you remove it. Plain text only, no links."
         />

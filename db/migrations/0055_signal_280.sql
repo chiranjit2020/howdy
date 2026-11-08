@@ -1,0 +1,2 @@
+ALTER TABLE "profiles" DROP CONSTRAINT "profiles_signal_len";--> statement-breakpoint
+ALTER TABLE "profiles" ADD CONSTRAINT "profiles_signal_len" CHECK ("profiles"."signal" is null or char_length("profiles"."signal") between 1 and 280);

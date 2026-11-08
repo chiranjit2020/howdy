@@ -7,7 +7,8 @@ export const LIMITS = {
   POST_CARD_MAX: 500,
   REPLY_MAX: 280,
   WHISPER_MAX: 280,
-  SIGNAL_MAX: 80,
+  /** The team's What's new note: 280 since 2026-11-08 (80 could not fit a two-step how-to). */
+  SIGNAL_MAX: 280,
   BIO_MAX: 150,
   TRIBUTE_MAX: 280,
   TOWNHALL_NAME_MIN: 3,
