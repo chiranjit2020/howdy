@@ -8,7 +8,7 @@ import { HowdyLogo } from '@/ui/logo';
  * card. Below lg there is no room for two halves, so the blue half goes and the card carries a blue band instead.
  *
  * The illustration loads lazily on purpose: on phones its half is hidden, and a hidden lazy image is never fetched.
- * Only a headline sits on the blue: white on #0187df is about 3.6:1, enough for large words, too little for small ones.
+ * Only a headline sits on the blue: white on the header blue is about 3.6:1, enough for large words, too little for small ones.
  */
 export function AuthSplit({ children }: { children: ReactNode }) {
   return (

@@ -661,30 +661,93 @@
 }
 
 /*
- * The opening screen: the top bar's blue with the stacked logo, holding for a moment and fading. Desktop browsers
- * only, once per visit (2026-11-08): the first page load of a visit carries data-first-load (the proxy's session
- * cookie). Phones in a browser tab never see it.
- * Not in the installed app (dropped 2026-11-08): the phone already draws its own splash there (Android: manifest blue +
- * bubble icon; iPhone: /splash/*.png), so ours made two opening screens in a row and held the app 0.7 s longer.
+ * The opening screen (2026-11-08): on the top bar's blue, the speech bubble rises and settles into the full logo while
+ * the wordmark fades in under it; then the screen fades into the page. About 1.3 s in all.
+ *
+ * Where: the installed app on every launch (display-mode: standalone), and a desktop browser on the first page load of
+ * a visit (data-first-load, the proxy's session cookie). Phones in a browser tab never see it. Only on a full page load:
+ * the root layout is not re-rendered when moving between pages.
+ *
+ * One animation, not two screens: in the installed app the phone shows its own splash first (Android: the maskable
+ * bubble icon on the manifest blue; iPhone: /splash/*.png, the bubble alone). Our first frame draws the bubble where
+ * that splash leaves it, so the handover does not show. The start position, measured in CSS px:
+ *   - Android 12+ draws the maskable icon on a 240dp canvas: the bubble (252 of its 512 px) is 118 px wide, 5.4 px left
+ *     of centre. The page starts under the status bar, so its centre is ~12 px lower than the screen's: hence -12.
+ *   - The logo box is 200 px wide; the bubble picture is its top 200 x 156.5 px, the bubble itself 142.9 px wide with its
+ *     centre at (46%, 47.7%) of that picture, i.e. (-8, -42) px from the screen's centre once settled.
+ *   - So it starts at scale(118 / 142.9) and translate(-5.4 + 8, -12 + 42) = (2.6, 30) px.
+ * .dev/make-launch-assets.mjs draws the iPhone pictures from the same numbers; change both together.
+ *
+ * 60fps: only transform and opacity move, which the phone hands to its graphics chip without redrawing the page.
  */
 .launch-screen {
   display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  place-items: center;
+  background: var(--color-header);
+  pointer-events: none;
+  animation: launch-out 0.3s ease-out 1s forwards;
+}
+@media (display-mode: standalone) {
+  .launch-screen {
+    display: grid;
+  }
 }
 @media (min-width: 48rem) {
   .launch-screen[data-first-load] {
-    position: fixed;
-    inset: 0;
-    z-index: 100;
     display: grid;
-    place-items: center;
-    background: var(--color-header);
-    pointer-events: none;
-    animation: launch-out 0.35s ease-out 0.7s forwards;
+  }
+}
+.launch-logo {
+  display: flex;
+  width: 200px;
+  flex-direction: column;
+}
+.launch-logo img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.launch-bubble {
+  transform-origin: 46% 47.7%;
+  will-change: transform;
+  /* Holds still for 150 ms (the phone's splash, and time for the picture to arrive), then settles. */
+  animation: launch-bubble 0.52s cubic-bezier(0.2, 0.8, 0.2, 1) 0.15s both;
+}
+.launch-word {
+  will-change: transform, opacity;
+  animation: launch-word 0.42s ease-out 0.33s both;
+}
+@keyframes launch-bubble {
+  from {
+    transform: translate(2.6px, 30px) scale(0.826);
+  }
+  to {
+    transform: none;
+  }
+}
+@keyframes launch-word {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
   }
 }
 @keyframes launch-out {
   to {
     opacity: 0;
     visibility: hidden;
+  }
+}
+/* Less motion asked for: the logo just appears whole and the screen fades as usual. */
+@media (prefers-reduced-motion: reduce) {
+  .launch-bubble,
+  .launch-word {
+    animation: none;
   }
 }
