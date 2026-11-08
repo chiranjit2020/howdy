@@ -7,9 +7,14 @@
  * request (and every page that does answer, even with an error) goes to the network untouched. So it still cannot serve a
  * stale or someone else's page.
  */
-const OFFLINE_CACHE = 'howdy-offline-v1';
+const OFFLINE_CACHE = 'howdy-offline-v2';
 const OFFLINE_PAGE = '/offline.html';
-const OFFLINE_FILES = [OFFLINE_PAGE, '/offline.css', '/brand/howdy-wordmark.png', '/icons/howdy-h-192.png'];
+const OFFLINE_FILES = [
+  OFFLINE_PAGE,
+  '/offline.css',
+  '/brand/howdy-wordmark.png',
+  '/icons/howdy-bubble-192.png',
+];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -79,7 +84,7 @@ self.addEventListener('push', (event) => {
         body,
         tag,
         renotify: true,
-        icon: '/icons/howdy-h-192.png',
+        icon: '/icons/howdy-bubble-192.png',
         data: { url: safePath(data.url) },
       }),
       // The number on the app icon, where the platform shows one (Android shows a dot for any notification).

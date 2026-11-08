@@ -70,7 +70,7 @@ export function InstallIsland() {
       showActivity({
         id: ID,
         priority: 10,
-        icon: <Img src="/icons/howdy-h-192.png" width={32} height={32} alt="" />,
+        icon: <Img src="/icons/howdy-bubble-192.png" width={32} height={32} alt="" />,
         label: 'Get the Howdy app',
         autoExpandMs: 1200,
         onDismiss: snooze,

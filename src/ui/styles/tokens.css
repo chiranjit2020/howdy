@@ -653,3 +653,32 @@
     scroll-behavior: auto !important;
   }
 }
+
+/*
+ * The installed app's opening screen (2026-11-08): when Howdy is opened from the home screen it starts on the top
+ * bar's blue with the stacked logo (speech bubble over the white wordmark), which holds for a moment and fades.
+ * Android draws its own splash first (manifest blue + bubble icon); this continues it with the real wordmark. iPhones
+ * show /splash/*.png (same picture) first. Only in the installed app (`display-mode: standalone`), never in a browser
+ * tab; and only on a full page load, as the root layout is not re-rendered when moving between pages.
+ */
+.launch-screen {
+  display: none;
+}
+@media (display-mode: standalone) {
+  .launch-screen {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: grid;
+    place-items: center;
+    background: var(--color-header);
+    pointer-events: none;
+    animation: launch-out 0.35s ease-out 0.7s forwards;
+  }
+}
+@keyframes launch-out {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}

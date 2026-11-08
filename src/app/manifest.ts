@@ -14,13 +14,22 @@ export default function manifest(): MetadataRoute.Manifest {
     scope: '/',
     display: 'standalone',
     orientation: 'portrait',
-    background_color: '#f6f7fb',
-    theme_color: '#f6f7fb',
+    // Android builds the opening screen from these: the top bar's blue with the icon in the middle (2026-11-08). The
+    // app's own opening screen (LaunchScreen) then continues it with the wordmark.
+    background_color: '#0187df',
+    theme_color: '#0187df',
     categories: ['social'],
+    // The smiling speech bubble on blue. The maskable one keeps the bubble inside the middle 80%, so Android's
+    // circle or squircle crop never cuts it.
     icons: [
-      { src: '/icons/howdy-h-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
-      { src: '/icons/howdy-h-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
-      { src: '/icons/howdy-h-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+      { src: '/icons/howdy-bubble-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+      { src: '/icons/howdy-bubble-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+      {
+        src: '/icons/howdy-bubble-maskable-512.png',
+        sizes: '512x512',
+        type: 'image/png',
+        purpose: 'maskable',
+      },
     ],
   };
 }

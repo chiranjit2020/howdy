@@ -153,12 +153,10 @@ describe('design-system discipline', () => {
     expect(offenders).toEqual([]);
   });
 
-  it('the browser theme-color meta values match the background tokens (Light and Dark)', () => {
+  it('the browser theme-color meta value matches the top bar token (one blue in both themes, like the bar)', () => {
     const layout = readFileSync('src/app/layout.tsx', 'utf8');
-    const light = /prefers-color-scheme: light\)',\s*color: '(#[0-9a-f]{6})'/i.exec(layout)?.[1];
-    const dark = /prefers-color-scheme: dark\)',\s*color: '(#[0-9a-f]{6})'/i.exec(layout)?.[1];
-    expect(light?.toLowerCase()).toBe(get('background', 'light'));
-    expect(dark?.toLowerCase()).toBe(get('background', 'dark'));
+    const color = /themeColor: '(#[0-9a-f]{6})'/i.exec(layout)?.[1];
+    expect(color?.toLowerCase()).toBe(get('header', 'light'));
   });
 
   it('the welcome share image uses the Light palette', () => {
@@ -177,11 +175,11 @@ describe('design-system discipline', () => {
     }
   });
 
-  it('the web app manifest colours match the Light background token (the installed app opens in Light)', () => {
+  it('the web app manifest colours match the top bar token (the installed app opens on the bar’s blue)', () => {
     const manifest = readFileSync('src/app/manifest.ts', 'utf8');
     for (const key of ['background_color', 'theme_color']) {
       const value = new RegExp(`${key}: '(#[0-9a-f]{6})'`, 'i').exec(manifest)?.[1];
-      expect(value?.toLowerCase(), key).toBe(get('background', 'light'));
+      expect(value?.toLowerCase(), key).toBe(get('header', 'light'));
     }
   });
 });
