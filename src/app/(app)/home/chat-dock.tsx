@@ -22,7 +22,7 @@ type State =
   | { status: 'failed'; person: ChatPerson };
 
 /** The window is for wide screens, where Home has its right panel; narrower ones go to the Messages page. */
-const WIDE = '(min-width: 80rem)';
+const WIDE = '(min-width: 75rem)'; // = the xl breakpoint (tokens.css), where the right panel appears
 
 /**
  * How a link asks for the window: a cancelable event on `window`, accepted (preventDefault) by the window when it is

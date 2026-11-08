@@ -93,9 +93,9 @@ export default async function HomePage() {
     // The chat window (wide screens) opens from the right panel's Message buttons; it needs the same live settings as
     // the Messages page.
     <ChatDockProvider wsUrl={getEnv().WS_PUBLIC_URL} liveChannel={liveChannelFor(user.id)}>
-      {/* The feed at a comfortable reading width (672 px), centred in the space beside the menu; from xl (1280 px) up
+      {/* The feed at a comfortable reading width (672 px), centred in the space beside the menu; from xl (1200 px) up
           the right panel beside it. No side padding of its own: the shell's 16 px is the gutter. */}
-      <div className="flex w-full py-4 xl:grid xl:grid-cols-[minmax(0,1fr)_18rem] xl:items-start xl:gap-6">
+      <div className="flex w-full py-4 xl:grid xl:grid-cols-[minmax(0,1fr)_20rem] xl:items-start xl:gap-6">
         <main id="main" className="mx-auto flex w-full max-w-2xl min-w-0 flex-col gap-4">
           {/* The page's name for screen readers and the outline; on screen the sidebar already says where you are. */}
           <h1 className="sr-only">Home</h1>

@@ -12,6 +12,15 @@
   --color-*: initial;
   --text-*: initial;
   --radius-*: initial;
+
+  /*
+   * Layout (2026-11-08): the whole app is at most 1280 px wide, centred; wider screens get plain background either side.
+   * 16 + 208 menu + 24 + 672 feed + 24 + 320 panel + 16 = 1280, so the three columns sit together with no dead space.
+   * The right panel shows from `xl` = 1200 px (not Tailwind's 1280), so a 1280 px laptop, whose window is a little
+   * narrower than the screen, still gets it; between 1200 and 1280 the feed gives up a little width.
+   */
+  --container-shell: 80rem;
+  --breakpoint-xl: 75rem;
   --shadow-*: initial;
 
   /*

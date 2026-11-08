@@ -88,7 +88,8 @@ export function AppShell({
         <header className="sticky top-0 z-30 bg-header">
           <div
             className={cn(
-              'flex h-14 w-full items-center gap-2 px-4 min-[360px]:gap-3',
+              // The blue bar runs edge to edge; its contents line up with the 1280 px page below.
+              'mx-auto flex h-14 w-full max-w-shell items-center gap-2 px-4 min-[360px]:gap-3',
               logoOnly ? 'justify-center' : 'justify-between',
               // Signed in, from md up: three columns, the two sides equal, so the search box sits in the middle of the
               // screen rather than of the space the logo and the buttons leave.
@@ -154,8 +155,8 @@ export function AppShell({
         </header>
       )}
 
-      {/* Full width, with 16 px each side on every screen size. */}
-      <div className="flex w-full gap-6 px-4">
+      {/* At most 1280 px, centred, with 16 px each side on every screen size. */}
+      <div className="mx-auto flex w-full max-w-shell gap-6 px-4">
         {me && (
           <aside className="sticky top-14 hidden max-h-[calc(100dvh-3.5rem)] w-52 shrink-0 flex-col justify-between gap-6 self-start py-4 md:flex">
             <ShellSidebarNav items={items} />

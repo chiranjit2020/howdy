@@ -38,12 +38,12 @@ export function SkeletonPage({
 }
 
 /**
- * Home's frame (Friends, Profile visitors): the 672 px column and, on wide screens, the 18 rem right panel holding `rail`
+ * Home's frame (Friends, Profile visitors): the 672 px column and, on wide screens, the 20 rem right panel holding `rail`
  * striped cards — the same boxes as the page, so nothing jumps when it arrives.
  */
 export function SkeletonFramedPage({ children, rail = 2 }: { children: ReactNode; rail?: number }) {
   return (
-    <div className="flex w-full flex-col gap-4 py-4 xl:grid xl:grid-cols-[minmax(0,1fr)_18rem] xl:items-start xl:gap-6">
+    <div className="flex w-full flex-col gap-4 py-4 xl:grid xl:grid-cols-[minmax(0,1fr)_20rem] xl:items-start xl:gap-6">
       <main id="main" aria-busy="true" className="mx-auto flex w-full max-w-2xl min-w-0 flex-col gap-4">
         <p role="status" className="sr-only">
           Loading…

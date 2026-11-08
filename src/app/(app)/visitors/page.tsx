@@ -36,7 +36,7 @@ export default async function TracksPage() {
   })).filter((g) => g.people.length > 0 || g.hidden > 0);
 
   return (
-    <div className="flex w-full flex-col gap-4 py-4 xl:grid xl:grid-cols-[minmax(0,1fr)_18rem] xl:items-start xl:gap-6">
+    <div className="flex w-full flex-col gap-4 py-4 xl:grid xl:grid-cols-[minmax(0,1fr)_20rem] xl:items-start xl:gap-6">
       <main id="main" className="mx-auto flex w-full max-w-2xl min-w-0 flex-col gap-4">
         <h1 className="text-heading text-text-primary">Profile visitors</h1>
         <MarkVisitsSeen fresh={fresh} />

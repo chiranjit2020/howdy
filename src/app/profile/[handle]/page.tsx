@@ -179,10 +179,10 @@ export default async function RanchPage({ params }: { params: Promise<{ handle: 
           : undefined;
 
   // Home's frame: the profile, relationship controls, wall and testimonials in Home's column (672 px, centred, 16 px
-  // apart), and from xl (1280 px) up the status and owner cards in an 18rem panel beside it. Narrower, the panel's cards
+  // apart), and from xl (1200 px) up the status and owner cards in a 20rem panel beside it. Narrower, the panel's cards
   // follow the wall in the same column, so the wall is never pushed down a phone screen.
   return (
-    <div className="flex w-full flex-col gap-4 py-4 xl:grid xl:grid-cols-[minmax(0,1fr)_18rem] xl:items-start xl:gap-6">
+    <div className="flex w-full flex-col gap-4 py-4 xl:grid xl:grid-cols-[minmax(0,1fr)_20rem] xl:items-start xl:gap-6">
       <main id="main" className="mx-auto flex w-full max-w-2xl min-w-0 flex-col gap-4">
         {(() => {
           const header = (
