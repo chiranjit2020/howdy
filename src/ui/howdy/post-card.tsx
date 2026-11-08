@@ -97,21 +97,18 @@ export function PostCardReply({
         size="sm"
       />
       <div className="min-w-0 flex-1">
-        {/* Grey, not Sunflower (2026-11-08): yellow is for things to tap (the Star, Home, buttons); a thread of yellow
-            bubbles competed with the Star. Grey reads as conversation. */}
-        <div className="w-fit max-w-full rounded-lg bg-surface-sunken px-2.5 py-1.5">
-          <p className="text-caption [overflow-wrap:anywhere]">
-            <Link href={`/profile/${author.handle}`} className={NAME_LINK}>
-              {author.name}
-            </Link>
-            <NameBadge verified={author.verified} trusted={author.trusted} className="ml-0.5" />{' '}
-            <span className="text-metadata text-text-muted">@{author.handle}</span>
-          </p>
-          <p className="text-caption break-words text-text-primary">
+        {/* No bubble (2026-11-08, the user's pick): the name in bold, then the words on the same line, so a short reply
+            is two lines. The @handle is one tap away on the name. */}
+        <p className="text-caption break-words text-text-primary [overflow-wrap:anywhere]">
+          <Link href={`/profile/${author.handle}`} title={`@${author.handle}`} className={NAME_LINK}>
+            {author.name}
+          </Link>
+          <NameBadge verified={author.verified} trusted={author.trusted} className="ml-0.5" />{' '}
+          <span>
             <ReplyBody body={body} />
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-x-2 pl-2.5 text-metadata text-text-muted">
+          </span>
+        </p>
+        <div className="flex flex-wrap items-center gap-x-2 text-metadata text-text-muted">
           <RelativeTime date={createdAt} />
           {notice && <span>· {notice}</span>}
           {reply && (
@@ -664,7 +661,7 @@ export function PostCard({
               </button>
             )}
             {shown.length > 0 && (
-              <ul aria-label={`Replies to this ${noun.toLowerCase()}`} className="flex flex-col gap-2">
+              <ul aria-label={`Replies to this ${noun.toLowerCase()}`} className="flex flex-col gap-3">
                 {shown}
               </ul>
             )}
