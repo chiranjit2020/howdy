@@ -108,6 +108,10 @@
   --color-on-scrim: #ffffff;
   /* A whisper of Sunflower for quiet surfaces (reply bubbles): ink and violet both read on it. */
   --color-primary-soft: light-dark(#fef6d8, #3a3220);
+  /* Ghost white (#f8f8ff), the chat surface behind message bubbles (2026-11-08, the user's call; it was primary-soft). */
+  --color-chat: light-dark(#f8f8ff, #1f2336);
+  /* Words on my own (Sunflower) message bubbles: black ink, both themes (2026-11-08, the user's call; was Royal Navy). */
+  --color-on-bubble: #100b00;
   /* The icon of the current nav item, and a count badge on it (violet, so it never melts into the yellow). */
   --color-primary-mark: #2b3278;
 

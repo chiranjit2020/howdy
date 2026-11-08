@@ -19,7 +19,7 @@ export default function Loading() {
       <div className="border-b border-border px-3 py-2">
         <SkeletonRow />
       </div>
-      <div className="flex flex-1 flex-col justify-end gap-3 bg-primary-soft p-3">
+      <div className="flex flex-1 flex-col justify-end gap-3 bg-chat p-3">
         {bubbles.map((width, i) => (
           <Skeleton key={i} className={cn('h-10 rounded-2xl', width, i % 2 === 1 && 'self-end')} />
         ))}

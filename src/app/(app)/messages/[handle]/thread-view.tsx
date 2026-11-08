@@ -473,9 +473,9 @@ export function ThreadView({
         aria-live="polite"
         aria-label={`Messages with ${displayName}`}
         className={cn(
-          // Soft Sunflower, like reply bubbles under posts: conversations share one warm surface.
+          // Ghost white (2026-11-08): a calm neutral, so the Sunflower of my own bubbles is the only yellow.
           // …sunk in a soft well, so the bubbles in it sit up off the page.
-          'flex flex-col gap-1.5 rounded-lg bg-primary-soft p-2.5 shadow-well',
+          'flex flex-col gap-1.5 rounded-lg bg-chat p-2.5 shadow-well',
           'min-h-0 flex-1 overflow-y-auto',
           // On the page the messages fill the card between its header and the reply bar.
           !dock && 'rounded-none p-3 shadow-none',
