@@ -96,7 +96,7 @@ describe('Avatar profile photo tint', () => {
     const fills = new Set<string>();
     for (const tint of PORTRAIT_TINTS) {
       const { container, unmount } = render(<Avatar name="Sneha Roy" tint={tint} />);
-      const disc = container.querySelector('span > span') as HTMLElement;
+      const disc = container.querySelector('.border-2') as HTMLElement;
       fills.add(
         disc.className
           .split(' ')
