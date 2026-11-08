@@ -2,7 +2,8 @@ import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { LEGAL_FACTS } from '@/shared/legal';
 import { Img } from '../art/img';
-import { Card } from '../primitives';
+import { cn } from '../cn';
+import { HowdyLogo } from '../logo';
 
 /**
  * The frame every signed-out page shares (Welcome, Log in, Sign up, confirm email, forgot / new password): no top bar,
@@ -56,25 +57,53 @@ export function EntryFooter() {
 }
 
 /**
- * Centred on the screen. No side padding of its own: the shell's 15 px already gives the gutter, and doubling it
- * squeezes the card on a 320px phone.
+ * The blue strip that tops every sign-in card: a small copy of the app's top bar, so signing in already looks like the
+ * app you are about to enter.
+ */
+export function EntryBand({ className }: { className?: string }) {
+  return (
+    <div className={cn('flex h-20 items-center justify-center bg-header', className)}>
+      <HowdyLogo tone="onColour" size="band" />
+    </div>
+  );
+}
+
+/**
+ * Centred on the screen. Bare pages have no shell gutter, so it is here: 8 px on phones, 16 px from sm up (the same as
+ * the app), never doubled, so the card still fits a 320px phone.
  */
 export function EntryMain({ children }: { children: ReactNode }) {
   return (
-    <main id="main" className="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center py-4">
+    <main
+      id="main"
+      // 28rem of card plus the gutter either side (the box includes its padding).
+      className="mx-auto flex min-h-dvh w-full max-w-[29rem] flex-col justify-center px-2 py-4 sm:max-w-[30rem] sm:px-4"
+    >
       {children}
     </main>
   );
 }
 
-/** Logo, the page's own content, then the footer links: the whole frame for a simple entry page. */
+/**
+ * The sign-in card (2026-11-08): the blue band with the white logo on top, the page's own content under it. Every
+ * signed-out page uses it, so the whole flow (Log in, Create account, Google's last step, forgot password, confirm
+ * email) looks the same. `bandClassName`: Log in / Create account hide the band from lg, where the split screen's blue
+ * half carries the logo. Card's look without Card: its p-4 would win over p-0 (cn does not merge classes).
+ */
+export function EntryPanel({ children, bandClassName }: { children: ReactNode; bandClassName?: string }) {
+  return (
+    <div className="flex flex-col overflow-hidden rounded-card border border-border bg-surface shadow-clay">
+      <EntryBand {...(bandClassName ? { className: bandClassName } : {})} />
+      <div className="flex flex-col gap-5 p-5 sm:p-7">{children}</div>
+    </div>
+  );
+}
+
+/** Band, the page's own content, then the footer links: the whole frame for a simple entry page. */
 export function EntryCard({ children }: { children: ReactNode }) {
   return (
     <EntryMain>
-      <Card className="flex flex-col gap-5 p-5 shadow-clay sm:p-7">
-        <EntryLogo />
-        {children}
-      </Card>
+      <EntryPanel>{children}</EntryPanel>
       <EntryFooter />
     </EntryMain>
   );

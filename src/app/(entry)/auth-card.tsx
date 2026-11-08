@@ -1,8 +1,7 @@
 'use client';
 
 import { useEffect, useState, type MouseEvent } from 'react';
-import { EntryFooter, EntryLogo } from '@/ui/auth/entry-shell';
-import { Card } from '@/ui/primitives';
+import { EntryFooter, EntryPanel } from '@/ui/auth/entry-shell';
 import { ClaimForm } from './signup/claim-form';
 import { LoginForm } from './login/login-form';
 
@@ -61,8 +60,8 @@ export function AuthCard({
 
   return (
     <>
-      <Card className="flex flex-col gap-5 p-5 shadow-clay sm:p-7">
-        <EntryLogo />
+      {/* Phones and tablets: the blue band carries the logo. From lg the split screen's blue half does, so no band. */}
+      <EntryPanel bandClassName="lg:hidden">
         {active === 'login' ? (
           <LoginForm google={google} />
         ) : (
@@ -78,7 +77,7 @@ export function AuthCard({
             {mode.otherLabel}
           </a>
         </p>
-      </Card>
+      </EntryPanel>
       <EntryFooter />
     </>
   );

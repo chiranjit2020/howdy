@@ -3,6 +3,7 @@ import { getCurrentUser, googleEnabled, turnstileSiteKey } from '@/modules/auth'
 import { inviterName } from '@/modules/invites';
 import { INVITE_CODE_PATTERN } from '@/shared/validation/invites';
 import { AuthCard } from '../auth-card';
+import { AuthSplit } from '../auth-split';
 
 export const metadata = { title: 'Create account' };
 
@@ -17,18 +18,13 @@ export default async function SignupPage({
   const code = typeof raw === 'string' && INVITE_CODE_PATTERN.test(raw) ? raw : undefined;
   const invitedBy = code ? await inviterName(code) : null;
   return (
-    <main
-      id="main"
-      // Centred on the screen (these pages have no top bar). No side padding of its own: the shell's 15 px
-      // already gives the gutter, and doubling it squeezes the card on a 320px phone.
-      className="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center py-4"
-    >
+    <AuthSplit>
       <AuthCard
         initial="signup"
         google={googleEnabled()}
         turnstileSiteKey={turnstileSiteKey()}
         {...(code && invitedBy ? { invite: { code, invitedBy } } : {})}
       />
-    </main>
+    </AuthSplit>
   );
 }

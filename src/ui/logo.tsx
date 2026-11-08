@@ -12,6 +12,9 @@ const LOGO_HEIGHT = {
   xs: 'h-7',
   bar: 'h-6 min-[360px]:h-7',
   top: 'h-9 min-[360px]:h-10',
+  // The Log in card's blue band (phones) and the big logo on the split screen's blue half (desktop).
+  band: 'h-11',
+  hero: 'h-16',
 } as const;
 
 // `onColour`: the white wordmark with the yellow speech bubble and sparks, for the blue top bar (it vanishes on white).

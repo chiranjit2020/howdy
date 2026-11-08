@@ -14,8 +14,8 @@ export default function manifest(): MetadataRoute.Manifest {
     scope: '/',
     display: 'standalone',
     orientation: 'portrait',
-    // Android builds the opening screen from these: the top bar's blue with the icon in the middle (2026-11-08). The
-    // app's own opening screen (LaunchScreen) then continues it with the wordmark.
+    // Android builds the opening screen from these: the top bar's blue with the icon in the middle (2026-11-08). It is
+    // the only one: the app no longer adds its own LaunchScreen after it (that made two in a row).
     background_color: '#0187df',
     theme_color: '#0187df',
     categories: ['social'],
