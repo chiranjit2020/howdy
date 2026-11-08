@@ -99,7 +99,7 @@ export function PostCardReply({
       <div className="min-w-0 flex-1">
         {/* Grey, not Sunflower (2026-11-08): yellow is for things to tap (the Star, Home, buttons); a thread of yellow
             bubbles competed with the Star. Grey reads as conversation. */}
-        <div className="w-fit max-w-full rounded-lg bg-surface-sunken px-3 py-2">
+        <div className="w-fit max-w-full rounded-lg bg-surface-sunken px-2.5 py-1.5">
           <p className="text-caption [overflow-wrap:anywhere]">
             <Link href={`/profile/${author.handle}`} className={NAME_LINK}>
               {author.name}
@@ -111,7 +111,7 @@ export function PostCardReply({
             <ReplyBody body={body} />
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-x-2 pl-3 text-metadata text-text-muted">
+        <div className="flex flex-wrap items-center gap-x-2 pl-2.5 text-metadata text-text-muted">
           <RelativeTime date={createdAt} />
           {notice && <span>· {notice}</span>}
           {reply && (
@@ -653,7 +653,7 @@ export function PostCard({
         )}
 
         {(shown.length > 0 || (open && replyComposer)) && (
-          <div ref={repliesRef} id={repliesId} className="flex flex-col gap-3 px-3 pt-1 pb-3 sm:px-4 sm:pb-4">
+          <div ref={repliesRef} id={repliesId} className="flex flex-col gap-2 px-3 pt-1 pb-3 sm:px-4">
             {hidden > 0 && (
               <button
                 type="button"
@@ -664,7 +664,7 @@ export function PostCard({
               </button>
             )}
             {shown.length > 0 && (
-              <ul aria-label={`Replies to this ${noun.toLowerCase()}`} className="flex flex-col gap-3">
+              <ul aria-label={`Replies to this ${noun.toLowerCase()}`} className="flex flex-col gap-2">
                 {shown}
               </ul>
             )}
