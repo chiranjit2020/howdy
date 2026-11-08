@@ -155,8 +155,8 @@ export function AppShell({
         </header>
       )}
 
-      {/* At most 1280 px, centred, with 16 px each side on every screen size. */}
-      <div className="mx-auto flex w-full max-w-shell gap-6 px-4">
+      {/* At most 1280 px, centred; 8 px each side on phones (2026-11-08, more room for posts), 16 px from sm up. */}
+      <div className="mx-auto flex w-full max-w-shell gap-6 px-2 sm:px-4">
         {me && (
           <aside className="sticky top-14 hidden max-h-[calc(100dvh-3.5rem)] w-52 shrink-0 flex-col justify-between gap-6 self-start py-4 md:flex">
             <ShellSidebarNav items={items} />

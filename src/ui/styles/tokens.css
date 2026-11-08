@@ -224,6 +224,8 @@
    * Howdy's own rounded look, not a sharp-cornered feed photo. If the card padding changes, change this with it.
    */
   --radius-card-inset: 1rem;
+  /* The same rule on phones, where post cards have 12px padding (2026-11-08): `rounded-card-inset-sm sm:rounded-card-inset`. */
+  --radius-card-inset-sm: 0.75rem;
   --radius-pill: 9999px;
 
   /*

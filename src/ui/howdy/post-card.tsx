@@ -97,7 +97,9 @@ export function PostCardReply({
         size="sm"
       />
       <div className="min-w-0 flex-1">
-        <div className="w-fit max-w-full rounded-lg bg-primary-soft px-3 py-2">
+        {/* Grey, not Sunflower (2026-11-08): yellow is for things to tap (the Star, Home, buttons); a thread of yellow
+            bubbles competed with the Star. Grey reads as conversation. */}
+        <div className="w-fit max-w-full rounded-lg bg-surface-sunken px-3 py-2">
           <p className="text-caption [overflow-wrap:anywhere]">
             <Link href={`/profile/${author.handle}`} className={NAME_LINK}>
               {author.name}
@@ -446,7 +448,7 @@ function PostPhoto({ photo, alt }: { photo: { url: string; width: number; height
         aria-label={`${alt}. Show the whole photo`}
         // A double-click here opens the photo, nothing else (on the rest of the post it gives a Star).
         onDoubleClick={(e) => e.stopPropagation()}
-        className="block w-full cursor-zoom-in overflow-hidden rounded-card-inset"
+        className="block w-full cursor-zoom-in overflow-hidden rounded-card-inset-sm sm:rounded-card-inset"
       >
         <Img
           src={photo.url}
@@ -552,7 +554,8 @@ export function PostCard({
         <div
           onDoubleClick={() => canReact && !myReaction && onReact(STAR_KIND)}
           // With a reaction row under it, the post keeps only 4 px below so the row reads as part of the post.
-          className={cn('flex flex-col gap-3 p-4', hasActions && 'pb-1')}
+          // 12px padding on phones (2026-11-08), 16px from sm up: on a 390px phone the text and photo gain 24px.
+          className={cn('flex flex-col gap-3 p-3 sm:p-4', hasActions && 'pb-1 sm:pb-1')}
         >
           <header className="flex items-start gap-3">
             <Avatar
@@ -611,7 +614,7 @@ export function PostCard({
           // No dividing line (2026-11-07): a rule between the post and its reactions read as "end of post", and people
           // stopped before reacting. The row sits right under the post instead, as part of it.
           // 12 px below (plus the buttons' own inner space) so the card's bottom edge breathes like its 16 px top.
-          <footer className="mx-4 flex items-center gap-1 pb-3">
+          <footer className="mx-3 flex items-center gap-1 pb-3 sm:mx-4">
             <StarButton
               reactions={reactions}
               mine={myReaction}
@@ -647,7 +650,7 @@ export function PostCard({
         )}
 
         {(shown.length > 0 || (open && replyComposer)) && (
-          <div ref={repliesRef} id={repliesId} className="flex flex-col gap-3 px-4 pt-1 pb-4">
+          <div ref={repliesRef} id={repliesId} className="flex flex-col gap-3 px-3 pt-1 pb-3 sm:px-4 sm:pb-4">
             {hidden > 0 && (
               <button
                 type="button"
