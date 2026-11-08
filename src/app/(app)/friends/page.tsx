@@ -32,14 +32,14 @@ export default async function PossePage() {
       <main id="main" className="mx-auto flex w-full max-w-2xl min-w-0 flex-col gap-4">
         <h1 className="text-heading text-text-primary">Friends</h1>
         {/* Below xl the panel follows the whole list, too far down to be seen with many friends: how to add someone
-            comes first instead, then suggestions three at a time. Only one copy of each is ever displayed. */}
+            comes first instead, then every suggestion (up to ten, as on a wide screen; 2026-11-08). Only one copy of each is ever displayed. */}
         <div className="flex flex-col gap-4 xl:hidden">
           <AskForm id="ask-by-username-top" />
           {invite && (
             <InviteCard initial={invite} origin={new URL(getEnv().APP_URL).origin} id="invite-friends-top" />
           )}
         </div>
-        <Suggestions initial={suggestions} id="suggestions-heading-top" show={3} className="xl:hidden" />
+        <Suggestions initial={suggestions} id="suggestions-heading-top" className="xl:hidden" />
         <PosseLists lists={lists} />
       </main>
       <aside aria-label="Add friends" className="hidden min-w-0 flex-col gap-4 xl:flex">
