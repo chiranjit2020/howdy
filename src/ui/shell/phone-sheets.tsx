@@ -5,12 +5,11 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useState, type ReactNode } from 'react';
 import { postJson } from '../auth/api';
 import { cn } from '../cn';
-import { CameraIcon, CapsuleIcon, DevicesIcon, FeedbackIcon, PencilIcon, SignOutIcon } from '../icons';
+import { CapsuleIcon, DevicesIcon, FeedbackIcon, SignOutIcon } from '../icons';
 import { Avatar } from '../primitives/avatar';
 import { Drawer } from '../primitives/dialog';
 import type { ShellMe } from './app-shell';
 import { FreeDot, FreeToTalkDialog, freeToTalkSummary, type FreeToTalkState } from './free-to-talk-menu';
-import { offerStoryFile } from './pending-story';
 
 /** One row in a phone sheet: an icon in a soft tile, the words, and (optionally) a line under them or a count. */
 const ROW =
@@ -46,69 +45,6 @@ function Count({ n, says }: { n: number; says: string }) {
   );
 }
 
-/**
- * The phone's ＋: write a post (Home's "What's on your mind?", with the cursor in it), add to your Story (the photo is
- * picked right here, since a browser opens its picker only from a tap, then Home's Stories take over), or seal a Time
- * Capsule.
- */
-export function CreateSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const go = (href: string) => {
-    onClose();
-    router.push(href);
-  };
-  return (
-    <Drawer side="bottom" open={open} onClose={onClose} title="Create">
-      <ul className="-mx-2 -mt-2 flex flex-col">
-        <li>
-          <button type="button" className={ROW} onClick={() => go(`/home?nail=${Date.now()}`)}>
-            <RowIcon>
-              <PencilIcon />
-            </RowIcon>
-            <RowText title="Write a post" line="On your wall, for your friends’ feeds" />
-          </button>
-        </li>
-        <li>
-          {/* A label, so the tap itself opens the photo picker. */}
-          <label
-            className={cn(
-              ROW,
-              'cursor-pointer has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-accent',
-            )}
-          >
-            <RowIcon>
-              <CameraIcon />
-            </RowIcon>
-            <RowText title="Add to your Story" line="A photo for 12 hours" />
-            <input
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              className="sr-only"
-              onChange={(e) => {
-                const chosen = e.target.files?.[0];
-                e.target.value = '';
-                if (!chosen) return;
-                offerStoryFile(chosen);
-                onClose();
-                if (pathname !== '/home') router.push('/home');
-              }}
-            />
-          </label>
-        </li>
-        <li>
-          <button type="button" className={ROW} onClick={() => go('/capsules')}>
-            <RowIcon>
-              <CapsuleIcon />
-            </RowIcon>
-            <RowText title="Seal a Time Capsule" line="Words that open on a day you pick" />
-          </button>
-        </li>
-      </ul>
-    </Drawer>
-  );
-}
-
 export interface YouLink {
   href: string;
   label: string;
@@ -118,8 +54,9 @@ export interface YouLink {
 }
 
 /**
- * Your photo in the phone's tab bar opens this: your profile at the top, then Free to talk, the pages that are not tabs
- * (Visitors, Groups, staff pages, Settings), Devices and Sign out. It replaces the old "More" menu in the top bar.
+ * Your photo in the phone's tab bar (Profile) opens this: your profile at the top, then Free to talk, the pages that are not tabs
+ * (Visitors, Groups, staff pages, Settings), Time Capsules (2026-11-08, from the retired Create sheet), Devices and Sign
+ * out. It replaces the old "More" menu in the top bar.
  */
 export function YouSheet({
   open,
@@ -153,7 +90,7 @@ export function YouSheet({
       {freeToTalk && (
         <FreeToTalkDialog state={freeToTalk} open={talkOpen} onClose={() => setTalkOpen(false)} />
       )}
-      <Drawer side="bottom" open={open} onClose={onClose} title="You">
+      <Drawer side="bottom" open={open} onClose={onClose} title="Profile">
         <div className="-mx-2 -mt-2 flex flex-col gap-1">
           <Link href={`/profile/${me.handle}`} onClick={onClose} className={ROW}>
             <Avatar name={me.displayName} src={me.portraitUrl} tint={me.portraitTint} size="md" />
@@ -184,6 +121,12 @@ export function YouSheet({
                 {l.badge ? <Count n={l.badge} says={l.badgeSays ?? 'new'} /> : null}
               </Link>
             ))}
+            <Link href="/capsules" onClick={onClose} className={ROW}>
+              <RowIcon>
+                <CapsuleIcon />
+              </RowIcon>
+              <RowText title="Time Capsules" />
+            </Link>
             <Link href="/settings/account#devices" onClick={onClose} className={ROW}>
               <RowIcon>
                 <DevicesIcon />

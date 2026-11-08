@@ -12,6 +12,8 @@ export interface NavItem {
   expanded?: boolean;
   label: string;
   icon?: ReactNode;
+  /** A phone tab: the filled icon it shows while current (the outline `icon` otherwise). */
+  iconCurrent?: ReactNode;
   current?: boolean;
   /** Something new: what screen readers hear ("3 unread"). On a phone tab, `count` is the number shown. */
   badge?: string;
@@ -61,7 +63,7 @@ export function Navigation({
 }
 
 /**
- * A tab's icon, in a pill that turns sunflower on the current tab (the sidebar's mark). Lives inside the <Link> so it can
+ * A tab's icon (filled on the current tab, chosen by the caller), with its count or dot. Lives inside the <Link> so it can
  * see that link's navigation: on a slow network, before the next page's outline has arrived, the tapped icon dims and
  * breathes so the tap never feels ignored (useLinkStatus; usually the outline is already prefetched and this never shows).
  */
@@ -101,10 +103,9 @@ function TabMark({
     <span
       aria-hidden="true"
       className={cn(
-        'relative flex h-8 w-14 items-center justify-center rounded-pill text-title transition-[transform,background-color,color] duration-150 group-active:scale-90',
-        current
-          ? 'animate-nav-pop bg-primary text-on-primary'
-          : 'text-text-secondary group-hover:text-text-primary',
+        // Black icons on white (2026-11-08, the user's call): no pill; the current tab's icon is filled instead.
+        'relative flex h-8 w-14 items-center justify-center text-[1.625rem] text-text-primary transition-transform duration-150 group-active:scale-90',
+        current && 'animate-nav-pop',
         pending && 'animate-shimmer opacity-60',
       )}
     >
@@ -127,7 +128,9 @@ const TAB =
   'group flex h-full w-full flex-col items-center justify-center gap-0.5 text-tab no-underline transition-colors';
 
 function Tab({ it }: { it: NavItem }) {
-  const look = cn(TAB, it.current ? 'font-bold text-text-primary' : 'font-semibold text-text-secondary');
+  // Black labels: bold on the current tab, regular (400) on the rest.
+  const look = cn(TAB, 'text-text-primary', it.current ? 'font-bold' : 'font-normal');
+  const icon = it.current && it.iconCurrent ? it.iconCurrent : it.icon;
   const label = (
     <>
       <span className="max-w-full truncate tracking-tight">{it.label}</span>
@@ -135,12 +138,12 @@ function Tab({ it }: { it: NavItem }) {
     </>
   );
   return (
-    // min-w-0: five tabs share a 320 px screen.
+    // min-w-0: the tabs share a 320 px screen.
     <li className="min-w-0 flex-1">
       {it.href ? (
         <Link href={it.href} aria-current={it.current ? 'page' : undefined} className={look}>
           <TabIcon current={Boolean(it.current)} count={it.count} dot={Boolean(it.badge)}>
-            {it.icon}
+            {icon}
           </TabIcon>
           {label}
         </Link>
@@ -153,7 +156,7 @@ function Tab({ it }: { it: NavItem }) {
           className={look}
         >
           <TabMark current={Boolean(it.current)} count={it.count} dot={Boolean(it.badge)}>
-            {it.icon}
+            {icon}
           </TabMark>
           {label}
         </button>
@@ -163,18 +166,17 @@ function Tab({ it }: { it: NavItem }) {
 }
 
 /**
- * Mobile tab bar, hidden from md up (use <Navigation> there): a frosted ("acrylic") bar across the bottom edge, with a
- * hairline on top and content scrolling softly blurred behind it; it reaches down over the phone's home-bar area. Where
- * blur is not supported, or the person asks for less transparency, it is a plain solid bar. Full width, so five tabs
- * each get a fifth of the screen. Each tab is an icon in a pill (sunflower on the current tab, with a small hop) over a
- * short label; a pressed icon squishes. A tab is a link, or a button that opens a sheet. Reduced motion turns the
- * movement into plain state changes.
+ * Mobile tab bar, hidden from md up (use <Navigation> there): a solid white bar (the surface colour; 2026-11-08, it was
+ * frosted) across the bottom edge, with a hairline on top; it reaches down over the phone's home-bar area. Full width,
+ * the tabs sharing it equally. Each tab is a black outline icon over a regular black label; the current tab shows its
+ * filled icon (with a small hop) and a bold label. A pressed icon squishes. A tab is a link, or a button that opens a
+ * sheet. Reduced motion turns the movement into plain state changes.
  */
 export function BottomNavigation({ items, label }: { items: NavItem[]; label: string }) {
   return (
     <nav
       aria-label={label}
-      className="acrylic fixed inset-x-0 bottom-0 z-40 border-t border-border/70 pb-[env(safe-area-inset-bottom)] md:hidden"
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-surface pb-[env(safe-area-inset-bottom)] md:hidden"
     >
       <ul className="flex h-16 items-stretch px-1">
         {items.map((it) => (

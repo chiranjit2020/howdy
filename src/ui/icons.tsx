@@ -42,6 +42,7 @@ import {
   GoX,
   GoXCircle,
 } from 'react-icons/go';
+import { PiChatsCircle, PiChatsCircleFill, PiHouse, PiHouseFill, PiUsers, PiUsersFill } from 'react-icons/pi';
 
 type IconProps = Omit<ComponentProps<'svg'>, 'children'>;
 
@@ -138,3 +139,14 @@ export const SpinnerIcon = (p: IconProps) => (
     <path d="M8 1.5A6.5 6.5 0 1 0 14.5 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
   </svg>
 );
+
+/*
+ * The phone tab bar's icons only (2026-11-08, the user's pick): Phosphor (react-icons/pi), because each has an outline
+ * (Regular) and a Fill version, and the current tab shows the filled one. Octicons has no filled People or Messages.
+ */
+export const TabHomeIcon = go(PiHouse);
+export const TabHomeFillIcon = go(PiHouseFill);
+export const TabFriendsIcon = go(PiUsers);
+export const TabFriendsFillIcon = go(PiUsersFill);
+export const TabMessagesIcon = go(PiChatsCircle);
+export const TabMessagesFillIcon = go(PiChatsCircleFill);

@@ -8,9 +8,14 @@ import {
   BellIcon,
   GroupIcon,
   HomeIcon,
-  PlusIcon,
   SettingsIcon,
   ShieldIcon,
+  TabFriendsFillIcon,
+  TabFriendsIcon,
+  TabHomeFillIcon,
+  TabHomeIcon,
+  TabMessagesFillIcon,
+  TabMessagesIcon,
   TracksIcon,
   UserIcon,
   UsersIcon,
@@ -20,7 +25,7 @@ import { Avatar } from '../primitives/avatar';
 import { BottomNavigation, type NavItem } from '../primitives/navigation';
 import type { ShellMe } from './app-shell';
 import type { FreeToTalkState } from './free-to-talk-menu';
-import { CreateSheet, YouSheet } from './phone-sheets';
+import { YouSheet } from './phone-sheets';
 
 export type ShellNavKey =
   | 'home'
@@ -118,15 +123,22 @@ export function ShellSidebarNav({ items }: { items: ShellNavItem[] }) {
 }
 
 /**
- * The phone tab bar, in order: Home, Friends, ＋ (Create), Messages, and your photo (You). Notifications are the bell in
- * the top bar, with their count; everything else (Visitors, Groups, Settings, staff pages, Free to talk, Devices, Sign
- * out) is in the You sheet. The sidebar still lists everything on wide screens.
+ * The phone tab bar, in order: Home, Friends, Messages, and your photo (Profile). Create is gone (2026-11-08: almost
+ * nobody used it; posts and Stories start from Home's "What's on your mind?", Time Capsules from the Profile sheet).
+ * Notifications are the bell in the top bar, with their count; everything else (Visitors, Groups, Settings, staff pages,
+ * Free to talk, Time Capsules, Devices, Sign out) is in the Profile sheet. The sidebar still lists everything on wide screens.
  */
 const PHONE_TABS = ['home', 'posse', 'whispers'] as const;
-/** In the You sheet: every page that is neither a tab nor the bell, nor your own profile (the sheet's first row). */
+/** In the Profile sheet: every page that is neither a tab nor the bell, nor your own profile (the sheet's first row). */
 const IN_TABS: ShellNavKey[] = [...PHONE_TABS, 'chimes', 'ranch'];
+/** The phone tabs' own icons: outline, and filled while current (Phosphor; see icons.tsx). */
+const TAB_ICON: Record<(typeof PHONE_TABS)[number], [ReactNode, ReactNode]> = {
+  home: [<TabHomeIcon key="o" />, <TabHomeFillIcon key="f" />],
+  posse: [<TabFriendsIcon key="o" />, <TabFriendsFillIcon key="f" />],
+  whispers: [<TabMessagesIcon key="o" />, <TabMessagesFillIcon key="f" />],
+};
 
-/** The phone form of the navigation: a frosted tab bar along the bottom (hidden from `md` up by the primitive itself). */
+/** The phone form of the navigation: a white tab bar along the bottom (hidden from `md` up by the primitive itself). */
 export function ShellBottomNav({
   items,
   me,
@@ -134,11 +146,11 @@ export function ShellBottomNav({
 }: {
   items: ShellNavItem[];
   me: ShellMe;
-  /** Phones reach Free to talk in the You sheet (wide screens have the pill in the top bar). */
+  /** Phones reach Free to talk in the Profile sheet (wide screens have the pill in the top bar). */
   freeToTalk?: FreeToTalkState | undefined;
 }) {
   const pathname = usePathname();
-  const [sheet, setSheet] = useState<'create' | 'you' | undefined>();
+  const [sheet, setSheet] = useState<'you' | undefined>();
   const byKey = new Map(items.map((it) => [it.key, it]));
   const tab = (key: (typeof PHONE_TABS)[number]): NavItem[] => {
     const it = byKey.get(key);
@@ -147,7 +159,8 @@ export function ShellBottomNav({
       {
         href: it.href,
         label: it.label,
-        icon: ICON[key],
+        icon: TAB_ICON[key][0],
+        iconCurrent: TAB_ICON[key][1],
         current: isCurrent(pathname, it.href),
         ...(it.badge
           ? { badge: `${badgeText(it.badge)} ${it.badgeSays ?? 'unread'}`, count: badgeText(it.badge) }
@@ -159,21 +172,25 @@ export function ShellBottomNav({
   // Something new behind your photo: a waiting count on a page in the sheet, or friends free to talk.
   const waiting = rest.reduce((n, it) => n + (it.badge ?? 0), 0) + (freeToTalk?.lit.length ?? 0);
   const onYourPages =
-    isCurrent(pathname, `/profile/${me.handle}`) || rest.some((it) => isCurrent(pathname, it.href));
+    isCurrent(pathname, `/profile/${me.handle}`) ||
+    isCurrent(pathname, '/capsules') ||
+    rest.some((it) => isCurrent(pathname, it.href));
   const tabs: NavItem[] = [
     ...tab('home'),
     ...tab('posse'),
-    {
-      label: 'Create',
-      icon: <PlusIcon />,
-      onSelect: () => setSheet('create'),
-      expanded: sheet === 'create',
-    },
     ...tab('whispers'),
     {
-      label: 'You',
+      label: 'Profile',
+      // Your photo; on your own pages it gets a black ring (the photo cannot "fill" like the other icons).
       icon: (
-        <Avatar name={me.displayName} src={me.portraitUrl ?? undefined} tint={me.portraitTint} size="sm" />
+        <span
+          className={cn(
+            'inline-flex rounded-full',
+            onYourPages && 'ring-2 ring-text-primary ring-offset-2 ring-offset-surface',
+          )}
+        >
+          <Avatar name={me.displayName} src={me.portraitUrl ?? undefined} tint={me.portraitTint} size="sm" />
+        </span>
       ),
       onSelect: () => setSheet('you'),
       expanded: sheet === 'you',
@@ -184,7 +201,6 @@ export function ShellBottomNav({
   return (
     <>
       <BottomNavigation items={tabs} label="Primary" />
-      <CreateSheet open={sheet === 'create'} onClose={() => setSheet(undefined)} />
       <YouSheet
         open={sheet === 'you'}
         onClose={() => setSheet(undefined)}

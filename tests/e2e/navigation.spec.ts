@@ -41,7 +41,7 @@ async function person(browser: Browser, tag: string, opts: Parameters<typeof new
 
 const PHONE = { hasTouch: true, isMobile: true, viewport: { width: 320, height: 700 } };
 
-test('on a 320 px phone, the You sheet reaches every page that is not a tab — Moderation too, for staff', async ({
+test('on a 320 px phone, the Profile sheet reaches every page that is not a tab — Moderation too, for staff', async ({
   browser,
 }) => {
   const me = await person(browser, 'navphone', PHONE);
@@ -51,6 +51,7 @@ test('on a 320 px phone, the You sheet reaches every page that is not a tab — 
   const pages: [string, RegExp][] = [
     ['Visitors', /\/visitors$/],
     ['Groups', /\/groups$/],
+    ['Time Capsules', /\/capsules$/],
     ['Moderation', /\/moderation$/],
     ['Settings', /\/settings$/],
   ];
@@ -58,8 +59,8 @@ test('on a 320 px phone, the You sheet reaches every page that is not a tab — 
     await me.page.goto('/home');
     await pageReady(me.page);
     expect(await horizontalOverflow(me.page)).toBe(0);
-    await bar.getByRole('button', { name: /^You/ }).click();
-    const sheet = me.page.getByRole('dialog', { name: 'You' });
+    await bar.getByRole('button', { name: /^Profile/ }).click();
+    const sheet = me.page.getByRole('dialog', { name: 'Profile' });
     await expect(sheet).toBeVisible();
     if (label === 'Visitors') {
       expect(await axeViolations(me.page)).toEqual([]);
@@ -68,22 +69,14 @@ test('on a 320 px phone, the You sheet reaches every page that is not a tab — 
     await sheet.getByRole('link', { name: new RegExp(`^${label}`) }).click();
     await expect(me.page).toHaveURL(url);
   }
-  // ＋ opens Create: Time Capsules is one of its three ways to make something.
+  // There is no Create tab any more (2026-11-08): four tabs.
   await me.page.goto('/home');
   await pageReady(me.page);
-  await bar.getByRole('button', { name: 'Create' }).click();
-  const create = me.page.getByRole('dialog', { name: 'Create' });
-  expect(await axeViolations(me.page)).toEqual([]);
-  await create.getByRole('button', { name: /Seal a Time Capsule/ }).click();
-  await expect(me.page).toHaveURL(/\/capsules$/);
-  // "Write a post" opens Home with the cursor in "What's on your mind?".
-  await bar.getByRole('button', { name: 'Create' }).click();
-  await create.getByRole('button', { name: /Write a post/ }).click();
-  await expect(me.page).toHaveURL(/\/home\?nail=/);
-  await expect(me.page.locator('main textarea').first()).toBeFocused();
+  await expect(bar.getByRole('listitem')).toHaveCount(4);
+  await expect(bar.getByRole('button', { name: 'Create' })).toHaveCount(0);
   // The sheet ends with Sign out: on a phone that is where people look for it.
-  await bar.getByRole('button', { name: /^You/ }).click();
-  await me.page.getByRole('dialog', { name: 'You' }).getByRole('button', { name: 'Sign out' }).click();
+  await bar.getByRole('button', { name: /^Profile/ }).click();
+  await me.page.getByRole('dialog', { name: 'Profile' }).getByRole('button', { name: 'Sign out' }).click();
   await expect(me.page).toHaveURL(/\/gate$/);
   await me.page.goto('/home');
   await expect(me.page).toHaveURL(/\/login$/);
@@ -95,8 +88,8 @@ test('on a desktop the sidebar has them, and there is no phone tab bar', async (
   const me = await person(browser, 'navdesk', { viewport: { width: 1280, height: 800 } });
   await me.page.goto('/home');
   await pageReady(me.page);
-  // The phone tab bar (and its Create and You buttons) is hidden on wide screens.
-  await expect(me.page.getByRole('button', { name: 'Create' })).toBeHidden();
+  // The phone tab bar (and its Profile button) is hidden on wide screens.
+  await expect(me.page.getByRole('button', { name: /^Profile/ })).toBeHidden();
   const sidebar = me.page.getByRole('navigation', { name: 'Primary' }).first();
   for (const label of ['Visitors', 'Settings', 'Groups']) {
     await expect(sidebar.getByRole('link', { name: new RegExp(`^${label}`) })).toBeVisible();

@@ -8,7 +8,6 @@ import { postJson } from '@/ui/auth/api';
 import { cn } from '@/ui/cn';
 import { PlusIcon, SendIcon } from '@/ui/icons';
 import { uploadPhoto } from '@/ui/media/upload-photo';
-import { STORY_FILE_EVENT, takeStoryFile } from '@/ui/shell/pending-story';
 import { Avatar, FullScreen, FullScreenClose, IconButton, useToast } from '@/ui/primitives';
 import { StoryViewer } from './story-viewer';
 
@@ -38,16 +37,6 @@ export function StoriesStrip({
   const [file, setFile] = useState<File | undefined>();
   const picker = useRef<HTMLInputElement>(null);
   const startAdding = () => picker.current?.click();
-  // A photo picked in the phone's Create sheet ("Add to your Story"): taken as Home appears, or at once if it is open.
-  useEffect(() => {
-    const take = () => {
-      const chosen = takeStoryFile();
-      if (chosen) setFile(chosen);
-    };
-    take();
-    window.addEventListener(STORY_FILE_EVENT, take);
-    return () => window.removeEventListener(STORY_FILE_EVENT, take);
-  }, []);
   const mine = initial.find((r) => r.mine);
   const pals = initial.filter((r) => !r.mine);
 
