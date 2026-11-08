@@ -71,19 +71,32 @@ export interface Announcement {
 }
 
 /** The team's current "what's new" note: in the right panel on wide screens, above the feed on narrower ones. */
-export function WhatsNew({ news, id }: { news: Announcement; id: string }) {
+export function WhatsNew({ news, id, viewer }: { news: Announcement; id: string; viewer: string }) {
+  // The team account itself gets a way to the note's editor, on its own Profile (2026-11-08).
+  const mine = news.author.handle === viewer;
   return (
     <RailCard
       id={id}
       title="What’s new"
       lead={<PulseDot />}
       foot={
-        <p>
-          From{' '}
-          <Link href={`/profile/${news.author.handle}`} className="font-semibold">
-            {news.author.displayName}
-          </Link>
-          {news.author.verified && <VerifiedBadge className="ml-1" />}
+        <p className="flex items-center gap-2">
+          <span className="min-w-0 flex-1">
+            From{' '}
+            <Link href={`/profile/${news.author.handle}`} className="font-semibold">
+              {news.author.displayName}
+            </Link>
+            {news.author.verified && <VerifiedBadge className="ml-1" />}
+          </span>
+          {mine && (
+            <Link
+              href={`/profile/${news.author.handle}#whats-new-note`}
+              aria-label="Edit the What’s new note"
+              className={cn(buttonClasses({ variant: 'link' }), '-mx-1')}
+            >
+              Edit
+            </Link>
+          )}
         </p>
       }
     >
@@ -162,7 +175,7 @@ export function HomeRail({
   return (
     <>
       {/* The team's note leads the panel (2026-11-07): news is read first, then your circle. */}
-      {news && <WhatsNew news={news} id="rail-whats-new" />}
+      {news && <WhatsNew news={news} id="rail-whats-new" viewer={handle} />}
       {friends.length === 0 ? (
         <RailCard id="rail-find" title="Find your friends">
           <p className={RAIL_TEXT}>Look people up, or send them your link.</p>

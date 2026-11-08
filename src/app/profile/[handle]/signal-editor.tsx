@@ -50,7 +50,8 @@ export function SignalEditor({ current }: { current: string | undefined }) {
 
   return (
     <ClayCard>
-      <form onSubmit={save} noValidate className="flex flex-col gap-3">
+      {/* Home's "What's new" card links here (#whats-new-note); the margin keeps it clear of the sticky top bar. */}
+      <form id="whats-new-note" onSubmit={save} noValidate className="flex scroll-mt-20 flex-col gap-3">
         <h2 className="text-title text-text-primary">What’s new note</h2>
         {current && (
           <p className="text-caption text-text-secondary">

@@ -103,7 +103,7 @@ export default async function HomePage() {
           {/* Below xl there is no right panel: the team's note and On this day come before the feed instead. */}
           {announcement && (
             <div className="xl:hidden">
-              <WhatsNew news={announcement} id="whats-new" />
+              <WhatsNew news={announcement} id="whats-new" viewer={user.handle} />
             </div>
           )}
           {today && (
