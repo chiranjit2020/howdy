@@ -125,6 +125,8 @@
   --color-star: #f2b100;
   /* The top of the given Star's gradient: light Sunflower, so it looks lit from above. */
   --color-star-light: #ffe177;
+  /* The top bar (TRIAL, 2026-11-08): a bright sky blue behind the white-and-yellow logo. Same in both themes. */
+  --color-header: #0187df;
   /* Diwali lights round every avatar (TEMPORARY, Diwali 2026): deep Sunflower and a warm diya red, alternating. */
   --color-diwali-gold: #f2b100;
   --color-diwali-red: #e0301e;

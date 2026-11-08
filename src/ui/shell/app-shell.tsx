@@ -85,7 +85,7 @@ export function AppShell({
     <div className="daylight-only min-h-dvh">
       {/* Bare pages (signed out) leave the bar out altogether; their card carries the logo. */}
       {(me || !bare) && (
-        <header className="sticky top-0 z-30 border-b border-border/60 bg-background/90 backdrop-blur">
+        <header className="sticky top-0 z-30 bg-header">
           <div
             className={cn(
               'flex h-14 w-full items-center gap-2 px-4 min-[360px]:gap-3',
@@ -96,8 +96,9 @@ export function AppShell({
             )}
           >
             <HowdyLogo
-              size={me || logoOnly ? 'xs' : 'bar'}
+              size="top"
               href={me ? '/home' : '/gate'}
+              tone="onColour"
               className="justify-self-start"
             />
             {/* Search people: the box in the middle of the bar from md up; phones get a button to the Search page. */}
