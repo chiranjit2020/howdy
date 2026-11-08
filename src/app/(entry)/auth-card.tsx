@@ -73,7 +73,7 @@ export function AuthCard({
           <a
             href={`/${mode.other}`}
             onClick={swap}
-            className="inline-flex min-h-11 items-center font-semibold text-accent-strong no-underline hover:underline"
+            className="inline-flex min-h-11 items-center font-semibold text-link no-underline hover:underline"
           >
             {mode.otherLabel}
           </a>

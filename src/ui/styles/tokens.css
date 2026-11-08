@@ -76,7 +76,8 @@
   --color-text-primary: light-dark(#100b00, #f6f7fb);
   --color-text-secondary: light-dark(#4a4540, #b3b8d0);
   --color-text-muted: light-dark(#5e5850, #9ca2bd);
-  --color-link: light-dark(#2b3278, #b3baf0);
+  /* Links: the top bar's blue, one step deeper so small words stay readable (4.9:1 on white; 2026-11-08, was navy). */
+  --color-link: light-dark(#0073c4, #7cc8ff);
   /*
    * Focus: a deep sunflower gold (the user's call, 2026-10-31: sunflower rings). Pure sunflower is ~1.6:1 on white, too
    * faint to find; this gold keeps 3:1 on every surface. Dusk can use sunflower itself.

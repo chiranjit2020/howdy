@@ -5,7 +5,7 @@ import { AlertIcon } from '@/ui/icons';
 import { Checkbox } from '@/ui/primitives';
 
 // Plain weight, always underlined: the sentence reads as one, and the links still look like links.
-const LINK = 'text-accent-strong underline underline-offset-2';
+const LINK = 'text-link underline underline-offset-2';
 
 /** Small and inline, like the fields' own errors (the box above it carries aria-invalid). */
 function BoxError({ children }: { children: string }) {

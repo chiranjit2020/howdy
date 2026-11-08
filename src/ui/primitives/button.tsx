@@ -14,7 +14,7 @@ const VARIANT: Record<ButtonVariant, string> = {
   ghost: 'bg-transparent text-text-primary hover:bg-surface-sunken',
   danger: cn('bg-danger text-on-danger shadow-clay-sm hover:opacity-90', DISABLED_FILL),
   /** Words that act, like a link: no fill, no border. For small actions beside content (Send, Remove). */
-  link: 'bg-transparent text-accent hover:underline',
+  link: 'bg-transparent text-link hover:underline',
 };
 
 // Every size keeps a >=44px touch target on touch screens (min-h-11); with a mouse it is desktop-sized: 32 / 36 / 40 px.

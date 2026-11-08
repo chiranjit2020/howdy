@@ -62,7 +62,7 @@ function ReplyBody({ body }: { body: string }) {
     <>
       <Link
         href={`/profile/${m[1]!.toLowerCase()}`}
-        className="font-semibold text-accent no-underline hover:underline"
+        className="font-semibold text-link no-underline hover:underline"
       >
         {m[0]}
       </Link>
