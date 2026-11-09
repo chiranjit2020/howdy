@@ -145,11 +145,13 @@ describe('the legal documents', () => {
   it('the Cookie Policy names exactly the cookies the code sets', async () => {
     const text = read('cookies');
     const { THEME_COOKIE } = await import('@/ui/theme');
+    const { SPLASH_COOKIE } = await import('@/shared/splash');
     expect(text).toContain('`__Host-howdy_session`');
     expect(text).toContain(`\`${THEME_COOKIE}\``);
-    // only two cookie names, in backticks, that look like cookies
+    expect(text).toContain(`\`${SPLASH_COOKIE}\``);
+    // only these three cookie names, in backticks, that look like cookies
     const named = new Set(text.match(/`(__Host-)?howdy_[a-z_]+`/g));
-    expect(named.size).toBe(2);
+    expect(named.size).toBe(3);
   });
 
   it('the Privacy Policy states the retention periods the code enforces', async () => {
@@ -162,7 +164,9 @@ describe('the legal documents', () => {
     expect(AUDIT_RETENTION_DAYS).toBe(365);
     expect(text).toContain('**Security records:** 12 months, then deleted.');
     expect(text).not.toContain('fixed retention period for security records');
-    expect(text).toContain('**Status:** members no longer set one. The Howdy team’s “What’s new” note stays up until');
+    expect(text).toContain(
+      '**Status:** members no longer set one. The Howdy team’s “What’s new” note stays up until',
+    );
     expect(text).toContain(`**Messages:** ${WHISPER_RETENTION_DAYS} days`);
     expect(text).toContain(`**Profile visits:** ${TRACK_DAYS} days`);
     expect(text).toContain(

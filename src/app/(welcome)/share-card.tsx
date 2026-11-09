@@ -16,7 +16,7 @@ const SLATE = '#4a4540';
 const PRIMARY_SOFT = '#fef6d8';
 // The primary button: Sunflower with black ink on it, like every primary button in the app (2026-11-08; was navy).
 const PRIMARY = '#f8cf35';
-const ON_PRIMARY = INK;
+const ON_PRIMARY = '#100b00';
 // The headline's second line, on white: Royal Navy, the accent.
 const ACCENT = '#2b3278';
 

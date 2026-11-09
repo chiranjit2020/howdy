@@ -14,12 +14,13 @@ export const SETTINGS_SECTIONS = [
 
 /**
  * The sections of Settings, each its own short page: a row of links styled as tabs (they are navigation, so a nav with
- * aria-current, not an ARIA tablist). On a phone the row scrolls sideways; the current one is marked in sunflower.
+ * aria-current, not an ARIA tablist). On a phone the row scrolls sideways out to the shell's 8 px edge (-mx-2, matching
+ * its px-2; a wider bleed made the whole page scroll), and the current one is marked in sunflower.
  */
 export function SettingsTabs() {
   const path = usePathname();
   return (
-    <nav aria-label="Settings sections" className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+    <nav aria-label="Settings sections" className="-mx-2 overflow-x-auto px-2 sm:mx-0 sm:px-0">
       <ul className="flex min-w-max gap-1 border-b border-border">
         {SETTINGS_SECTIONS.map((s) => {
           const current = path === s.href;

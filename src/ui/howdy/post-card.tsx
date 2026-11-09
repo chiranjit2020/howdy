@@ -629,7 +629,7 @@ export function PostCard({
                 aria-controls={repliesId}
                 className="inline-flex min-h-11 items-center gap-1.5 rounded-pill px-3 text-caption font-semibold text-text-primary tabular-nums transition-colors duration-150 hover:bg-surface-sunken pointer-fine:min-h-8"
               >
-                <CommentIcon aria-hidden="true" className="text-[1.25rem]" />
+                <CommentIcon aria-hidden="true" className="text-icon" />
                 {replyCount}
               </button>
             )}

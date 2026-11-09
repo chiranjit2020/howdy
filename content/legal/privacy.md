@@ -7,7 +7,7 @@ Howdy is run by {{operator}}, an individual based in {{country}} ("Howdy", "we",
 ## The short version
 
 - We collect what you give us (your email, username, what you post) and a little that is needed to keep your account safe. We do not sell your data and we do not show ads.
-- We do not use analytics or tracking tools, and we use only two small cookies (see the [Cookie Policy](/cookies)).
+- We do not use analytics or tracking tools, and we use only three small cookies (see the [Cookie Policy](/cookies)).
 - A lot of Howdy is built to forget: Statuses and Stories fade after 12 hours, messages after 7 days, and profile visits keep only a date for 7 days.
 - Your privacy settings decide who can see your profile, status and wall. New profiles are visible to signed-in members only.
 - You can delete your account, or download a copy of your data, yourself in Settings at any time. You can also ask us to correct your data by writing to [{{contactEmail}}](mailto:{{contactEmail}}).
@@ -158,7 +158,7 @@ We may share information if the law requires it, for example in answer to a vali
 
 ## Cookies
 
-Howdy uses two cookies: one that keeps you signed in, and one that remembers your choice of light or dark theme, if you make one. There are no advertising or analytics cookies. The [Cookie Policy](/cookies) has the details.
+Howdy uses three cookies: one that keeps you signed in, one that remembers your choice of light or dark theme, if you make one, and one that remembers, until you close your browser, that you have already seen the welcome screen on a computer. There are no advertising or analytics cookies. The [Cookie Policy](/cookies) has the details.
 
 ## Security
 

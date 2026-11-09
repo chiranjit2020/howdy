@@ -104,7 +104,7 @@ function TabMark({
       aria-hidden="true"
       className={cn(
         // Black icons on white (2026-11-08, the user's call): no pill; the current tab's icon is filled instead.
-        'relative flex h-8 w-14 items-center justify-center text-[1.625rem] text-text-primary transition-transform duration-150 group-active:scale-90',
+        'relative flex h-8 w-14 items-center justify-center text-nav-icon text-text-primary transition-transform duration-150 group-active:scale-90',
         current && 'animate-nav-pop',
         pending && 'animate-shimmer opacity-60',
       )}

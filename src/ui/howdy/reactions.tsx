@@ -117,7 +117,7 @@ export function StarButton({
     setWasGiven(given);
     if (given) setBurst((b) => b + 1);
   }
-  const star = <StarMark given={given} burst={burst} className="text-[1.25rem]" />;
+  const star = <StarMark given={given} burst={burst} className="text-icon" />;
   const look = 'inline-flex items-center gap-1.5 text-caption font-semibold';
   if (!onReact) {
     if (total === 0) return null;

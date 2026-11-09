@@ -14,13 +14,18 @@ vi.mock('next/navigation', () => ({ usePathname: () => '/settings', useRouter: (
 const XSS = '<img src=x onerror=alert(1)><script>alert(2)</script>';
 
 describe('profile header extras', () => {
-  it('the friend count shows only when given (your own profile), and links to the friends list', () => {
-    const { rerender } = render(<RanchHeader displayName="Asha" handle="asha" friendCount={1} />);
+  it('the numbers show for everyone; only your own friend number links to the friends list (ADR-062)', () => {
+    const { rerender } = render(<RanchHeader displayName="Asha" handle="asha" friendCount={1} friendsLink />);
     expect(screen.getByRole('link', { name: '1 friend' })).toHaveAttribute('href', '/friends');
-    rerender(<RanchHeader displayName="Asha" handle="asha" friendCount={24} />);
-    expect(screen.getByRole('link', { name: '24 friends' })).toBeInTheDocument();
-    rerender(<RanchHeader displayName="Asha" handle="asha" />);
+    // Someone else's profile: the same number, as plain text, with their followers once there are any.
+    rerender(<RanchHeader displayName="Asha" handle="asha" friendCount={1234} followerCount={3} />);
+    expect(screen.getByText('1,234 friends')).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /friends?$/ })).not.toBeInTheDocument();
+    expect(screen.getByText(/3 followers/)).toBeInTheDocument();
+    rerender(<RanchHeader displayName="Asha" handle="asha" friendCount={2} followerCount={0} />);
+    expect(screen.queryByText(/follower/)).not.toBeInTheDocument();
+    rerender(<RanchHeader displayName="Asha" handle="asha" />);
+    expect(screen.queryByText(/friends?$/)).not.toBeInTheDocument();
   });
 
   it('the intro says what the tick means, team first; no tick and nothing to show, nothing at all', () => {

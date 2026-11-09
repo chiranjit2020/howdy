@@ -83,10 +83,10 @@ describe('displayNameSchema', () => {
 });
 
 describe('signalSchema', () => {
-  it('enforces the 80-character product limit and forbids links and disguising characters', () => {
+  it('enforces the 280-character limit (the team’s What’s new note) and forbids links and disguising characters', () => {
     expect(ok(signalSchema, 'Writing code. Send chai.')).toBe(true);
-    expect(ok(signalSchema, 'x'.repeat(80))).toBe(true);
-    expect(ok(signalSchema, 'x'.repeat(81))).toBe(false);
+    expect(ok(signalSchema, 'x'.repeat(280))).toBe(true);
+    expect(ok(signalSchema, 'x'.repeat(281))).toBe(false);
     expect(ok(signalSchema, '')).toBe(false);
     expect(ok(signalSchema, 'check out https://spam.example')).toBe(false);
     expect(ok(signalSchema, `hi${u(0x202e)}there`)).toBe(false);

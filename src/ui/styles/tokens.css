@@ -75,7 +75,7 @@
 
   --color-text-primary: light-dark(#100b00, #f6f7fb);
   --color-text-secondary: light-dark(#4a4540, #b3b8d0);
-  --color-text-muted: light-dark(#5e5850, #9ca2bd);
+  --color-text-muted: light-dark(#5e5850, #a0a6c1);
   /* Links: the top bar's blue, one step deeper so small words stay readable (4.9:1 on white; 2026-11-08, was navy). */
   --color-link: light-dark(#0073c4, #7cc8ff);
   /*
@@ -210,6 +210,11 @@
   --text-tab: 0.6875rem;
   --text-tab--line-height: 1.25;
   --text-tab--letter-spacing: -0.01em;
+  /* Icons sized by font size (their 1em): 20 px beside a post's actions, 26 px in the phone tab bar. */
+  --text-icon: 1.25rem;
+  --text-icon--line-height: 1;
+  --text-nav-icon: 1.625rem;
+  --text-nav-icon--line-height: 1;
   --text-code: 0.875rem;
   --text-code--line-height: 1.5;
 
