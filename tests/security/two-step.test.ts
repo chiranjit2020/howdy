@@ -358,7 +358,7 @@ describe('passkeys', () => {
     const { key } = await addKey(a);
     const r = await signInWith(key);
     expect(r.status).toBe(200);
-    expect(r.data).toEqual({ user: { id: await idOf(a), handle: a.handle } });
+    expect(r.data).toEqual({ user: { id: await idOf(a), handle: a.handle }, next: expect.any(String) });
     expect((await me(r.cookie)).status).toBe(200);
     const [row] = await db().select().from(passkeys);
     expect(row!.lastUsedAt).toBeInstanceOf(Date);

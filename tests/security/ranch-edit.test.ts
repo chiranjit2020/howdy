@@ -1,3 +1,4 @@
+import { capitaliseName, nameFromHandle } from '@/shared/names';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { getPool } from '@/platform/db';
 import { setRateLimiter } from '@/platform/rate-limit';
@@ -31,7 +32,10 @@ describe('only the signed-in owner can change a Ranch', () => {
     expect((await patchRanch({ displayName: 'Hijacked' }, evil)).status).toBe(403);
     expect((await setSignal('hijacked', evil)).status).toBe(403);
     expect((await clearSignal(evil)).status).toBe(403);
-    expect((await myRanch(a.cookie)).data.ranch).toMatchObject({ displayName: a.handle, signal: null });
+    expect((await myRanch(a.cookie)).data.ranch).toMatchObject({
+      displayName: nameFromHandle(a.handle),
+      signal: null,
+    });
   });
 
   it('User A cannot change User B: there is no way to even name B, and smuggled ids are ignored', async () => {
@@ -44,9 +48,13 @@ describe('only the signed-in owner can change a Ranch', () => {
       { cookie: a.cookie },
     );
     expect(attack.status).toBe(200);
-    expect(attack.data.ranch).toMatchObject({ handle: a.handle, displayName: 'Alice was here' });
+    // Saved capitalised word by word, like every display name.
+    expect(attack.data.ranch).toMatchObject({ handle: a.handle, displayName: 'Alice Was Here' });
     // Bob is untouched
-    expect((await myRanch(b.cookie)).data.ranch).toMatchObject({ handle: b.handle, displayName: b.handle });
+    expect((await myRanch(b.cookie)).data.ranch).toMatchObject({
+      handle: b.handle,
+      displayName: nameFromHandle(b.handle),
+    });
     // ...and so are the handles
     expect((await sql('select handle from users order by handle')).rows.map((r) => r.handle)).toEqual(
       [a.handle, b.handle].sort(),
@@ -110,7 +118,7 @@ describe('Tend the Ranch: validation is enforced on the server', () => {
     expect(r.status).toBe(422);
     expect(Object.keys(r.data.error?.fields ?? {})).toContain(field);
     expect((await myRanch(a.cookie)).data.ranch).toMatchObject({
-      displayName: a.handle,
+      displayName: nameFromHandle(a.handle),
       portraitTint: 'peach',
       ranchVisibility: 'members',
     });
@@ -156,7 +164,9 @@ describe('Tend the Ranch: validation is enforced on the server', () => {
     const a = await signedInUser(kit);
     const payload = '<img src=x onerror=alert(1)>';
     await patchRanch({ displayName: payload }, { cookie: a.cookie });
-    expect((await myRanch(a.cookie)).data.ranch).toMatchObject({ displayName: payload });
+    // Not sanitised or escaped: only capitalised word by word, like every display name.
+    expect((await myRanch(a.cookie)).data.ranch).toMatchObject({ displayName: capitaliseName(payload) });
+    expect(capitaliseName(payload)).toContain('<img ');
     // JSON API responses are not HTML
     const view = await viewRanch(a.handle, { cookie: a.cookie });
     expect(view.res.headers.get('content-type')).toMatch(/application\/json/);
@@ -200,7 +210,7 @@ describe('the Signal', () => {
   });
 
   it.each([
-    ['too long (81)', 's'.repeat(81)],
+    ['too long (281)', 's'.repeat(281)],
     ['empty', '   '],
     ['a link', 'see https://spam.example now'],
     ['a bare domain', 'buy at cheap-pills.com'],
@@ -251,7 +261,7 @@ describe('edits are rate limited (and fail closed)', () => {
     setRateLimiter(undefined);
     const { MemoryRateLimiter } = await import('@/platform/rate-limit');
     setRateLimiter(new MemoryRateLimiter());
-    expect((await myRanch(a.cookie)).data.ranch).toMatchObject({ displayName: a.handle });
+    expect((await myRanch(a.cookie)).data.ranch).toMatchObject({ displayName: nameFromHandle(a.handle) });
   });
 });
 

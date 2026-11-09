@@ -60,7 +60,11 @@ describe('sign up → verify → sign in → me → sign out (happy path)', () =
 
     const login = await loginAs(u);
     expect(login.status).toBe(200);
-    expect(login.data).toEqual({ user: { id: expect.any(String), handle: u.handle } });
+    // A first sign-in lands on the new account's own profile (e13245e).
+    expect(login.data).toEqual({
+      user: { id: expect.any(String), handle: u.handle },
+      next: `/profile/${u.handle}`,
+    });
     expect(login.cookie).toMatch(/^howdy_session=[A-Za-z0-9_-]{43}$/);
 
     const who = await me(login.cookie);

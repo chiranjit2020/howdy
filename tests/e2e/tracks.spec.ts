@@ -71,7 +71,7 @@ test.describe('Tracks in a real browser (production build, real CSP)', () => {
     await expect(a.page.getByRole('heading', { name: 'Profile visitors', level: 1 })).toBeVisible();
     // Grouped by day: the friend by name under Today, the stranger only as "Someone else".
     const today = a.page.getByRole('region', { name: 'Today', exact: true });
-    await expect(today.getByRole('link', { name: new RegExp(`^${friend.handle}`) })).toBeVisible();
+    await expect(today.getByRole('link', { name: new RegExp(`^${friend.name}`) })).toBeVisible();
     await expect(today.getByText('Someone else')).toBeVisible();
     // A friend's visit is a reason to say hi: one tap to Messages.
     await expect(today.getByRole('link', { name: /^Message to / })).toHaveAttribute(
@@ -80,6 +80,7 @@ test.describe('Tracks in a real browser (production build, real CSP)', () => {
     );
     // Nothing else about the stranger is anywhere on the page.
     expect(await a.page.content()).not.toContain(stranger.handle);
+    expect(await a.page.content()).not.toContain(stranger.name);
     // …and no time of day anywhere on it.
     expect(await a.page.locator('main').innerText()).not.toMatch(/\d{1,2}:\d{2}/);
 

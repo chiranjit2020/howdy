@@ -55,11 +55,11 @@ test.describe('Invite links (production build, real CSP)', () => {
     const friendProblems = await watchProblems(page);
     await page.goto(path);
     await pageReady(page);
-    await expect(page.getByText(`${rick.handle} invited you to Howdy`)).toBeVisible();
+    await expect(page.getByText(`${rick.name} invited you to Howdy`)).toBeVisible();
     expect(await axeViolations(page)).toEqual([]);
     expect(await horizontalOverflow(page)).toBe(0);
     // The link's preview card names the inviter; it is drawn per link, so check it really renders.
-    await expect(page).toHaveTitle(`${rick.handle} invited you to Howdy`);
+    await expect(page).toHaveTitle(`${rick.name} invited you to Howdy`);
     const og = await page.locator('meta[property="og:image"]').getAttribute('content');
     const card = await page.request.get(new URL(og!).pathname + new URL(og!).search);
     expect(card.status()).toBe(200);

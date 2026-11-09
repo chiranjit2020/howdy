@@ -53,7 +53,8 @@ describe('WCAG AA contrast (both themes)', () => {
     ['danger', 4.5],
     ['success-text', 4.5],
   ];
-  const surfaces = ['background', 'surface', 'surface-raised', 'parchment', 'tribute'];
+  // surface-sunken: the grey boxes (sign-in notices, two-step) hold links and small words too.
+  const surfaces = ['background', 'surface', 'surface-raised', 'surface-sunken', 'parchment', 'tribute'];
 
   for (const scheme of SCHEMES) {
     describe(scheme, () => {

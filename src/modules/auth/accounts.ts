@@ -8,6 +8,7 @@ import { emit } from '@/platform/events';
 import { logger } from '@/platform/logger';
 import { getMailer } from '@/platform/mailer';
 import { enforceRateLimit } from '@/platform/rate-limit';
+import { nameFromHandle } from '@/shared/names';
 import { passwordMatchesIdentity, IDENTITY_PASSWORD_MESSAGE } from '@/shared/validation/auth';
 import { audit } from './audit';
 import { BREACHED_PASSWORD_MESSAGE, isBreachedPassword } from './breached';
@@ -161,7 +162,7 @@ export async function signUp(
         .returning({ id: users.id });
       await tx.insert(credentials).values({ userId: u!.id, passwordHash });
       // Every account has a Ranch from the first moment (same transaction: no user without a profile, ever).
-      await createProfile(tx, u!.id, input.displayName ?? input.handle);
+      await createProfile(tx, u!.id, input.displayName ?? nameFromHandle(input.handle));
       // The sign-up form required agreeing to the current Terms + Privacy Policy; the schema refuses anything else.
       await recordAcceptance(tx, u!.id);
       const token = await issueEmailToken(tx, u!.id, 'verify_email', VERIFY_EMAIL_TTL_MS);
@@ -218,7 +219,7 @@ export async function signUpWithGoogle(
         .insert(users)
         .values({ email: input.email, handle: input.handle, emailVerifiedAt: now })
         .returning({ id: users.id });
-      await createProfile(tx, u!.id, input.displayName ?? input.handle);
+      await createProfile(tx, u!.id, input.displayName ?? nameFromHandle(input.handle));
       await recordAcceptance(tx, u!.id);
       return u!.id;
     });

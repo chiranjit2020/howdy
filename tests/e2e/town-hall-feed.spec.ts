@@ -37,7 +37,7 @@ const api = (p: Person, path: string, data: unknown) =>
   p.page.request.fetch(path, { method: 'POST', data, headers: { origin: ORIGIN } });
 
 /** The Post Card-shaped post from this person (its accessible name says who wrote it). */
-const postFrom = (page: Page, handle: string) => page.getByRole('article', { name: `Post from ${handle}` });
+const postFrom = (page: Page, name: string) => page.getByRole('article', { name: `Post from ${name}` });
 
 /** Reach the group the way a person would: Groups → its row under "Your groups". */
 async function openByTapping(p: Person, name: string, id: string) {
@@ -72,11 +72,11 @@ test.describe('Group feed (production build, real CSP, phone)', () => {
     await expect(ann.page.getByRole('heading', { name: 'The feed' })).toBeVisible();
     await ann.page.getByLabel('Post to this group').fill('Who is up for chai on Sunday?');
     await ann.page.getByRole('button', { name: 'Post', exact: true }).tap();
-    await expect(postFrom(ann.page, ann.handle)).toContainText('Who is up for chai on Sunday?');
+    await expect(postFrom(ann.page, ann.name)).toContainText('Who is up for chai on Sunday?');
 
     // The owner sees it, gives it a Star and scribbles a reply on its back.
     await openByTapping(owner, name, id);
-    const theirPost = postFrom(owner.page, ann.handle);
+    const theirPost = postFrom(owner.page, ann.name);
     await expect(theirPost).toContainText('Who is up for chai on Sunday?');
     await theirPost.getByRole('button', { name: /^Star/ }).tap();
     await expect(theirPost.getByRole('button', { name: /^Star/ })).toHaveAttribute('aria-pressed', 'true');
@@ -88,12 +88,12 @@ test.describe('Group feed (production build, real CSP, phone)', () => {
     // Ann's bell has both, and they lead back to the Town Hall.
     await ann.page.goto('/notifications');
     await pageReady(ann.page);
-    await expect(ann.page.getByText(`${owner.handle} replied to your post in a group.`)).toBeVisible();
-    await expect(ann.page.getByText(`${owner.handle} reacted to your post in a group.`)).toBeVisible();
-    await ann.page.getByText(`${owner.handle} replied to your post in a group.`).tap();
+    await expect(ann.page.getByText(`${owner.name} replied to your post in a group.`)).toBeVisible();
+    await expect(ann.page.getByText(`${owner.name} reacted to your post in a group.`)).toBeVisible();
+    await ann.page.getByText(`${owner.name} replied to your post in a group.`).tap();
     await expect(ann.page).toHaveURL(new RegExp(`/groups/${id}$`));
     await pageReady(ann.page);
-    await expect(postFrom(ann.page, ann.handle)).toBeVisible();
+    await expect(postFrom(ann.page, ann.name)).toBeVisible();
 
     // Checks on the member's view of the page, at 320 px.
     expect(await axeViolations(ann.page)).toEqual([]);
@@ -112,7 +112,7 @@ test.describe('Group feed (production build, real CSP, phone)', () => {
     await ann.page.getByRole('button', { name: `More about this post from @${ann.handle}` }).tap();
     await ann.page.getByRole('menuitem', { name: 'Take it back' }).tap();
     await ann.page.getByRole('button', { name: 'Take it down' }).tap();
-    await expect(postFrom(ann.page, ann.handle)).toHaveCount(0);
+    await expect(postFrom(ann.page, ann.name)).toHaveCount(0);
 
     expect(problems).toEqual([]);
     await Promise.all([owner.ctx.close(), ann.ctx.close(), outsider.ctx.close()]);

@@ -123,7 +123,8 @@ describe('who is rung when a message is sent', () => {
     const { a, b } = await pals();
     expect((await whisper(b.handle, 'howdy', as(a), newId())).status).toBe(201);
     await flushBackground();
-    expect(rungChannels()).toEqual(
+    // Who is rung, not how often: the recipient also hears the message's notification (live counts, ADR-035 amended).
+    expect([...new Set(rungChannels())]).toEqual(
       [liveChannelFor(await userId(a.handle))!, liveChannelFor(await userId(b.handle))!].sort(),
     );
   });

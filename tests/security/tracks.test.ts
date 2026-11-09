@@ -1,3 +1,4 @@
+import { nameFromHandle } from '@/shared/names';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { POST as markSeen } from '@/app/api/me/tracks/seen/route';
 import { bucketOf, newVisits, purgeOldTracks, recordVisit } from '@/modules/tracks';
@@ -203,7 +204,12 @@ describe('who is named — decided when the list is read', () => {
     await visit(stranger, owner);
     const t = await myTracks(as(owner));
     expect(t.data.people).toEqual([
-      { handle: friend.handle, displayName: friend.handle, portraitTint: expect.any(String), when: 'today' },
+      {
+        handle: friend.handle,
+        displayName: nameFromHandle(friend.handle),
+        portraitTint: expect.any(String),
+        when: 'today',
+      },
     ]);
     expect(t.data.hidden).toEqual({ today: 1, yesterday: 0, 'this-week': 0 });
     expect(t.text).not.toContain(stranger.handle);

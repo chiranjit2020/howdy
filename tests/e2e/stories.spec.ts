@@ -136,7 +136,7 @@ test('a Story: shared from Home on a phone, opened by a friend who reacts and re
   await owner.page.screenshot({ path: '.dev/story-viewer-mine.png' });
   await mine.getByRole('button', { name: 'Seen by 1' }).tap();
   await expect(mine.getByRole('listitem')).toHaveCount(1);
-  await expect(mine.getByRole('listitem')).toContainText(/reacted Fire/);
+  await expect(mine.getByRole('listitem')).toContainText(/gave a Star/);
   await owner.page.screenshot({ path: '.dev/story-viewer-seen.png' });
   expect(await axeViolations(owner.page)).toEqual([]);
   expect(await smallTargets(owner.page)).toEqual([]);

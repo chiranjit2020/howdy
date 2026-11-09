@@ -30,7 +30,7 @@ async function makePosse(asker: Person, asked: Person) {
   // The relationship bar says so at once; after the page refreshes the Ranch header's badge says it too.
   await expect(asker.page.getByText('Requested', { exact: true }).first()).toBeVisible();
   await asked.page.goto('/friends');
-  await asked.page.getByRole('button', { name: `Accept ${asker.handle}` }).click();
+  await asked.page.getByRole('button', { name: `Accept ${asker.name}` }).click();
   await expect(asked.page.getByRole('heading', { name: /^Your friends \(1\)/ })).toBeVisible();
 }
 
@@ -75,17 +75,17 @@ test.describe('Posse, Block and Flag trouble (production build, real CSP)', () =
     await expect(
       a.page
         .getByRole('region', { name: 'Requests for you (1)' })
-        .getByRole('link', { name: new RegExp(b.handle) }),
+        .getByRole('link', { name: new RegExp(b.name) }),
     ).toBeVisible();
     expect((await b.page.goto(`/profile/${a.handle}`))?.status()).toBe(404); // still hidden while pending
 
-    await a.page.getByRole('button', { name: `Accept ${b.handle}` }).click();
+    await a.page.getByRole('button', { name: `Accept ${b.name}` }).click();
     await expect(a.page.getByRole('heading', { name: /^Your friends \(1\)/ })).toBeVisible();
 
     // Now Bob is in the Posse: the Ranch opens for him, with the relationship shown.
     const after = await b.page.goto(`/profile/${a.handle}`);
     expect(after?.status()).toBe(200);
-    await expect(b.page.getByRole('heading', { level: 1, name: a.handle })).toBeVisible();
+    await expect(b.page.getByRole('heading', { level: 1, name: a.name })).toBeVisible();
     await expect(b.page.locator('#main').getByText('Friends', { exact: true })).toBeVisible(); // the relationship badge
 
     // A stranger (Carol) still gets the ordinary 404.
@@ -132,7 +132,7 @@ test.describe('Posse, Block and Flag trouble (production build, real CSP)', () =
     await b.page.goto('/profile/nobody_home_zzz');
     expect(await b.page.getByRole('main').innerText()).toBe(blockedText);
     await b.page.goto('/friends');
-    await expect(b.page.getByText(a.handle)).toHaveCount(0);
+    await expect(b.page.getByText(a.name)).toHaveCount(0);
 
     // Alice's Workshop lists Bob as an Outlaw, with an undo; her Posse is empty.
     await a.page.goto('/settings/people');
@@ -140,7 +140,7 @@ test.describe('Posse, Block and Flag trouble (production build, real CSP)', () =
     await a.page.goto('/friends');
     await expect(a.page.getByText('No friends yet')).toBeVisible();
     await a.page.goto('/settings/people');
-    await a.page.getByRole('button', { name: `Unblock ${b.handle}` }).click();
+    await a.page.getByRole('button', { name: `Unblock ${b.name}` }).click();
     await expect(a.page.getByText(/Nobody\. You can block/)).toBeVisible();
 
     // Unblocked: Bob can see Alice again (members-only is the default), but the Posse is gone.

@@ -1,3 +1,4 @@
+import { nameFromHandle } from '@/shared/names';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { purgeOldChimes } from '@/modules/notifications';
 import { flushBackground } from '@/platform/background';
@@ -54,7 +55,7 @@ describe('Posse notifications', () => {
     const a = await person('alice');
     const b = await person('bob');
     await doAct(b.handle, 'request', as(a));
-    expect(await texts(as(b))).toEqual([`${a.handle} wants to be your friend.`]);
+    expect(await texts(as(b))).toEqual([`${nameFromHandle(a.handle)} wants to be your friend.`]);
     expect((await chimesOf(as(b))).data.chimes![0]).toMatchObject({
       type: 'posse_requested',
       href: '/friends',
@@ -64,7 +65,7 @@ describe('Posse notifications', () => {
     expect(await texts(as(a))).toEqual([]);
 
     await doAct(a.handle, 'accept', as(b));
-    expect(await texts(as(a))).toEqual([`${b.handle} said yes. You are friends now.`]);
+    expect(await texts(as(a))).toEqual([`${nameFromHandle(b.handle)} said yes. You are friends now.`]);
     expect((await chimesOf(as(a))).data.chimes![0]!.href).toBe(`/profile/${b.handle}`);
     expect(await bell(as(b))).toBe(1); // accepting rings nothing for the accepter
   });
@@ -134,7 +135,7 @@ describe('Wall notifications', () => {
     // It leads to the post itself, not the top of the wall (2026-11-08).
     expect((await chimesOf(as(owner))).data.chimes![0]).toMatchObject({
       type: 'card_created',
-      text: `${friend.handle} posted on your wall.`,
+      text: `${nameFromHandle(friend.handle)} posted on your wall.`,
       href: `/profile/${owner.handle}/post/${id}`,
     });
     expect(await bell(as(friend))).toBe(0);
@@ -162,8 +163,10 @@ describe('Wall notifications', () => {
     await flushBackground();
     await q('delete from notifications');
     await replyTo(cardId, { body: 'a reply' }, as(friend));
-    expect(await texts(as(third))).toEqual([`${friend.handle} replied to your post.`]);
-    expect(await texts(as(owner))).toEqual([`${friend.handle} replied to a post on your wall.`]);
+    expect(await texts(as(third))).toEqual([`${nameFromHandle(friend.handle)} replied to your post.`]);
+    expect(await texts(as(owner))).toEqual([
+      `${nameFromHandle(friend.handle)} replied to a post on your wall.`,
+    ]);
     expect(await texts(as(friend))).toEqual([]);
     // The card's writer being the owner rings once, not twice.
     const own = (await nail(owner.handle, { body: 'owner card' }, as(owner))).data.card!.id;
@@ -184,7 +187,7 @@ describe('Wall notifications', () => {
     await replyTo(cardId, { body: `@${stranger.handle} look at this` }, as(third)); // never replied here: not told
     await replyTo(cardId, { body: `@${friend.handle} me again` }, as(friend)); // not about your own reply
     await flushBackground();
-    expect(await texts(as(friend))).toEqual([`${third.handle} replied to you on a post.`]);
+    expect(await texts(as(friend))).toEqual([`${nameFromHandle(third.handle)} replied to you on a post.`]);
     expect(await texts(as(stranger))).toEqual([]);
     // The owner (the card's writer) is told as the writer, not as someone mentioned.
     expect((await texts(as(owner))).every((t) => t.endsWith('replied to your post.'))).toBe(true);
@@ -198,7 +201,7 @@ describe('Wall notifications', () => {
       await yo(id, false, as(friend));
     }
     await yo(id, true, as(friend));
-    expect(await texts(as(owner))).toEqual([`${friend.handle} reacted to your post.`]);
+    expect(await texts(as(owner))).toEqual([`${nameFromHandle(friend.handle)} reacted to your post.`]);
     await markRead({ all: true }, as(owner));
     await yo(id, false, as(friend));
     await yo(id, true, as(friend));
@@ -212,11 +215,13 @@ describe('Wall notifications', () => {
     const id = (await nail(owner.handle, { body: 'please' }, as(friend))).data.card!.id;
     expect(await types(as(owner))).toEqual(['card_waiting']);
     expect((await chimesOf(as(owner))).data.chimes![0]!.text).toBe(
-      `A post from ${friend.handle} is waiting for your approval.`,
+      `A post from ${nameFromHandle(friend.handle)} is waiting for your approval.`,
     );
     expect(await texts(as(friend))).toEqual([]);
     await approve(id, as(owner));
-    expect(await texts(as(friend))).toEqual([`${owner.handle} approved your post. It is on the wall now.`]);
+    expect(await texts(as(friend))).toEqual([
+      `${nameFromHandle(owner.handle)} approved your post. It is on the wall now.`,
+    ]);
   });
 
   it('Restrict: the owner gets the SAME "waiting" Notification, and approving a held card tells its writer NOTHING (that would reveal it)', async () => {
@@ -226,7 +231,7 @@ describe('Wall notifications', () => {
     const held = (await chimesOf(as(owner))).data.chimes![0]!;
     expect(held).toMatchObject({
       type: 'card_waiting',
-      text: `A post from ${friend.handle} is waiting for your approval.`,
+      text: `A post from ${nameFromHandle(friend.handle)} is waiting for your approval.`,
     });
     await approve(id, as(owner));
     expect(await rows()).toBe(1);
@@ -272,7 +277,7 @@ describe('what is shown is decided when it is read', () => {
     expect(await bell(as(owner))).toBe(2);
     await doAct(other.handle, 'mute', as(owner));
     expect(await bell(as(owner))).toBe(1);
-    expect(await texts(as(owner))).toEqual([`${friend.handle} posted on your wall.`]);
+    expect(await texts(as(owner))).toEqual([`${nameFromHandle(friend.handle)} posted on your wall.`]);
     await doAct(other.handle, 'unmute', as(owner));
     expect(await bell(as(owner))).toBe(2);
     await doAct(friend.handle, 'block', as(owner));

@@ -1,3 +1,4 @@
+import { nameFromHandle } from '@/shared/names';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { GET as myInviteRoute, POST as resetRoute } from '@/app/api/me/invite/route';
 import { authHandlers } from '@/modules/auth';
@@ -61,11 +62,11 @@ describe('my invite link', () => {
     const first = await linkOf(rick);
     expect(first.code).toMatch(/^[A-Za-z0-9]{10}$/);
     expect((await linkOf(rick)).code).toBe(first.code);
-    expect(await inviterName(first.code)).toBe(rick.handle); // display name defaults to the call sign
+    expect(await inviterName(first.code)).toBe(nameFromHandle(rick.handle)); // display name starts as the username made readable
     const next = await reset(rick);
     expect(next).not.toBe(first.code);
     expect(await inviterName(first.code)).toBeNull();
-    expect(await inviterName(next)).toBe(rick.handle);
+    expect(await inviterName(next)).toBe(nameFromHandle(rick.handle));
   });
 
   it('shows the display name only — never the username', async () => {

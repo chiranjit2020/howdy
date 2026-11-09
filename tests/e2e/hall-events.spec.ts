@@ -81,7 +81,7 @@ test('post an event from the dialog, a member answers Going, the organiser sees 
   await owner.page.reload();
   await pageReady(owner.page);
   await ownersEvent.getByText('Who answered').click();
-  await expect(ownersEvent).toContainText(`Going: ${ann.handle}`);
+  await expect(ownersEvent).toContainText(`Going: ${ann.name}`);
 
   expect(problems).toEqual([]);
   await Promise.all([owner.ctx.close(), ann.ctx.close()]);

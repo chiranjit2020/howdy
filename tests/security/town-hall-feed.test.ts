@@ -1,3 +1,4 @@
+import { nameFromHandle } from '@/shared/names';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { AUTO_HOLD_REPORTERS } from '@/modules/moderation/anti-spam';
 import { purgeStaleHeld } from '@/modules/town-halls';
@@ -376,7 +377,9 @@ describe('Notifications (ADR-033)', () => {
     const mine = (await chimesOf(as(ann))).data.chimes!;
     expect(mine.map((c) => c.type).sort()).toEqual(['hall_reaction_given', 'hall_reply_created']);
     expect(new Set(mine.map((c) => c.href))).toEqual(new Set([`/groups/${id}`]));
-    expect(mine.map((c) => c.text)).toContain(`${bob.handle} replied to your post in a group.`);
+    expect(mine.map((c) => c.text)).toContain(
+      `${nameFromHandle(bob.handle)} replied to your post in a group.`,
+    );
     // Other members (the owner included) are not rung for every reply.
     expect((await chimesOf(as(owner))).data.chimes).toEqual([]);
   });
@@ -397,7 +400,7 @@ describe('Notifications (ADR-033)', () => {
 
     const bobs = (await chimesOf(as(bob))).data.chimes!;
     expect(bobs.map((c) => [c.type, c.text, c.href])).toEqual([
-      ['hall_reply_created', `${cat.handle} replied to you in a group.`, `/groups/${id}`],
+      ['hall_reply_created', `${nameFromHandle(cat.handle)} replied to you in a group.`, `/groups/${id}`],
     ]);
     expect((await chimesOf(as(dan))).data.chimes).toEqual([]);
     const anns = (await chimesOf(as(ann))).data.chimes!.map((c) => c.text);

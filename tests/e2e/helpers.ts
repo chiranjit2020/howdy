@@ -3,6 +3,7 @@ import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { join } from 'node:path';
 import { expect, type Browser, type BrowserContext, type Page } from '@playwright/test';
+import { nameFromHandle } from '../../src/shared/names';
 import { parse } from 'dotenv';
 import { Pool } from 'pg';
 
@@ -93,8 +94,11 @@ export async function newContext(
 
 export const uniqueAccount = (tag: string) => {
   const n = `${Date.now().toString(36)}${randomInt(1000, 9999)}`;
+  const handle = `${tag}_${n}`.slice(0, 24);
   return {
-    handle: `${tag}_${n}`.slice(0, 24),
+    handle,
+    // The display name a new account starts with: its username made readable ("star_x1" → "Star X1").
+    name: nameFromHandle(handle),
     email: `${tag}.${n}@example.com`,
     password: 'sunflower porch lantern 7319',
   };

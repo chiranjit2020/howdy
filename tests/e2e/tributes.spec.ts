@@ -87,7 +87,7 @@ test.describe('Testimonials (production build, real CSP)', () => {
     // Alice is told it is waiting, and approves it from her own Porch.
     await expect
       .poll(() => chimeTexts(a), { timeout: 10_000 })
-      .toContain(`A testimonial from ${b.handle} is waiting for your approval.`);
+      .toContain(`A testimonial from ${b.name} is waiting for your approval.`);
     await a.page.goto(`/profile/${a.handle}`);
     await pageReady(a.page);
     await expect(a.page.getByRole('heading', { name: 'Waiting for you (1)' })).toBeVisible();
@@ -99,7 +99,7 @@ test.describe('Testimonials (production build, real CSP)', () => {
     // Bob is told; Carol can read it now; nobody sees a "waiting" badge any more.
     await expect
       .poll(() => chimeTexts(b), { timeout: 10_000 })
-      .toContain(`${a.handle} approved your testimonial. It is on their profile now.`);
+      .toContain(`${a.name} approved your testimonial. It is on their profile now.`);
     await c.page.reload();
     await pageReady(c.page);
     await expect(shownTributes(c.page).first()).toContainText(first);

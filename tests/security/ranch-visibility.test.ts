@@ -1,3 +1,4 @@
+import { nameFromHandle } from '@/shared/names';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { getPool } from '@/platform/db';
 import { setRateLimiter } from '@/platform/rate-limit';
@@ -27,7 +28,7 @@ describe('every account has a Ranch, created with the account', () => {
     const row = (
       await sql('select p.* from profiles p join users x on x.id = p.user_id where x.email = $1', [u.email])
     ).rows[0];
-    expect(row.display_name).toBe(u.handle);
+    expect(row.display_name).toBe(nameFromHandle(u.handle));
     expect(row.ranch_visibility).toBe('members');
     expect(row.signal_visibility).toBe('members');
     expect(row.portrait_tint).toBe('peach');
@@ -65,7 +66,11 @@ describe('who can open a Ranch (privacy defaults and settings)', () => {
     const { a, b } = await twoUsers();
     const asMember = await viewRanch(b.handle, { cookie: a.cookie });
     expect(asMember.status).toBe(200);
-    expect(asMember.data.ranch).toMatchObject({ handle: b.handle, displayName: b.handle, isOwner: false });
+    expect(asMember.data.ranch).toMatchObject({
+      handle: b.handle,
+      displayName: nameFromHandle(b.handle),
+      isOwner: false,
+    });
     expect((await viewRanch(b.handle)).status).toBe(404);
   });
 
@@ -155,11 +160,14 @@ describe('what a viewer receives', () => {
     const own = await myRanch(b.cookie);
     expect(own.data.ranch).toMatchObject({
       handle: b.handle,
-      displayName: 'Bob the Builder',
+      displayName: 'Bob The Builder',
       ranchVisibility: 'everyone',
       signalVisibility: 'members',
     });
-    expect((await myRanch(a.cookie)).data.ranch).toMatchObject({ handle: a.handle, displayName: a.handle });
+    expect((await myRanch(a.cookie)).data.ranch).toMatchObject({
+      handle: a.handle,
+      displayName: nameFromHandle(a.handle),
+    });
     expect((await myRanch()).status).toBe(401);
   });
 });

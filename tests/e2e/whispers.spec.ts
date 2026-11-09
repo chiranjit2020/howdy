@@ -90,8 +90,8 @@ test.describe('Messages in a real browser (production build, real CSP, real WebS
       await b.page.goto('/messages');
       await expect(b.page.getByRole('link', { name: /^Messages\s*,\s*1 unread$/ })).toBeVisible();
     }).toPass({ timeout: 10_000 });
-    await expect(b.page.getByRole('link', { name: new RegExp(a.handle) })).toContainText('Are you around?');
-    await b.page.getByRole('link', { name: new RegExp(a.handle) }).click();
+    await expect(b.page.getByRole('link', { name: new RegExp(a.name) })).toContainText('Are you around?');
+    await b.page.getByRole('link', { name: new RegExp(a.name) }).click();
     await expect(log(b.page).getByText('Are you around?')).toBeVisible();
     await expect
       .poll(
@@ -216,7 +216,7 @@ test('Messages as a messenger: start one from New message, find it with search, 
   await a.page.getByRole('button', { name: 'New message' }).click();
   const picker = a.page.getByRole('dialog', { name: 'New message' });
   await picker.getByLabel('Search friends').fill(b.handle.slice(0, 5));
-  await picker.getByRole('link', { name: new RegExp(b.handle) }).click();
+  await picker.getByRole('link', { name: new RegExp(b.name) }).click();
   await expect(a.page).toHaveURL(new RegExp(`/messages/${b.handle}$`));
   await say(a.page, 'Howdy from New message');
   await expect(log(a.page).getByText('Howdy from New message')).toBeVisible();
@@ -226,13 +226,10 @@ test('Messages as a messenger: start one from New message, find it with search, 
   await a.page.reload();
   await pageReady(a.page);
   const list = a.page.getByRole('list', { name: 'Your conversations' });
-  await expect(list.getByRole('link', { name: new RegExp(b.handle) })).toHaveAttribute(
-    'aria-current',
-    'page',
-  );
+  await expect(list.getByRole('link', { name: new RegExp(b.name) })).toHaveAttribute('aria-current', 'page');
   await a.page.getByLabel('Search conversations').fill(c.handle);
   await expect(list.getByRole('link')).toHaveCount(1);
-  await expect(list.getByRole('link', { name: new RegExp(c.handle) })).toBeVisible();
+  await expect(list.getByRole('link', { name: new RegExp(c.name) })).toBeVisible();
 
   // On a phone the chat is the whole screen, with a way back to the list.
   await a.page.setViewportSize({ width: 390, height: 800 });

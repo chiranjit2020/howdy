@@ -89,8 +89,8 @@ test.describe('Notifications in a real browser (production build, real CSP)', ()
     expect((await api(b, `/api/cards/${cardId}/yo`, { on: true })).ok()).toBe(true);
     await untilUnread(a, 2);
     await a.page.goto('/notifications');
-    await expect(a.page.getByText(`${b.handle} posted on your wall.`)).toBeVisible();
-    await expect(a.page.getByText(`${b.handle} reacted to your post.`)).toBeVisible();
+    await expect(a.page.getByText(`${b.name} posted on your wall.`)).toBeVisible();
+    await expect(a.page.getByText(`${b.name} reacted to your post.`)).toBeVisible();
     await expect(a.page.getByRole('status')).toHaveText('2 unread');
     await expect(bellLink(a.page)).toHaveAccessibleName('Notifications'); // cleared without a reload
     await untilUnread(a, 0);
@@ -98,7 +98,7 @@ test.describe('Notifications in a real browser (production build, real CSP)', ()
     await expect(a.page.getByRole('status')).toHaveText('2 unread'); // still unread: only the bell was cleared
 
     // One read from its menu, back to unread, then all read at once; one removed.
-    const posted = a.page.getByRole('listitem').filter({ hasText: `${b.handle} posted on your wall.` });
+    const posted = a.page.getByRole('listitem').filter({ hasText: `${b.name} posted on your wall.` });
     await posted.getByRole('button', { name: /^More about this notification/ }).click();
     await a.page.getByRole('menuitem', { name: 'Mark as read' }).click();
     await expect(a.page.getByRole('status')).toHaveText('1 unread');
@@ -113,7 +113,7 @@ test.describe('Notifications in a real browser (production build, real CSP)', ()
     await a.page.getByRole('menuitem', { name: 'Remove' }).click();
     await expect(posted).toHaveCount(0);
     await a.page.reload();
-    await expect(a.page.getByText(`${b.handle} posted on your wall.`)).toHaveCount(0);
+    await expect(a.page.getByText(`${b.name} posted on your wall.`)).toHaveCount(0);
 
     // Alice mutes Bob: what he rang earlier disappears from her Chimes, without a word to Bob.
     expect((await api(a, `/api/relationships/${b.handle}`, { action: 'mute' })).ok()).toBe(true);
@@ -132,7 +132,7 @@ test.describe('Notifications in a real browser (production build, real CSP)', ()
     await untilUnread(a, 1); // the earlier ones were marked read; only this reply is new — this Yo did not ring
     await a.page.goto('/notifications');
     await expect(a.page.getByText('replied to your post')).toBeVisible();
-    await expect(a.page.getByText(`${b.handle} reacted to your post.`)).toHaveCount(1); // only the earlier one
+    await expect(a.page.getByText(`${b.name} reacted to your post.`)).toHaveCount(1); // only the earlier one
 
     expect(problems).toEqual([]);
     await Promise.all([a.ctx.close(), b.ctx.close()]);
@@ -150,7 +150,7 @@ test.describe('Notifications in a real browser (production build, real CSP)', ()
     const id = ((await posted.json()) as { card: { id: string } }).card.id;
     await untilUnread(a, 2); // the accept-era Posse chime is Alice's? No: Bob asked, Alice accepted -> Bob rang; Alice got the ask + this
     await a.page.goto('/notifications');
-    await expect(a.page.getByText(`A post from ${b.handle} is waiting for your approval.`)).toBeVisible();
+    await expect(a.page.getByText(`A post from ${b.name} is waiting for your approval.`)).toBeVisible();
     const before = ((await (await b.page.request.get('/api/me/chimes/unread')).json()) as { unread: number })
       .unread;
     expect((await api(a, `/api/cards/${id}/approve`, {})).ok()).toBe(true);

@@ -27,6 +27,6 @@ test('made-up profiles, message threads and groups answer a real 404; real ones 
   }
 
   expect((await page.goto(`/profile/${a.handle}`))?.status()).toBe(200);
-  await expect(page.getByRole('heading', { level: 1, name: a.handle })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: a.name })).toBeVisible();
   await ctx.close();
 });

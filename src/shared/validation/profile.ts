@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { LIMITS } from '../limits';
+import { capitaliseName } from '../names';
 import './zod-setup'; // jitless Zod (no eval probe under our CSP)
 
 /**
@@ -95,10 +96,10 @@ const cleanText = (max: number, emptyMessage: string, what: string) =>
 /** "@" and its look-alikes (full-width ＠, small ﹫): a name must never pass for a username. */
 const AT_SIGN = /[@＠﹫]/;
 
-export const displayNameSchema = cleanText(DISPLAY_NAME_MAX, 'Enter a display name.', 'Your name').refine(
-  (s) => !AT_SIGN.test(s),
-  'Your name cannot contain “@”: that is for usernames.',
-);
+/** A display name, capitalised word by word as it is saved (`capitaliseName`), from every way in: sign-up, Google, Settings. */
+export const displayNameSchema = cleanText(DISPLAY_NAME_MAX, 'Enter a display name.', 'Your name')
+  .refine((s) => !AT_SIGN.test(s), 'Your name cannot contain “@”: that is for usernames.')
+  .transform(capitaliseName);
 export const signalSchema = cleanText(LIMITS.SIGNAL_MAX, 'Say something, or clear your status.', 'A status');
 
 /** A short bio. Empty clears it. Screened like every public line: no links, no disguising characters. */

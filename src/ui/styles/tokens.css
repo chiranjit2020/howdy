@@ -76,8 +76,11 @@
   --color-text-primary: light-dark(#100b00, #f6f7fb);
   --color-text-secondary: light-dark(#4a4540, #b3b8d0);
   --color-text-muted: light-dark(#5e5850, #a0a6c1);
-  /* Links: the top bar's blue, one step deeper so small words stay readable (4.9:1 on white; 2026-11-08, was navy). */
-  --color-link: light-dark(#0073c4, #7cc8ff);
+  /*
+   * Links: the top bar's blue, one step deeper so small words stay readable (2026-11-08, was navy). #006fbd since
+   * 2026-11-10 (was #0073c4): 5.2:1 on white and 4.5:1 on the grey surface-sunken boxes, where #0073c4 was 4.3:1.
+   */
+  --color-link: light-dark(#006fbd, #7cc8ff);
   /*
    * Focus: a deep sunflower gold (the user's call, 2026-10-31: sunflower rings). Pure sunflower is ~1.6:1 on white, too
    * faint to find; this gold keeps 3:1 on every surface. Dusk can use sunflower itself.
@@ -143,7 +146,7 @@
   /* White on that blue (the Verified badge's tick). The theme has no built-in white, so it is named here. */
   --color-on-header: #ffffff;
   /*
-   * The top bar's blue one step deeper (the light link colour): for a block that carries small white words, which the
+   * The top bar's blue one step deeper: for a block that carries small white words, which the
    * bar's own blue cannot (3.8:1). White on it is 4.9:1. The welcome page's closing block uses it.
    */
   --color-header-deep: #0073c4;

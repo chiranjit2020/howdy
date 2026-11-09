@@ -43,7 +43,7 @@ test.describe('Ranch and Settings (production build, real CSP)', () => {
       .getByRole('link', { name: 'My profile' })
       .click();
     await expect(a.page).toHaveURL(new RegExp(`/profile/${a.handle}$`));
-    await expect(a.page.getByRole('heading', { level: 1, name: a.handle })).toBeVisible(); // display name defaults to the handle
+    await expect(a.page.getByRole('heading', { level: 1, name: a.name })).toBeVisible(); // display name starts as the username made readable
 
     // Your own profile: how many friends, after the username; and editing right here (the camera on the picture and
     // "Edit your profile" open the same dialog, with the same forms as Settings).
@@ -114,7 +114,7 @@ test.describe('Ranch and Settings (production build, real CSP)', () => {
 
     // Default: a signed-in member sees the Ranch (its bio included).
     await b.page.goto(`/profile/${a.handle}`);
-    await expect(b.page.getByRole('heading', { level: 1, name: a.handle })).toBeVisible();
+    await expect(b.page.getByRole('heading', { level: 1, name: a.name })).toBeVisible();
     await expect(b.page.getByText('Members-only words')).toBeVisible();
     // No owner controls, and nobody else's friends (their number included) on a profile.
     await expect(b.page.getByRole('button', { name: 'Edit your profile' })).toHaveCount(0);
@@ -138,19 +138,19 @@ test.describe('Ranch and Settings (production build, real CSP)', () => {
     // Open the Ranch to everyone: signed-out visitors see it too.
     await saveBoundaries(a.page, 'everyone');
     await anonPage.goto(`/profile/${a.handle}`);
-    await expect(anonPage.getByRole('heading', { level: 1, name: a.handle })).toBeVisible();
+    await expect(anonPage.getByRole('heading', { level: 1, name: a.name })).toBeVisible();
 
     // Ranch to posse: a signed-in stranger now gets a real 404, and a signed-out visitor the generic prompt.
     await saveBoundaries(a.page, 'posse');
     const notFound = await b.page.goto(`/profile/${a.handle}`);
     expect(notFound?.status()).toBe(404);
-    await expect(b.page.getByRole('heading', { level: 1, name: a.handle })).toHaveCount(0);
+    await expect(b.page.getByRole('heading', { level: 1, name: a.name })).toHaveCount(0);
     await anonPage.goto(`/profile/${a.handle}`);
     await expect(anonPage.getByRole('main')).toContainText('Log in to visit this profile');
 
     // The owner can always open their own Ranch.
     await a.page.goto(`/profile/${a.handle}`);
-    await expect(a.page.getByRole('heading', { level: 1, name: a.handle })).toBeVisible();
+    await expect(a.page.getByRole('heading', { level: 1, name: a.name })).toBeVisible();
 
     await Promise.all([a.ctx.close(), b.ctx.close(), anon.close()]);
   });

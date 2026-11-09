@@ -28,7 +28,10 @@ test.afterAll(async () => {
 
 /** Phones reach Free to talk from the tab bar's You sheet; it opens as a dialog. */
 async function openFreeToTalk(page: Page) {
-  await page.getByRole('navigation', { name: 'Primary' }).getByRole('button', { name: /^Profile/ }).tap();
+  await page
+    .getByRole('navigation', { name: 'Primary' })
+    .getByRole('button', { name: /^Profile/ })
+    .tap();
   await page.getByRole('dialog', { name: 'Profile' }).getByRole('button', { name: /^Free/ }).tap();
   return page.getByRole('dialog', { name: 'Free to talk' });
 }
@@ -94,13 +97,13 @@ test.describe('Free to talk (production build, real CSP)', () => {
     await pageReady(pal.page);
     await expect(pal.page.getByRole('button', { name: /Profile.*1 new/ })).toBeVisible();
     const lit = (await openFreeToTalk(pal.page)).getByRole('list', { name: 'Friends free to talk' });
-    await expect(lit.getByRole('link', { name: owner.handle, exact: true })).toBeVisible();
+    await expect(lit.getByRole('link', { name: owner.name, exact: true })).toBeVisible();
     await expect(lit.getByText(/until \d{1,2}:\d{2} [ap]m/)).toBeVisible();
     await expect(lit.getByText(note)).toBeVisible();
     expect(await axeViolations(pal.page)).toEqual([]);
     expect(await smallTargets(pal.page)).toEqual([]);
     expect(await horizontalOverflow(pal.page)).toBe(0);
-    await lit.getByRole('link', { name: `Message to ${owner.handle}` }).tap();
+    await lit.getByRole('link', { name: `Message to ${owner.name}` }).tap();
     await expect(pal.page).toHaveURL(new RegExp(`/messages/${owner.handle}$`));
 
     // ...and on the owner's Porch.

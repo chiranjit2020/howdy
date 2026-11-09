@@ -1,3 +1,4 @@
+import { nameFromHandle } from '@/shared/names';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import {
   listHeld,
@@ -708,7 +709,7 @@ describe('Notifications for messages', () => {
     expect(list).toHaveLength(1);
     expect(list[0]).toMatchObject({
       type: 'whisper_received',
-      text: `${a.handle} sent you a message.`,
+      text: `${nameFromHandle(a.handle)} sent you a message.`,
       href: `/messages/${a.handle}`,
       unread: true,
     });
