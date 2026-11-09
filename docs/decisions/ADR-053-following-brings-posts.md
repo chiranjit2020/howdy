@@ -1,6 +1,7 @@
 # ADR-053 — Following brings someone's own posts to your Home
 
-Status: accepted (2026-11-01). Supersedes the "Scouting grants nothing" part of ADR-010.
+Status: accepted (2026-11-01). Supersedes the "Scouting grants nothing" part of ADR-010. The owner-only follower count
+was superseded by ADR-062 (2026-11-09): friend and follower numbers are public.
 
 ## Why
 

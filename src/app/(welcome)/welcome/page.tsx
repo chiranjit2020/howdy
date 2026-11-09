@@ -3,7 +3,7 @@ import { WelcomeStory } from '../welcome-story';
 
 const TITLE = 'Howdy — stay close to your people';
 const DESCRIPTION =
-  'Social media for people you actually know: share posts, Stories and messages with your friends, family and batch. No endless feed, no follower counts, no strangers.';
+  'Social media for people you actually know: share posts, Stories and messages with your friends, family and batch. No algorithm, no ads, no strangers in your inbox.';
 
 export const metadata: Metadata = {
   title: { absolute: TITLE },

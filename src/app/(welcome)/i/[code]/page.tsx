@@ -5,7 +5,7 @@ import { lookUpInviter } from './inviter';
 type Props = { params: Promise<{ code: string }> };
 
 const DESCRIPTION =
-  'Social media for people you actually know: share posts, Stories and messages with your friends, family and batch. No endless feed, no follower counts, no strangers.';
+  'Social media for people you actually know: share posts, Stories and messages with your friends, family and batch. No algorithm, no ads, no strangers in your inbox.';
 
 /** Only the inviter's display name is ever shown (ADR-045); a link that does not work reads as the plain welcome. */
 export async function generateMetadata({ params }: Props): Promise<Metadata> {

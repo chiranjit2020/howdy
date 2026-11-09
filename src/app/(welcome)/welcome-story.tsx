@@ -9,10 +9,12 @@ import {
   PiChatsCircle,
   PiDownloadSimple,
   PiEye,
-  PiHeart,
+  PiDeviceMobile,
+  PiHandWaving,
+  PiHouse,
   PiHourglass,
   PiCamera,
-  PiInfinity,
+  PiClock,
   PiKey,
   PiScales,
   PiNote,
@@ -33,46 +35,65 @@ const TILE = 'bg-primary text-on-primary';
 
 type Icon = ComponentType<IconBaseProps>;
 
+// Every line here is checked against the app (2026-11-09). Keep it true: change it in the same commit as the feature.
 const FEATURES: { icon: Icon; name: string; text: string }[] = [
   {
     icon: PiUser,
     name: 'Your profile',
-    text: 'Your photo, cover, a few words and the details you choose to share, each with its own audience.',
+    text: 'Your photo, a cover, a short bio and the details you choose to share, each with its own audience.',
   },
   {
     icon: PiUsers,
     name: 'Friends',
-    text: 'Add people you know, meet friends of your friends, follow people you look up to, and invite with your own link.',
+    text: 'Add people you know, follow people you look up to (they aren’t told), mark close friends and invite with your own link.',
+  },
+  {
+    icon: PiHouse,
+    name: 'Home',
+    text: 'Posts from your friends and the people you follow, newest first, with Stories on top and friends you may know.',
   },
   {
     icon: PiNote,
     name: 'Posts',
-    text: 'Write on a friend’s wall, react, reply, mention with @name, and pin one post to the top of yours.',
+    text: 'Words, a photo or both, on your wall or a friend’s. Give a Star, reply, @mention, pin one to the top.',
   },
   { icon: PiCamera, name: 'Stories', text: 'A photo for your friends or close friends, gone in 12 hours.' },
   {
     icon: PiChatsCircle,
     name: 'Messages',
-    text: 'Private chats with friends, with “Seen” only if you both want it.',
+    text: 'Instant chats with friends that clear themselves after 7 days. “Seen” only if you both want it.',
+  },
+  {
+    icon: PiHandWaving,
+    name: 'Free to talk',
+    text: 'Let your friends know you’re free for a while, so they know it’s a good time to message.',
   },
   {
     icon: PiBuildings,
     name: 'Groups',
-    text: 'Circles for your batch, family or team, with events, polls and a pinned notice.',
+    text: 'For your batch, family, society or team: posts with photos, events, polls and a pinned notice.',
   },
-  { icon: PiEye, name: 'Profile visitors', text: 'See who stopped by, or browse privately.' },
+  { icon: PiEye, name: 'Profile visitors', text: 'See who stopped by your profile, or browse privately.' },
   {
     icon: PiQuotes,
     name: 'Testimonials & Describe',
-    text: 'Kind words you approve, and the word friends pick for you.',
+    text: 'Kind words friends write, shown once you approve them, and the words friends pick for you.',
   },
-  { icon: PiHourglass, name: 'Time Capsules', text: 'Words that open on a day you choose.' },
-  { icon: PiBell, name: 'Notifications', text: 'On your phone too, plus “On this day” memories.' },
+  {
+    icon: PiHourglass,
+    name: 'Time Capsules',
+    text: 'A message for yourself or a friend that opens on the day you choose.',
+  },
+  {
+    icon: PiBell,
+    name: 'Notifications',
+    text: 'Live as things happen, on your phone too, plus “On this day” memories.',
+  },
 ];
 
 const SAFETY: { icon: Icon; text: string }[] = [
-  { icon: PiScales, text: 'Community Guidelines everyone agrees to before they join' },
-  { icon: PiProhibit, text: 'Block, restrict and report quietly. Saying no is never announced' },
+  { icon: PiScales, text: 'Everyone is 18 or older and agrees to the Community Guidelines' },
+  { icon: PiProhibit, text: 'Block, restrict, mute and report quietly. Saying no is never announced' },
   { icon: PiKey, text: 'Passkeys and two-step sign-in keep your account yours' },
   { icon: PiShieldCheck, text: 'Every photo is checked before anyone sees it' },
   { icon: PiDownloadSimple, text: 'Download everything you have shared, any time' },
@@ -84,17 +105,17 @@ const GOOD_TO_KNOW: { icon: Icon; name: string; text: string }[] = [
   {
     icon: PiVideoCamera,
     name: 'Photos, not videos (for now)',
-    text: 'Howdy is run by one person on a small budget, and videos take a lot of storage. You can share photos in posts, groups and Stories. Video isn’t supported yet.',
+    text: 'Howdy is run by one person on a small budget, and videos take a lot of storage. You can share photos in posts, groups and Stories. Messages are words only, and video isn’t supported yet.',
   },
   {
     icon: PiChatsCircle,
-    name: 'Friends only for messages',
-    text: 'You can only message people who are your friends, which keeps strangers out of your inbox.',
+    name: 'Messages: friends only, gone in 7 days',
+    text: 'You can only message your friends, which keeps strangers out of your inbox. Messages are deleted after 7 days, so keep anything important somewhere else.',
   },
   {
-    icon: PiHeart,
-    name: 'No ads, ever',
-    text: 'Howdy is free and does not sell your data. It grows slowly, by invitation.',
+    icon: PiDeviceMobile,
+    name: 'No app store needed',
+    text: 'Howdy runs in your browser. Add it to your home screen and it opens like an app, with notifications.',
   },
 ];
 
@@ -103,11 +124,6 @@ const AHEAD: { name: string; text: string; tag: string }[] = [
     tag: 'Planned',
     name: 'Even stronger photo safety',
     text: 'An extra layer of scanning for the worst kinds of images, on top of the checks every photo gets today.',
-  },
-  {
-    tag: 'Next',
-    name: 'More circles',
-    text: 'Opening Howdy to more campuses and communities, one small circle at a time.',
   },
   {
     tag: 'Later',
@@ -219,8 +235,8 @@ export function WelcomeStory({ invite }: { invite?: { code: string; invitedBy?: 
               <span className="text-accent">to your people.</span>
             </h1>
             <p className="max-w-xl text-title font-normal text-text-secondary">
-              Share posts, Stories and messages with your friends, family and batch — without the endless
-              feed, follower counts or strangers.
+              Share posts, Stories and messages with your friends, family and batch. No algorithm, no ads, and
+              no strangers in your inbox.
             </p>
             <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
               <Link href={join} className={cn(buttonClasses({ size: 'lg' }), 'nav-action-gloss relative')}>
@@ -244,14 +260,14 @@ export function WelcomeStory({ invite }: { invite?: { code: string; invitedBy?: 
               {(
                 [
                   [
-                    PiInfinity,
-                    'No feed to get lost in',
-                    'You open a friend’s wall or a group on purpose. Nothing is ranked, nothing autoplays, and there’s no end to scroll to.',
+                    PiClock,
+                    'Newest first, nothing ranked',
+                    'Home shows posts from your friends and the people you follow, in the order they were shared. No algorithm, no suggested posts, nothing autoplays.',
                   ],
                   [
                     PiUsers,
-                    'No follower race',
-                    'Friends are friends both ways. Nobody sees counts, so nobody competes for them.',
+                    'Real people, not crowds',
+                    'Friends are friends both ways, and only friends can message you. You can still follow people you look up to.',
                   ],
                   [
                     PiBellSlash,
@@ -274,8 +290,8 @@ export function WelcomeStory({ invite }: { invite?: { code: string; invitedBy?: 
 
         {/* What is built. */}
         <Section id="tour" kicker="What’s inside" title="Everything here works today.">
-          {/* Ten features: two even rows of five on wide screens (icon above the words), two columns on phones. */}
-          <ul className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-5">
+          {/* Twelve features: three even rows of four on wide screens (icon above the words), two columns on phones. */}
+          <ul className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
             {FEATURES.map((f) => (
               <li key={f.name} className="clay flex flex-col gap-3 p-4 sm:p-5">
                 <span className={cn('flex size-11 shrink-0 items-center justify-center rounded-lg', TILE)}>

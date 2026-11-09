@@ -1,4 +1,4 @@
-import { posseLinks, scouts, userControls } from '@db/schema';
+import { posseLinks, scouts, userControls, users } from '@db/schema';
 import { and, count, desc, eq, inArray, ne, or } from 'drizzle-orm';
 import { can } from '@/modules/authz';
 import { enforceNewAccountLimit } from '@/modules/moderation';
@@ -262,12 +262,40 @@ export async function followedIdsOf(userId: string, max = 500): Promise<string[]
 }
 
 /**
- * How many people follow this person: shown to them alone, never to visitors (ADR-053). A number, never who. Deleted
- * accounts take their follows with them and a block removes any follow either way, so the rows are the count.
+ * How many people follow this person (ADR-053). A number, never who. Deleted accounts take their follows with them and
+ * a block removes any follow either way, so the rows are the count.
  */
 export async function followerCountOf(userId: string): Promise<number> {
   const [row] = await getDb().select({ n: count() }).from(scouts).where(eq(scouts.scouteeId, userId));
   return row?.n ?? 0;
+}
+
+/**
+ * The two numbers on a profile, shown to everyone who may open it (ADR-062): friends and followers. Numbers, never
+ * who. Only active accounts count, the same people the owner's own Friends list shows, so a suspended or
+ * closing account never props a number up and the owner and visitors always see the same figures.
+ */
+export async function profileCountsOf(userId: string): Promise<{ friends: number; followers: number }> {
+  const db = getDb();
+  const [[friends], [followers]] = await Promise.all([
+    db
+      .select({ n: count() })
+      .from(posseLinks)
+      .innerJoin(
+        users,
+        or(
+          and(eq(posseLinks.userLow, userId), eq(users.id, posseLinks.userHigh)),
+          and(eq(posseLinks.userHigh, userId), eq(users.id, posseLinks.userLow)),
+        ),
+      )
+      .where(and(eq(posseLinks.status, 'accepted'), eq(users.status, 'active'))),
+    db
+      .select({ n: count() })
+      .from(scouts)
+      .innerJoin(users, eq(users.id, scouts.scoutId))
+      .where(and(eq(scouts.scouteeId, userId), eq(users.status, 'active'))),
+  ]);
+  return { friends: friends?.n ?? 0, followers: followers?.n ?? 0 };
 }
 
 /**

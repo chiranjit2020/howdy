@@ -9,6 +9,7 @@ export {
   fenceStandings,
   followedIdsOf,
   followerCountOf,
+  profileCountsOf,
   friendIdsOf,
   getRelationshipView,
   hasLimited,

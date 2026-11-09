@@ -24,7 +24,7 @@ Howdy is run by {{operator}}, an individual based in {{country}} ("Howdy", "we",
 
 **What you post and do.** Posts and replies, waves and other reactions, testimonials you write or receive, the words you pick to describe friends, messages you send, Time Capsules you seal, Stories you share and the Stories you view or react to, groups you start or join, posts, replies and reactions in groups, events and polls in groups and your answers and votes, reports you file, and feedback you send about Howdy (what kind, your words, and the page you sent it from). Feedback is read only by Howdy's admins, who are also emailed a copy.
 
-**Your connections.** Who is in your friends, and requests between you. Also the private choices you make about others: Close friends, following, Mute, Restrict and Block. Those are visible only to you, and the other person is never told who made them. Following someone shows their own posts on your Home; the person you follow sees only how many people follow them, never who.
+**Your connections.** Who is in your friends, and requests between you. Also the private choices you make about others: Close friends, following, Mute, Restrict and Block. Those are visible only to you, and the other person is never told who made them. Following someone shows their own posts on your Home; the person you follow is not told, and is never shown who follows them.
 
 **Profile visits.** When you open someone else's profile while signed in, we may note that you visited, as a date only. See [Profile visitors and Private browsing](#profile-visitors-and-private-browsing) below.
 
@@ -54,6 +54,7 @@ We do not sell your information, share it with advertisers, or use it to build a
 Your settings decide most of it.
 
 - **Your profile and status** can be visible to everyone, to signed-in members (the default), or to your friends only.
+- **Your friend and follower numbers** ("48 friends · 3 followers") show on your profile to everyone who can see your profile. They are numbers only: who your friends are is shown only to you, and nobody is ever shown who follows whom.
 - **Your details** each have their own setting: Everyone on Howdy, Friends (the default) or Only me. People who are not signed in never see them, and a block hides them all. A phone number or contact email is for friends or only you. Links to your website and social profiles open the other site in a new tab without telling it which profile the visitor came from.
 - **Your wall** follows your settings for who may read it and who may write on it. You can review posts before they appear, and remove anything on your own wall.
 - **Messages** are only ever between the two people in the conversation.

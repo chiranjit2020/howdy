@@ -14,7 +14,7 @@ import {
   resolveHandle,
   type RanchView,
 } from '@/modules/profiles';
-import { followerCountOf, getRelationshipView, listMyRelationships } from '@/modules/relationships';
+import { getRelationshipView, listMyRelationships, profileCountsOf } from '@/modules/relationships';
 import { listTributes, listWaitingTributes } from '@/modules/tributes';
 import { recheckTrust } from '@/modules/trust';
 import { attachPortraits, withCards } from '@/app/_lib/social';
@@ -113,7 +113,7 @@ export default async function RanchPage({ params }: { params: Promise<{ handle: 
     { value: description },
     trust,
     mine,
-    followers,
+    counts,
   ] = await Promise.all([
     // A signed-in visitor also sees how they relate to this person (and can act on it). The photo is offered only to
     // signed-in viewers (the picture itself needs a session), and only on a Porch they may open, which this page has
@@ -158,8 +158,12 @@ export default async function RanchPage({ params }: { params: Promise<{ handle: 
     isOwner && user ? recheckTrust(user.id) : null,
     // Your own details with their audiences, for editing them here.
     isOwner && user ? myDetails(user.id) : null,
-    // How many follow you (ADR-053): yours alone to see. Best-effort: without it the number is simply not shown.
-    isOwner && user ? followerCountOf(user.id).catch(() => undefined) : undefined,
+    // Friends and followers (ADR-062): two numbers everyone who may open this profile sees, never who. Best-effort:
+    // without them the numbers are simply not shown.
+    (async () => {
+      const ownerId = isOwner && user ? user.id : (await resolveHandle(r.handle))?.userId;
+      return ownerId ? await profileCountsOf(ownerId) : null;
+    })().catch(() => null),
   ]);
   // Photos for everyone on the Fence whom this viewer may see (initials for the rest).
   await attachPortraits(
@@ -213,9 +217,10 @@ export default async function RanchPage({ params }: { params: Promise<{ handle: 
                   portraitTint={ranch.portraitTint}
                   {...(photo ? { portraitUrl: portraitUrl(ranch.handle, photo) } : {})}
                   {...(badge ? { relationship: badge } : {})}
-                  // Only on your own profile (posse is loaded for the owner only): nobody else's friends are shown.
-                  {...(posse ? { friendCount: posse.length } : {})}
-                  {...(followers !== undefined ? { followerCount: followers } : {})}
+                  // The numbers only, for everyone (ADR-062); who the friends are stays the owner's (PosseCard below).
+                  {...(counts
+                    ? { friendCount: counts.friends, friendsLink: isOwner, followerCount: counts.followers }
+                    : {})}
                   {...(description && description.words.length > 0
                     ? { describedAs: description.words.map((w) => MARK_LABEL[w]).join(' · ') }
                     : {})}

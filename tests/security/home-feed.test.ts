@@ -1,6 +1,6 @@
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { GET as feedRoute } from '@/app/api/feed/route';
-import { followerCountOf } from '@/modules/relationships';
+import { followerCountOf, profileCountsOf } from '@/modules/relationships';
 import { getPool } from '@/platform/db';
 import { call, freshAuthState, signedInUser, uniqueUser, type TestKit } from '../helpers/auth';
 import { fenceOf, nail } from '../helpers/fence';
@@ -198,5 +198,23 @@ describe('people I follow (ADR-053)', () => {
     expect(await followerCountOf(id)).toBe(1);
     await doAct(star.handle, 'unscout', as(me));
     expect(await followerCountOf(id)).toBe(0);
+  });
+
+  it('the profile numbers count active friends and followers only (ADR-062)', async () => {
+    const { me, star, pal } = await followed();
+    const id = await userId(star.handle);
+    const setStatus = (p: P, status: string) =>
+      getPool().query('update users set status = $1 where handle = $2', [status, p.handle]);
+    expect(await profileCountsOf(id)).toEqual({ friends: 1, followers: 1 });
+    // A suspended follower or friend no longer props the numbers up; back to active, they count again.
+    await setStatus(me, 'suspended');
+    await setStatus(pal, 'pending_deletion');
+    expect(await profileCountsOf(id)).toEqual({ friends: 0, followers: 0 });
+    await setStatus(me, 'active');
+    expect(await profileCountsOf(id)).toEqual({ friends: 0, followers: 1 });
+    // A friend request that is only asked is not a friend.
+    const asker = await person('asker');
+    await doAct(star.handle, 'request', as(asker));
+    expect((await profileCountsOf(id)).friends).toBe(0);
   });
 });

@@ -23,12 +23,11 @@ export interface RanchHeaderProps {
   verified?: boolean;
   /** Has earned the Trusted tick (shown only when not the team account). */
   trusted?: boolean;
-  /**
-   * How many friends, after the username, linking to the friends list. Only ever passed on your own profile: nobody
-   * else's friends are shown on a profile, their number included (nobody competes for numbers).
-   */
+  /** How many friends, after the username (ADR-062: everyone sees the number, never who). */
   friendCount?: number;
-  /** How many people follow you (ADR-053): your own profile only, shown once there is anyone. Never who. */
+  /** On your own profile the friend number links to your Friends page; on anyone else's it is plain text. */
+  friendsLink?: boolean;
+  /** How many people follow them (ADR-053, public since ADR-062), shown once there is anyone. Never who. */
   followerCount?: number;
   /** Something on the picture's lower right edge: on your own profile, the camera that changes it. */
   portraitAction?: ReactNode;
@@ -52,6 +51,7 @@ export function RanchHeader({
   verified,
   trusted,
   friendCount,
+  friendsLink,
   followerCount,
   portraitAction,
   describedAs,
@@ -80,9 +80,15 @@ export function RanchHeader({
             {friendCount !== undefined && (
               <>
                 {' · '}
-                <Link href="/friends" className="font-semibold text-text-secondary">
-                  {friendCount} {friendCount === 1 ? 'friend' : 'friends'}
-                </Link>
+                {friendsLink ? (
+                  <Link href="/friends" className="font-semibold text-text-secondary">
+                    {friendCount.toLocaleString('en-IN')} {friendCount === 1 ? 'friend' : 'friends'}
+                  </Link>
+                ) : (
+                  <span className="font-semibold">
+                    {friendCount.toLocaleString('en-IN')} {friendCount === 1 ? 'friend' : 'friends'}
+                  </span>
+                )}
               </>
             )}
             {followerCount !== undefined && followerCount > 0 && (

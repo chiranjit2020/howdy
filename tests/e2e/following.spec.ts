@@ -12,7 +12,7 @@ import {
 
 /**
  * ADR-053: following someone you are not friends with brings what they write on their own wall to your Home. Offered only
- * where you may read that wall; friends get Close friend instead. Only they see how many follow them.
+ * where you may read that wall; friends get Close friend instead. Since ADR-062 everyone sees the numbers, never who.
  */
 
 const ORIGIN = 'http://localhost:3300';
@@ -37,7 +37,7 @@ async function makePals(asker: Person, asked: Person) {
   expect((await api(asked, `/api/relationships/${asker.handle}`, { action: 'accept' })).ok()).toBe(true);
 }
 
-test('follow someone from their profile: their own posts reach Home, and only they see the count', async ({
+test('follow someone from their profile: their own posts reach Home, and everyone sees the numbers', async ({
   browser,
 }) => {
   test.slow(); // three people sign up
@@ -74,11 +74,19 @@ test('follow someone from their profile: their own posts reach Home, and only th
   await expect(pal.page.getByRole('switch', { name: 'Close friend' })).toBeVisible();
   await expect(pal.page.getByRole('button', { name: /^Follow/ })).toHaveCount(0);
 
-  // The count is the owner's alone.
+  // The numbers are for everyone (ADR-062): the owner, a friend and a follower see the same two figures. The friend
+  // number links to the Friends page only on your own profile.
   await star.page.goto(`/profile/${star.handle}`);
   await pageReady(star.page);
   await expect(star.page.getByText('1 follower')).toBeVisible();
-  await expect(fan.page.getByText(/follower/)).toHaveCount(0);
+  await expect(star.page.getByRole('link', { name: '1 friend' })).toBeVisible();
+  for (const viewer of [fan, pal]) {
+    await viewer.page.goto(`/profile/${star.handle}`);
+    await pageReady(viewer.page);
+    await expect(viewer.page.getByText('1 follower')).toBeVisible();
+    await expect(viewer.page.getByText('1 friend', { exact: true })).toBeVisible();
+    await expect(viewer.page.getByRole('link', { name: '1 friend' })).toHaveCount(0);
+  }
 
   expect(problems).toEqual([]);
   await Promise.all([star, fan, pal].map((p) => p.ctx.close()));
