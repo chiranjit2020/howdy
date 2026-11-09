@@ -53,28 +53,29 @@ export function InviteCard({
     else setError(res.error?.message ?? 'That did not work. Try again.');
   }
 
+  // Short (2026-11-10): one line of words, the link and Share on one row, Reset and the week's count in the foot.
   return (
     <RailCard
       id={id}
       title="Invite someone new"
-      {...(invite.joinedThisWeek > 0
-        ? { foot: <p>{invite.joinedThisWeek} joined with it this week</p> }
-        : {})}
+      foot={
+        <div className="flex flex-wrap items-center justify-between gap-x-3">
+          <span>{invite.joinedThisWeek > 0 ? `${invite.joinedThisWeek} joined with it this week` : ''}</span>
+          <Button size="sm" variant="link" className="-mx-1" onClick={() => setConfirming(true)}>
+            Reset link…
+          </Button>
+        </div>
+      }
     >
-      <p className={RAIL_TEXT}>
-        Not on Howdy yet? Send them your link. When they join, their friend request comes to you, and you
-        decide.
-      </p>
+      <p className={RAIL_TEXT}>When they join, you get their request.</p>
       {error && <FormMessage tone="error">{error}</FormMessage>}
-      <p className="rounded-md bg-surface-sunken px-3 py-2 font-mono text-caption [overflow-wrap:anywhere] text-text-primary">
-        {link}
-      </p>
-      <div className="flex flex-wrap items-center gap-2">
-        <Button size="sm" onClick={share}>
-          <span aria-live="polite">{copied ? 'Link copied!' : 'Share my link'}</span>
-        </Button>
-        <Button size="sm" variant="ghost" onClick={() => setConfirming(true)}>
-          Reset link…
+      <div className="flex items-center gap-2">
+        <p className="min-w-0 flex-1 truncate rounded-md bg-surface-sunken px-3 py-2 font-mono text-caption text-text-primary">
+          {/* Shown without https:// so more of it fits; Share sends the whole link. */}
+          {link.replace(/^https?:\/\//, '')}
+        </p>
+        <Button size="sm" className="shrink-0" onClick={share}>
+          <span aria-live="polite">{copied ? 'Copied!' : 'Share'}</span>
         </Button>
       </div>
       <ConfirmationDialog

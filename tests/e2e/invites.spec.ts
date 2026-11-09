@@ -43,7 +43,8 @@ test.describe('Invite links (production build, real CSP)', () => {
       .getByText(/\/i\/[A-Za-z0-9]{10}$/)
       .filter({ visible: true })
       .textContent())!.trim();
-    const path = new URL(link).pathname;
+    // The card shows the link without https:// (Share sends it whole); the /i/<code> part is what matters here.
+    const path = /\/i\/[A-Za-z0-9]{10}$/.exec(link)![0];
     expect(await axeViolations(rick.page)).toEqual([]);
     expect(await smallTargets(rick.page)).toEqual([]);
     expect(await horizontalOverflow(rick.page)).toBe(0);
