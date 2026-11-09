@@ -142,9 +142,6 @@
   --color-header: #0187df;
   /* White on that blue (the Verified badge's tick). The theme has no built-in white, so it is named here. */
   --color-on-header: #ffffff;
-  /* Diwali lights round every avatar (TEMPORARY, Diwali 2026): deep Sunflower and a warm diya red, alternating. */
-  --color-diwali-gold: #f2b100;
-  --color-diwali-red: #e0301e;
   --color-info: #bee1e6;
   --color-on-info: #2b2d42;
   --color-mystery: #d8b4e2;
@@ -294,18 +291,6 @@
 
   /* A ring spreading out of a dot and fading, again and again: "look here" (the What's new note, 2026-11-07). */
   --animate-ripple: ripple 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
-  /* Diwali lights (TEMPORARY): each dot dims and brightens; the red ones run half a beat behind the gold. */
-  --animate-twinkle: twinkle 1.6s ease-in-out infinite;
-
-  @keyframes twinkle {
-    0%,
-    100% {
-      opacity: 1;
-    }
-    50% {
-      opacity: 0.35;
-    }
-  }
 
   @keyframes ripple {
     from {
