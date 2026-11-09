@@ -13,36 +13,24 @@ import { FreeDot, FreeToTalkDialog, freeToTalkSummary, type FreeToTalkState } fr
 import type { ShellNavKey } from './nav';
 
 /**
- * One row of the Profile sheet (the user's design, 2026-11-10): a 48 px tinted tile with its icon, the words, then a
- * count if there is one and a chevron. Tints are the palette's own soft tokens only (no new colours).
+ * One row of the Profile sheet (the user's design, 2026-11-10): a 48 px grey tile with its icon, the words, then a
+ * count if there is one and a chevron.
  */
 const ROW =
   'flex min-h-14 w-full items-center gap-4 rounded-lg px-2 py-1 text-left text-title text-text-primary no-underline hover:bg-surface-sunken hover:no-underline';
 
-type Tone = 'sunflower' | 'navy' | 'blue' | 'cyan' | 'red' | 'green' | 'grey';
-const TONE: Record<Tone, string> = {
-  sunflower: 'bg-primary-soft text-text-primary',
-  navy: 'bg-accent-soft text-accent',
-  blue: 'bg-accent-soft text-link',
-  cyan: 'bg-info text-on-info',
-  red: 'bg-danger-soft text-danger',
-  green: 'bg-success text-success-text',
-  grey: 'bg-surface-sunken text-danger',
-};
-/** Each page's tile, as in the design: Visitors and Settings blue, Groups and Time Capsules navy, staff red and green. */
-const TONE_OF: Partial<Record<ShellNavKey, Tone>> = {
-  tracks: 'blue',
-  'town-halls': 'navy',
-  moderation: 'red',
-  security: 'green',
-  workshop: 'blue',
-};
-
-function RowIcon({ tone, children }: { tone: Tone; children: ReactNode }) {
+/**
+ * Every tile is the same neutral grey with a black icon, like icons everywhere in the app (the user's rule, 2026-11-10:
+ * no extra colours). The one exception is Sign out, in the theme's red.
+ */
+function RowIcon({ danger = false, children }: { danger?: boolean; children: ReactNode }) {
   return (
     <span
       aria-hidden="true"
-      className={cn('grid size-12 shrink-0 place-items-center rounded-xl [&_svg]:size-6', TONE[tone])}
+      className={cn(
+        'grid size-12 shrink-0 place-items-center rounded-xl bg-surface-sunken [&_svg]:size-6',
+        danger ? 'text-danger' : 'text-text-primary',
+      )}
     >
       {children}
     </span>
@@ -112,7 +100,7 @@ export function YouSheet({
 
   const pageRow = (l: YouLink) => (
     <Link key={l.href} href={l.href} onClick={onClose} className={ROW}>
-      <RowIcon tone={TONE_OF[l.key] ?? 'navy'}>{l.icon}</RowIcon>
+      <RowIcon>{l.icon}</RowIcon>
       <RowText title={l.label} />
       {l.badge ? <Count n={l.badge} says={l.badgeSays ?? 'new'} /> : null}
       <Chevron />
@@ -152,7 +140,7 @@ export function YouSheet({
                     setTalkOpen(true);
                   }}
                 >
-                  <RowIcon tone="sunflower">
+                  <RowIcon>
                     <FreeDot on={Boolean(freeToTalk.mine)} />
                   </RowIcon>
                   <RowText title={talk.label} />
@@ -169,14 +157,14 @@ export function YouSheet({
             <div className={GROUP}>
               {settings && pageRow(settings)}
               <Link href="/capsules" onClick={onClose} className={ROW}>
-                <RowIcon tone="navy">
+                <RowIcon>
                   <CapsuleIcon />
                 </RowIcon>
                 <RowText title="Time Capsules" />
                 <Chevron />
               </Link>
               <Link href="/settings/account#devices" onClick={onClose} className={ROW}>
-                <RowIcon tone="cyan">
+                <RowIcon>
                   <DevicesIcon />
                 </RowIcon>
                 <RowText title="Devices" />
@@ -185,7 +173,7 @@ export function YouSheet({
             </div>
             <div className={GROUP}>
               <Link href={`/feedback?from=${encodeURIComponent(pathname)}`} onClick={onClose} className={ROW}>
-                <RowIcon tone="sunflower">
+                <RowIcon>
                   <FeedbackIcon />
                 </RowIcon>
                 <RowText title="Send feedback" />
@@ -201,7 +189,7 @@ export function YouSheet({
               disabled={leaving}
               aria-busy={leaving || undefined}
             >
-              <RowIcon tone="grey">
+              <RowIcon danger>
                 <SignOutIcon />
               </RowIcon>
               <RowText
