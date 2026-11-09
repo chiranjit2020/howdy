@@ -126,7 +126,7 @@ export function RelationshipBar({
           )}
           items={[
             ...(rel.posse === 'member'
-              ? [{ id: 'leave', label: 'Stop being friends…', onSelect: () => setConfirm('leave') }]
+              ? [{ id: 'leave', label: 'Unfriend…', onSelect: () => setConfirm('leave') }]
               : []),
             {
               id: 'mute',
@@ -239,9 +239,9 @@ export function RelationshipBar({
       />
       <ConfirmationDialog
         open={confirm === 'leave'}
-        title="Stop being friends?"
+        title="Unfriend?"
         description={`You and @${handle} will no longer be friends. They are not told.`}
-        confirmLabel="Stop being friends"
+        confirmLabel="Unfriend"
         loading={busy === 'leave'}
         onCancel={() => setConfirm(undefined)}
         onConfirm={() =>

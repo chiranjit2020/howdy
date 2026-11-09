@@ -10,11 +10,11 @@ const SIZE = {
 } as const;
 const PX = { sm: 32, md: 40, lg: 64, xl: 112 } as const;
 
-// Fills for initials (no photo). The first is everyone's default: the top bar's blue, one shade deeper so the white
-// initials stay readable (4.9:1; the bar's own blue is 3.8:1), replacing the dark navy (2026-11-10, the user's call).
-// Every fill and its text are checked in the design-tokens test.
+// Fills for initials (no photo). The first is everyone's default: the top bar's exact blue, `header` (2026-11-10, the
+// user's call), with black ink initials (5.2:1; white on it would be 3.8:1, too faint for small letters). It replaced
+// the dark navy. Every fill and its text are checked in the design-tokens test.
 const FILLS = [
-  'bg-header-deep text-on-header',
+  'bg-header text-on-primary',
   'bg-success text-on-success',
   'bg-warning text-on-warning',
   'bg-mystery text-on-mystery',

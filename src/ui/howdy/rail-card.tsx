@@ -6,8 +6,10 @@ import type { ReactNode } from 'react';
  * link or button at the end of the title row, and an optional foot under a dashed rule. Inside: 40 px avatars, 14 px
  * words, 12 px meta, 12 px gaps (2026-11-07, the mock cards). (The sunflower bar along the top was removed 2026-11-07.)
  */
+// No overflow-hidden (2026-11-10): it was there for the old sunflower top bar, and it cut off a row's â‹¯ menu (the last
+// friend's "Unfriend") at the card's edge. Menus now spill over the card like they should.
 export const RAIL_CARD =
-  'relative flex flex-col gap-3 overflow-hidden rounded-card border border-border bg-surface p-4 shadow-clay';
+  'relative flex flex-col gap-3 rounded-card border border-border bg-surface p-4 shadow-clay';
 export const RAIL_TITLE = 'text-title font-semibold text-text-primary capitalize';
 /** A card's main words: 14 px ink (secondary grey is for the extra line under the dashed rule, not the point). */
 export const RAIL_TEXT = 'text-card text-text-primary';

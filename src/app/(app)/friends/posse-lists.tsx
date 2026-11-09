@@ -174,7 +174,7 @@ export function PosseLists({ lists, addFriend }: { lists: RelationshipLists; add
                         disabled: busy !== undefined,
                         onSelect: () => run(p.handle, p.closeByMe ? 'unclose' : 'close'),
                       },
-                      { id: 'leave', label: 'Stop being friends…', onSelect: () => setLeaving(p) },
+                      { id: 'leave', label: 'Unfriend…', onSelect: () => setLeaving(p) },
                     ]}
                   />
                 </>
@@ -225,9 +225,9 @@ export function PosseLists({ lists, addFriend }: { lists: RelationshipLists; add
 
       <ConfirmationDialog
         open={leaving !== undefined}
-        title="Stop being friends?"
+        title="Unfriend?"
         description={`You and @${leaving?.handle ?? ''} will no longer be friends. They are not told.`}
-        confirmLabel="Stop being friends"
+        confirmLabel="Unfriend"
         loading={leaving !== undefined && busy === `${leaving.handle}:leave`}
         onCancel={() => setLeaving(undefined)}
         onConfirm={async () => {

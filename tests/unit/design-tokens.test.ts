@@ -83,6 +83,8 @@ describe('WCAG AA contrast (both themes)', () => {
           ['text-muted', 'primary-soft'],
           // The welcome page's closing block: a white sentence on the deeper top-bar blue.
           ['on-header', 'header-deep'],
+          // Default avatars: black ink initials on the top bar's blue.
+          ['on-primary', 'header'],
           ['on-danger', 'danger'],
           ['on-info', 'info'],
           ['on-mystery', 'mystery'],

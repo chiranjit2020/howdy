@@ -81,6 +81,21 @@ test.describe('Posse, Block and Flag trouble (production build, real CSP)', () =
 
     await a.page.getByRole('button', { name: `Accept ${b.name}` }).click();
     await expect(a.page.getByRole('heading', { name: /^Your friends \(1\)/ })).toBeVisible();
+    // The last friend's ⋯ menu spills over the card instead of being cut off at its edge (2026-11-10): what is drawn
+    // at the middle of "Unfriend…" is that item itself, not the card's clip or what lies under it.
+    await a.page
+      .getByRole('button', { name: `More about ${b.name}` })
+      .filter({ visible: true })
+      .click();
+    const unfriend = a.page.getByRole('menuitem', { name: 'Unfriend…' });
+    await expect(unfriend).toBeVisible();
+    expect(
+      await unfriend.evaluate((el) => {
+        const r = el.getBoundingClientRect();
+        return el.contains(document.elementFromPoint(r.left + r.width / 2, r.top + r.height - 4));
+      }),
+    ).toBe(true);
+    await a.page.keyboard.press('Escape');
 
     // Now Bob is in the Posse: the Ranch opens for him, with the relationship shown.
     const after = await b.page.goto(`/profile/${a.handle}`);
@@ -99,10 +114,10 @@ test.describe('Posse, Block and Flag trouble (production build, real CSP)', () =
       'true',
     );
     await openMore(b.page);
-    await b.page.getByRole('menuitem', { name: 'Stop being friends…' }).click();
+    await b.page.getByRole('menuitem', { name: 'Unfriend…' }).click();
     await b.page
-      .getByRole('alertdialog', { name: 'Stop being friends?' })
-      .getByRole('button', { name: 'Stop being friends' })
+      .getByRole('alertdialog', { name: 'Unfriend?' })
+      .getByRole('button', { name: 'Unfriend' })
       .click();
     await expect(b.page.getByRole('heading', { name: 'Page not found' })).toBeVisible();
 
