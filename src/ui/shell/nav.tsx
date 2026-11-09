@@ -91,9 +91,11 @@ export function ShellSidebarNav({ items }: { items: ShellNavItem[] }) {
                     : 'text-text-primary hover:bg-surface-sunken',
                 )}
               >
+                {/* 20 px (text-icon): at 16 px Phosphor Regular's lines are ~1 px and blur grey on ordinary laptop
+                    screens; at 20 px they stay sharp (2026-11-10, the user's pick of the comparison). */}
                 <span
                   aria-hidden="true"
-                  className={cn('flex text-title', current ? 'text-on-primary' : 'text-text-primary')}
+                  className={cn('flex text-icon', current ? 'text-on-primary' : 'text-text-primary')}
                 >
                   {ICON[it.key]}
                 </span>
