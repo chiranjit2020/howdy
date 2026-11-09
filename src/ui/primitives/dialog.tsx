@@ -91,7 +91,12 @@ function DialogBase({
             <h2 id={titleId} className="text-heading text-text-primary">
               {title}
             </h2>
-            <IconButton label="Close" onClick={onClose} className="-mt-2 -mr-2">
+            {/* A bottom sheet's Close sits on a grey circle (the Profile sheet design, 2026-11-10), easy to spot. */}
+            <IconButton
+              label="Close"
+              onClick={onClose}
+              className={cn('-mt-2 -mr-2', placement === 'bottom' && 'bg-surface-sunken')}
+            >
               <CloseIcon />
             </IconButton>
           </div>

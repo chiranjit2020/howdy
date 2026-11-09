@@ -9,6 +9,7 @@ import {
   GroupIcon,
   HomeIcon,
   SettingsIcon,
+  ShieldCheckIcon,
   ShieldIcon,
   TabFriendsFillIcon,
   TabFriendsIcon,
@@ -61,7 +62,7 @@ const ICON: Record<ShellNavKey, ReactNode> = {
   'town-halls': <GroupIcon />,
   moderation: <ShieldIcon />,
   // No icon of its own yet: the Security Center shares Moderation's.
-  security: <ShieldIcon />,
+  security: <ShieldCheckIcon />,
 };
 
 const isCurrent = (pathname: string, href: string) => pathname === href || pathname.startsWith(`${href}/`);
@@ -209,6 +210,7 @@ export function ShellBottomNav({
         me={me}
         freeToTalk={freeToTalk}
         links={rest.map((it) => ({
+          key: it.key,
           href: it.href,
           label: it.label,
           icon: ICON[it.key],

@@ -9,6 +9,7 @@ import {
   PiBuildings,
   PiCamera,
   PiCaretDown,
+  PiCaretRight,
   PiChatCircle,
   PiChatsCircle,
   PiChatsCircleFill,
@@ -64,6 +65,7 @@ export const CloseIcon = go(PiX);
 export const MoreIcon = go(PiDotsThree);
 export const StarIcon = go(PiStar);
 export const ChevronDownIcon = go(PiCaretDown);
+export const ChevronRightIcon = go(PiCaretRight);
 // Open in full (the chat window's "open the full chat").
 export const ExpandIcon = go(PiArrowsOut);
 export const ReplyIcon = go(PiArrowBendUpLeft);
