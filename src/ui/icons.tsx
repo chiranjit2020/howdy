@@ -17,7 +17,7 @@ import {
   PiCheckCircle,
   PiClock,
   PiDeviceMobile,
-  PiDotsThree,
+  PiDotsThreeBold,
   PiEye,
   PiEyeSlash,
   PiGear,
@@ -62,7 +62,8 @@ const go = (Icon: ComponentType<IconBaseProps>) =>
   };
 
 export const CloseIcon = go(PiX);
-export const MoreIcon = go(PiDotsThree);
+// The one Bold icon: Regular's three dots are ~1.5 px circles and all but vanish (2026-11-10, the user's report).
+export const MoreIcon = go(PiDotsThreeBold);
 export const StarIcon = go(PiStar);
 export const ChevronDownIcon = go(PiCaretDown);
 export const ChevronRightIcon = go(PiCaretRight);

@@ -10,11 +10,12 @@ const SIZE = {
 } as const;
 const PX = { sm: 32, md: 40, lg: 64, xl: 112 } as const;
 
-// Fills for initials (no photo). The first is everyone's default: the top bar's exact blue, `header` (2026-11-10, the
-// user's call), with black ink initials (5.2:1; white on it would be 3.8:1, too faint for small letters). It replaced
-// the dark navy. Every fill and its text are checked in the design-tokens test.
+// Fills for initials (no photo). The first is everyone's default: the top bar's exact blue, `header`, with WHITE
+// initials (2026-11-10, the user's call, made knowing white on it is 3.8:1, under the 4.5:1 small text normally gets).
+// So the browser tests' contrast check skips `.avatar-initials` (tests/e2e/helpers.ts); every other fill keeps its
+// checked pair in the design-tokens test.
 const FILLS = [
-  'bg-header text-on-primary',
+  'bg-header text-on-header',
   'bg-success text-on-success',
   'bg-warning text-on-warning',
   'bg-mystery text-on-mystery',
@@ -69,7 +70,7 @@ export function Avatar({ name, src, size = 'md', online, tint, className }: Avat
         {src ? (
           <Img src={src} alt={name} width={PX[size]} height={PX[size]} className="size-full object-cover" />
         ) : (
-          <span role="img" aria-label={name}>
+          <span role="img" aria-label={name} className="avatar-initials">
             {initials(name)}
           </span>
         )}

@@ -738,7 +738,7 @@ function MemberMenu({
             disabled={busy}
             {...t}
           >
-            <MoreIcon />
+            <MoreIcon className="size-5" />
           </button>
         )}
         items={items}

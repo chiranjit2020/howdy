@@ -83,8 +83,6 @@ describe('WCAG AA contrast (both themes)', () => {
           ['text-muted', 'primary-soft'],
           // The welcome page's closing block: a white sentence on the deeper top-bar blue.
           ['on-header', 'header-deep'],
-          // Default avatars: black ink initials on the top bar's blue.
-          ['on-primary', 'header'],
           ['on-danger', 'danger'],
           ['on-info', 'info'],
           ['on-mystery', 'mystery'],
@@ -99,6 +97,12 @@ describe('WCAG AA contrast (both themes)', () => {
 
       // Buttons and the current nav item are filled with the brand violet itself (user's choice): their short
       // semibold labels get 3:1, the large-text level; everything smaller stays on accent-strong above.
+      // Default avatars: white initials on the top bar's blue, the user's call (avatar.tsx): held to 3:1, the
+      // large-text level, so the blue cannot drift any lighter.
+      it('white avatar initials on the top bar blue meet 3:1', () => {
+        expect(contrast(get('on-header', scheme), get('header', scheme))).toBeGreaterThanOrEqual(3);
+      });
+
       it('button labels on the theme colour meet 3:1', () => {
         expect(contrast(get('on-accent', scheme), get('accent', scheme))).toBeGreaterThanOrEqual(3);
       });

@@ -276,7 +276,7 @@ export function StoryViewer({
                     aria-label="More"
                     className={ROUND}
                   >
-                    <MoreIcon />
+                    <MoreIcon className="size-5" />
                   </button>
                 )}
               />

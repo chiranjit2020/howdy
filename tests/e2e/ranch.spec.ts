@@ -187,13 +187,14 @@ test.describe('Ranch and Settings: accessibility and layout in a real browser', 
           const axe = (
             window as unknown as {
               axe: {
-                run: () => Promise<{
+                run: (context?: { exclude: string[][] }) => Promise<{
                   violations: { id: string; help: string; nodes: { target: string[] }[] }[];
                 }>;
               };
             }
           ).axe;
-          return (await axe.run()).violations.map(
+          // .avatar-initials: white on the top bar's blue (3.8:1), the user's call (avatar.tsx, 2026-11-10).
+          return (await axe.run({ exclude: [['.avatar-initials']] })).violations.map(
             (v) => `${v.id}: ${v.help} (${v.nodes.map((n) => n.target.join(' ')).join(', ')})`,
           );
         });

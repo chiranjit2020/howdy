@@ -261,7 +261,11 @@ export async function axeViolations(page: Page): Promise<string[]> {
     // at 3:1 in design-tokens.test.ts), so colour contrast skips only those; every other rule still covers them.
     // `document`, not undefined: axe 4.13 refuses an undefined context ("axe.run arguments are invalid").
     const all = await axe.run(document, { rules: { 'color-contrast': { enabled: false } } });
-    const contrast = await axe.run({ exclude: [['.bg-accent']] }, { runOnly: ['color-contrast'] });
+    const contrast = await axe.run(
+      // .avatar-initials: white initials on the top bar's blue (3.8:1), the user's call (avatar.tsx, 2026-11-10).
+      { exclude: [['.bg-accent'], ['.avatar-initials']] },
+      { runOnly: ['color-contrast'] },
+    );
     return [...all.violations, ...contrast.violations].map(
       (v) =>
         `${v.id}: ${v.help} (${v.nodes.map((n) => `${n.target.join(' ')} — ${n.any.map((x) => x.message).join('; ')}`).join(', ')})`,

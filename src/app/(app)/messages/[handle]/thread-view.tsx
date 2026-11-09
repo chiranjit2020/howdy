@@ -399,7 +399,7 @@ export function ThreadView({
               )}
               {...p}
             >
-              <MoreIcon />
+              <MoreIcon className="size-5" />
             </button>
           )}
           items={[

@@ -164,7 +164,7 @@ export function PosseLists({ lists, addFriend }: { lists: RelationshipLists; add
                         className={iconButton}
                         {...t}
                       >
-                        <MoreIcon />
+                        <MoreIcon className="size-5" />
                       </button>
                     )}
                     items={[

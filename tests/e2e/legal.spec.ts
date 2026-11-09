@@ -121,10 +121,15 @@ test.describe('Legal pages (production build, real CSP)', () => {
         const violations = await page.evaluate(async () => {
           const axe = (
             window as unknown as {
-              axe: { run: () => Promise<{ violations: { id: string; nodes: { target: string[] }[] }[] }> };
+              axe: {
+                run: (context?: {
+                  exclude: string[][];
+                }) => Promise<{ violations: { id: string; nodes: { target: string[] }[] }[] }>;
+              };
             }
           ).axe;
-          return (await axe.run()).violations.map(
+          // .avatar-initials: white on the top bar's blue (3.8:1), the user's call (avatar.tsx, 2026-11-10).
+          return (await axe.run({ exclude: [['.avatar-initials']] })).violations.map(
             (v) => `${v.id} (${v.nodes.map((n) => n.target.join(' ')).join(', ')})`,
           );
         });

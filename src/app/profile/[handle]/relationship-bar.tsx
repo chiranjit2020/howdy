@@ -121,7 +121,7 @@ export function RelationshipBar({
               className="-mr-2 inline-flex size-11 shrink-0 items-center justify-center rounded-pill text-title text-text-primary hover:bg-surface-sunken"
               {...p}
             >
-              <MoreIcon />
+              <MoreIcon className="size-5" />
             </button>
           )}
           items={[
