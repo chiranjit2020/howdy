@@ -73,7 +73,7 @@ export function SuggestionStrip({ initial }: { initial: PalSuggestion[] }) {
             </Link>
             {asked.has(s.handle) ? (
               <span className="flex min-h-11 items-center text-caption text-text-secondary pointer-fine:min-h-8">
-                Asked
+                Request sent
               </span>
             ) : (
               <Button
@@ -81,9 +81,9 @@ export function SuggestionStrip({ initial }: { initial: PalSuggestion[] }) {
                 fullWidth
                 loading={busy === `${s.handle}:ask`}
                 onClick={() => ask(s.handle)}
-                aria-label={`Ask ${s.displayName} to be friends`}
+                aria-label={`Add ${s.displayName} as a friend`}
               >
-                Ask
+                Add friend
               </Button>
             )}
           </li>

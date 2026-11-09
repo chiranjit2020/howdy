@@ -132,8 +132,8 @@ test('Home: friends you may know as small cards before the posts; Ask, and the Ã
   expect(await horizontalOverflow(me.page)).toBe(0);
 
   const xCard = strip.getByRole('listitem').filter({ hasText: `Person ${x!.handle}` });
-  await xCard.getByRole('button', { name: `Ask Person ${x!.handle} to be friends` }).click();
-  await expect(xCard.getByText('Asked')).toBeVisible();
+  await xCard.getByRole('button', { name: `Add Person ${x!.handle} as a friend` }).click();
+  await expect(xCard.getByText('Request sent')).toBeVisible();
 
   const yCard = strip.getByRole('listitem').filter({ hasText: `Person ${y!.handle}` });
   await yCard.getByRole('button', { name: `Not now: stop suggesting Person ${y!.handle}` }).click();

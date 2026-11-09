@@ -49,7 +49,7 @@ export function useSuggestionActions(initial: PalSuggestion[]) {
 }
 
 /**
- * "Pals you may know" (ADR-029): Pals of at least two of my Pals. Neither Ask nor Not now tells them anything beyond what
+ * "Pals you may know" (ADR-029): Pals of at least two of my Pals. Neither Add friend nor Not now tells them anything beyond what
  * an ordinary ask does. Only rendered when there is someone.
  *
  * `show` keeps the card short (the Friends page on a phone): the first few, and the next one moves up when one is
@@ -106,20 +106,21 @@ export function Suggestions({
                 <span className="line-clamp-2 text-metadata font-normal text-text-muted">{why(s)}</span>
               </Link>
               {asked.has(s.handle) ? (
-                <span className="text-caption text-text-secondary">Asked</span>
+                <span className="text-caption text-text-secondary">Request sent</span>
               ) : (
-                <span className="flex items-center gap-2">
+                // "Add friend", never a lone short word: a pill around "Ask" came out as a circle (2026-11-10).
+                <span className="flex items-center gap-3">
                   <Button
                     size="sm"
                     loading={busy === `${s.handle}:ask`}
                     onClick={() => ask(s.handle)}
-                    aria-label={`Ask ${s.displayName} to be friends`}
+                    aria-label={`Add ${s.displayName} as a friend`}
                   >
-                    Ask
+                    Add friend
                   </Button>
                   <Button
                     size="sm"
-                    variant="ghost"
+                    variant="link"
                     loading={busy === `${s.handle}:dismiss`}
                     onClick={() => notNow(s.handle)}
                     aria-label={`Not now: stop suggesting ${s.displayName}`}
