@@ -84,6 +84,26 @@ test('on a 320 px phone, the Profile sheet reaches every page that is not a tab 
   await me.ctx.close();
 });
 
+test('the Profile sheet shows every row at once on a common phone, staff rows included: no scrolling', async ({
+  browser,
+}) => {
+  // 360×740: a common Android screen once the browser's own bars are taken off (2026-11-10, the user's ask).
+  const me = await person(browser, 'navfit', { ...PHONE, viewport: { width: 360, height: 740 } });
+  await makeStaff(db, me.handle);
+  await me.page.goto('/home');
+  await pageReady(me.page);
+  await me.page
+    .getByRole('navigation', { name: 'Primary' })
+    .getByRole('button', { name: /^Profile/ })
+    .click();
+  const sheet = me.page.getByRole('dialog', { name: 'Profile' });
+  await expect(sheet.getByRole('link', { name: /^Moderation/ })).toBeVisible();
+  await expect(sheet.getByRole('button', { name: 'Sign out' })).toBeInViewport();
+  expect(await sheet.evaluate((el) => el.scrollHeight - el.clientHeight)).toBeLessThanOrEqual(0);
+  expect(await smallTargets(me.page)).toEqual([]);
+  await me.ctx.close();
+});
+
 test('on a desktop the sidebar has them, and there is no phone tab bar', async ({ browser }) => {
   const me = await person(browser, 'navdesk', { viewport: { width: 1280, height: 800 } });
   await me.page.goto('/home');

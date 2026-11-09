@@ -86,7 +86,8 @@ function DialogBase({
       )}
     >
       {open && (
-        <div className="flex flex-col gap-4 p-6">
+        // A bottom sheet is a phone menu: tighter edges, so its rows fit one screen (the Profile sheet, 2026-11-10).
+        <div className={cn('flex flex-col', placement === 'bottom' ? 'gap-3 p-4' : 'gap-4 p-6')}>
           <div className="flex items-start justify-between gap-4">
             <h2 id={titleId} className="text-heading text-text-primary">
               {title}

@@ -103,7 +103,7 @@ test('no Follow where it would bring nothing: a wall only friends may read', asy
   expect(r.ok()).toBe(true);
   await fan.page.goto(`/profile/${star.handle}`);
   await pageReady(fan.page);
-  await expect(fan.page.getByRole('button', { name: 'Ask to be friends' })).toBeVisible();
+  await expect(fan.page.getByRole('button', { name: 'Add friend' })).toBeVisible();
   await expect(fan.page.getByRole('button', { name: /^Follow/ })).toHaveCount(0);
   await Promise.all([star.ctx.close(), fan.ctx.close()]);
 });

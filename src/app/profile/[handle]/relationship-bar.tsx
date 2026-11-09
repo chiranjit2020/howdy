@@ -153,7 +153,7 @@ export function RelationshipBar({
       {/* One main action, full width. */}
       {rel.posse === 'none' && (
         <Button fullWidth loading={busy === 'request'} onClick={() => run('request')}>
-          Ask to be friends
+          Add friend
         </Button>
       )}
       {rel.posse === 'sent' && (

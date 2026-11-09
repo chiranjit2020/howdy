@@ -18,7 +18,8 @@ import { FormMessage } from '@/ui/auth/form-parts';
 import { Avatar, Button, ClayCard, Input, Select, Switch, Textarea, useToast } from '@/ui/primitives';
 
 const TINT_LABEL: Record<PortraitTint, string> = {
-  peach: 'Peach',
+  // Stored as 'peach' (its old colour); shown as the default blue since 2026-11-10.
+  peach: 'Blue',
   mint: 'Mint',
   gold: 'Gold',
   lavender: 'Lavender',

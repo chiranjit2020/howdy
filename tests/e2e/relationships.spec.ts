@@ -26,7 +26,7 @@ type Person = Awaited<ReturnType<typeof person>>;
 /** `asker` asks `asked` to join their Posse and `asked` accepts — all through the UI. */
 async function makePosse(asker: Person, asked: Person) {
   await asker.page.goto(`/profile/${asked.handle}`);
-  await asker.page.getByRole('button', { name: 'Ask to be friends' }).click();
+  await asker.page.getByRole('button', { name: 'Add friend' }).click();
   // The relationship bar says so at once; after the page refreshes the Ranch header's badge says it too.
   await expect(asker.page.getByText('Requested', { exact: true }).first()).toBeVisible();
   await asked.page.goto('/friends');
@@ -145,7 +145,7 @@ test.describe('Posse, Block and Flag trouble (production build, real CSP)', () =
 
     // Unblocked: Bob can see Alice again (members-only is the default), but the Posse is gone.
     expect((await b.page.goto(`/profile/${a.handle}`))?.status()).toBe(200);
-    await expect(b.page.getByRole('button', { name: 'Ask to be friends' })).toBeVisible();
+    await expect(b.page.getByRole('button', { name: 'Add friend' })).toBeVisible();
     await Promise.all([a.ctx.close(), b.ctx.close()]);
   });
 

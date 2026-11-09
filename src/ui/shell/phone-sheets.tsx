@@ -13,11 +13,12 @@ import { FreeDot, FreeToTalkDialog, freeToTalkSummary, type FreeToTalkState } fr
 import type { ShellNavKey } from './nav';
 
 /**
- * One row of the Profile sheet (the user's design, 2026-11-10): a 48 px grey tile with its icon, the words, then a
- * count if there is one and a chevron.
+ * One row of the Profile sheet (the user's design, 2026-11-10): a 40 px grey tile with its icon, the words, then a
+ * count if there is one and a chevron. App-sized (14 px words, 44 px rows: the touch minimum) so every row, staff
+ * pages included, fits on one phone screen without scrolling.
  */
 const ROW =
-  'flex min-h-14 w-full items-center gap-4 rounded-lg px-2 py-1 text-left text-title text-text-primary no-underline hover:bg-surface-sunken hover:no-underline';
+  'flex min-h-11 w-full items-center gap-3 rounded-lg px-2 py-0.5 text-left text-card text-text-primary no-underline hover:bg-surface-sunken hover:no-underline';
 
 /**
  * Every tile is the same neutral grey with a black icon, like icons everywhere in the app (the user's rule, 2026-11-10:
@@ -28,7 +29,7 @@ function RowIcon({ danger = false, children }: { danger?: boolean; children: Rea
     <span
       aria-hidden="true"
       className={cn(
-        'grid size-12 shrink-0 place-items-center rounded-xl bg-surface-sunken [&_svg]:size-6',
+        'grid size-10 shrink-0 place-items-center rounded-lg bg-surface-sunken [&_svg]:size-5',
         danger ? 'text-danger' : 'text-text-primary',
       )}
     >
@@ -119,12 +120,14 @@ export function YouSheet({
         <FreeToTalkDialog state={freeToTalk} open={talkOpen} onClose={() => setTalkOpen(false)} />
       )}
       <Drawer side="bottom" open={open} onClose={onClose} title="Profile">
-        <div className="-mx-2 -mt-1 flex flex-col">
-          <Link href={`/profile/${me.handle}`} onClick={onClose} className={cn(ROW, 'mb-1 py-2')}>
-            <Avatar name={me.displayName} src={me.portraitUrl} tint={me.portraitTint} size="lg" />
+        <div className="-mx-2 -mt-2 flex flex-col">
+          <Link href={`/profile/${me.handle}`} onClick={onClose} className={cn(ROW, 'mb-1 py-1')}>
+            <Avatar name={me.displayName} src={me.portraitUrl} tint={me.portraitTint} size="md" />
             <span className="flex min-w-0 flex-1 flex-col">
-              <span className="truncate text-heading font-semibold">{me.displayName}</span>
-              <span className="truncate text-body text-text-secondary">@{me.handle} · View your profile</span>
+              <span className="truncate text-title font-semibold">{me.displayName}</span>
+              <span className="truncate text-caption text-text-secondary">
+                @{me.handle} · View your profile
+              </span>
             </span>
             <Chevron />
           </Link>
