@@ -27,10 +27,14 @@ import {
 } from 'react-icons/pi';
 import { Img } from '@/ui/art/img';
 import { cn } from '@/ui/cn';
+import { HowdyLogo } from '@/ui/logo';
 import { buttonClasses } from '@/ui/primitives';
 import { ShareButton } from './welcome/share-button';
 
-/** Every icon tile: sunflower with a violet line icon (Phosphor, like the app). The page is white and light sunflower. */
+/**
+ * The app's colours (2026-11-08): the sky-blue top bar, Sunflower with black ink for tiles and buttons, white cards.
+ * Every icon tile is Sunflower with a black Phosphor line icon. The page alternates white and light sunflower bands.
+ */
 const TILE = 'bg-primary text-on-primary';
 
 type Icon = ComponentType<IconBaseProps>;
@@ -161,11 +165,12 @@ function Section({
   );
 }
 
-/** Where the illustrations come from (Magnific, free licence: the credit must stay on the page while they are used). */
-const ILLUSTRATIONS = [
-  'https://www.magnific.com/free-vector/hand-drawn-iranian-women-illustration_33179751.htm',
-  'https://www.magnific.com/free-vector/hand-drawn-iranian-women-illustration_33179743.htm',
-];
+/**
+ * Where the hero illustration comes from (Magnific, free licence: the credit must stay on the page while it is used).
+ * The closing block's friends-around-a-phone picture is the user's own (Log in uses it too), so it needs no credit.
+ */
+const HERO_ILLUSTRATION =
+  'https://www.magnific.com/free-vector/hand-drawn-iranian-women-illustration_33179751.htm';
 
 /** The hero's picture: someone at their desk, with a soft sunflower sun behind her. Decorative. */
 function HeroArt() {
@@ -196,25 +201,25 @@ export function WelcomeStory({ invite }: { invite?: { code: string; invitedBy?: 
   const join = invite ? `/signup?invite=${invite.code}` : '/signup';
   return (
     <>
-      <header className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-4 sm:px-6">
-        <Link href="/welcome" aria-label="Howdy" className="inline-flex min-h-11 items-center no-underline">
-          <Img
-            src="/brand/howdy-wordmark.png"
-            width={728}
-            height={224}
-            alt="Howdy"
-            loading="eager"
-            className="h-9 w-auto sm:h-11"
-          />
-        </Link>
-        <nav aria-label="Account" className="flex items-center gap-2">
-          <Link href="/login" className={buttonClasses({ variant: 'ghost', compact: true })}>
-            Log in
-          </Link>
-          <Link href={join} className={buttonClasses({ compact: true })}>
-            Join free
-          </Link>
-        </nav>
+      {/* The app's own top bar: the sky blue with the white logo, so the page looks like what people step into. */}
+      <header className="sticky top-0 z-30 bg-header">
+        <div className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between gap-2 px-4 sm:px-6">
+          <HowdyLogo tone="onColour" size="top" href="/welcome" />
+          <nav aria-label="Account" className="flex items-center gap-2">
+            <Link
+              href="/login"
+              className={cn(buttonClasses({ variant: 'secondary', size: 'sm' }), 'hover:no-underline')}
+            >
+              Log in
+            </Link>
+            <Link
+              href={join}
+              className={cn(buttonClasses({ size: 'sm' }), 'whitespace-nowrap hover:no-underline')}
+            >
+              Join free
+            </Link>
+          </nav>
+        </div>
       </header>
 
       <main id="main">
@@ -231,15 +236,15 @@ export function WelcomeStory({ invite }: { invite?: { code: string; invitedBy?: 
             <h1 className="font-display text-[clamp(2.6rem,1.6rem+4.6vw,4.75rem)] leading-[1.02] font-semibold tracking-tight text-text-primary">
               Stay close
               <br />
-              {/* Two-tone, like the wordmark: no highlighter. */}
-              <span className="text-accent">to your people.</span>
+              {/* Two-tone: ink, then the top bar's blue (3.8:1 on white, fine at this size). */}
+              <span className="text-header">to your people.</span>
             </h1>
             <p className="max-w-xl text-title font-normal text-text-secondary">
               Share posts, Stories and messages with your friends, family and batch. No algorithm, no ads, and
               no strangers in your inbox.
             </p>
             <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
-              <Link href={join} className={cn(buttonClasses({ size: 'lg' }), 'nav-action-gloss relative')}>
+              <Link href={join} className={cn(buttonClasses({ size: 'lg' }), 'hover:no-underline')}>
                 Sign up — it’s free
               </Link>
               <a href="#tour" className={buttonClasses({ variant: 'secondary', size: 'lg' })}>
@@ -345,10 +350,10 @@ export function WelcomeStory({ invite }: { invite?: { code: string; invitedBy?: 
                 <li key={a.name} className="relative">
                   <span
                     aria-hidden="true"
-                    className="absolute top-5 -left-[calc(1.5rem+7px)] size-3 rounded-pill border-2 border-accent bg-highlight ring-4 ring-background sm:-left-[calc(2rem+7px)]"
+                    className="absolute top-5 -left-[calc(1.5rem+7px)] size-3 rounded-pill bg-header ring-4 ring-primary-soft sm:-left-[calc(2rem+7px)]"
                   />
                   <div className="clay flex flex-col gap-2 p-5">
-                    <span className="self-start rounded-pill bg-warning px-2.5 py-0.5 tabular-nums text-metadata text-on-warning">
+                    <span className="self-start rounded-pill bg-primary px-2.5 py-0.5 tabular-nums text-metadata text-on-primary">
                       {a.tag}
                     </span>
                     <h3 className="text-title text-text-primary">{a.name}</h3>
@@ -364,36 +369,40 @@ export function WelcomeStory({ invite }: { invite?: { code: string; invitedBy?: 
           </Section>
         </div>
 
-        {/* The way in. */}
+        {/* The way in: the blue of the top bar, one step deeper so its sentence can be white (4.9:1; the bar's own blue
+            is 3.8:1, enough for headlines only), with Log in's friends around one phone. */}
         <section
           aria-labelledby="join-title"
           className="mx-auto w-full max-w-6xl px-4 pt-10 pb-16 sm:px-6 sm:pt-14 sm:pb-24"
         >
-          <div className="clay relative flex flex-col items-center gap-5 overflow-hidden bg-primary-soft px-6 py-12 text-center sm:py-16">
-            <Img
-              src="/illustrations/welcome-skate.webp"
-              width={837}
-              height={1000}
-              alt=""
-              aria-hidden="true"
-              className="-mt-4 h-auto w-36 sm:-mt-6 sm:w-48"
-            />
-            <h2
-              id="join-title"
-              className="font-display text-[clamp(2rem,1.4rem+2.6vw,3.25rem)] leading-tight font-semibold text-text-primary"
-            >
-              Pull up a chair.
-            </h2>
-            <p className="max-w-lg text-title font-normal text-text-secondary">
-              Howdy is free, small on purpose, and better with your people in it. Claim your username before
-              someone else does.
-            </p>
-            <div className="flex w-full flex-col justify-center gap-3 sm:w-auto sm:flex-row">
-              <Link href={join} className={buttonClasses({ size: 'lg' })}>
-                Sign up
-              </Link>
-              <ShareButton />
+          <div className="grid items-center gap-8 overflow-hidden rounded-card bg-header-deep px-6 py-10 shadow-clay sm:px-10 sm:py-12 lg:grid-cols-[1fr_1.1fr] lg:gap-10">
+            <div className="flex flex-col items-start gap-5">
+              <h2
+                id="join-title"
+                className="font-display text-[clamp(2rem,1.4rem+2.6vw,3.25rem)] leading-tight font-semibold text-on-header"
+              >
+                Pull up a chair.
+              </h2>
+              <p className="max-w-md text-heading text-on-header">
+                Howdy is free, small on purpose, and better with your people in it. Claim your username before
+                someone else does.
+              </p>
+              <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
+                <Link href={join} className={cn(buttonClasses({ size: 'lg' }), 'hover:no-underline')}>
+                  Sign up
+                </Link>
+                <ShareButton />
+              </div>
             </div>
+            <Img
+              src="/illustrations/friends-phone-1280.webp"
+              srcSet="/illustrations/friends-phone-720.webp 720w, /illustrations/friends-phone-1280.webp 1280w"
+              sizes="(min-width: 64rem) 34rem, 90vw"
+              width={1280}
+              height={720}
+              alt="Five friends laughing together at something on one phone"
+              className="h-auto w-full rounded-card"
+            />
           </div>
         </section>
       </main>
@@ -403,13 +412,9 @@ export function WelcomeStory({ invite }: { invite?: { code: string; invitedBy?: 
           <p className="text-center sm:text-left">
             © 2026 Howdy · Made in India by Chiranjit Karmakar
             <span className="block text-metadata">
-              Illustrations from Magnific:{' '}
-              <a href={ILLUSTRATIONS[0]} target="_blank" rel="noopener noreferrer" className="underline">
-                at the desk
-              </a>
-              ,{' '}
-              <a href={ILLUSTRATIONS[1]} target="_blank" rel="noopener noreferrer" className="underline">
-                on the skateboard
+              Illustration at the desk from{' '}
+              <a href={HERO_ILLUSTRATION} target="_blank" rel="noopener noreferrer" className="underline">
+                Magnific
               </a>
             </span>
           </p>

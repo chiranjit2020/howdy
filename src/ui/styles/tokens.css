@@ -142,6 +142,11 @@
   --color-header: #0187df;
   /* White on that blue (the Verified badge's tick). The theme has no built-in white, so it is named here. */
   --color-on-header: #ffffff;
+  /*
+   * The top bar's blue one step deeper (the light link colour): for a block that carries small white words, which the
+   * bar's own blue cannot (3.8:1). White on it is 4.9:1. The welcome page's closing block uses it.
+   */
+  --color-header-deep: #0073c4;
   --color-info: #bee1e6;
   --color-on-info: #2b2d42;
   --color-mystery: #d8b4e2;

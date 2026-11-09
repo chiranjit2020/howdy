@@ -80,6 +80,8 @@ describe('WCAG AA contrast (both themes)', () => {
           ['text-primary', 'primary-soft'],
           ['text-secondary', 'primary-soft'],
           ['text-muted', 'primary-soft'],
+          // The welcome page's closing block: a white sentence on the deeper top-bar blue.
+          ['on-header', 'header-deep'],
           ['on-danger', 'danger'],
           ['on-info', 'info'],
           ['on-mystery', 'mystery'],
@@ -168,6 +170,7 @@ describe('design-system discipline', () => {
       PRIMARY_SOFT: 'primary-soft',
       PRIMARY: 'primary',
       ON_PRIMARY: 'on-primary',
+      ACCENT: 'header',
     };
     for (const [constant, token] of Object.entries(pinned)) {
       const value = new RegExp(`const ${constant} = '(#[0-9a-f]{6})'`, 'i').exec(image)?.[1];
