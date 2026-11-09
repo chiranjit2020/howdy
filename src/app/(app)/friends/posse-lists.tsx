@@ -10,23 +10,37 @@ import { FormMessage } from '@/ui/auth/form-parts';
 import { PersonRow } from '@/ui/howdy';
 import { RAIL_CARD, RAIL_TEXT, RailCard } from '@/ui/howdy/rail-card';
 import { MoreIcon, UsersIcon, WhisperIcon } from '@/ui/icons';
-import { Button, ConfirmationDialog, Dropdown, EmptyState } from '@/ui/primitives';
+import { Button, ConfirmationDialog, Dropdown, EmptyState, Input } from '@/ui/primitives';
 
 // A round 44px icon button (or link) for the compact Pals row. The card is white, so the hover is the sunken grey.
 const iconButton =
   'inline-flex size-11 items-center justify-center rounded-pill text-title text-text-primary no-underline hover:bg-surface-sunken hover:text-text-primary';
 
-/** How many friends a phone shows before "Show all": the list sits above Following and grows long. */
+/** How many friends a phone shows before "Show all"; past this many, the list also gets a search box. */
 const PHONE_FRIENDS = 8;
+/** A friend who said yes within this long is marked "New friend" (newest are on top). */
+const NEW_FRIEND_MS = 7 * 24 * 60 * 60 * 1000;
 
-/** The signed-in person's Posse, requests and scouting. Each button sends one action; the page then reloads from the server. */
-export function PosseLists({ lists }: { lists: RelationshipLists }) {
+/**
+ * The signed-in person's lists, in the order people act on them (2026-11-10): requests waiting for you first, then
+ * `addFriend` (the phone's compact Add a friend box; wide screens have it in the right panel), your friends newest first,
+ * the requests you sent, and who you follow. Each button sends one action; the page then reloads from the server.
+ */
+export function PosseLists({ lists, addFriend }: { lists: RelationshipLists; addFriend?: ReactNode }) {
   const router = useRouter();
   const [busy, setBusy] = useState<string | undefined>();
   const [error, setError] = useState<string | undefined>();
   const [leaving, setLeaving] = useState<PersonEntry | undefined>();
   const [allFriends, setAllFriends] = useState(false);
-  const friendsCut = !allFriends && lists.posse.length > PHONE_FRIENDS;
+  const [query, setQuery] = useState('');
+  const q = query.trim().toLowerCase();
+  const friends = q
+    ? lists.posse.filter((p) => p.displayName.toLowerCase().includes(q) || p.handle.includes(q))
+    : lists.posse;
+  // While searching every match shows; otherwise a phone shows the newest few until "Show all".
+  const friendsCut = !q && !allFriends && lists.posse.length > PHONE_FRIENDS;
+  const [now] = useState(() => Date.now());
+  const isNew = (p: PersonEntry) => now - new Date(p.at).getTime() < NEW_FRIEND_MS;
 
   async function run(handle: string, action: RelationshipAction) {
     setBusy(`${handle}:${action}`);
@@ -65,8 +79,10 @@ export function PosseLists({ lists }: { lists: RelationshipLists }) {
     row: (p: PersonEntry, i: number) => ReactNode,
     more?: ReactNode,
     foot?: ReactNode,
+    top?: ReactNode,
   ) => (
     <RailCard id={id} title={title} {...(foot ? { foot } : {})}>
+      {top}
       {people.length === 0 ? (
         <p className={RAIL_TEXT}>{empty}</p>
       ) : (
@@ -87,19 +103,17 @@ export function PosseLists({ lists }: { lists: RelationshipLists }) {
             key={p.handle}
             {...p}
             card
+            inlineActions
             actions={
               <>
                 {btn(p, 'accept', 'Accept', 'primary')}
-                {btn(p, 'decline', 'Decline')}
+                {btn(p, 'decline', 'Decline', 'ghost')}
               </>
             }
           />
         ))}
 
-      {lists.outgoing.length > 0 &&
-        section('waiting', `Sent requests (${lists.outgoing.length})`, lists.outgoing, '', (p) => (
-          <PersonRow key={p.handle} {...p} card inlineActions actions={btn(p, 'cancel', 'Cancel', 'ghost')} />
-        ))}
+      {addFriend}
 
       {lists.posse.length === 0 && lists.incoming.length === 0 ? (
         <div className={RAIL_CARD}>
@@ -114,8 +128,8 @@ export function PosseLists({ lists }: { lists: RelationshipLists }) {
         section(
           'posse',
           `Your friends (${lists.posse.length})`,
-          lists.posse,
-          'Nobody yet. Accept a request or ask someone.',
+          friends,
+          `No friend matches “${query.trim()}”.`,
           (p, i) => (
             <PersonRow
               key={p.handle}
@@ -123,7 +137,13 @@ export function PosseLists({ lists }: { lists: RelationshipLists }) {
               card
               inlineActions
               className={friendsCut && i >= PHONE_FRIENDS ? 'max-xl:hidden' : undefined}
-              {...(p.closeByMe ? { note: 'Close friend' } : {})}
+              {...(isNew(p) || p.closeByMe
+                ? {
+                    note: [isNew(p) && 'New friend', p.closeByMe && 'Close friend']
+                      .filter(Boolean)
+                      .join(' · '),
+                  }
+                : {})}
               actions={
                 <>
                   <Link
@@ -172,8 +192,25 @@ export function PosseLists({ lists }: { lists: RelationshipLists }) {
             </Button>
           ),
           'Close friend is a private label, just for you. Following someone shows their posts on your Home. Nobody is told about either.',
+          lists.posse.length > PHONE_FRIENDS && (
+            <Input
+              label="Search your friends"
+              hideLabel
+              type="search"
+              placeholder="Search your friends"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              autoCapitalize="none"
+              spellCheck={false}
+            />
+          ),
         )
       )}
+
+      {lists.outgoing.length > 0 &&
+        section('waiting', `Sent requests (${lists.outgoing.length})`, lists.outgoing, '', (p) => (
+          <PersonRow key={p.handle} {...p} card inlineActions actions={btn(p, 'cancel', 'Cancel', 'ghost')} />
+        ))}
 
       {lists.scouting.length > 0 &&
         section('scouting', 'Following', lists.scouting, '', (p) => (

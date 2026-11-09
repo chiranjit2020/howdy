@@ -764,6 +764,9 @@ export async function listMyRelationships(actorId: string): Promise<MyRelationsh
       out.outgoing.push({ userId: other, at: l.createdAt });
     }
   }
+  // Friends newest first by when they became friends (the yes), not when the request was sent: someone who accepts an
+  // old request today belongs at the top, not buried at the bottom of a long list (2026-11-10).
+  out.posse.sort((x, y) => y.at.getTime() - x.at.getTime());
   for (const s of scouting) out.scouting.push({ userId: s.scouteeId, at: s.createdAt });
   for (const c of controls) {
     const bucket = c.kind === 'block' ? out.blocked : c.kind === 'mute' ? out.muted : out.restricted;

@@ -17,6 +17,19 @@ const person = (tag: string) => signedInUser(kit, uniqueUser(tag));
 const as = (p: { cookie: string }) => ({ cookie: p.cookie });
 
 describe('the Posse handshake', () => {
+  it('friends come newest first by when they said yes, not when the request was sent', async () => {
+    const me = await person('me');
+    const early = await person('early');
+    const prompt = await person('prompt');
+    await doAct(early.handle, 'request', as(me)); // asked first…
+    await doAct(prompt.handle, 'request', as(me));
+    await doAct(me.handle, 'accept', as(prompt));
+    await new Promise((r) => setTimeout(r, 20));
+    await doAct(me.handle, 'accept', as(early)); // …but said yes last
+    const lists = (await myLists(as(me))).data as { posse: { handle: string }[] };
+    expect(lists.posse.map((p) => p.handle)).toEqual([early.handle, prompt.handle]);
+  });
+
   it('a request is private: the asker sees "sent", the asked sees "received", strangers see nothing', async () => {
     const a = await person('alice');
     const b = await person('bob');

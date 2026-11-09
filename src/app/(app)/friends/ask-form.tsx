@@ -5,7 +5,7 @@ import { useState, type FormEvent } from 'react';
 import { handleParamSchema } from '@/shared/validation/profile';
 import { postJson } from '@/ui/auth/api';
 import { FormMessage } from '@/ui/auth/form-parts';
-import { RAIL_TEXT, RailCard } from '@/ui/howdy/rail-card';
+import { RailCard } from '@/ui/howdy/rail-card';
 import { Button, Input } from '@/ui/primitives';
 
 /**
@@ -41,10 +41,12 @@ export function AskForm({ id = 'ask-by-username' }: { id?: string }) {
   }
 
   return (
-    <RailCard id={id} title="Send a friend request">
-      <p className={RAIL_TEXT}>
-        Type their username (it&apos;s under their name, after the @) and we&apos;ll send them a request.
-      </p>
+    // Compact (2026-11-10): the box and Send on one line, the how-to in the dashed foot, so it never pushes the lists down.
+    <RailCard
+      id={id}
+      title="Add a friend"
+      foot={<p>Their username is under their name, after the @. Works for private profiles too.</p>}
+    >
       <form onSubmit={submit} noValidate className="flex flex-col gap-2">
         {formError && <FormMessage tone="error">{formError}</FormMessage>}
         {sent && (
@@ -52,22 +54,25 @@ export function AskForm({ id = 'ask-by-username' }: { id?: string }) {
             If @{sent} is out there, your request is on its way. Requests stay private until they say yes.
           </FormMessage>
         )}
-        <Input
-          label="Their username"
-          hideLabel
-          prefix="@"
-          placeholder="username"
-          name="handle"
-          value={handle}
-          onChange={(e) => setHandle(e.target.value)}
-          error={fieldError}
-          autoCapitalize="none"
-          spellCheck={false}
-          hint="Works for private profiles too."
-        />
-        <Button type="submit" size="sm" loading={busy} fullWidth>
-          Send request
-        </Button>
+        <div className="flex items-start gap-2">
+          <div className="min-w-0 flex-1">
+            <Input
+              label="Their username"
+              hideLabel
+              prefix="@"
+              placeholder="username"
+              name="handle"
+              value={handle}
+              onChange={(e) => setHandle(e.target.value)}
+              error={fieldError}
+              autoCapitalize="none"
+              spellCheck={false}
+            />
+          </div>
+          <Button type="submit" loading={busy} className="shrink-0" aria-label="Send request">
+            Send
+          </Button>
+        </div>
       </form>
     </RailCard>
   );
