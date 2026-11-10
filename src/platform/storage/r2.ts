@@ -29,6 +29,8 @@ const isNotFound = (err: unknown): boolean => {
 /**
  * Cloudflare R2 through the S3 protocol (so plain AWS S3 also works: change the endpoint). The bucket stays PRIVATE: browsers only
  * ever get a signed URL to upload, and photos are read back by this server and served through the app's own authorization.
+ * Videos (ADR-064) are the one exception to "read back by this server": after the app's own check, the browser gets a
+ * signed GET URL that works for a few minutes and streams from R2 itself (R2 does not charge for that bandwidth).
  * Pass `client` in tests to see exactly what would be sent.
  */
 export class R2ObjectStore implements ObjectStore {
@@ -96,6 +98,40 @@ export class R2ObjectStore implements ObjectStore {
       if (isNotFound(err)) return null;
       throw err;
     }
+  }
+
+  async getHead(key: string, length: number): Promise<Buffer | null> {
+    assertObjectKey(key);
+    try {
+      const out = await this.client.send(
+        new GetObjectCommand({ Bucket: this.bucket, Key: key, Range: `bytes=0-${length - 1}` }),
+      );
+      const bytes = await out.Body?.transformToByteArray();
+      if (!bytes) return null;
+      // A store that ignores Range would send everything: never keep more than was asked for.
+      return Buffer.from(bytes.subarray(0, length));
+    } catch (err) {
+      if (isNotFound(err)) return null;
+      // Asking for bytes of an empty object is "416 Range Not Satisfiable": there is no header to read.
+      if ((err as { $metadata?: { httpStatusCode?: number } })?.$metadata?.httpStatusCode === 416)
+        return Buffer.alloc(0);
+      throw err;
+    }
+  }
+
+  async createDownload(key: string, opts: { contentType: string; ttlSec: number }): Promise<string> {
+    assertObjectKey(key);
+    return getSignedUrl(
+      this.client,
+      new GetObjectCommand({
+        Bucket: this.bucket,
+        Key: key,
+        // Served with the type we checked, never sniffed, and never kept by a shared cache.
+        ResponseContentType: opts.contentType,
+        ResponseCacheControl: 'private, max-age=600',
+      }),
+      { expiresIn: opts.ttlSec },
+    );
   }
 
   async put(key: string, body: Buffer, contentType: string): Promise<void> {

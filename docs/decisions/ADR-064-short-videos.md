@@ -50,8 +50,32 @@ watching is free because R2 does not charge for bandwidth) and the Neon database
    at once until a moderator looks. (Security backlog: CSAM scanning is still open, and there is no free tool for
    video.)
 9. **3 videos a day per person**, through the existing rate limiter, so one person cannot fill the free 10 GB.
-10. **New table `post_videos`** (post, owner, object key, poster key, size, duration, created, expires). A migration,
-    so it needs the usual OK before running on the live database.
+10. **Stored in the existing `media` table, not a new one** (changed while building): kind `card_video`, with new
+    columns `duration_ms`, `poster_key`, `expires_at` and a new status `expired` (migration 0058, additive only). The
+    `media` table already has everything a post's file needs: it is deleted with its post, removed on account
+    deletion, covered by the clean-up job, and "one photo per card" becomes "one photo or video per card" for free.
+    The migration needs the usual OK before running on the live database.
+
+## How it was built
+
+- **Library: Mediabunny 1.62.1** (pinned exactly; a release at least two weeks old). Pure TypeScript over the browser's
+  WebCodecs, no WebAssembly, so the CSP needs no `wasm-unsafe-eval`. Loaded only when someone picks a video.
+- **Encoder settings** (`src/shared/validation/media.ts`, used by both the phone and the server): H.264, short side
+  720 px (never enlarged, sizes even), 2 Mbps target, a key frame every 2 s (Mediabunny's default is 5; 2 makes
+  jumping ahead start sooner for ~5% more size), frame rate capped at 30 (60 fps phone clips halve in size), rotation
+  baked into the pixels, AAC 96 kbps (more than 2 channels mixed down), fast start `in-memory`, first 30 s kept.
+- **Poster**: one frame at 0.5 s (past a black first frame) as a JPEG, sent through the card-photo path, so it is
+  re-encoded to WebP and goes through the photo check like any photo. A frame the check would hold refuses the video.
+- **Server check** (`src/modules/media/mp4.ts`): reads the first 1 MB only and walks the MP4 boxes: `ftyp` first,
+  `moov` before `mdat`, one `avc1`/`avc3` picture track, at most one `mp4a` sound track, nothing else, ≤ 30.5 s,
+  short side ≤ 736 and long side ≤ 1312. Nothing is decoded.
+- **Watching**: `GET /api/cards/:id/video` checks the card's rules and 302-redirects to a 10-minute signed R2 link
+  (`no-store`, `no-referrer`). If the link runs out mid-watch, the player asks once more and carries on from the same
+  second. The poster is served by the app like a card photo.
+- **Reports** hide the video from everyone but its writer at once; the moderator can play it from the queue;
+  dismissing the last open report on that card shows it again.
+- **Browsers that cannot convert** (no WebCodecs, or no AAC sound encoder) get a plain message instead
+  of a broken upload. The sound is never silently dropped.
 
 ## What it holds
 

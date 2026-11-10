@@ -36,6 +36,9 @@ export function buildCsp(
     // nonce cannot cover attributes). The hash is of `display:none` alone; every other style="" stays blocked.
     ...(isDev ? [] : [`style-src-attr 'unsafe-hashes' '${STREAMED_SVG_STYLE_HASH}'`]),
     "img-src 'self' blob: data:",
+    // Card videos (ADR-064): a preview of the chosen clip (blob:), and playback straight from the storage bucket through
+    // a short-lived signed link (the app's own route redirects there after checking who may watch).
+    `media-src 'self' blob:${storageOrigin ? ` ${storageOrigin}` : ''}`,
     "font-src 'self'",
     // The service worker (/sw.js). Named explicitly: under 'strict-dynamic' script-src ignores 'self'.
     "worker-src 'self'",

@@ -18,6 +18,7 @@ export interface QueueItem {
   canRemove: boolean;
   canRemoveCard: boolean;
   cardHasPhoto: boolean;
+  cardHasVideo: boolean;
   status: string;
   reporter: { handle: string } | null;
   target: { handle: string; status: string } | null;

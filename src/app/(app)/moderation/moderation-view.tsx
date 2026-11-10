@@ -324,6 +324,18 @@ function Queue({ initial }: { initial: QueuePage }) {
                       className="max-h-60 w-auto max-w-full rounded-md object-contain"
                     />
                   )}
+                  {r.cardHasVideo && (
+                    // The reported card's video (ADR-064). Hidden from everyone but its writer while this report is
+                    // open; "Clear" shows it again, removing the card removes it. Nothing loads until play.
+                    <video
+                      src={`/api/moderation/reports/${r.id}/card-video`}
+                      controls
+                      preload="none"
+                      playsInline
+                      aria-label={`The video on the reported card by @${r.target?.handle ?? 'someone'}`}
+                      className="max-h-80 w-full max-w-md rounded-md bg-surface-sunken"
+                    />
+                  )}
                   {r.subject === 'portrait' && r.canRemove && (
                     <Img
                       src={`/api/moderation/reports/${r.id}/portrait`}

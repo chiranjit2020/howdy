@@ -46,6 +46,7 @@ import {
   PiWarning,
   PiX,
   PiXCircle,
+  PiVideoCamera,
 } from 'react-icons/pi';
 
 type IconProps = Omit<ComponentProps<'svg'>, 'children'>;
@@ -104,6 +105,8 @@ export const PinIcon = go(PiPushPin);
 export const PlayIcon = go(PiPlayCircle);
 // Add or change a photo.
 export const CameraIcon = go(PiCamera);
+// Add a video to a post (ADR-064).
+export const VideoIcon = go(PiVideoCamera);
 // Post, Reply, Send.
 export const SendIcon = go(PiPaperPlaneRight);
 // Your signed-in devices, and signing out (the phone's You sheet).

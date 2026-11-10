@@ -59,7 +59,7 @@ const FEATURES: { icon: Icon; name: string; text: string }[] = [
   {
     icon: PiNote,
     name: 'Posts',
-    text: 'Words, a photo or both, on your wall or a friend’s. Give a Star, reply, @mention, pin one to the top, edit a typo.',
+    text: 'Words, a photo or a 30-second video, on your wall or a friend’s. Give a Star, reply, @mention, pin one to the top, edit a typo.',
   },
   { icon: PiCamera, name: 'Stories', text: 'A photo for your friends or close friends, gone in 12 hours.' },
   {
@@ -108,8 +108,8 @@ const SAFETY: { icon: Icon; text: string }[] = [
 const GOOD_TO_KNOW: { icon: Icon; name: string; text: string }[] = [
   {
     icon: PiVideoCamera,
-    name: 'Photos, not videos (for now)',
-    text: 'Howdy is run by one person on a small budget, and videos take a lot of storage. You can share photos in posts, groups and Stories. Messages are words only, and video isn’t supported yet.',
+    name: 'Short videos, for friends, for 3 days',
+    text: 'Howdy is run by one person on a small budget, and videos take a lot of storage. So a post can carry one video of up to 30 seconds, on a wall only friends can see, and it disappears after 3 days. Your phone makes it smaller before it uploads. Groups, Stories and Messages don’t take videos yet.',
   },
   {
     icon: PiChatsCircle,

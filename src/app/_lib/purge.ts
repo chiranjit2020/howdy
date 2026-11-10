@@ -11,7 +11,7 @@ import { purgeStaleWaiting } from '@/modules/fence';
 import { purgeOldInvitations } from '@/modules/invites';
 import { purgeExpiredStories } from '@/modules/stories';
 import { purgeExpiredLights } from '@/modules/lights';
-import { purgeDetachedCardPhotos, purgeStaleMedia } from '@/modules/media';
+import { expireCardVideos, purgeDetachedCardPhotos, purgeStaleMedia } from '@/modules/media';
 import { liftExpiredSuspensions, purgeClosedReports } from '@/modules/moderation';
 import { purgeOldChimes } from '@/modules/notifications';
 import { clearExpiredSignals } from '@/modules/profiles';
@@ -50,6 +50,9 @@ export async function runAllPurges() {
   const storyRows = await purgeExpiredStories();
   // Card photos never nailed within the hour, or whose card, post or Story has since been removed (ADR-031).
   const cardPhotos = await purgeDetachedCardPhotos();
+  // Card videos past their 3 days (ADR-064): both files go, the post then says "This video has expired". They already
+  // stop playing at the exact moment; this only frees the storage (a bucket rule on videos/ is the safety net).
+  const videos = await expireCardVideos();
   const tributeRows = await purgeStaleTributes();
   // Not retention, but daily upkeep that belongs with it: Trusted ticks nobody has looked at lately are checked again.
   const trust = await recheckStaleTrust();
@@ -81,6 +84,7 @@ export async function runAllPurges() {
     ...trackRows,
     ...files,
     ...cardPhotos,
+    ...videos,
     ...tributeRows,
     ...trust,
     ...suspensionsDone,

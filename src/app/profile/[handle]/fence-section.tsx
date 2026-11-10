@@ -11,6 +11,7 @@ import { Button, ConfirmationDialog, Dropdown, IconButton, useToast } from '@/ui
 import { ReportDialog } from '@/ui/howdy/report-dialog';
 import { MoreIcon } from '@/ui/icons';
 import { uploadPhoto } from '@/ui/media/upload-photo';
+import { uploadVideo } from '@/ui/media/upload-video';
 
 /** The parts of a page this component uses. Dates arrive as Date objects (first paint) or ISO strings (later pages). */
 type WireReply = Omit<ReplyView, 'createdAt'> & { createdAt: Date | string };
@@ -79,11 +80,12 @@ export function FenceSection({
   const patchCard = (id: string, fn: (c: WireCard) => WireCard) =>
     setCards((all) => all.map((c) => (c.id === id ? fn(c) : c)));
 
-  async function nail(body: string, photoId?: string): Promise<boolean> {
+  async function nail(body: string, photoId?: string, videoId?: string): Promise<boolean> {
     setError(undefined);
     const res = await postJson<{ card: WireCard }>(`/api/porch/${handle}/fence`, {
       body,
       ...(photoId ? { photoId } : {}),
+      ...(videoId ? { videoId } : {}),
     });
     if (res.ok && res.data) {
       const card = res.data.card;
@@ -94,6 +96,7 @@ export function FenceSection({
     setError(
       res.error?.fields?.body ??
         res.error?.fields?.photo ??
+        res.error?.fields?.video ??
         res.error?.message ??
         'That did not work. Try again.',
     );
@@ -273,6 +276,7 @@ export function FenceSection({
           {...(initial.canAddPhoto
             ? { onPhoto: (file: File) => uploadPhoto('/api/me/card-photo', file) }
             : {})}
+          {...(initial.canAddVideo ? { onVideo: uploadVideo } : {})}
         />
       </div>
     ) : undefined;
@@ -318,7 +322,7 @@ export function FenceSection({
                   editor: (
                     <PostEditForm
                       initial={c.body}
-                      allowEmpty={c.photo !== null}
+                      allowEmpty={c.photo !== null || c.video !== null}
                       onSave={(b) => saveEdit(c, b)}
                       onCancel={() => setEditing(undefined)}
                     />
@@ -368,6 +372,7 @@ export function FenceSection({
               : {})}
             actions={cardMenu(c)}
             photo={c.photo}
+            video={c.video}
             // In the feed, say whose wall it is on, unless they wrote it on their own.
             {...(c.wall && c.wall.handle !== c.author.handle
               ? { wall: { name: c.wall.displayName, handle: c.wall.handle } }

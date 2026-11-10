@@ -1,7 +1,13 @@
-import { mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
+import { mkdir, open, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { dirname, resolve, sep } from 'node:path';
 import { assertObjectKey, type ObjectStore, type UploadTarget } from './types';
-import { signUploadToken, verifyUploadToken } from './upload-token';
+import {
+  signDownloadToken,
+  signUploadToken,
+  verifyDownloadToken,
+  verifyUploadToken,
+  type DownloadClaims,
+} from './upload-token';
 
 /**
  * Files in a folder. For development and tests only (production refuses it: files on one disk do not survive a redeploy).
@@ -57,6 +63,39 @@ export class LocalObjectStore implements ObjectStore {
     if (size === null) return null;
     if (size > maxBytes) throw new Error('Object is larger than allowed');
     return readFile(this.pathFor(key));
+  }
+
+  async getHead(key: string, length: number): Promise<Buffer | null> {
+    return this.readRange(key, 0, length);
+  }
+
+  /** `length` bytes from `start` (fewer at the end of the file), or null when there is no such file. */
+  async readRange(key: string, start: number, length: number): Promise<Buffer | null> {
+    let handle;
+    try {
+      handle = await open(this.pathFor(key), 'r');
+    } catch (err) {
+      if ((err as NodeJS.ErrnoException).code === 'ENOENT') return null;
+      throw err;
+    }
+    try {
+      const buf = Buffer.alloc(length);
+      const { bytesRead } = await handle.read(buf, 0, length, start);
+      return buf.subarray(0, bytesRead);
+    } finally {
+      await handle.close();
+    }
+  }
+
+  async createDownload(key: string, opts: { contentType: string; ttlSec: number }): Promise<string> {
+    assertObjectKey(key);
+    const token = signDownloadToken(this.secret, { key, contentType: opts.contentType }, opts.ttlSec);
+    return `/api/media/local/${token}`;
+  }
+
+  /** What a download token allows (key and type), or null for a bad or expired one. */
+  verifyDownload(token: string): DownloadClaims | null {
+    return verifyDownloadToken(this.secret, token);
   }
 
   async put(key: string, body: Buffer, _contentType: string): Promise<void> {

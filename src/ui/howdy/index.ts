@@ -5,7 +5,9 @@ export {
   PostCardReply,
   PostCardComposer,
   PostEditForm,
+  PostVideo,
   POST_LIST,
+  type PostVideoData,
   type PostCardProps,
   type PostCardAuthor,
 } from './post-card';

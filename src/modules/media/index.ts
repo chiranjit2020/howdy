@@ -28,3 +28,13 @@ export {
   type StartedUpload,
 } from './service';
 export { processCover, processPortrait, MAX_INPUT_PIXELS, type ProcessedPortrait } from './image';
+export {
+  cardVideoLink,
+  completeCardVideo,
+  expireCardVideos,
+  holdCardVideo,
+  readCardVideoPoster,
+  releaseCardVideo,
+  startCardVideoUpload,
+  WATCH_LINK_SEC,
+} from './video';

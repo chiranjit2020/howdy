@@ -126,6 +126,11 @@ export interface CardView {
    * its words; the version in it changes if the photo does, so a browser never shows a stale one.
    */
   photo: { url: string; width: number; height: number } | null;
+  /**
+   * The card's video (ADR-064), or null. `ready`: playable until `expiresAt`, by the card's own rules and only while its
+   * wall is friends-only; `url` hands out a 10-minute link when the player asks. `expired`: it had one, past its 3 days.
+   */
+  video: CardVideo | null;
   /** Pinned to the top of its wall by the wall's owner. Only ever true on the wall itself, never in Home's feed. */
   pinned: boolean;
   /** May the viewer pin it (or unpin it)? The wall's owner, for a published card. */
@@ -135,6 +140,18 @@ export interface CardView {
   /** May the viewer change its words? Its writer only (ADR-063); the server checks again. */
   canEdit: boolean;
 }
+
+export type CardVideo =
+  | {
+      state: 'ready';
+      url: string;
+      posterUrl: string;
+      width: number;
+      height: number;
+      durationMs: number;
+      expiresAt: Date;
+    }
+  | { state: 'expired' };
 
 export interface FencePage {
   cards: CardView[];
@@ -146,6 +163,8 @@ export interface FencePage {
   review: boolean;
   /** May the viewer add a photo to a card here? The owner, or one of their Pals who may post (ADR-031). */
   canAddPhoto: boolean;
+  /** May the viewer add a video? As for a photo, and only on a wall that friends alone can see (ADR-064). */
+  canAddVideo: boolean;
 }
 
 const toRef = (p: PersonCard): AuthorRef => ({
@@ -247,18 +266,21 @@ async function hydrate(
       // Replies per card are capped at write time; this only bounds the read.
       .limit(ids.length * (REPLIES_PER_CARD + 5)),
     db
-      .select({ id: media.id, cardId: media.cardId, width: media.width, height: media.height })
+      .select(CARD_MEDIA_COLUMNS)
       .from(media)
       .where(
         and(
           inArray(media.cardId, ids),
-          eq(media.kind, 'card_photo'),
-          eq(media.status, 'ready'),
+          inArray(media.kind, ['card_photo', 'card_video']),
+          inArray(media.status, ['ready', 'expired']),
           photoShownTo(viewerId),
         ),
       ),
   ]);
-  const photoByCard = new Map(photos.map((p) => [p.cardId!, p]));
+  const photoByCard = new Map(
+    photos.filter((p) => p.kind === 'card_photo' && p.status === 'ready').map((p) => [p.cardId!, p]),
+  );
+  const videoByCard = new Map(photos.filter((p) => p.kind === 'card_video').map((p) => [p.cardId!, p]));
 
   const replyAuthorIds = replyRows.map((r: ReplyRow) => r.authorId);
   const [replyAuthors, hidden] = await Promise.all([
@@ -316,6 +338,7 @@ async function hydrate(
         ...reactionFields(reactionsByCard.get(row.id) ?? emptyReactions(), myReaction.get(row.id) ?? null),
         replies: repliesByCard.get(row.id) ?? [],
         photo: photoOf(row.id, photoByCard.get(row.id)),
+        video: videoOf(row.id, videoByCard.get(row.id), wall.fence),
         pinned: false,
         canPin: isOwner && published,
         editedAt: row.editedAt,
@@ -332,6 +355,61 @@ const photoOf = (
   p && p.width && p.height
     ? { url: `/api/cards/${cardId}/photo?v=${p.id}`, width: p.width, height: p.height }
     : null;
+
+/** What a card's photo or video row gives the page (ADR-031, ADR-064). */
+const CARD_MEDIA_COLUMNS = {
+  id: media.id,
+  cardId: media.cardId,
+  kind: media.kind,
+  status: media.status,
+  width: media.width,
+  height: media.height,
+  durationMs: media.durationMs,
+  expiresAt: media.expiresAt,
+};
+type CardMediaRow = {
+  id: string;
+  status: string;
+  width: number | null;
+  height: number | null;
+  durationMs: number | null;
+  expiresAt: Date | null;
+};
+
+/** A photo or a video on a card here: whoever may post, if it is their own wall or they are the owner's friend (ADR-031). */
+const mayAddMedia = (
+  viewer: Actor,
+  viewerId: string | null,
+  ownerId: string,
+  fence: FenceResource,
+  ctx: FenceContext,
+): boolean =>
+  canFence(viewer, 'fence:post', fence, ctx).allow &&
+  (viewerId === ownerId || ctx.relationship === 'POSSE' || ctx.relationship === 'CLOSE_POSSE');
+
+/** Videos are for friends only (ADR-064): on a wall anyone else can read, a video is not shown (or posted). */
+export const videosAllowedOn = (fence: FenceResource): boolean => fence.fenceVisibility === 'posse';
+
+/**
+ * A card's video for the page: playable until it expires, while the wall is friends-only; "expired" once past its 3
+ * days (whether or not the job has deleted the files yet); null when it has none or may not be shown here.
+ */
+function videoOf(cardId: string, v: CardMediaRow | undefined, fence: FenceResource): CardVideo | null {
+  if (!v) return null;
+  const now = Date.now();
+  if (v.status === 'expired' || (v.expiresAt && v.expiresAt.getTime() <= now)) return { state: 'expired' };
+  if (v.status !== 'ready' || !videosAllowedOn(fence)) return null;
+  if (!v.width || !v.height || !v.durationMs || !v.expiresAt) return null;
+  return {
+    state: 'ready',
+    url: `/api/cards/${cardId}/video?v=${v.id}`,
+    posterUrl: `/api/cards/${cardId}/video/poster?v=${v.id}`,
+    width: v.width,
+    height: v.height,
+    durationMs: v.durationMs,
+    expiresAt: v.expiresAt,
+  };
+}
 
 /**
  * One page of a Fence, newest first, or null when the viewer may not read it (missing, inactive and hidden are the same).
@@ -427,9 +505,8 @@ export async function listFence(
     nextCursor: next ? encodeCursor(next) : null,
     isOwner: viewerId === ownerId,
     canPost: canFence(viewer, 'fence:post', fence, ctx).allow,
-    canAddPhoto:
-      canFence(viewer, 'fence:post', fence, ctx).allow &&
-      (viewerId === ownerId || ctx.relationship === 'POSSE' || ctx.relationship === 'CLOSE_POSSE'),
+    canAddPhoto: mayAddMedia(viewer, viewerId, ownerId, fence, ctx),
+    canAddVideo: mayAddMedia(viewer, viewerId, ownerId, fence, ctx) && videosAllowedOn(fence),
     review: fence.fenceReview && viewerId !== ownerId,
   };
 }
@@ -513,9 +590,8 @@ export async function getFenceCard(
     nextCursor: null,
     isOwner: viewerId === ownerId,
     canPost: canFence(viewer, 'fence:post', fence, ctx).allow,
-    canAddPhoto:
-      canFence(viewer, 'fence:post', fence, ctx).allow &&
-      (viewerId === ownerId || ctx.relationship === 'POSSE' || ctx.relationship === 'CLOSE_POSSE'),
+    canAddPhoto: mayAddMedia(viewer, viewerId, ownerId, fence, ctx),
+    canAddVideo: mayAddMedia(viewer, viewerId, ownerId, fence, ctx) && videosAllowedOn(fence),
     review: fence.fenceReview && viewerId !== ownerId,
   };
 }
@@ -730,7 +806,10 @@ export async function postCard(
   handle: string,
   body: string,
   photoId?: string,
+  videoId?: string,
 ): Promise<CardView> {
+  if (photoId && videoId)
+    throw new AppError('VALIDATION_FAILED', { message: 'A post has a photo or a video, not both.' });
   // Spent before the handle is looked up: the same limit trips whether the Fence exists, is hidden or is a made-up name.
   await enforceRateLimit(`fence:post:${userId}`, RATE.postUser);
   await enforceNewAccountLimit(userId, 'card');
@@ -753,6 +832,21 @@ export async function postCard(
     throw new AppError('FORBIDDEN', {
       message: 'Only their friends can add a photo to a post on this wall.',
     });
+  }
+  // A video (ADR-064): the same rule as a photo, and only on a wall friends alone can see.
+  if (videoId) {
+    if (userId !== ownerId && ctx.relationship !== 'POSSE' && ctx.relationship !== 'CLOSE_POSSE') {
+      throw new AppError('FORBIDDEN', {
+        message: 'Only their friends can add a video to a post on this wall.',
+      });
+    }
+    if (!videosAllowedOn(fence)) {
+      const message =
+        userId === ownerId
+          ? 'Videos can go only on a wall that just your friends can see. You can change who sees your wall in Settings.'
+          : 'Videos can go only on walls that just friends can see.';
+      throw new AppError('FORBIDDEN', { message, fields: { video: message } });
+    }
   }
   const status = await statusFor(actor, 'card', fence, ctx, userId);
   const row = await getDb().transaction(async (tx) => {
@@ -785,6 +879,28 @@ export async function postCard(
           message: 'That photo is no longer available. Add it again.',
           fields: { photo: 'That photo is no longer available. Add it again.' },
         });
+      }
+    }
+    if (videoId) {
+      // Only MY finished video, on no card yet, not past its time, young enough that the clean-up cannot take it.
+      const attached = await tx
+        .update(media)
+        .set({ cardId: card!.id, updatedAt: sql`now()` })
+        .where(
+          and(
+            eq(media.id, videoId),
+            eq(media.ownerId, userId),
+            eq(media.kind, 'card_video'),
+            eq(media.status, 'ready'),
+            isNull(media.cardId),
+            gt(media.expiresAt, new Date()),
+            gt(media.createdAt, new Date(Date.now() - PHOTO_ATTACH_WINDOW_MS)),
+          ),
+        )
+        .returning({ id: media.id });
+      if (attached.length === 0) {
+        const message = 'That video is no longer available. Add it again.';
+        throw new AppError('VALIDATION_FAILED', { message, fields: { video: message } });
       }
     }
     return card!;
@@ -937,11 +1053,11 @@ export async function editCard(userId: string, cardId: string, body: string): Pr
   }
   const db = getDb();
   if (body === '') {
-    // Words OR a photo, as when posting: a photo post may lose its words, a words-only post may not.
+    // Words OR a photo or video, as when posting: such a post may lose its words, a words-only post may not.
     const [photo] = await db
       .select({ id: media.id })
       .from(media)
-      .where(and(eq(media.cardId, card.id), eq(media.kind, 'card_photo')))
+      .where(and(eq(media.cardId, card.id), inArray(media.kind, ['card_photo', 'card_video'])))
       .limit(1);
     if (!photo) {
       throw new AppError('VALIDATION_FAILED', {
@@ -1060,6 +1176,8 @@ export interface WaitingCard {
   author: AuthorRef;
   /** A waiting card's photo, so the owner sees what they are approving (ADR-031). Never on a reply. */
   photo?: CardView['photo'];
+  /** A waiting card's video (ADR-064), the same way. */
+  video?: CardView['video'];
 }
 export interface WaitingReply extends WaitingCard {
   onCard: string;
@@ -1099,19 +1217,24 @@ export async function listWaiting(ownerId: string): Promise<Waiting> {
     hiddenAuthors(ownerId, ids),
     cardIds.length
       ? db
-          .select({ id: media.id, cardId: media.cardId, width: media.width, height: media.height })
+          .select(CARD_MEDIA_COLUMNS)
           .from(media)
           .where(
             and(
               inArray(media.cardId, cardIds),
-              eq(media.kind, 'card_photo'),
-              eq(media.status, 'ready'),
+              inArray(media.kind, ['card_photo', 'card_video']),
+              inArray(media.status, ['ready', 'expired']),
               photoShownTo(ownerId),
             ),
           )
       : Promise.resolve([]),
   ]);
-  const photoByCard = new Map(photos.map((p) => [p.cardId!, p]));
+  const photoByCard = new Map(
+    photos.filter((p) => p.kind === 'card_photo' && p.status === 'ready').map((p) => [p.cardId!, p]),
+  );
+  const videoByCard = new Map(photos.filter((p) => p.kind === 'card_video').map((p) => [p.cardId!, p]));
+  // The owner sees a waiting video by the same rule as on the wall (friends-only walls).
+  const ownFence = videoByCard.size ? await getFenceResource(ownerId) : null;
   const ok = (id: string) => authors.has(id) && !hidden.has(id);
   return {
     cards: cards
@@ -1122,6 +1245,7 @@ export async function listWaiting(ownerId: string): Promise<Waiting> {
         createdAt: c.createdAt,
         author: toRef(authors.get(c.authorId)!),
         photo: photoOf(c.id, photoByCard.get(c.id)),
+        video: ownFence ? videoOf(c.id, videoByCard.get(c.id), ownFence) : null,
       })),
     replies: replies
       .filter((r) => ok(r.reply.authorId))
@@ -1167,6 +1291,41 @@ export async function cardPhotoFor(viewer: Actor, cardId: string): Promise<strin
   ]);
   if (hidden.has(card.authorId) || !authors.has(card.authorId)) return null;
   return photo[0]?.id ?? null;
+}
+
+/**
+ * The video of a card (ADR-064), for someone who may see that card right now: the same rules as its photo
+ * (cardPhotoFor), and only while the wall is friends-only (so never for a signed-out visitor). Its media id, or null —
+ * also once it has expired. The media module then hands out the short-lived link.
+ */
+export async function cardVideoFor(viewer: Actor, cardId: string): Promise<string | null> {
+  if (viewer.kind !== 'user' || !idParamSchema.safeParse(cardId).success) return null;
+  const [card] = await getDb().select().from(postCards).where(eq(postCards.id, cardId)).limit(1);
+  if (!card) return null;
+  const acc = await access(viewer, card.fenceOwnerId);
+  if (!acc || !videosAllowedOn(acc.fence)) return null;
+  const viewerId = viewer.id;
+  if (card.status !== 'published' && card.authorId !== viewerId && viewerId !== card.fenceOwnerId)
+    return null;
+  const [hidden, authors, video] = await Promise.all([
+    hiddenAuthors(viewerId, [card.authorId]),
+    authorsFor([card.authorId]),
+    getDb()
+      .select({ id: media.id })
+      .from(media)
+      .where(
+        and(
+          eq(media.cardId, card.id),
+          eq(media.kind, 'card_video'),
+          eq(media.status, 'ready'),
+          gt(media.expiresAt, new Date()),
+          photoShownTo(viewerId),
+        ),
+      )
+      .limit(1),
+  ]);
+  if (hidden.has(card.authorId) || !authors.has(card.authorId)) return null;
+  return video[0]?.id ?? null;
 }
 
 /** A card the reader may see, in the shape a report needs (the writer and a snapshot of the text). Null otherwise. */

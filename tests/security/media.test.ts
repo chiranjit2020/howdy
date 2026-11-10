@@ -467,6 +467,8 @@ describe('the local upload endpoint only exists for the local driver', () => {
       createUpload: async () => ({ url: 'https://bucket.example/x', method: 'PUT', headers: {} }),
       size: async () => null,
       get: async () => null,
+      getHead: async () => null,
+      createDownload: async () => 'https://bucket.example/x',
       put: async () => undefined,
       delete: async () => undefined,
     });

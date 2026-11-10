@@ -8,6 +8,8 @@ export {
   approveReply,
   cardForReport,
   cardPhotoFor,
+  cardVideoFor,
+  videosAllowedOn,
   editCard,
   getFenceCard,
   listFence,
@@ -25,6 +27,7 @@ export {
 export type {
   AuthorRef,
   CardView,
+  CardVideo,
   FeedCardView,
   FeedPage,
   FencePage,

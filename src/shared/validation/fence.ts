@@ -36,8 +36,17 @@ export const postCardSchema = z
   .object({
     body: fenceText(LIMITS.POST_CARD_MAX, EMPTY_POST_MESSAGE, 'A post', true).default(''),
     photoId: z.uuid().optional(),
+    /** One finished video of mine instead (ADR-064). */
+    videoId: z.uuid().optional(),
   })
-  .refine((c) => c.body !== '' || c.photoId !== undefined, { message: EMPTY_POST_MESSAGE, path: ['body'] });
+  .refine((c) => c.body !== '' || c.photoId !== undefined || c.videoId !== undefined, {
+    message: EMPTY_POST_MESSAGE,
+    path: ['body'],
+  })
+  .refine((c) => c.photoId === undefined || c.videoId === undefined, {
+    message: 'A post has a photo or a video, not both.',
+    path: ['video'],
+  });
 export const postReplySchema = z.object({ body: replyBodySchema });
 /** New words for your own post (ADR-063). Empty is allowed here; the server refuses it unless the post has a photo. */
 export const editCardSchema = z.object({

@@ -7,7 +7,7 @@ import type { WaitingTribute } from '@/modules/tributes';
 import { apiRequest } from '@/ui/auth/api';
 import { FormMessage } from '@/ui/auth/form-parts';
 import { Img } from '@/ui/art/img';
-import { RelativeTime } from '@/ui/howdy';
+import { PostVideo, RelativeTime, type PostVideoData } from '@/ui/howdy';
 import { Button, ClayCard } from '@/ui/primitives';
 
 type Item = {
@@ -18,6 +18,7 @@ type Item = {
   createdAt: Date | string;
   onCard?: string;
   photo?: { url: string; width: number; height: number } | null;
+  video?: PostVideoData | null;
 };
 
 const ROUTE: Record<Item['kind'], string> = { cards: 'cards', replies: 'replies', tributes: 'tributes' };
@@ -36,6 +37,7 @@ export function WaitingQueue({ waiting, tributes = [] }: { waiting: Waiting; tri
       handle: c.author.handle,
       createdAt: c.createdAt,
       photo: c.photo,
+      video: c.video ?? null,
     })),
     ...waiting.replies.map((r) => ({
       kind: 'replies' as const,
@@ -92,6 +94,7 @@ export function WaitingQueue({ waiting, tributes = [] }: { waiting: Waiting; tri
                 className="h-auto max-h-60 w-full rounded-md bg-surface-sunken object-contain"
               />
             )}
+            {item.video && <PostVideo video={item.video} label={`Video on the waiting post from @${item.handle}`} />}
             <div className="flex gap-2">
               <Button size="sm" loading={busy === `${item.id}:approve`} onClick={() => run(item, 'approve')}>
                 Approve

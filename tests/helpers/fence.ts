@@ -47,6 +47,18 @@ export interface Card {
   replies: Reply[];
   author: { handle: string; displayName: string };
   photo: { url: string; width: number; height: number } | null;
+  video:
+    | {
+        state: 'ready';
+        url: string;
+        posterUrl: string;
+        width: number;
+        height: number;
+        durationMs: number;
+        expiresAt: string;
+      }
+    | { state: 'expired' }
+    | null;
   pinned: boolean;
   canPin: boolean;
   editedAt: string | null;

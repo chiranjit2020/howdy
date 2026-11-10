@@ -23,7 +23,7 @@ import type { ReactionKind } from '@/shared/validation/fence';
 import type { PortraitTint } from '@/shared/validation/profile';
 import { Img } from '../art/img';
 import { cn } from '../cn';
-import { CameraIcon, CommentIcon, PinIcon, ReplyIcon, SendIcon } from '../icons';
+import { CameraIcon, CommentIcon, PinIcon, PlayIcon, ReplyIcon, SendIcon, VideoIcon } from '../icons';
 import { Avatar } from '../primitives/avatar';
 import { PhotoViewer } from '../primitives/dialog';
 import { Button, buttonClasses } from '../primitives/button';
@@ -31,6 +31,8 @@ import { IconButton } from '../primitives/icon-button';
 import { Input, Textarea } from '../primitives/field';
 import { FormMessage } from '../auth/form-parts';
 import type { PhotoUpload } from '../media/upload-photo';
+import type { VideoStage, VideoUpload } from '../media/upload-video';
+import { VIDEO_LIFETIME_DAYS, VIDEO_MAX_SECONDS } from '@/shared/validation/media';
 import { RelativeTime } from './time';
 import { NameBadge } from './verified-badge';
 import { STAR_KIND, StarButton } from './reactions';
@@ -163,6 +165,18 @@ const COMPOSER = {
   },
 } as const;
 
+/** The line under a chosen video: where it is on its way, then what will be posted. */
+function videoStatus(v: { stage: VideoStage | null; trimmed?: boolean }): string {
+  if (v.stage?.step === 'preparing') {
+    return `Preparing your video… ${Math.round(v.stage.fraction * 100)}% (it’s made smaller on your phone, so keep this page open)`;
+  }
+  if (v.stage?.step === 'uploading') return 'Uploading…';
+  if (v.stage?.step === 'checking') return 'Almost done…';
+  return v.trimmed
+    ? `Ready. Only the first ${VIDEO_MAX_SECONDS} seconds are kept. Friends can watch it for ${VIDEO_LIFETIME_DAYS} days.`
+    : `Ready. Friends can watch it for ${VIDEO_LIFETIME_DAYS} days.`;
+}
+
 /**
  * Composer for a Post Card (500), a reply (280) or a Town Hall post (280). Limits come from LIMITS; the server is the authority. A card composer
  * given `onPhoto` also offers one photo (ADR-031): it uploads as soon as it is chosen, shows a local preview, and its id
@@ -172,14 +186,17 @@ export function PostCardComposer({
   kind,
   onSubmit,
   onPhoto,
+  onVideo,
   disabled,
   lead,
 }: {
   kind: keyof typeof COMPOSER;
   /** Return `false` to keep what was typed (e.g. the server refused it); anything else clears the box. */
-  onSubmit: (body: string, photoId?: string) => boolean | void | Promise<boolean | void>;
+  onSubmit: (body: string, photoId?: string, videoId?: string) => boolean | void | Promise<boolean | void>;
   /** Upload a chosen photo; only offered when given (the server decides who may add one). */
   onPhoto?: (file: File) => Promise<PhotoUpload>;
+  /** Prepare and upload a chosen video (ADR-064); only offered when given (friends-only walls). */
+  onVideo?: (file: File, onStage: (s: VideoStage) => void, signal: AbortSignal) => Promise<VideoUpload>;
   disabled?: boolean;
   /** Something before the box, outside the form (Home: your Story button when no friend has a Story). */
   lead?: ReactNode;
@@ -191,7 +208,13 @@ export function PostCardComposer({
   const [busy, setBusy] = useState(false);
   const [photo, setPhoto] = useState<{ preview: string; id?: string } | undefined>();
   const [photoError, setPhotoError] = useState<string | undefined>();
-  const uploading = photo !== undefined && photo.id === undefined;
+  // A chosen video (ADR-064): its poster as a preview, where it is on its way, and its id once the server has it.
+  const [video, setVideo] = useState<
+    { poster?: string; stage: VideoStage | null; id?: string; trimmed?: boolean } | undefined
+  >();
+  const videoJob = useRef<AbortController | null>(null);
+  const uploading =
+    (photo !== undefined && photo.id === undefined) || (video !== undefined && video.id === undefined);
   const trimmed = body.trim();
   // Every post box (Home, a wall, a group) is one borderless line until you click in; it stays open while it holds
   // words, a photo or a photo error, and closes again when you leave it empty. "Add a photo" lives in the open box only
@@ -205,7 +228,13 @@ export function PostCardComposer({
   const box = useRef<HTMLTextAreaElement>(null);
   const collapsible = kind !== 'reply';
   const open =
-    !collapsible || focused || picking || body !== '' || photo !== undefined || photoError !== undefined;
+    !collapsible ||
+    focused ||
+    picking ||
+    body !== '' ||
+    photo !== undefined ||
+    video !== undefined ||
+    photoError !== undefined;
 
   function startPicking(e: MouseEvent<HTMLLabelElement>) {
     setPicking(true);
@@ -237,16 +266,62 @@ export function PostCardComposer({
     }
   }
 
+  // The video's poster preview is a temporary address too.
+  const posterUrl = video?.poster;
+  useEffect(() => () => (posterUrl ? URL.revokeObjectURL(posterUrl) : undefined), [posterUrl]);
+  // Leaving the page (or the box going away) stops a conversion that is still running.
+  useEffect(() => () => videoJob.current?.abort(), []);
+
+  function dropVideo() {
+    videoJob.current?.abort();
+    videoJob.current = null;
+    setVideo(undefined);
+  }
+
+  async function chooseVideo(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    setPicking(false);
+    if (!file || !onVideo) return;
+    setPhotoError(undefined);
+    videoJob.current?.abort();
+    const job = new AbortController();
+    videoJob.current = job;
+    setVideo({ stage: { step: 'preparing', fraction: 0 } });
+    if (collapsible) box.current?.focus();
+    const res = await onVideo(
+      file,
+      (stage) => {
+        if (!job.signal.aborted) setVideo((v) => (v ? { ...v, stage } : v));
+      },
+      job.signal,
+    );
+    if (job.signal.aborted) return; // removed meanwhile
+    videoJob.current = null;
+    if (res.ok) {
+      setVideo({
+        poster: URL.createObjectURL(res.poster),
+        stage: null,
+        id: res.mediaId,
+        trimmed: res.trimmed,
+      });
+    } else {
+      setVideo(undefined);
+      setPhotoError(res.message);
+    }
+  }
+
   async function submit(e: FormEvent) {
     e.preventDefault();
-    // Words OR a photo: most people post the photo alone (2026-11-07). A reply has no photo, so it needs words.
-    if ((!trimmed && !photo?.id) || busy || uploading) return;
+    // Words OR a photo or video: most people post the picture alone (2026-11-07). A reply has none, so it needs words.
+    if ((!trimmed && !photo?.id && !video?.id) || busy || uploading) return;
     setBusy(true);
     try {
-      const ok = await onSubmit(trimmed, photo?.id);
+      const ok = await onSubmit(trimmed, photo?.id, video?.id);
       if (ok !== false) {
         setBody('');
         setPhoto(undefined);
+        setVideo(undefined);
       }
     } finally {
       setBusy(false);
@@ -296,16 +371,23 @@ export function PostCardComposer({
   // Pressing it must not take focus from the box: an empty box closes when it loses focus, which would remove this very
   // button mid-click and the file picker would never open ("Add a photo" only worked after typing something).
   // Keyboard users are unaffected: tabbing reaches the file input inside the form, which keeps it open.
-  const photoPicker = (look: string, children: ReactNode) => (
+  const filePicker = (look: string, children: ReactNode, which: 'photo' | 'video') => (
     <label
       onMouseDown={(e) => e.preventDefault()}
       onClick={startPicking}
       className={cn(look, 'cursor-pointer focus-within:outline-2 focus-within:outline-focus')}
     >
-      <input type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" onChange={choose} />
+      <input
+        type="file"
+        accept={which === 'photo' ? 'image/jpeg,image/png,image/webp' : 'video/*'}
+        className="sr-only"
+        onChange={which === 'photo' ? choose : chooseVideo}
+      />
       {children}
     </label>
   );
+  const pickerLook = buttonClasses({ variant: 'secondary', size: 'sm' });
+  const hasMedia = photo !== undefined || video !== undefined;
 
   const form = (
     // The box stays the first child in both states, so opening it never remounts it (focus and caret stay put).
@@ -353,15 +435,49 @@ export function PostCardComposer({
           </Button>
         </div>
       )}
+      {video && (
+        <div className="relative flex flex-col items-start gap-1 self-start">
+          {video.poster ? (
+            // eslint-disable-next-line @next/next/no-img-element -- a blob: preview of the poster frame
+            <img
+              src={video.poster}
+              alt="The first moments of the video you chose"
+              className="max-h-40 rounded-card-inset object-contain"
+            />
+          ) : (
+            <div className="flex h-24 w-40 items-center justify-center rounded-card-inset bg-surface-sunken">
+              <VideoIcon className="size-6 text-text-muted" />
+            </div>
+          )}
+          <p aria-live="polite" className="text-metadata text-text-secondary">
+            {videoStatus(video)}
+          </p>
+          <Button type="button" variant="ghost" size="sm" onClick={dropVideo} aria-label="Remove the video">
+            Remove video
+          </Button>
+        </div>
+      )}
       {open && (
         <div className="flex flex-wrap items-center justify-between gap-2">
-          {onPhoto && !photo ? (
-            photoPicker(
-              buttonClasses({ variant: 'secondary', size: 'sm' }),
-              <>
-                <CameraIcon className="size-4" /> Add a photo
-              </>,
-            )
+          {!hasMedia && (onPhoto || onVideo) ? (
+            <div className="flex flex-wrap gap-2">
+              {onPhoto &&
+                filePicker(
+                  pickerLook,
+                  <>
+                    <CameraIcon className="size-4" /> Add a photo
+                  </>,
+                  'photo',
+                )}
+              {onVideo &&
+                filePicker(
+                  pickerLook,
+                  <>
+                    <VideoIcon className="size-4" /> Add a video
+                  </>,
+                  'video',
+                )}
+            </div>
           ) : (
             <span />
           )}
@@ -369,7 +485,7 @@ export function PostCardComposer({
             type="submit"
             size="sm"
             loading={busy}
-            disabled={disabled || (!trimmed && !photo) || uploading}
+            disabled={disabled || (!trimmed && !photo && !video) || uploading}
             className="self-end"
           >
             <SendIcon className="size-4" />
@@ -495,6 +611,8 @@ export interface PostCardProps {
   actions?: ReactNode;
   /** The card's photo (ADR-031), served only to people who may see the card. */
   photo?: { url: string; width: number; height: number } | null;
+  /** The card's video (ADR-064): playable for 3 days, then "expired". */
+  video?: PostVideoData | null;
   /** What it is called to a screen reader ("Post Card from …"); a Town Hall post says "Post". */
   noun?: string;
   /** Whose wall it is on, when that is not plain from the page (Home's feed): "on Priya's wall", linked. */
@@ -550,6 +668,122 @@ function PostPhoto({ photo, alt }: { photo: { url: string; width: number; height
   );
 }
 
+/** A card's video as the page gets it (ADR-064). Dates may arrive as strings after the first page. */
+export type PostVideoData =
+  | {
+      state: 'ready';
+      url: string;
+      posterUrl: string;
+      width: number;
+      height: number;
+      durationMs: number;
+      expiresAt: Date | string;
+    }
+  | { state: 'expired' };
+
+/** "0:12". */
+const clock = (ms: number) => {
+  const s = Math.round(ms / 1000);
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+};
+
+/** "2 days left", "5 hours left", "less than an hour left". */
+function timeLeft(expiresAt: Date | string): string {
+  const ms = new Date(expiresAt).getTime() - Date.now();
+  const hours = Math.floor(ms / 3_600_000);
+  if (hours >= 48) return `${Math.floor(hours / 24)} days left`;
+  if (hours >= 24) return '1 day left';
+  if (hours >= 2) return `${hours} hours left`;
+  if (hours === 1) return '1 hour left';
+  return 'less than an hour left';
+}
+
+/**
+ * A post's video (ADR-064). Until it is tapped it is only a picture (the poster) with a play button and its length:
+ * nothing of the video downloads, so a feed full of videos costs no data. The tap swaps in the browser's own player,
+ * which plays with sound, never loops, and streams from storage (it starts after the first few KB and jumps by asking
+ * for just the bytes it needs). Same size rules as a photo: full width, nothing taller than 4:5.
+ */
+export function PostVideo({ video, label }: { video: PostVideoData; label: string }) {
+  const [playing, setPlaying] = useState(false);
+  // The link to the file works for 10 minutes. Paused longer and then played on, the player asks the page again once.
+  const [src, setSrc] = useState<string | null>(null);
+  const retried = useRef(false);
+  const resumeAt = useRef(0);
+
+  if (video.state === 'expired') {
+    return (
+      <p className="rounded-card-inset-sm bg-surface-sunken px-3 py-4 text-caption text-text-secondary sm:rounded-card-inset">
+        This video has expired. Videos stay up for {VIDEO_LIFETIME_DAYS} days.
+      </p>
+    );
+  }
+  const tall = video.height / video.width > TALLEST;
+  const box = cn(
+    'block w-full overflow-hidden rounded-card-inset-sm bg-surface-sunken sm:rounded-card-inset',
+    tall ? 'aspect-[4/5]' : '',
+  );
+  // Only the player uses this, and it exists only in the browser after a tap (never in server-made HTML).
+  const ratio = tall ? undefined : { aspectRatio: `${video.width} / ${video.height}` };
+  return (
+    <div className="flex flex-col gap-1">
+      {playing && src ? (
+        <video
+          src={src}
+          poster={video.posterUrl}
+          controls
+          autoPlay
+          playsInline
+          preload="none"
+          aria-label={label}
+          // A double-click here is the player's (full screen), not a Star.
+          onDoubleClick={(e) => e.stopPropagation()}
+          onLoadedMetadata={(e) => {
+            if (resumeAt.current) e.currentTarget.currentTime = resumeAt.current;
+            resumeAt.current = 0;
+          }}
+          onError={(e) => {
+            if (retried.current) return;
+            retried.current = true;
+            resumeAt.current = e.currentTarget.currentTime;
+            setSrc(`${video.url}&r=${Date.now()}`);
+          }}
+          className={cn(box, 'object-contain')}
+          style={ratio}
+        />
+      ) : (
+        <button
+          type="button"
+          onClick={() => {
+            setSrc(video.url);
+            setPlaying(true);
+          }}
+          onDoubleClick={(e) => e.stopPropagation()}
+          aria-label={`${label}, ${clock(video.durationMs)}. Play`}
+          className={cn(box, 'relative cursor-pointer')}
+        >
+          {/* Sized by its own width and height (no style attribute: the CSP blocks those in server-made HTML). */}
+          {/* eslint-disable-next-line @next/next/no-img-element -- served by our own route with its own access check */}
+          <img
+            src={video.posterUrl}
+            width={video.width}
+            height={video.height}
+            alt=""
+            className={cn('block w-full', tall ? 'h-full object-cover' : 'h-auto')}
+          />
+          <span className="absolute inset-0 flex items-center justify-center">
+            <PlayIcon className="size-16 rounded-full bg-scrim text-on-scrim" />
+          </span>
+          <span className="absolute right-2 bottom-2 rounded-full bg-scrim px-2 py-0.5 text-metadata text-on-scrim">
+            {clock(video.durationMs)}
+          </span>
+        </button>
+      )}
+      <p className="text-metadata text-text-muted">Video · {timeLeft(video.expiresAt)}</p>
+    </div>
+  );
+}
+
 /** How many of the newest replies show under a card before "View all". */
 const REPLY_PREVIEW = 2;
 
@@ -582,6 +816,7 @@ export function PostCard({
   replyComposer,
   actions,
   photo,
+  video,
   noun = 'Post',
   wall,
   startOpen = false,
@@ -690,6 +925,7 @@ export function PostCard({
               alt={`Photo on this ${noun === 'Post' ? 'post' : 'card'} from ${author.name}`}
             />
           )}
+          {video && <PostVideo video={video} label={`Video on this post from ${author.name}`} />}
           {notice && <p className="text-caption font-semibold text-text-secondary">{notice}</p>}
         </div>
 

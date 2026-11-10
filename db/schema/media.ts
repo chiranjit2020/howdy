@@ -65,17 +65,34 @@ export const media = pgTable(
      * owner it looks like any other photo.
      */
     held: boolean('held').notNull().default(false),
+    /** A `card_video` (ADR-064): its length in milliseconds, read from the file's own header by the server. */
+    durationMs: integer('duration_ms'),
+    /** A `card_video`'s poster: the still frame shown before play (a WebP made from the person's frame, like a photo). */
+    posterKey: text('poster_key'),
+    /** A `card_video` stops being served at this moment (3 days after it was finished); the job then deletes it. */
+    expiresAt: tstz('expires_at'),
     createdAt: tstz('created_at').notNull().defaultNow(),
     updatedAt: tstz('updated_at').notNull().defaultNow(),
   },
   (t) => [
-    check('media_kind_check', sql`${t.kind} in ('portrait', 'card_photo', 'cover')`),
-    check('media_card_only_for_card_photos', sql`${t.cardId} is null or ${t.kind} = 'card_photo'`),
+    check('media_kind_check', sql`${t.kind} in ('portrait', 'card_photo', 'cover', 'card_video')`),
+    // A card holds one photo OR one video (the one-per-card index below covers both kinds).
+    check(
+      'media_card_only_for_card_photos',
+      sql`${t.cardId} is null or ${t.kind} in ('card_photo', 'card_video')`,
+    ),
+    check(
+      'media_video_fields_only_for_videos',
+      sql`${t.kind} = 'card_video' or (${t.durationMs} is null and ${t.posterKey} is null and ${t.expiresAt} is null)`,
+    ),
     check('media_hall_post_only_for_card_photos', sql`${t.hallPostId} is null or ${t.kind} = 'card_photo'`),
     check('media_story_only_for_card_photos', sql`${t.storyId} is null or ${t.kind} = 'card_photo'`),
     // One photo, one place: a card, a Town Hall post or a Story — never two of them.
     check('media_one_home', sql`num_nonnulls(${t.cardId}, ${t.hallPostId}, ${t.storyId}) <= 1`),
-    check('media_status_check', sql`${t.status} in ('pending', 'ready', 'retired')`),
+    // expired: a card video past its 3 days (ADR-064). Its files are gone; the row stays while its card does, so the
+    // post can say "This video has expired" rather than look as if it never had one.
+    check('media_status_check', sql`${t.status} in ('pending', 'ready', 'retired', 'expired')`),
+    check('media_expired_only_for_videos', sql`${t.status} <> 'expired' or ${t.kind} = 'card_video'`),
     // One live Portrait and one live cover per person, enforced by the database, not just by the code.
     uniqueIndex('media_one_ready_per_owner_idx')
       .on(t.ownerId, t.kind)
@@ -95,5 +112,9 @@ export const media = pgTable(
     index('media_owner_idx').on(t.ownerId),
     // The retention job looks for stale pending rows and for retired ones.
     index('media_status_created_idx').on(t.status, t.createdAt),
+    // The retention job looks for videos past their 3 days (ADR-064).
+    index('media_expires_idx')
+      .on(t.expiresAt)
+      .where(sql`${t.expiresAt} is not null`),
   ],
 );

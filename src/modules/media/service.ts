@@ -38,7 +38,11 @@ function isUniqueViolation(err: unknown): boolean {
   return false;
 }
 
-type Status = 'pending' | 'ready' | 'retired';
+type Status = 'pending' | 'ready' | 'retired' | 'expired';
+
+/** A row's files: its object, and a video's poster (ADR-064). */
+export type StoredFiles = { id: string; objectKey: string; posterKey?: string | null };
+export const FILE_COLUMNS = { id: media.id, objectKey: media.objectKey, posterKey: media.posterKey };
 
 /**
  * Remove a file: the OBJECT first, then the row (an interrupted job then still has the row to find it again). Never throws:
@@ -48,14 +52,15 @@ type Status = 'pending' | 'ready' | 'retired';
  * reading a row and deleting it, another request may have made it the person's live Portrait, and a stale "clean-up" must never
  * take that away.
  */
-async function destroy(
-  rows: { id: string; objectKey: string }[],
+export async function destroy(
+  rows: StoredFiles[],
   statuses: Status[] = ['pending', 'retired'],
 ): Promise<number> {
   let done = 0;
   for (const row of rows) {
     try {
       await store().delete(row.objectKey);
+      if (row.posterKey) await store().delete(row.posterKey);
       await getDb()
         .delete(media)
         .where(and(eq(media.id, row.id), inArray(media.status, statuses)));
@@ -408,19 +413,20 @@ export async function purgeDetachedCardPhotos(
 ): Promise<{ cardPhotosRemoved: number }> {
   const cutoff = new Date(now.getTime() - UNATTACHED_TTL_MINUTES * 60_000);
   const rows = await getDb()
-    .select({ id: media.id, objectKey: media.objectKey })
+    .select(FILE_COLUMNS)
     .from(media)
     .where(
       and(
-        eq(media.kind, 'card_photo'),
-        eq(media.status, 'ready'),
+        // A card video (ADR-064) goes the same way: never posted, or its card was taken down.
+        inArray(media.kind, ['card_photo', 'card_video']),
+        inArray(media.status, ['ready', 'expired']),
         isNull(media.cardId),
         isNull(media.hallPostId),
         isNull(media.storyId),
         lt(media.createdAt, cutoff),
       ),
     );
-  return { cardPhotosRemoved: await destroy(rows, ['ready']) };
+  return { cardPhotosRemoved: await destroy(rows, ['ready', 'expired']) };
 }
 
 /** Remove my Portrait (the initials avatar comes back) or my cover photo (my Howdy cover shows). Whether there was one. */
@@ -559,11 +565,8 @@ export async function mediaLeftFor(userId: string): Promise<number> {
 
 /** Remove every file a person owns, objects first. What an account deletion has to call before the person's rows go. */
 export async function deleteAllMediaFor(userId: string): Promise<number> {
-  const rows = await getDb()
-    .select({ id: media.id, objectKey: media.objectKey })
-    .from(media)
-    .where(eq(media.ownerId, userId));
-  return destroy(rows, ['pending', 'ready', 'retired']);
+  const rows = await getDb().select(FILE_COLUMNS).from(media).where(eq(media.ownerId, userId));
+  return destroy(rows, ['pending', 'ready', 'retired', 'expired']);
 }
 
 /**
@@ -580,7 +583,7 @@ export async function purgeStaleMedia(
     .from(media)
     .where(and(eq(media.status, 'pending'), lt(media.createdAt, cutoff)));
   const retired = await db
-    .select({ id: media.id, objectKey: media.objectKey })
+    .select(FILE_COLUMNS)
     .from(media)
     .where(inArray(media.status, ['retired']));
   return { mediaPending: await destroy(pending), mediaRetired: await destroy(retired) };

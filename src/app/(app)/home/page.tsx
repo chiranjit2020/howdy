@@ -125,6 +125,8 @@ export default async function HomePage() {
                 isOwner: false,
                 canPost: true,
                 canAddPhoto: true,
+                // A video only when your own wall is friends-only (ADR-064); the server checks again.
+                canAddVideo: ranch.fenceVisibility === 'posse',
                 review: false,
               }}
             />

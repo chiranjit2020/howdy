@@ -61,3 +61,55 @@ export function verifyUploadToken(
     return null;
   }
 }
+
+/**
+ * The local driver's version of a signed GET URL (videos, ADR-064): one key, one type, short-lived. A different purpose
+ * label from uploads, so an upload token can never be used to read and a read token never to write.
+ */
+const DOWNLOAD_PURPOSE = 'howdy:media-download:v1';
+const downloadMac = (secret: string, payload: string) =>
+  createHmac('sha256', createHmac('sha256', secret).update(DOWNLOAD_PURPOSE).digest())
+    .update(payload)
+    .digest();
+
+export interface DownloadClaims {
+  key: string;
+  contentType: string;
+}
+
+export function signDownloadToken(
+  secret: string,
+  claims: DownloadClaims,
+  ttlSec: number,
+  now: number = Date.now(),
+): string {
+  const payload = b64(JSON.stringify({ ...claims, exp: now + ttlSec * 1000 }));
+  return `${payload}.${b64(downloadMac(secret, payload))}`;
+}
+
+export function verifyDownloadToken(
+  secret: string,
+  token: string,
+  now: number = Date.now(),
+): DownloadClaims | null {
+  const [payload, sig, extra] = token.split('.');
+  if (!payload || !sig || extra !== undefined) return null;
+  const expected = downloadMac(secret, payload);
+  const given = Buffer.from(sig, 'base64url');
+  if (given.length !== expected.length || !timingSafeEqual(given, expected)) return null;
+  try {
+    const c = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8')) as Partial<
+      DownloadClaims & { exp: number }
+    >;
+    if (
+      typeof c.key !== 'string' ||
+      typeof c.contentType !== 'string' ||
+      typeof c.exp !== 'number' ||
+      c.exp <= now
+    )
+      return null;
+    return { key: c.key, contentType: c.contentType };
+  } catch {
+    return null;
+  }
+}

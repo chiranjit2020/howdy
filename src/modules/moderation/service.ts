@@ -11,7 +11,7 @@ import {
   townHalls,
   users,
 } from '@db/schema';
-import { and, asc, desc, eq, inArray, isNull, lte, sql } from 'drizzle-orm';
+import { and, asc, count, desc, eq, inArray, isNull, lte, sql } from 'drizzle-orm';
 import { decodeCursor, encodeCursor, type Cursor } from '@/platform/cursor';
 import { getDb } from '@/platform/db';
 import { isUnderReview } from './anti-spam';
@@ -242,6 +242,8 @@ export interface QueueItem {
   canRemoveCard: boolean;
   /** The reported card (or Town Hall post, ADR-046) is still there and carries a photo: the moderator can look at it. */
   cardHasPhoto: boolean;
+  /** The reported card carries a video (ADR-064). */
+  cardHasVideo: boolean;
   status: ReportStatus;
   createdAt: Date;
   /** Null when the reporter's account is since gone — the report itself is kept regardless. */
@@ -318,10 +320,10 @@ export async function listQueue(
     stillThere(page),
     liveCardIds.length
       ? getDb()
-          .select({ cardId: media.cardId })
+          .select({ cardId: media.cardId, kind: media.kind })
           .from(media)
           .where(and(inArray(media.cardId, liveCardIds), eq(media.status, 'ready')))
-      : Promise.resolve([] as { cardId: string | null }[]),
+      : Promise.resolve([] as { cardId: string | null; kind: string }[]),
     // A reported Town Hall post's photo (ADR-046), the same way.
     hallPostIds.length
       ? getDb()
@@ -330,7 +332,9 @@ export async function listQueue(
           .where(and(inArray(media.hallPostId, hallPostIds), eq(media.status, 'ready')))
       : Promise.resolve([] as { hallPostId: string | null }[]),
   ]);
-  const withPhoto = new Set(cardPhotos.map((p) => p.cardId));
+  const withPhoto = new Set(cardPhotos.filter((p) => p.kind === 'card_photo').map((p) => p.cardId));
+  // A card video (ADR-064), which the moderator can play from the queue.
+  const withVideo = new Set(cardPhotos.filter((p) => p.kind === 'card_video').map((p) => p.cardId));
   const hallWithPhoto = new Set(hallPhotos.map((p) => p.hallPostId));
   const targets = [...new Set(page.flatMap((r) => (r.targetUserId ? [r.targetUserId] : [])))];
   const held = new Set(
@@ -353,6 +357,7 @@ export async function listQueue(
       cardHasPhoto:
         (r.subject === 'card' && r.cardId !== null && withPhoto.has(r.cardId)) ||
         (r.subject === 'hall_post' && r.hallPostId !== null && hallWithPhoto.has(r.hallPostId)),
+      cardHasVideo: r.subject === 'card' && r.cardId !== null && withVideo.has(r.cardId),
       status: r.status as ReportStatus,
       createdAt: r.createdAt,
       reporter: r.reporterId ? (people.get(r.reporterId) ?? null) : null,
@@ -520,6 +525,7 @@ export async function dismissReport(
   moderatorId: string,
   reportId: string,
   release?: (mediaId: string) => Promise<boolean>,
+  releaseVideo?: (cardId: string) => Promise<boolean>,
 ): Promise<void> {
   const row = await reportToActOn(moderatorId, reportId);
   await getDb().transaction(async (tx) => {
@@ -528,6 +534,15 @@ export async function dismissReport(
       await release(row.mediaId);
     }
   });
+  // A reported card's video was hidden when the report came in (ADR-064). Shown again once no report on that card is
+  // still open: another person's report keeps it hidden.
+  if (releaseVideo && row.subject === 'card' && row.cardId) {
+    const [open] = await getDb()
+      .select({ n: count() })
+      .from(reports)
+      .where(and(eq(reports.cardId, row.cardId), sql`${reports.status} in ('open', 'reviewing')`));
+    if ((open?.n ?? 0) === 0) await releaseVideo(row.cardId);
+  }
   await auditModAction('report_dismissed', moderatorId, { reportId });
 }
 
@@ -674,6 +689,20 @@ export async function reportedCardPhoto(moderatorId: string, reportId: string): 
     .where(and(on, eq(media.kind, 'card_photo'), eq(media.status, 'ready')))
     .limit(1);
   return photo?.id ?? null;
+}
+
+/** The video on a reported card (ADR-064), for a moderator to play while the card is still there. Moderator only. */
+export async function reportedCardVideo(moderatorId: string, reportId: string): Promise<string | null> {
+  await requireModerator(moderatorId);
+  await enforceRateLimit(`moderation:read:${moderatorId}`, RATE.read);
+  const row = await loadReport(reportId);
+  if (row?.subject !== 'card' || !row.cardId) return null;
+  const [video] = await getDb()
+    .select({ id: media.id })
+    .from(media)
+    .where(and(eq(media.cardId, row.cardId), eq(media.kind, 'card_video'), eq(media.status, 'ready')))
+    .limit(1);
+  return video?.id ?? null;
 }
 
 /**

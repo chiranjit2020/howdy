@@ -20,6 +20,16 @@ export interface ObjectStore {
   size(key: string): Promise<number | null>;
   /** The object's bytes, or null when there is none. Throws if it is larger than `maxBytes` (never reads it in that case). */
   get(key: string, maxBytes: number): Promise<Buffer | null>;
+  /**
+   * The first `length` bytes of the object (fewer if it is shorter), or null when there is none. For reading a file's
+   * header without downloading all of it (a video's MP4 boxes, ADR-064).
+   */
+  getHead(key: string, length: number): Promise<Buffer | null>;
+  /**
+   * A short-lived URL the browser can GET the object from directly, with range requests (so a `<video>` can stream and
+   * seek). Only ever handed out after the app has decided the viewer may see the file.
+   */
+  createDownload(key: string, opts: { contentType: string; ttlSec: number }): Promise<string>;
   put(key: string, body: Buffer, contentType: string): Promise<void>;
   /** Idempotent: deleting something that is not there is not an error. */
   delete(key: string): Promise<void>;

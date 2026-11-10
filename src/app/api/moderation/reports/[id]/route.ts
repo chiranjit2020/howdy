@@ -1,5 +1,5 @@
 import { requireSession } from '@/modules/auth';
-import { releaseHeldPhoto, retireCardPhoto, retirePortrait } from '@/modules/media';
+import { releaseCardVideo, releaseHeldPhoto, retireCardPhoto, retirePortrait } from '@/modules/media';
 import {
   dismissReport,
   removeReportedCard,
@@ -50,8 +50,9 @@ export const POST = route(async ({ req, params }) => {
       await removeReportedHallPost(user.id, id);
       break;
     case 'dismiss':
-      // A photo the photo check held is released when its report is dismissed (ADR-039).
-      await dismissReport(user.id, id, releaseHeldPhoto);
+      // A photo the photo check held is released when its report is dismissed (ADR-039); so is a reported card's
+      // video, once no other report on that card is open (ADR-064).
+      await dismissReport(user.id, id, releaseHeldPhoto, releaseCardVideo);
       break;
   }
   return json({ ok: true });

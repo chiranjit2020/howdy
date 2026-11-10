@@ -22,6 +22,7 @@ export {
   removeReportedTownHall,
   removeReportedWhisper,
   reportedCardPhoto,
+  reportedCardVideo,
   reportedPortrait,
   suspendAccount,
   suspendFromReport,

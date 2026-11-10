@@ -40,3 +40,36 @@ export const coverCompleteSchema = portraitCompleteSchema;
 export const CARD_PHOTO_MAX_PX = 1280;
 export const cardPhotoUploadSchema = portraitUploadSchema;
 export const cardPhotoCompleteSchema = portraitCompleteSchema;
+
+/**
+ * A video on a Post Card (ADR-064). The phone converts every clip to this before upload (H.264 + AAC in a fast-start
+ * MP4); the server reads the file's header to check it really is that, and no longer than this.
+ */
+export const VIDEO_TYPE = 'video/mp4';
+/** Seconds. Longer clips are cut to their first 30 seconds on the phone. */
+export const VIDEO_MAX_SECONDS = 30;
+/** A 30 s clip at the settings below is about 6–8 MB; this leaves room for busy scenes, never a full-quality original. */
+export const VIDEO_MAX_BYTES = 20 * 1024 * 1024;
+/** The short side of the converted video, in pixels (720p). Never enlarged. */
+export const VIDEO_SHORT_SIDE_PX = 720;
+/** Target bitrates, in bits per second: ~2 Mbps picture, 96 kbps sound. */
+export const VIDEO_BITRATE = 2_000_000;
+export const VIDEO_AUDIO_BITRATE = 96_000;
+/** A key frame every 2 seconds, so jumping to any point starts playing quickly (the library's default is 5). */
+export const VIDEO_KEYFRAME_SECONDS = 2;
+/** How long a video stays up. */
+export const VIDEO_LIFETIME_DAYS = 3;
+/** New videos a person may post in 24 hours. */
+export const VIDEOS_PER_DAY = 3;
+
+export const cardVideoUploadSchema = z.object({
+  contentType: z.literal(VIDEO_TYPE, { message: 'That video could not be prepared.' }),
+  size: z
+    .number({ message: 'Choose a video.' })
+    .int()
+    .min(1, 'That file is empty.')
+    .max(VIDEO_MAX_BYTES, 'That video is too big, even after shrinking. Try a shorter clip.'),
+});
+
+/** Finishing a video: its upload, and the poster frame already sent as a card photo. */
+export const cardVideoCompleteSchema = z.object({ mediaId: z.uuid(), posterId: z.uuid() });
