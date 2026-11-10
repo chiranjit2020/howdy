@@ -4,6 +4,7 @@ export {
   PostCard,
   PostCardReply,
   PostCardComposer,
+  PostEditForm,
   POST_LIST,
   type PostCardProps,
   type PostCardAuthor,

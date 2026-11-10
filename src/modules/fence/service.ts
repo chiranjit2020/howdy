@@ -24,6 +24,7 @@ import {
   FENCE_MAX_PAGE_SIZE,
   FENCE_PAGE_SIZE,
   REACTION_KINDS,
+  EMPTY_POST_MESSAGE,
   REPLIES_PER_CARD,
   idParamSchema,
   type ReactionKind,
@@ -66,6 +67,8 @@ export const RATE = {
   replyPerFence: rule(12, 3600),
   yo: rule(200, 3600),
   manage: rule(120, 3600),
+  /** Changing the words of your own posts (ADR-063): plenty for fixing typos, too few to keep rewriting a post. */
+  edit: rule(30, 3600),
 } as const;
 
 /** Waiting cards and replies nobody answered are dropped after this long (see docs/DATA_LIFECYCLE.md). */
@@ -127,6 +130,10 @@ export interface CardView {
   pinned: boolean;
   /** May the viewer pin it (or unpin it)? The wall's owner, for a published card. */
   canPin: boolean;
+  /** When its writer last changed the words (shown as "Edited"), or null. */
+  editedAt: Date | null;
+  /** May the viewer change its words? Its writer only (ADR-063); the server checks again. */
+  canEdit: boolean;
 }
 
 export interface FencePage {
@@ -174,6 +181,7 @@ interface CardRow {
   body: string;
   status: string;
   createdAt: Date;
+  editedAt: Date | null;
 }
 
 interface ReplyRow {
@@ -310,6 +318,8 @@ async function hydrate(
         photo: photoOf(row.id, photoByCard.get(row.id)),
         pinned: false,
         canPin: isOwner && published,
+        editedAt: row.editedAt,
+        canEdit: row.authorId === viewerId,
       },
     ];
   });
@@ -907,6 +917,65 @@ export async function setYo(
     });
   }
   return { yoByMe: true, myReaction: kind };
+}
+
+/**
+ * Change the words of your own card (ADR-063). Only its writer may, and only while they may still write on that wall (a
+ * blocked writer gets the same 404 as a missing card; taking a card down stays always allowed). The photo stays as it is.
+ * The words get the same checks as a new card, and an edit is shown to readers as "Edited".
+ * On SOMEONE ELSE's wall an edit is new words for the owner: if a new card from this writer would wait (Review on,
+ * restricted, held by the anti-spam check), a published card goes back to waiting too, so approved words cannot be
+ * swapped for ones the owner never saw. A card that is already waiting stays as it is. Unchanged words change nothing.
+ */
+export async function editCard(userId: string, cardId: string, body: string): Promise<CardView> {
+  await enforceRateLimit(`fence:edit:${userId}`, RATE.edit);
+  const loaded = await loadCard(userId, cardId);
+  if (!loaded || loaded.card.authorId !== userId) throw new AppError('NOT_FOUND');
+  const { card, fence, ctx, actor } = loaded;
+  if (!canFence(actor, 'fence:post', fence, ctx).allow) {
+    throw new AppError('FORBIDDEN', { message: 'This wall is not open for changes from you.' });
+  }
+  const db = getDb();
+  if (body === '') {
+    // Words OR a photo, as when posting: a photo post may lose its words, a words-only post may not.
+    const [photo] = await db
+      .select({ id: media.id })
+      .from(media)
+      .where(and(eq(media.cardId, card.id), eq(media.kind, 'card_photo')))
+      .limit(1);
+    if (!photo) {
+      throw new AppError('VALIDATION_FAILED', {
+        message: EMPTY_POST_MESSAGE,
+        fields: { body: EMPTY_POST_MESSAGE },
+      });
+    }
+  }
+  let row: CardRow = card;
+  if (body !== card.body) {
+    const status =
+      card.status === 'published' && userId !== fence.ownerId
+        ? await statusFor(actor, 'card', fence, ctx, userId)
+        : card.status;
+    const [updated] = await db
+      .update(postCards)
+      .set({
+        body,
+        editedAt: new Date(),
+        status,
+        // Only a published card is ever pinned.
+        ...(status !== 'published' ? { pinnedAt: null } : {}),
+      })
+      .where(and(eq(postCards.id, card.id), eq(postCards.authorId, userId)))
+      .returning();
+    if (!updated) throw new AppError('NOT_FOUND');
+    row = updated;
+    if (card.status === 'published' && status !== 'published') {
+      emit({ type: 'card.waiting', cardId: card.id, ownerId: fence.ownerId, authorId: userId });
+    }
+  }
+  const [view] = await hydrate(actor, () => ({ fence, ctx }), [row], await authorsFor([userId]));
+  if (!view) throw new AppError('NOT_FOUND');
+  return view;
 }
 
 /**

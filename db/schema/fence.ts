@@ -30,6 +30,11 @@ export const postCards = pgTable(
      * below); only a published card is ever pinned (the service checks). Goes with the card when it is deleted.
      */
     pinnedAt: tstz('pinned_at'),
+    /**
+     * When its writer last changed the words, or null (ADR-063, 2026-11-10). Readers see "Edited" next to the time, so
+     * nobody can quietly change what people already reacted to.
+     */
+    editedAt: tstz('edited_at'),
   },
   (t) => [
     uniqueIndex('post_cards_one_pinned')

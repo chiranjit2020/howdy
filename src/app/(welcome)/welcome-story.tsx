@@ -59,7 +59,7 @@ const FEATURES: { icon: Icon; name: string; text: string }[] = [
   {
     icon: PiNote,
     name: 'Posts',
-    text: 'Words, a photo or both, on your wall or a friend’s. Give a Star, reply, @mention, pin one to the top.',
+    text: 'Words, a photo or both, on your wall or a friend’s. Give a Star, reply, @mention, pin one to the top, edit a typo.',
   },
   { icon: PiCamera, name: 'Stories', text: 'A photo for your friends or close friends, gone in 12 hours.' },
   {

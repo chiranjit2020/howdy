@@ -390,6 +390,83 @@ export function PostCardComposer({
   );
 }
 
+/**
+ * Changing the words of your own post, right where they were (ADR-063): the box starts with them, Save keeps the new
+ * words, Cancel or Esc leaves them as they were. Save waits until something changed. `allowEmpty`: the post has a photo,
+ * so it may lose its words. The photo itself is not changed here.
+ */
+export function PostEditForm({
+  initial,
+  allowEmpty,
+  onSave,
+  onCancel,
+}: {
+  initial: string;
+  allowEmpty: boolean;
+  /** Resolve to an error message to keep the box open, or nothing when saved. */
+  onSave: (body: string) => Promise<string | void>;
+  onCancel: () => void;
+}) {
+  const [body, setBody] = useState(initial);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | undefined>();
+  const trimmed = body.trim();
+  const box = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => {
+    const el = box.current;
+    if (!el) return;
+    el.focus();
+    el.setSelectionRange(el.value.length, el.value.length); // carry on at the end of the words
+  }, []);
+
+  async function save(e: FormEvent) {
+    e.preventDefault();
+    if (busy || trimmed === initial.trim() || (!trimmed && !allowEmpty)) return;
+    setBusy(true);
+    setError((await onSave(trimmed).finally(() => setBusy(false))) ?? undefined);
+  }
+
+  return (
+    <form
+      onSubmit={save}
+      onKeyDown={(e) => {
+        if (e.key === 'Escape') {
+          e.stopPropagation();
+          onCancel();
+        }
+      }}
+      // A double-click here selects words; it must not give the post a Star.
+      onDoubleClick={(e) => e.stopPropagation()}
+      className="flex flex-col gap-2"
+    >
+      <Textarea
+        ref={box}
+        label="Edit your post"
+        hideLabel
+        value={body}
+        onChange={(e) => setBody(e.target.value)}
+        maxLength={LIMITS.POST_CARD_MAX}
+        showCount
+        rows={3}
+        {...(error ? { error } : {})}
+      />
+      <div className="flex items-center justify-end gap-2">
+        <Button type="button" variant="ghost" size="sm" onClick={onCancel} disabled={busy}>
+          Cancel
+        </Button>
+        <Button
+          type="submit"
+          size="sm"
+          loading={busy}
+          disabled={trimmed === initial.trim() || (!trimmed && !allowEmpty)}
+        >
+          Save
+        </Button>
+      </div>
+    </form>
+  );
+}
+
 export interface PostCardProps {
   author: PostCardAuthor;
   body: string;
@@ -424,6 +501,10 @@ export interface PostCardProps {
   wall?: { name: string; handle: string };
   /** Start with every reply shown and the reply box open (a post on its own page, opened from a notification). */
   startOpen?: boolean;
+  /** Its writer changed the words after posting: "Edited" next to the time (ADR-063). */
+  edited?: boolean;
+  /** Shown in place of the words while the writer edits them (a <PostEditForm />). */
+  editor?: ReactNode;
 }
 
 /** The list posts go in: each post its own card, 10 px apart (the user's call: merged posts hid who wrote what). */
@@ -504,6 +585,8 @@ export function PostCard({
   noun = 'Post',
   wall,
   startOpen = false,
+  edited = false,
+  editor,
 }: PostCardProps) {
   const [open, setOpen] = useState(startOpen);
   const wantsFocus = useRef(false);
@@ -574,6 +657,7 @@ export function PostCard({
               {/* Quiet like the mock cards: 12 px, regular weight, grey, so the name leads and this reads as a footnote. */}
               <p className="text-metadata font-normal [overflow-wrap:anywhere] text-text-muted">
                 @{author.handle} · <RelativeTime date={createdAt} />
+                {edited && ' · Edited'}
                 {wall && (
                   <>
                     {' · on '}
@@ -599,7 +683,7 @@ export function PostCard({
             {actions}
           </header>
           {attachment}
-          {body && <FoldedText className="text-body text-text-primary">{body}</FoldedText>}
+          {editor ?? (body && <FoldedText className="text-body text-text-primary">{body}</FoldedText>)}
           {photo && (
             <PostPhoto
               photo={photo}

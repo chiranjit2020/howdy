@@ -8,6 +8,7 @@ export {
   approveReply,
   cardForReport,
   cardPhotoFor,
+  editCard,
   getFenceCard,
   listFence,
   listFriendsFeed,

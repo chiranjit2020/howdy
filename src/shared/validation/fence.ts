@@ -39,6 +39,10 @@ export const postCardSchema = z
   })
   .refine((c) => c.body !== '' || c.photoId !== undefined, { message: EMPTY_POST_MESSAGE, path: ['body'] });
 export const postReplySchema = z.object({ body: replyBodySchema });
+/** New words for your own post (ADR-063). Empty is allowed here; the server refuses it unless the post has a photo. */
+export const editCardSchema = z.object({
+  body: fenceText(LIMITS.POST_CARD_MAX, EMPTY_POST_MESSAGE, 'A post', true),
+});
 
 /** Page size for the Fence. */
 export const FENCE_PAGE_SIZE = 20;

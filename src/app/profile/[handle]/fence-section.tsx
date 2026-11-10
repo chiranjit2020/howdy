@@ -6,7 +6,7 @@ import type { AuthorRef, CardView, FencePage, ReplyView } from '@/modules/fence'
 import type { ReactionKind } from '@/shared/validation/fence';
 import { apiRequest, postJson } from '@/ui/auth/api';
 import { FormMessage } from '@/ui/auth/form-parts';
-import { Fence, PostCard, PostCardComposer, PostCardReply } from '@/ui/howdy';
+import { Fence, PostCard, PostCardComposer, PostCardReply, PostEditForm } from '@/ui/howdy';
 import { Button, ConfirmationDialog, Dropdown, IconButton, useToast } from '@/ui/primitives';
 import { ReportDialog } from '@/ui/howdy/report-dialog';
 import { MoreIcon } from '@/ui/icons';
@@ -14,8 +14,9 @@ import { uploadPhoto } from '@/ui/media/upload-photo';
 
 /** The parts of a page this component uses. Dates arrive as Date objects (first paint) or ISO strings (later pages). */
 type WireReply = Omit<ReplyView, 'createdAt'> & { createdAt: Date | string };
-type WireCard = Omit<CardView, 'createdAt' | 'replies'> & {
+type WireCard = Omit<CardView, 'createdAt' | 'replies' | 'editedAt'> & {
   createdAt: Date | string;
+  editedAt: Date | string | null;
   replies: WireReply[];
   /** Home's feed only: whose wall the card is on. */
   wall?: AuthorRef;
@@ -72,6 +73,8 @@ export function FenceSection({
   const [removal, setRemoval] = useState<Removal | undefined>();
   const [removing, setRemoving] = useState(false);
   const [reporting, setReporting] = useState<string | undefined>();
+  /** The post whose words are being changed right now (one at a time). */
+  const [editing, setEditing] = useState<string | undefined>();
 
   const patchCard = (id: string, fn: (c: WireCard) => WireCard) =>
     setCards((all) => all.map((c) => (c.id === id ? fn(c) : c)));
@@ -154,6 +157,30 @@ export function FenceSection({
     toast({ title: on ? 'Pinned to the top of your wall.' : 'Unpinned.', tone: 'success' });
   }
 
+  /**
+   * Save new words for your own post (ADR-063). The server answers with the post as it now is: on someone else's wall
+   * with Review on, it may be waiting for their OK again, which the post then says.
+   */
+  async function saveEdit(card: WireCard, body: string): Promise<string | void> {
+    const res = await apiRequest<{ card: WireCard }>('PATCH', `/api/cards/${card.id}`, { body });
+    if (!res.ok || !res.data) {
+      return res.error?.fields?.body ?? res.error?.message ?? 'That did not save. Try again.';
+    }
+    const saved = res.data.card;
+    // Keep where it sits and the feed's wall label; take the new words, status and pin from the server.
+    patchCard(card.id, (c) => ({
+      ...c,
+      ...saved,
+      ...(c.wall ? { wall: c.wall } : {}),
+      pinned: c.pinned && saved.canPin,
+    }));
+    setEditing(undefined);
+    toast({
+      title: saved.waiting ? 'Saved. It waits for approval again.' : 'Post updated.',
+      tone: 'success',
+    });
+  }
+
   async function confirmRemoval() {
     if (!removal) return;
     setRemoving(true);
@@ -188,6 +215,7 @@ export function FenceSection({
 
   function cardMenu(c: WireCard) {
     const items = [
+      ...(c.canEdit ? [{ id: 'edit', label: 'Edit post', onSelect: () => setEditing(c.id) }] : []),
       // Pinning is about your wall, so it is offered there, not in Home's feed.
       ...(!feed && c.canPin
         ? [{ id: 'pin', label: c.pinned ? 'Unpin' : 'Pin to top', onSelect: () => void pin(c, !c.pinned) }]
@@ -284,6 +312,19 @@ export function FenceSection({
             }}
             body={c.body}
             createdAt={c.createdAt}
+            edited={c.editedAt !== null}
+            {...(editing === c.id
+              ? {
+                  editor: (
+                    <PostEditForm
+                      initial={c.body}
+                      allowEmpty={c.photo !== null}
+                      onSave={(b) => saveEdit(c, b)}
+                      onCancel={() => setEditing(undefined)}
+                    />
+                  ),
+                }
+              : {})}
             reactions={c.reactions}
             myReaction={c.myReaction}
             canReact={c.canYo}
