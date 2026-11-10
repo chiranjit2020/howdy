@@ -71,6 +71,9 @@
   --color-parchment: light-dark(#fbfbfd, #2a2f47);
   --color-tribute: light-dark(#fef6d7, #333a52);
   --color-border: light-dark(#e1e4ee, #3a405c);
+  /* A raised card's edge: none in light mode (its shadow is the edge), the hairline in dark mode, where a shadow
+     barely shows. The border stays 1 px wide either way, so nothing shifts between themes. */
+  --color-card-edge: light-dark(transparent, #3a405c);
   --color-border-strong: light-dark(#737891, #8489a8);
 
   --color-text-primary: light-dark(#100b00, #f6f7fb);
@@ -248,9 +251,8 @@
    * Flat elevation. The names are kept from the old clay recipe so every surface follows without per-component edits,
    * but there is no inner light or shade any more: one subtle outer shadow, and pressed means "no lift".
    */
-  --shadow-clay:
-    0 4px 6px -1px light-dark(rgb(0 0 0 / 0.1), rgb(0 0 0 / 0.35)),
-    0 2px 4px -1px light-dark(rgb(0 0 0 / 0.06), rgb(0 0 0 / 0.25));
+  /* 2026-11-10 (user's pick): one tight 2 px shadow, and no hairline border round a card in light mode. */
+  --shadow-clay: 0 2px 4px light-dark(rgb(0 0 0 / 0.18), rgb(0 0 0 / 0.5));
   --shadow-clay-sm: 0 1px 2px light-dark(rgb(43 45 66 / 0.06), rgb(0 0 0 / 0.3));
   --shadow-clay-pressed: none;
   --shadow-float: 0 12px 32px light-dark(rgb(43 45 66 / 0.18), rgb(0 0 0 / 0.55));
@@ -580,11 +582,11 @@
   }
 }
 
-/* Raised surface (card): a hairline border and a subtle shadow. */
+/* Raised surface (card): a subtle shadow; the hairline edge shows in dark mode only (--color-card-edge). */
 @utility clay {
   background: var(--color-surface);
   border-radius: var(--radius-card);
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-card-edge);
   box-shadow: var(--shadow-clay);
 }
 

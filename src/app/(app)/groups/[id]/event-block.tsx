@@ -34,7 +34,7 @@ export function EventBlock({
   return (
     <section
       aria-label={`Event: ${event.title}`}
-      className="flex flex-col gap-3 rounded-card border border-border bg-surface-sunken/50 p-3 shadow-clay"
+      className="flex flex-col gap-3 rounded-card border border-card-edge bg-surface-sunken/50 p-3 shadow-clay"
     >
       <div className="flex items-start gap-3">
         <div

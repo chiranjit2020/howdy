@@ -92,7 +92,7 @@ export function EntryMain({ children }: { children: ReactNode }) {
  */
 export function EntryPanel({ children, bandClassName }: { children: ReactNode; bandClassName?: string }) {
   return (
-    <div className="flex flex-col overflow-hidden rounded-card border border-border bg-surface shadow-clay">
+    <div className="flex flex-col overflow-hidden rounded-card border border-card-edge bg-surface shadow-clay">
       <EntryBand {...(bandClassName ? { className: bandClassName } : {})} />
       <div className="flex flex-col gap-5 p-5 sm:p-7">{children}</div>
     </div>

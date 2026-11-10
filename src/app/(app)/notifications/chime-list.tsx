@@ -185,7 +185,7 @@ export function ChimeList({ initial, seenAt, bell }: { initial: Page; seenAt: st
       ) : (
         <section
           aria-label="Your notifications"
-          className="overflow-hidden rounded-card border border-border bg-surface shadow-clay"
+          className="overflow-hidden rounded-card border border-card-edge bg-surface shadow-clay"
         >
           <ul className="flex flex-col divide-y divide-border">
             {chimes.map((c) => {
