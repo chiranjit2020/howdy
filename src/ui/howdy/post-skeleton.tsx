@@ -30,7 +30,7 @@ export function PostSkeleton({ photo = false }: { photo?: boolean }) {
  */
 export function ComposerSkeleton() {
   return (
-    <div className="clay flex items-center gap-2 px-3 py-2 sm:px-4">
+    <div className="clay flex items-center gap-2 rounded-xl! px-2.5 py-2">
       <Skeleton className="h-11 flex-1 pointer-fine:h-[2.625rem]" />
       <Skeleton className="size-11 shrink-0 rounded-pill pointer-fine:size-9" />
     </div>

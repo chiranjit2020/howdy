@@ -229,8 +229,9 @@ export function FenceSection({
         ref={composerRef}
         id="nail"
         // A card of its own, the same on Home and on a wall, like the posts under it. Slim top and bottom (8 px,
-        // 2026-11-10): closed it is one line, so the card's full 16 px made it look like an empty post.
-        className="clay flex scroll-mt-24 flex-col gap-2 px-3 py-2 sm:px-4"
+        // 2026-11-10): closed it is one line, so the card's full 16 px made it look like an empty post. A slim card takes
+        // smaller corners (12 px, not the posts' 20 px) and a 10 px side, so the picture sits evenly inside it.
+        className="clay flex scroll-mt-24 flex-col gap-2 rounded-xl! px-2.5 py-2"
       >
         {initial.review && (
           <p className="text-caption text-text-secondary">
