@@ -3,7 +3,7 @@ import { Skeleton } from '@/ui/primitives';
 
 /**
  * Home's outline, in Home's own layout (the same grid, column width and right panel as page.tsx), so nothing moves when
- * the real page arrives: your Story, "What's on your mind?", two posts, and on wide screens the right panel's cards.
+ * the real page arrives: your Story, "Share something with friends", two posts, and on wide screens the right panel's cards.
  */
 export default function Loading() {
   return (
@@ -19,7 +19,7 @@ export default function Loading() {
           <Skeleton className="size-14 rounded-pill" />
           <Skeleton className="h-3 w-14" />
         </div>
-        {/* "What's on your mind?" is one line with a camera button until you click in. */}
+        {/* "Share something with friends" is one line with a camera button until you click in. */}
         <ComposerSkeleton />
         <Skeleton className="h-6 w-32" />
         <div className="flex flex-col gap-2.5">

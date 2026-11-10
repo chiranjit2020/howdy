@@ -13,7 +13,7 @@ import {
 } from './helpers';
 
 /**
- * Home's "What's on your mind?": one borderless line until you click in, then the full box with Add a photo and Post;
+ * Home's "Share something with friends": one borderless line until you click in, then the full box with Add a photo and Post;
  * it closes again when you leave it empty, and stays open while it holds words or a photo.
  */
 
@@ -34,24 +34,24 @@ const photo = () =>
     .jpeg()
     .toBuffer();
 
-test('one line until clicked; opens, posts, closes again; a photo alone is a post', async ({
-  browser,
-}) => {
+test('one line until clicked; opens, posts, closes again; a photo alone is a post', async ({ browser }) => {
   const me = await person(browser, 'mind');
   const page = me.page;
   const problems = await watchProblems(page);
   await pageReady(page);
 
-  const box = page.getByLabel('What’s on your mind?');
+  const box = page.getByLabel('Share something with friends');
   const post = page.getByRole('button', { name: 'Post', exact: true });
   const height = async () => (await box.boundingBox())!.height;
 
   // One line, the question inside it with no border round it, and nothing beside it (2026-11-07: the camera beside the
   // closed line repeated the open box's Add a photo); no Post button yet.
-  await expect(box).toHaveAttribute('placeholder', 'What’s on your mind?');
+  await expect(box).toHaveAttribute('placeholder', 'Share something with friends…');
   expect(await height()).toBeLessThanOrEqual(44);
   expect(await box.evaluate((el) => getComputedStyle(el).borderTopWidth)).toBe('0px');
-  await expect(page.locator('form').filter({ has: box }).locator('label').filter({ hasText: 'Add a photo' })).toHaveCount(0);
+  await expect(
+    page.locator('form').filter({ has: box }).locator('label').filter({ hasText: 'Add a photo' }),
+  ).toHaveCount(0);
   await expect(post).toHaveCount(0);
 
   // No friend has a Story, so there is no row for one lonely circle: my Story button leads the line, on its level.

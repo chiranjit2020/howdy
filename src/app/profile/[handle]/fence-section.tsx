@@ -34,8 +34,8 @@ type Source =
   | {
       feed: true;
       myHandle: string;
-      /** Shown before "What's on your mind?" (Home: your Story). */ composerLead?: ReactNode;
-      /** Between "What's on your mind?" and the posts (Home: Friends you may know, ADR-061). */
+      /** Shown before "Share something with friends" (Home: your Story). */ composerLead?: ReactNode;
+      /** Between "Share something with friends" and the posts (Home: Friends you may know, ADR-061). */
       beforePosts?: ReactNode;
     };
 
@@ -228,8 +228,9 @@ export function FenceSection({
       <div
         ref={composerRef}
         id="nail"
-        // A card of its own, the same on Home and on a wall, like the posts under it.
-        className="clay flex scroll-mt-24 flex-col gap-2 p-3 sm:p-4"
+        // A card of its own, the same on Home and on a wall, like the posts under it. Slim top and bottom (8 px,
+        // 2026-11-10): closed it is one line, so the card's full 16 px made it look like an empty post.
+        className="clay flex scroll-mt-24 flex-col gap-2 px-3 py-2 sm:px-4"
       >
         {initial.review && (
           <p className="text-caption text-text-secondary">
@@ -249,7 +250,7 @@ export function FenceSection({
 
   return (
     <>
-      {/* In the feed, "What's on your mind?" comes first and the "What’s Going On?" heading sits over the posts it names;
+      {/* In the feed, "Share something with friends" comes first and the "What’s Going On?" heading sits over the posts it names;
         on a wall, the composer belongs under "The wall". */}
       {feed && composer}
       {'feed' in source && source.beforePosts}

@@ -12,7 +12,7 @@ import { useSuggestionActions } from '../friends/suggestions';
 const SHOW = 10;
 
 /**
- * "Friends you may know" on Home (ADR-061): a row of small cards between "What's on your mind?" and the posts, on every
+ * "Friends you may know" on Home (ADR-061): a row of small cards between "Share something with friends" and the posts, on every
  * screen size: up to ten (early days fill it, 2026-11-08) in a row you swipe, with the next card peeking in to say there
  * is more. On a phone no scrollbar is drawn (the peek and the snap do that job); in a wide column a thin one shows,
  * since a mouse cannot swipe, and keyboard focus scrolls each card into view. Dismissing one closes the gap and the next moves in.

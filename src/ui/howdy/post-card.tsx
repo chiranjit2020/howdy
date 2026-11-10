@@ -149,8 +149,8 @@ const COMPOSER = {
   /** Home: a card on your own wall, which your friends see in their feed. */
   home: {
     max: LIMITS.POST_CARD_MAX,
-    label: 'What’s on your mind?',
-    placeholder: 'What’s on your mind?',
+    label: 'Share something with friends',
+    placeholder: 'Share something with friends…',
     rows: 2,
     submit: 'Post',
   },

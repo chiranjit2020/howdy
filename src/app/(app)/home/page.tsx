@@ -24,7 +24,7 @@ import { SuggestionStrip } from './suggestion-strip';
 export const metadata = { title: 'Home' };
 
 /**
- * First protected page: Stories, "What's on your mind?" and your friends' posts; on wide screens a right panel with
+ * First protected page: Stories, "Share something with friends" and your friends' posts; on wide screens a right panel with
  * your circle right now (friends free to talk, latest messages, friend requests, On this day, the team's note). The
  * counts are beside the menu and the bell, and Free to talk is in the top bar, on every page. The session check happens
  * on the server: an unauthenticated request never reaches the markup.
@@ -74,7 +74,7 @@ export default async function HomePage() {
     memories && memories.cards.length + memories.pals.length + memories.tributes.length > 0 ? memories : null;
   const free = lit.map((l) => ({ ...l.pal, note: l.note, untilLabel: clockOf(l.until) }));
   // With friends' Stories: the row of rings. Without: no row for one lonely circle; your Story button leads the
-  // "What's on your mind?" line instead (unless the feed, and so that line, could not load).
+  // "Share something with friends" line instead (unless the feed, and so that line, could not load).
   const storiesRow = ring.some((r) => !r.mine) || !feed;
   const stories = (variant: 'row' | 'lead') => (
     <StoriesStrip
@@ -120,7 +120,7 @@ export default async function HomePage() {
               signedIn
               initial={{
                 ...feed,
-                // "What's on your mind?" posts to your own wall: its owner may always post there, with a photo, and
+                // "Share something with friends" posts to your own wall: its owner may always post there, with a photo, and
                 // nothing waits for approval. The feed itself is not one wall, so nobody is its owner.
                 isOwner: false,
                 canPost: true,

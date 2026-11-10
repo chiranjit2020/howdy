@@ -16,7 +16,7 @@ const AUDIENCE_LABEL: Record<StoryAudience, string> = { pals: 'Friends', close: 
 /**
  * Stories on Home (ADR-047): a row of rings — mine first, then Pals with Stories for me (a pink ring = not seen yet).
  * Tapping opens the viewer; "Your Story" adds one. Each Story lasts 12 hours. `lead`: only my button, smaller and without
- * its caption, for the start of the "What's on your mind?" line when no friend has a Story (one circle is no row).
+ * its caption, for the start of the "Share something with friends" line when no friend has a Story (one circle is no row).
  */
 export function StoriesStrip({
   initial,
@@ -55,7 +55,7 @@ export function StoriesStrip({
         className={cn(
           // flex, not block: an inline picture in a block leaves a gap under it for text that is not there.
           'flex rounded-pill p-0.5',
-          // Beside "What's on your mind?": the 2 px ring room is taken back, so the picture sits on the card's own 16 px
+          // Beside "Share something with friends": the 2 px ring room is taken back, so the picture sits on the card's own 16 px
           // padding, level with the pictures on the posts below (the button stays 44 px to tap).
           lead && '-m-0.5',
           mine ? 'bg-border-strong' : 'bg-transparent',

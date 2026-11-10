@@ -127,7 +127,7 @@ export function ShellSidebarNav({ items }: { items: ShellNavItem[] }) {
 
 /**
  * The phone tab bar, in order: Home, Friends, Messages, and your photo (Profile). Create is gone (2026-11-08: almost
- * nobody used it; posts and Stories start from Home's "What's on your mind?", Time Capsules from the Profile sheet).
+ * nobody used it; posts and Stories start from Home's "Share something with friends", Time Capsules from the Profile sheet).
  * Notifications are the bell in the top bar, with their count; everything else (Visitors, Groups, Settings, staff pages,
  * Free to talk, Time Capsules, Devices, Sign out) is in the Profile sheet. The sidebar still lists everything on wide screens.
  */
