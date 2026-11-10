@@ -50,7 +50,7 @@ export function ActivityChart({ series, long }: { series: ActivityBucket[]; long
   ];
   return (
     <figure className="flex min-h-0 flex-1 flex-col gap-2">
-      <div className="relative h-48 flex-1 xl:h-auto xl:min-h-40">
+      <div className="relative h-48 flex-1 xl:h-auto xl:min-h-32">
         <svg
           viewBox={`0 0 ${W} ${H}`}
           preserveAspectRatio="none"

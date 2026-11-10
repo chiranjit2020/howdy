@@ -118,7 +118,7 @@ function Panel({
         role="region"
         aria-label={title}
         className={
-          'min-h-0 flex-1 rounded-b-md focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-on-island xl:overflow-y-auto ' +
+          'min-h-0 flex-1 rounded-b-md focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-on-island overflow-y-auto ' +
           bodyClass
         }
       >
@@ -264,6 +264,41 @@ function TimedList({ rows, empty }: { rows: SecurityEventRow[]; empty: string })
   );
 }
 
+/** One column of the "Needs attention" strip: a heading with its count, then the rows or a calm empty line. */
+function AttentionColumn({
+  title,
+  count,
+  tone = 'text-warning',
+  children,
+}: {
+  title: string;
+  count: number;
+  tone?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex min-w-0 flex-col gap-1 px-4 py-3">
+      <h3 className="flex items-baseline justify-between gap-2">
+        <span className={sectionLabel}>{title}</span>
+        <span
+          className={'tabular-nums text-caption font-bold ' + (count > 0 ? tone : 'text-on-island-muted')}
+        >
+          {num(count)}
+        </span>
+      </h3>
+      {/* Focusable and named, so a keyboard user can scroll a long list (axe: scrollable-region-focusable). */}
+      <div
+        tabIndex={0}
+        role="region"
+        aria-label={title}
+        className="max-h-40 overflow-y-auto rounded-sm focus-visible:outline-2 focus-visible:outline-on-island xl:max-h-24"
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
 export function SecurityView({ data }: { data: ConsoleData }) {
   const k = data.kpis;
   const s = data.series;
@@ -271,58 +306,46 @@ export function SecurityView({ data }: { data: ConsoleData }) {
   const okChecks = data.health.checks.filter((c) => c.status === 'ok').length;
   const counted = data.health.checks.filter((c) => c.status !== 'skip').length;
   const anyCritical = data.alerts.some((a) => a.severity === 'critical');
+  const needsYou =
+    data.alerts.length + data.sensitive.length + data.flagged.length + data.queue.oldest.length;
 
   return (
+    // On a full-HD screen everything fits without the page scrolling; on a shorter one only <main> scrolls, so
+    // the sidebar stays put and no panel is ever squeezed until its content is cut off.
     <div className="grid min-h-dvh xl:h-dvh xl:grid-cols-[232px_minmax(0,1fr)] xl:overflow-hidden">
       <Sidebar data={data} />
 
       <div className="flex min-h-0 min-w-0 flex-col pb-16 xl:pb-0">
-        {/* Top bar */}
-        <header className="flex min-h-14 shrink-0 flex-wrap items-center justify-between gap-x-4 gap-y-1 border-b border-on-island/10 px-4 py-2 xl:px-6">
-          <p className="text-caption text-on-island-muted">
-            Howdy Control Room <span aria-hidden>/</span>{' '}
-            <span className="font-semibold text-on-island">Mission Console</span>
-          </p>
-          <div className="flex flex-wrap items-center gap-2 text-metadata">
-            <span className="rounded-sm border border-on-island/10 px-2 py-1 tabular-nums text-on-island-muted">
-              Checked {clock(data.generatedAt)} IST
-            </span>
-            <span className="rounded-sm border border-on-island/10 px-2 py-1 text-on-island-muted">
-              Role: Admin
-            </span>
-            <span
-              className={
-                'flex items-center gap-1.5 rounded-sm px-2 py-1 font-semibold ' +
-                (data.health.status === 'ok'
-                  ? 'bg-success/10 text-success'
-                  : data.health.status === 'warn'
-                    ? 'bg-warning/10 text-warning'
-                    : 'bg-danger/15 text-danger')
-              }
-            >
-              <span className={'inline-block size-1.5 rounded-pill ' + (DOT[data.health.status] ?? '')} />
-              {data.health.status === 'ok'
-                ? 'Healthy'
-                : data.health.status === 'warn'
-                  ? 'Degraded'
-                  : 'Failing'}
-            </span>
-          </div>
-        </header>
-
-        <main id="main" className="flex min-h-0 flex-1 flex-col gap-3 px-4 py-3 xl:px-6">
-          {/* Title row */}
-          <div className="flex shrink-0 flex-wrap items-center justify-between gap-3">
-            <div className="flex flex-col">
-              <h1 className="flex items-center gap-2 text-caption font-bold">
-                <span className={'inline-block size-2 rounded-pill ' + (DOT[data.health.status] ?? '')} />
-                Mission Console
-              </h1>
-              <p className="text-metadata text-on-island-muted">
-                Platform overview and security telemetry · {words}
+        <main
+          id="main"
+          className="flex flex-col gap-3 px-4 py-3 xl:min-h-0 xl:flex-1 xl:overflow-y-auto xl:px-6"
+        >
+          {/* 1. Title, freshness, overall status and the time range: one row instead of a top bar + a title row. */}
+          <header className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex min-w-0 flex-col">
+              <h1 className="text-caption font-bold">Mission Console</h1>
+              <p className="text-metadata text-on-island-muted tabular-nums">
+                Checked {clock(data.generatedAt)} IST · showing the {words}
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
+              <span
+                className={
+                  'flex min-h-8 items-center gap-1.5 rounded-sm px-2 text-metadata font-semibold ' +
+                  (data.health.status === 'ok'
+                    ? 'bg-success/10 text-success'
+                    : data.health.status === 'warn'
+                      ? 'bg-warning/10 text-warning'
+                      : 'bg-danger/15 text-danger')
+                }
+              >
+                <span className={'inline-block size-1.5 rounded-pill ' + (DOT[data.health.status] ?? '')} />
+                {data.health.status === 'ok'
+                  ? 'Healthy'
+                  : data.health.status === 'warn'
+                    ? 'Degraded'
+                    : 'Failing'}
+              </span>
               <nav aria-label="Time range" className="flex rounded-sm border border-on-island/10 p-0.5">
                 {RANGES.map((r) => (
                   <a
@@ -342,10 +365,105 @@ export function SecurityView({ data }: { data: ConsoleData }) {
               </nav>
               <AutoRefresh seconds={60} />
             </div>
-          </div>
+          </header>
 
-          {/* KPIs */}
-          <div className="grid shrink-0 grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+          {/* 2. Needs attention: everything an admin may have to act on, first, in one place. */}
+          <section
+            aria-labelledby="needs-attention"
+            className="flex flex-col rounded-md border border-on-island/10 bg-island-raised"
+          >
+            <header className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-b border-on-island/10 px-4 py-2">
+              <h2 id="needs-attention" className="text-caption font-semibold text-on-island">
+                Needs attention
+              </h2>
+              <span className="text-metadata text-on-island-muted">
+                {needsYou === 0 ? 'Nothing needs you right now' : `${num(needsYou)} item(s) to look at`}
+              </span>
+            </header>
+            <div className="grid divide-y divide-on-island/10 md:grid-cols-2 md:divide-y-0 xl:grid-cols-4 xl:divide-x">
+              <AttentionColumn
+                title="Security alerts (7d)"
+                count={data.alerts.length}
+                tone={anyCritical ? 'text-danger' : 'text-warning'}
+              >
+                {data.alerts.length === 0 ? (
+                  <p className="text-metadata text-on-island-muted">None. Rules run every 30 minutes.</p>
+                ) : (
+                  <ul className="flex flex-col divide-y divide-on-island/5">
+                    {data.alerts.map((a, i) => (
+                      <li key={i} className="flex flex-col gap-0.5 py-1.5">
+                        <span className="flex items-baseline justify-between gap-3">
+                          <span
+                            className={
+                              'min-w-0 text-caption ' +
+                              (a.severity === 'critical' ? 'text-danger' : 'text-warning')
+                            }
+                          >
+                            {RULE_LABEL[a.rule] ?? label(a.rule)}
+                          </span>
+                          <time className="shrink-0 text-metadata text-on-island-muted tabular-nums">
+                            {when(a.at)}
+                          </time>
+                        </span>
+                        <span className="text-metadata text-on-island-muted">
+                          {a.severity.toUpperCase()} · {a.count} in an hour{a.handle && ` · ${a.handle}`}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </AttentionColumn>
+
+              <AttentionColumn title="Was this really them? (7d)" count={data.sensitive.length}>
+                <TimedList rows={data.sensitive} empty="No two-step or passkey removals, no resets." />
+              </AttentionColumn>
+
+              <AttentionColumn title="Sign-in pressure (24h)" count={data.flagged.length}>
+                {data.flagged.length === 0 ? (
+                  <p className="text-metadata text-on-island-muted">
+                    No account hit 5+ failed sign-ins or repeated 2-step failures.
+                  </p>
+                ) : (
+                  <ul className="flex flex-col divide-y divide-on-island/5">
+                    {data.flagged.map((f) => (
+                      <li key={f.handle} className="flex items-center justify-between gap-3 py-1">
+                        <span className="min-w-0 truncate text-caption">{f.handle}</span>
+                        <span className="shrink-0 text-metadata text-warning tabular-nums">
+                          {f.loginFailed} login{f.secondStepFailed > 0 && ` · ${f.secondStepFailed} 2-step`}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </AttentionColumn>
+
+              <AttentionColumn title="Reports waiting longest" count={data.queue.oldest.length}>
+                {data.queue.oldest.length === 0 ? (
+                  <p className="text-metadata text-on-island-muted">The queue is empty.</p>
+                ) : (
+                  <ul className="flex flex-col divide-y divide-on-island/5">
+                    {data.queue.oldest.map((r) => (
+                      <li key={r.id} className="flex flex-col gap-0.5 py-1.5">
+                        <span className="flex items-baseline justify-between gap-2">
+                          <span className="text-caption">#{r.id.slice(0, 8)}</span>
+                          <time className="tabular-nums text-metadata text-on-island-muted">
+                            {when(r.at)}
+                          </time>
+                        </span>
+                        <span className="text-metadata text-on-island-muted">
+                          {label(r.reason)} · {label(r.subject)} ·{' '}
+                          {r.source === 'photo_check' ? 'photo check' : 'member report'}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </AttentionColumn>
+            </div>
+          </section>
+
+          {/* 3. The numbers. */}
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
             <Kpi
               title="Total users"
               value={num(k.totalUsers)}
@@ -374,7 +492,7 @@ export function SecurityView({ data }: { data: ConsoleData }) {
               title="Failed sign-ins"
               value={num(k.loginFails.now)}
               delta={<Delta c={k.loginFails} upIsBad />}
-              foot={`${data.flagged.length} account(s) under pressure (24h)`}
+              foot={`vs ${num(k.loginFails.prev)} the period before`}
               spark={s.map((b) => b.failed)}
               tone="stroke-signal-amber"
               valueTone={k.loginFails.now > 20 ? 'text-warning' : 'text-on-island'}
@@ -382,51 +500,90 @@ export function SecurityView({ data }: { data: ConsoleData }) {
             <Kpi
               title="Reports open"
               value={num(data.queue.open)}
-              foot={`${data.queue.reviewing} in review · ${data.safety.suspendedAccounts} suspended`}
+              foot={`${data.queue.reviewing} in review · ${data.queue.resolved} resolved`}
               spark={s.map((b) => b.reports)}
               tone="stroke-signal-coral"
               valueTone={data.queue.open > 0 ? 'text-warning' : 'text-on-island'}
             />
             <Kpi
-              title="Security alerts"
-              value={num(k.alerts.now)}
-              delta={<Delta c={k.alerts} upIsBad />}
-              foot={k.alerts.now ? 'Emailed to owner + admins' : 'Rules run every 30 min'}
-              valueTone={k.alerts.now ? (anyCritical ? 'text-danger' : 'text-warning') : 'text-success'}
+              title="Suspended"
+              value={num(data.safety.suspendedAccounts)}
+              foot="Accounts suspended now"
+              valueTone={data.safety.suspendedAccounts > 0 ? 'text-signal-coral' : 'text-on-island'}
             />
           </div>
 
-          {/* Body: chart + safety + events on the left, the side column on the right. */}
-          <div className="grid min-h-0 flex-1 gap-3 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_400px] xl:grid-rows-[minmax(0,1fr)_minmax(0,1fr)]">
-            <Panel
-              title="Activity"
-              className="md:col-span-2"
-              bodyClass="flex flex-col gap-2 p-4"
-              aside={
-                <ul className="flex flex-wrap gap-x-3 gap-y-1 text-metadata text-on-island-muted">
-                  {SERIES.map((x) => (
-                    <li key={x.key} className="flex items-center gap-1.5">
-                      <span className={'inline-block size-1.5 rounded-pill ' + x.dot} />
-                      {x.label}
-                    </li>
-                  ))}
-                </ul>
-              }
-            >
-              <p className="text-metadata text-on-island-muted">
-                Sign-ins, sign-ups, failed sign-ins and reports, {words} (IST).
-              </p>
-              <ActivityChart series={s} long={data.range === '7d'} />
-            </Panel>
+          {/* 4. Trends and logs: chart over the event trail on the left; members and systems on the right. */}
+          <div className="grid gap-3 xl:min-h-[30rem] xl:flex-1 xl:grid-cols-[minmax(0,1fr)_400px]">
+            <div className="flex min-h-0 min-w-0 flex-col gap-3">
+              <Panel
+                title="Activity"
+                className="xl:flex-1"
+                bodyClass="flex flex-col gap-2 p-4"
+                aside={
+                  <ul className="flex flex-wrap gap-x-3 gap-y-1 text-metadata text-on-island-muted">
+                    {SERIES.map((x) => (
+                      <li key={x.key} className="flex items-center gap-1.5">
+                        <span className={'inline-block size-1.5 rounded-pill ' + x.dot} />
+                        {x.label}
+                      </li>
+                    ))}
+                  </ul>
+                }
+              >
+                <ActivityChart series={s} long={data.range === '7d'} />
+              </Panel>
 
-            {/* Side column: one cell spanning both rows on a full-HD screen. */}
-            <div className="flex min-h-0 min-w-0 flex-col gap-3 md:col-span-2 xl:col-span-1 xl:row-span-2">
+              <Panel
+                title="Recent security events"
+                className="xl:flex-1"
+                bodyClass="max-h-96 px-4 pt-2 pb-3 xl:max-h-none"
+              >
+                <EventsTable rows={data.recent} />
+              </Panel>
+            </div>
+
+            <div className="flex min-h-0 min-w-0 flex-col gap-3">
+              <Panel
+                title="Social pulse"
+                className="shrink-0"
+                bodyClass="p-3"
+                aside={<span className="text-metadata text-on-island-muted">{words}</span>}
+              >
+                <div className="grid grid-cols-2 gap-2">
+                  {(
+                    [
+                      ['Posts', data.social.postCards],
+                      ['Waves sent', data.social.yos],
+                      ['Profile visits', data.social.tracks],
+                      ['Testimonials', data.social.tributes],
+                    ] as const
+                  ).map(([t, c]) => (
+                    <div key={t} className="flex flex-col gap-0.5 rounded-sm bg-on-island/5 px-3 py-2">
+                      <span className="flex items-baseline justify-between gap-2">
+                        <span className={sectionLabel}>{t}</span>
+                        <Delta c={c} />
+                      </span>
+                      <span className="text-caption font-bold tabular-nums">{num(c.now)}</span>
+                    </div>
+                  ))}
+                </div>
+                <p className="mt-3 text-metadata text-on-island-muted">
+                  Change is against the {words.replace('last ', 'previous ')}.
+                </p>
+              </Panel>
+
               <Panel
                 title="System health"
-                className="shrink-0"
+                className="xl:flex-1"
                 bodyClass="px-4 py-2"
                 aside={
-                  <span className="rounded-sm bg-success/10 px-1.5 py-0.5 tabular-nums text-tab font-semibold text-success">
+                  <span
+                    className={
+                      'rounded-sm px-1.5 py-0.5 tabular-nums text-tab font-semibold ' +
+                      (okChecks === counted ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning')
+                    }
+                  >
                     {okChecks}/{counted} OK
                   </span>
                 }
@@ -438,7 +595,10 @@ export function SecurityView({ data }: { data: ConsoleData }) {
                   {data.health.checks.map((c) => (
                     <li key={c.id} className="flex items-baseline gap-3 py-0.5 text-metadata">
                       <span className="shrink-0 text-caption text-on-island">{c.label}</span>
-                      <span className="min-w-0 flex-1 truncate text-right text-on-island-muted">
+                      <span
+                        className="min-w-0 flex-1 truncate text-right text-on-island-muted"
+                        title={c.detail}
+                      >
                         {c.detail}
                       </span>
                       <span
@@ -457,155 +617,11 @@ export function SecurityView({ data }: { data: ConsoleData }) {
                   ))}
                 </ul>
               </Panel>
-
-              <Panel
-                title="Social pulse"
-                className="shrink-0"
-                bodyClass="p-3"
-                aside={<span className="text-metadata text-on-island-muted">{words}</span>}
-              >
-                <div className="grid grid-cols-2 gap-2">
-                  {(
-                    [
-                      ['Posts', data.social.postCards],
-                      ['Waves sent', data.social.yos],
-                      ['Profile visits', data.social.tracks],
-                      ['Testimonials', data.social.tributes],
-                    ] as const
-                  ).map(([t, c]) => (
-                    <div key={t} className="flex flex-col gap-0.5 rounded-sm bg-on-island/5 px-3 py-1.5">
-                      <span className="flex items-baseline justify-between gap-2">
-                        <span className={sectionLabel}>{t}</span>
-                        <Delta c={c} />
-                      </span>
-                      <span className="text-caption font-bold tabular-nums">{num(c.now)}</span>
-                    </div>
-                  ))}
-                </div>
-              </Panel>
-
-              <Panel title="Alerts (7d)" className="min-h-32 flex-1">
-                {data.alerts.length === 0 ? (
-                  <p className="text-caption text-on-island-muted">
-                    No alerts this week. Rules run every 30 minutes; new ones are emailed to the owner and
-                    admins.
-                  </p>
-                ) : (
-                  <ul className="flex flex-col divide-y divide-on-island/5">
-                    {data.alerts.map((a, i) => (
-                      <li key={i} className="flex flex-col gap-0.5 py-1.5">
-                        <span className="flex items-baseline justify-between gap-3">
-                          <span
-                            className={
-                              'min-w-0 text-caption ' +
-                              (a.severity === 'critical' ? 'text-danger' : 'text-warning')
-                            }
-                          >
-                            {RULE_LABEL[a.rule] ?? label(a.rule)}
-                          </span>
-                          <time className="shrink-0 text-metadata text-on-island-muted tabular-nums">
-                            {when(a.at)}
-                          </time>
-                        </span>
-                        <span className="text-metadata text-on-island-muted">
-                          {a.severity.toUpperCase()} · {a.count} in an hour{a.handle && ` · ${a.handle}`}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </Panel>
-
-              <Panel title="Was this really them? (7d)" className="min-h-32 flex-1">
-                <TimedList
-                  rows={data.sensitive}
-                  empty="No two-step removals, passkey removals or resets this week."
-                />
-              </Panel>
             </div>
-
-            <Panel
-              title="Safety overview"
-              aside={
-                <a
-                  href="/moderation"
-                  className="inline-flex min-h-11 items-center text-metadata font-semibold text-telemetry-soft underline-offset-2 hover:underline"
-                >
-                  Open queue →
-                </a>
-              }
-            >
-              <p className="text-metadata text-on-island-muted">
-                Member reports and the automatic photo check. CSAM hash matching is not live yet.
-              </p>
-              <div className="mt-3 grid grid-cols-4 gap-2 text-center">
-                {(
-                  [
-                    ['Open', data.queue.open, data.queue.open ? 'text-warning' : 'text-on-island'],
-                    ['In review', data.queue.reviewing, 'text-info'],
-                    ['Resolved', data.queue.resolved, 'text-success'],
-                    ['Suspended', data.safety.suspendedAccounts, 'text-signal-coral'],
-                  ] as const
-                ).map(([t, n, tone]) => (
-                  <div key={t} className="flex min-w-0 flex-col gap-0.5 rounded-sm bg-on-island/5 px-1 py-2">
-                    <span className={sectionLabel + ' truncate'}>{t}</span>
-                    <span className={'text-caption font-bold tabular-nums ' + tone}>{num(n)}</span>
-                  </div>
-                ))}
-              </div>
-              <h3 className={sectionLabel + ' mt-4 mb-1'}>Waiting longest</h3>
-              {data.queue.oldest.length === 0 ? (
-                <p className="text-metadata text-on-island-muted">The queue is empty.</p>
-              ) : (
-                <ul className="flex flex-col gap-1.5">
-                  {data.queue.oldest.map((r) => (
-                    <li key={r.id} className="flex flex-col gap-0.5 rounded-sm bg-on-island/5 px-3 py-2">
-                      <span className="flex items-baseline justify-between gap-2">
-                        <span className="text-caption">
-                          <span className="mr-1.5 rounded-sm bg-warning/15 px-1 tabular-nums text-tab font-semibold text-warning uppercase">
-                            Open
-                          </span>
-                          #{r.id.slice(0, 8)}
-                        </span>
-                        <time className="tabular-nums text-metadata text-on-island-muted">{when(r.at)}</time>
-                      </span>
-                      <span className="text-metadata text-on-island-muted">
-                        {label(r.reason)} · {label(r.subject)} ·{' '}
-                        {r.source === 'photo_check' ? 'photo check' : 'member report'}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-              <h3 className={sectionLabel + ' mt-4 mb-1'}>Under sign-in pressure (24h)</h3>
-              {data.flagged.length === 0 ? (
-                <p className="text-metadata text-on-island-muted">
-                  No account hit 5+ failed sign-ins or repeated 2-step failures.
-                </p>
-              ) : (
-                <ul className="flex flex-col divide-y divide-on-island/5">
-                  {data.flagged.map((f) => (
-                    <li key={f.handle} className="flex items-center justify-between gap-3 py-1">
-                      <span className="min-w-0 truncate text-caption">{f.handle}</span>
-                      <span className="shrink-0 text-metadata text-warning tabular-nums">
-                        {f.loginFailed} login{f.secondStepFailed > 0 && ` · ${f.secondStepFailed} 2-step`}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </Panel>
-
-            <Panel title="Recent security events">
-              <EventsTable rows={data.recent} />
-            </Panel>
           </div>
 
-          <footer className="flex shrink-0 flex-wrap justify-between gap-x-4 gap-y-1 text-tab tracking-wider text-on-island-muted uppercase">
-            <span className="flex items-center gap-1.5">
-              <span className={'inline-block size-1.5 rounded-pill ' + (DOT[data.health.status] ?? '')} />
-              Read-only · the audit trail holds no IPs, tokens or message content
-            </span>
+          <footer className="flex flex-wrap justify-between gap-x-4 gap-y-1 text-tab tracking-wider text-on-island-muted uppercase">
+            <span>Read-only · the audit trail holds no IPs, tokens or message content</span>
             <span>Howdy Control Room</span>
           </footer>
         </main>
