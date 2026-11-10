@@ -88,6 +88,9 @@ Pushing to `main` deploys to Vercel. Production does **not** run migrations on d
 
 Landing page illustrations are from Magnific (free plan) and are credited to their artist on the landing page.
 
-## Licence
+## Copyright
 
-No licence has been granted yet. All rights reserved.
+Copyright © 2026 Chiranjit Karmakar. All rights reserved.
+
+This is proprietary software. No licence is granted: you may not copy, modify, distribute, host or reuse any part of
+this project without written permission. See [LICENSE](LICENSE).
