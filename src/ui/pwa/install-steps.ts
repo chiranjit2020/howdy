@@ -13,7 +13,12 @@ export function osOf(ua: string): PhoneOs {
   return 'other';
 }
 
-export type InstallBrowser = 'offer' | 'ios' | 'samsung' | 'firefox' | 'in-app' | 'chromium';
+/**
+ * `other`: a phone maker's or other Android browser that cannot install a web app (Mi Browser on Xiaomi/Poco/Redmi,
+ * Opera, UC, Vivo, Oppo/Realme's HeyTap…). Found on a Poco phone (2026-11-11): Mi Browser looks like Chrome but its
+ * menu has no "Install app", so a hint about the menu led nowhere. These get "Open in Chrome" instead.
+ */
+export type InstallBrowser = 'offer' | 'ios' | 'samsung' | 'firefox' | 'in-app' | 'other' | 'chromium';
 
 /** `offer`: the browser handed us its own one-tap install (Android Chrome, Edge, sometimes Samsung). It always wins. */
 export function installBrowser(ua: string, os: PhoneOs, offer: boolean): InstallBrowser {
@@ -23,6 +28,13 @@ export function installBrowser(ua: string, os: PhoneOs, offer: boolean): Install
   if (os === 'ios') return 'ios';
   if (/SamsungBrowser/.test(ua)) return 'samsung';
   if (/Firefox|FxiOS/.test(ua)) return 'firefox';
+  if (
+    os === 'android' &&
+    /MiuiBrowser|XiaoMi|Mint Browser|OPR\/|Opera|UCBrowser|UCWEB|YaBrowser|HeyTapBrowser|VivoBrowser|OppoBrowser|baidu|QQBrowser|Puffin/.test(
+      ua,
+    )
+  )
+    return 'other';
   return 'chromium';
 }
 
@@ -30,13 +42,15 @@ export function installBrowser(ua: string, os: PhoneOs, offer: boolean): Install
  * What the big button does:
  * - `install`: the browser's own install box (or, when it did not offer one, a one-line hint);
  * - `home-screen`: iPhone — no website may install itself there, so a one-line hint with the Share icon;
- * - `open-chrome`: inside Instagram & co on Android — open this page in Chrome, where one-tap install works;
+ * - `open-chrome`: inside Instagram & co on Android, or in a browser that cannot install (Mi Browser…) — open this
+ *   page in Chrome, where one-tap install works;
  * - `none`: inside Instagram & co on iPhone — no button, just the one line saying to open it in Safari.
  */
 export type InstallAction = 'install' | 'home-screen' | 'open-chrome' | 'none';
 
 export function installAction(browser: InstallBrowser, os: PhoneOs): InstallAction {
   if (browser === 'in-app') return os === 'android' ? 'open-chrome' : 'none';
+  if (browser === 'other') return 'open-chrome';
   if (browser === 'ios') return 'home-screen';
   return 'install';
 }

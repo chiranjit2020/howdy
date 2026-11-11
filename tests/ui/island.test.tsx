@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DynamicIsland } from '@/ui/island/island';
 import { dismissActivity, resetIsland, showActivity } from '@/ui/island/store';
 import { GetAppBar } from '@/app/(app)/home/get-app-bar';
+import { canPromptInstall, captureInstallPrompt } from '@/ui/pwa/pwa';
 import { chromeIntentUrl, installAction, installBrowser, isPhoneAgent, osOf } from '@/ui/pwa/install-steps';
 import { axeViolations } from './setup';
 
@@ -22,6 +23,11 @@ const UA = {
     'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1',
   iphoneInstagram:
     'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 Instagram 350.0',
+  // A Poco phone's own browser (2026-11-11): looks like Chrome, cannot install.
+  miBrowser:
+    'Mozilla/5.0 (Linux; U; Android 14; en-in; 23049PCD8I Build/UKQ1.230804.001) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/122.0.6261.119 Mobile Safari/537.36 XiaoMi/MiuiBrowser/14.12.0-gn',
+  pocoChrome:
+    'Mozilla/5.0 (Linux; Android 14; 23049PCD8I) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Mobile Safari/537.36',
 };
 
 describe('which install steps a browser gets', () => {
@@ -95,6 +101,9 @@ describe('Home’s “Get the Howdy app” bar (replaced the island’s pop-up)'
     expect(act_(UA.iphone)).toBe('home-screen');
     expect(act_(UA.instagram)).toBe('open-chrome');
     expect(act_(UA.iphoneInstagram)).toBe('none');
+    // Mi Browser cannot install: send them to Chrome. Chrome on the same Poco phone installs.
+    expect(act_(UA.miBrowser)).toBe('open-chrome');
+    expect(act_(UA.pocoChrome)).toBe('install');
     expect(chromeIntentUrl('https://howdy.example/home?x=1')).toBe(
       'intent://howdy.example/home?x=1#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=https%3A%2F%2Fhowdy.example%2Fhome%3Fx%3D1;end',
     );
@@ -157,5 +166,34 @@ describe('Home’s “Get the Howdy app” bar (replaced the island’s pop-up)'
     expect(isPhoneAgent(UA.samsung)).toBe(true);
     expect(isPhoneAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/129.0 Safari/537.36')).toBe(false);
     expect(isPhoneAgent(null)).toBe(false);
+  });
+});
+
+describe('the install offer, caught before the app runs (RootLayout’s catcher)', () => {
+  type W = Window & { __howdyInstall?: unknown };
+  afterEach(() => {
+    (window as W).__howdyInstall = null;
+  });
+
+  it('an offer that arrived before the bar mounted is used: the button opens the browser’s own box', async () => {
+    const prompt = vi.fn(async () => undefined);
+    (window as W).__howdyInstall = { prompt, userChoice: Promise.resolve({ outcome: 'dismissed' }) };
+    const user = userEvent.setup();
+    render(<GetAppBar ua={UA.pocoChrome} />);
+    await user.click(screen.getByRole('button', { name: 'Install Howdy' }));
+    expect(prompt).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole('status')).toBeEmptyDOMElement(); // no menu hint when the box was offered
+  });
+
+  it('an offer that arrives later is picked up from the catcher’s event', async () => {
+    const off = captureInstallPrompt();
+    render(<GetAppBar ua={UA.pocoChrome} />);
+    expect(canPromptInstall()).toBe(false);
+    act(() => {
+      (window as W).__howdyInstall = { prompt: vi.fn(), userChoice: new Promise(() => undefined) };
+      window.dispatchEvent(new Event('howdy:installoffer'));
+    });
+    expect(canPromptInstall()).toBe(true);
+    off();
   });
 });

@@ -9,30 +9,26 @@ export interface InstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
 }
 
-let deferred: InstallPromptEvent | null = null;
+/**
+ * The browser's install offer is caught by a tiny script at the top of every page (RootLayout's INSTALL_CATCHER), which
+ * keeps it on `window.__howdyInstall` and fires `howdy:installoffer` when it arrives or is used up. It has to be that
+ * early: Chrome makes the offer once, often before the app's own code runs.
+ */
+type CatcherWindow = Window & { __howdyInstall?: InstallPromptEvent | null };
+const offer = () =>
+  typeof window === 'undefined' ? null : ((window as CatcherWindow).__howdyInstall ?? null);
 const listeners = new Set<() => void>();
 const changed = () => listeners.forEach((l) => l());
 
-/** The browser offered to install Howdy; keep the offer until a button uses it. Called once, from PwaBoot. */
+/** Pass the catcher's news on to whoever is watching (onInstallChange). Called once, from PwaBoot. */
 export function captureInstallPrompt(): () => void {
-  const onPrompt = (e: Event) => {
-    e.preventDefault(); // keep it for our own button (Chrome still shows its own menu item)
-    deferred = e as InstallPromptEvent;
-    changed();
-  };
-  const onInstalled = () => {
-    deferred = null;
-    changed();
-  };
-  window.addEventListener('beforeinstallprompt', onPrompt);
-  window.addEventListener('appinstalled', onInstalled);
-  return () => {
-    window.removeEventListener('beforeinstallprompt', onPrompt);
-    window.removeEventListener('appinstalled', onInstalled);
-  };
+  window.addEventListener('howdy:installoffer', changed);
+  // It may have arrived before this ran: let the watchers look now.
+  if (offer()) changed();
+  return () => window.removeEventListener('howdy:installoffer', changed);
 }
 
-export const canPromptInstall = () => deferred !== null;
+export const canPromptInstall = () => offer() !== null;
 export function onInstallChange(cb: () => void): () => void {
   listeners.add(cb);
   return () => listeners.delete(cb);
@@ -40,9 +36,9 @@ export function onInstallChange(cb: () => void): () => void {
 
 /** Show the browser's own install dialog. True when the person said yes. */
 export async function promptInstall(): Promise<boolean> {
-  const e = deferred;
+  const e = offer();
   if (!e) return false;
-  deferred = null; // an offer can be used once
+  (window as CatcherWindow).__howdyInstall = null; // an offer can be used once
   changed();
   await e.prompt();
   return (await e.userChoice).outcome === 'accepted';

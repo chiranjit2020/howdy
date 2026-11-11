@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Google_Sans, JetBrains_Mono } from 'next/font/google';
 import { cookies, headers } from 'next/headers';
+import Script from 'next/script';
 import type { ReactNode } from 'react';
 import { SPLASH_HEADER } from '@/shared/splash';
 import { ToastProvider } from '@/ui/primitives';
@@ -61,7 +62,9 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   // Theme is read on the server so the first paint is already correct — no inline script (CSP-safe).
   const theme = parseTheme((await cookies()).get(THEME_COOKIE)?.value);
   // The first page load of a visit (set by the proxy): desktop browsers get the opening screen.
-  const firstLoad = (await headers()).get(SPLASH_HEADER) === '1';
+  const head = await headers();
+  const firstLoad = head.get(SPLASH_HEADER) === '1';
+  const nonce = head.get('x-nonce') ?? undefined;
   return (
     // suppressHydrationWarning: extensions (Claude in Chrome, dark-mode tools) add classes to <html> before React loads;
     // like <body> below, only this tag's own attributes are ignored.
@@ -74,6 +77,9 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       {/* Extensions (Grammarly, etc.) add attributes to <body> before React loads; this ignores only <body>'s own
           attributes, so real mismatches inside the page still warn. */}
       <body suppressHydrationWarning>
+        {/* Catches Chrome's one-time install offer before the app's code runs (public/install-catcher.js explains).
+            beforeInteractive puts it in <head>, ahead of every Next.js script; the nonce lets the CSP allow it. */}
+        <Script src="/install-catcher.js" strategy="beforeInteractive" nonce={nonce} />
         <a
           href="#main"
           className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:rounded-pill focus:bg-accent-strong focus:px-4 focus:py-2 focus:text-on-accent"

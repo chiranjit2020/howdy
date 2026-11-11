@@ -63,7 +63,8 @@ function hintFor(browser: InstallBrowser): ReactNode {
           <Key label="the menu">
             <BrowserMenuIcon className="size-5" />
           </Key>{' '}
-          at the top, then <b>Install app</b>.
+          {/* Chrome's own words change by version: "Install app" on some, "Add to Home screen" on others. */}
+          at the top, then <b>Install app</b> or <b>Add to Home screen</b>.
         </>
       );
   }
