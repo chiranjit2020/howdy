@@ -1,3 +1,4 @@
+import { smallPortrait } from '@/shared/portrait';
 import type { PortraitTint } from '@/shared/validation/profile';
 import { Img } from '../art/img';
 import { cn } from '../cn';
@@ -68,7 +69,14 @@ export function Avatar({ name, src, size = 'md', online, tint, className }: Avat
         )}
       >
         {src ? (
-          <Img src={src} alt={name} width={PX[size]} height={PX[size]} className="size-full object-cover" />
+          <Img
+            // Up to 64 px the small copy is sharp; only the profile header's big avatar needs the full photo.
+            src={size === 'xl' ? src : smallPortrait(src)}
+            alt={name}
+            width={PX[size]}
+            height={PX[size]}
+            className="size-full object-cover"
+          />
         ) : (
           <span role="img" aria-label={name} className="avatar-initials">
             {initials(name)}

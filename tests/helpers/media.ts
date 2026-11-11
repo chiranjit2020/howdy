@@ -71,9 +71,10 @@ export async function uploadPortrait(
 }
 
 /** GET /api/portraits/:handle — the picture itself. */
-export async function getPortrait(handle: string, opts: Opts = {}) {
+export async function getPortrait(handle: string, opts: Opts & { size?: 'small' } = {}) {
+  const query = opts.size ? `?size=${opts.size}` : '';
   const res = await getPortraitRoute(
-    request('GET', `/api/portraits/${encodeURIComponent(handle)}`, undefined, opts),
+    request('GET', `/api/portraits/${encodeURIComponent(handle)}${query}`, undefined, opts),
     { params: Promise.resolve({ handle }) },
   );
   const bytes = Buffer.from(await res.arrayBuffer());

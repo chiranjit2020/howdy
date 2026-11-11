@@ -9,11 +9,20 @@ import { photoChecker } from '@/platform/photo-check';
 import { enforceRateLimit } from '@/platform/rate-limit';
 import { getObjectStore, type UploadTarget } from '@/platform/storage';
 import { PORTRAIT_MAX_BYTES, type PortraitType } from '@/shared/validation/media';
-import { feedCopyOf, previewForCheck, processCardPhoto, processCover, processPortrait } from './image';
+import {
+  feedCopyOf,
+  previewForCheck,
+  processCardPhoto,
+  processCover,
+  processPortrait,
+  smallPortraitOf,
+} from './image';
 
 /** Where a card photo's smaller feed copy is kept: beside the original, so it is found (and removed) from its key. */
 // `cards/<id>.webp` -> `cards/<id>-feed.webp` (an object key may have only one extension).
 const feedCopyKey = (objectKey: string) => objectKey.replace(/(\.[a-z0-9]{1,5})?$/, '-feed.webp');
+/** Where a Portrait's small copy is kept, the same way: `portraits/<id>.webp` -> `portraits/<id>-small.webp`. */
+const smallCopyKey = (objectKey: string) => objectKey.replace(/(\.[a-z0-9]{1,5})?$/, '-small.webp');
 
 const rule = (limit: number, windowSec: number) => ({ limit, windowSec });
 export const RATE = {
@@ -65,8 +74,10 @@ export async function destroy(
     try {
       await store().delete(row.objectKey);
       if (row.posterKey) await store().delete(row.posterKey);
-      // A card photo's feed copy, if one was ever made (deleting a key that is not there is not an error).
+      // A card photo's feed copy or a Portrait's small copy, if one was ever made (deleting a key that is not there is
+      // not an error).
       await store().delete(feedCopyKey(row.objectKey));
+      await store().delete(smallCopyKey(row.objectKey));
       await getDb()
         .delete(media)
         .where(and(eq(media.id, row.id), inArray(media.status, statuses)));
@@ -569,6 +580,7 @@ async function readProfilePhoto(
   kind: ProfilePhotoKind,
   ownerId: string,
   viewer: PhotoViewer,
+  opts: { small?: boolean } = {},
 ): Promise<{ bytes: Buffer; version: string } | null> {
   const [row] = await getDb()
     .select({ id: media.id, objectKey: media.objectKey })
@@ -576,12 +588,38 @@ async function readProfilePhoto(
     .where(and(eq(media.ownerId, ownerId), eq(media.kind, kind), eq(media.status, 'ready'), shownTo(viewer)))
     .limit(1);
   if (!row) return null;
-  const bytes = await store().get(row.objectKey, SERVE_MAX_BYTES);
+  const bytes = opts.small
+    ? await readSmallCopy(row.objectKey, row.id)
+    : await store().get(row.objectKey, SERVE_MAX_BYTES);
   return bytes ? { bytes, version: row.id } : null;
 }
 
-export const readPortrait = (ownerId: string, viewer: PhotoViewer) =>
-  readProfilePhoto('portrait', ownerId, viewer);
+/**
+ * A Portrait's small copy, made the first time someone asks for it and kept beside the original (so Portraits stored
+ * before it existed need no backfill); destroy() removes it with the original. If it cannot be made, the full photo is
+ * served instead: a slower avatar, never a missing one.
+ */
+async function readSmallCopy(objectKey: string, mediaId: string): Promise<Buffer | null> {
+  const key = smallCopyKey(objectKey);
+  const kept = await store().get(key, SERVE_MAX_BYTES);
+  if (kept) return kept;
+  const full = await store().get(objectKey, SERVE_MAX_BYTES);
+  if (!full) return null;
+  const copy = await smallPortraitOf(full).catch((cause) => {
+    log.warn({ event: 'media.small_copy_failed', mediaId, cause: String(cause) });
+    return null;
+  });
+  if (!copy) return full;
+  // Saving it is best-effort: the copy is still served now, and made again next time.
+  await store()
+    .put(key, copy, 'image/webp')
+    .catch((cause) => log.warn({ event: 'media.small_copy_store_failed', mediaId, cause: String(cause) }));
+  return copy;
+}
+
+/** `small`: the copy for avatars up to 64 px (SMALL_PORTRAIT_PX square) instead of the full 512 px photo. */
+export const readPortrait = (ownerId: string, viewer: PhotoViewer, opts: { small?: boolean } = {}) =>
+  readProfilePhoto('portrait', ownerId, viewer, opts);
 export const readCover = (ownerId: string, viewer: PhotoViewer) => readProfilePhoto('cover', ownerId, viewer);
 
 /** How many file rows a person still has (account deletion must see 0 before it deletes the account, ADR-027). */

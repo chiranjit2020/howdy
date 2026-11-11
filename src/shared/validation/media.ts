@@ -16,6 +16,12 @@ export const PORTRAIT_MAX_BYTES = 5 * 1024 * 1024;
 /** What we store and serve: a square this many pixels on a side, as WebP. */
 export const PORTRAIT_SIZE_PX = 512;
 
+/**
+ * The small copy every avatar up to 64 px uses (2026-11-12): sharp at 2.5× on a 64 px avatar and 3× up to 53 px, for a
+ * few KB instead of the full photo's ~30 KB. Only the biggest avatar (a profile's header) still loads the full one.
+ */
+export const SMALL_PORTRAIT_PX = 160;
+
 export const portraitUploadSchema = z.object({
   contentType: z.enum(PORTRAIT_TYPES, { message: 'Choose a JPEG, PNG or WebP photo.' }),
   size: z

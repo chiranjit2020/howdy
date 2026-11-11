@@ -29,10 +29,12 @@ export const GET = route(async ({ req, params }) => {
   const allowed = owner.userId === session.user.id || (await mayViewRanch(session.user.id, owner.userId));
   if (!allowed) throw new AppError('NOT_FOUND');
 
-  const portrait = await readPortrait(owner.userId, { userId: session.user.id });
+  // `?size=small`: the copy for avatars up to 64 px (a few KB instead of the full photo's ~30 KB).
+  const small = new URL(req.url).searchParams.get('size') === 'small';
+  const portrait = await readPortrait(owner.userId, { userId: session.user.id }, { small });
   if (!portrait) throw new AppError('NOT_FOUND');
 
-  const etag = `"${portrait.version}"`;
+  const etag = small ? `"${portrait.version}-small"` : `"${portrait.version}"`;
   const headers = new Headers({
     ETag: etag,
     'Cache-Control': 'private, no-cache',

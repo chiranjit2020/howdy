@@ -108,6 +108,23 @@ describe('a new profile photo is decoded, cropped and re-encoded — only pixels
     expect(await storage.files()).toEqual([`portraits/${rows[0].object_key.split('/')[1]}`]);
   });
 
+  it('the small copy for avatars is a 160x160 WebP, made once, and removed with the photo', async () => {
+    const a = await alice();
+    await uploadPortrait(a.cookie, await jpeg());
+    const small = await getPortrait(a.handle, { ...as(a), size: 'small' });
+    expect(small.status).toBe(200);
+    expect(small.res.headers.get('content-type')).toBe('image/webp');
+    expect(await inspect(small.bytes)).toMatchObject({ format: 'webp', width: 160, height: 160 });
+    // Its own ETag, so a browser never mixes it up with the full photo.
+    const full = await getPortrait(a.handle, as(a));
+    expect(small.res.headers.get('etag')).not.toBe(full.res.headers.get('etag'));
+    expect(small.bytes.length).toBeLessThan(full.bytes.length);
+    // Kept beside the original, and gone with it.
+    expect((await storage.files()).filter((f) => f.endsWith('-small.webp'))).toHaveLength(1);
+    await removeMine(as(a));
+    expect(await storage.files()).toEqual([]);
+  });
+
   it('removing it deletes the file and the row, and is harmless to repeat', async () => {
     const a = await alice();
     await uploadPortrait(a.cookie, await jpeg());
@@ -403,6 +420,16 @@ describe('who may see a profile photo: the same people who may open the Ranch, a
     expect((await getPortrait(a.handle, as(b))).status).toBe(404); // asking is not belonging
     await doAct(b.handle, 'accept', as(a));
     expect((await getPortrait(a.handle, as(b))).status).toBe(200);
+  });
+
+  it('the small copy follows exactly the same rules as the full photo', async () => {
+    const a = await alice();
+    const b = await bob();
+    await uploadPortrait(a.cookie, await jpeg());
+    expect((await getPortrait(a.handle, { size: 'small' })).status).toBe(404); // signed out
+    await patchRanch({ ranchVisibility: 'posse' }, as(a));
+    expect((await getPortrait(a.handle, { ...as(b), size: 'small' })).status).toBe(404);
+    expect((await getPortrait(a.handle, { ...as(a), size: 'small' })).status).toBe(200);
   });
 
   it('blocking someone takes the photo away at once, even from a browser that has it cached', async () => {

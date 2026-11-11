@@ -6,6 +6,7 @@ import {
   COVER_WIDTH_PX,
   FEED_PHOTO_PX,
   PORTRAIT_SIZE_PX,
+  SMALL_PORTRAIT_PX,
 } from '@/shared/validation/media';
 
 /** The most pixels we will even try to decode (a 24-megapixel photo). A "pixel bomb" is small on disk and huge in memory. */
@@ -92,6 +93,17 @@ export async function feedCopyOf(stored: Buffer): Promise<Buffer | null> {
   const { width } = await img.metadata();
   if (!width || width <= FEED_PHOTO_PX) return null;
   return img.resize({ width: FEED_PHOTO_PX, withoutEnlargement: true }).webp({ quality: 75 }).toBuffer();
+}
+
+/**
+ * The small copy of a stored Portrait, for avatars up to 64 px: SMALL_PORTRAIT_PX square. Made from our own stored WebP,
+ * never from an upload.
+ */
+export async function smallPortraitOf(stored: Buffer): Promise<Buffer> {
+  return sharp(stored, { limitInputPixels: MAX_INPUT_PIXELS, failOn: 'error', animated: false })
+    .resize(SMALL_PORTRAIT_PX, SMALL_PORTRAIT_PX, { fit: 'cover', withoutEnlargement: true })
+    .webp({ quality: 80 })
+    .toBuffer();
 }
 
 /**
