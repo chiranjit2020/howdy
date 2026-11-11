@@ -3,6 +3,7 @@ import {
   VIDEO_BITRATE,
   VIDEO_KEYFRAME_SECONDS,
   VIDEO_MAX_BYTES,
+  VIDEO_LONG_SIDE_PX,
   VIDEO_MAX_SECONDS,
   VIDEO_SHORT_SIDE_PX,
   VIDEO_TYPE,
@@ -74,10 +75,11 @@ export async function prepareVideo(
     if (!(duration > 0)) return { ok: false, message: UNREADABLE };
     const end = Math.min(duration, VIDEO_MAX_SECONDS);
 
-    // 720p: the short side at most 720, never enlarged, sizes even (H.264 needs that). Display size = after rotation.
+    // 720p: fitted inside 720 × 1280 (short side ≤ 720 AND long side ≤ 1280, so a tall 20:9 screen recording fits too),
+    // never enlarged, sizes even (H.264 needs that). Display size = after rotation.
     const w = video.displayWidth;
     const h = video.displayHeight;
-    const scale = Math.min(1, VIDEO_SHORT_SIDE_PX / Math.min(w, h));
+    const scale = Math.min(1, VIDEO_SHORT_SIDE_PX / Math.min(w, h), VIDEO_LONG_SIDE_PX / Math.max(w, h));
     const width = even(w * scale);
     const height = even(h * scale);
 

@@ -69,6 +69,11 @@ describe('inspectMp4: what the phone makes is accepted', () => {
     });
   });
 
+  it('accepts a tall 20:9 clip fitted inside 720 × 1280 (576 × 1280)', () => {
+    const { buf, size } = file(ftyp, box('moov', mvhd(8), trak('vide', 'avc1', 576, 1280)), mdat);
+    expect(inspectMp4(buf, size, LIMITS).ok).toBe(true);
+  });
+
   it('allows half a second over 30 for how encoders round the last frame', () => {
     const { buf, size } = file(ftyp, box('moov', mvhd(30.4), trak('vide', 'avc1')), mdat);
     expect(inspectMp4(buf, size, LIMITS).ok).toBe(true);
@@ -131,7 +136,11 @@ describe('inspectMp4: anything else is refused, with the reason', () => {
       [3840, 2160],
     ]) {
       const { buf, size } = file(ftyp, box('moov', mvhd(5), trak('vide', 'avc1', w, h)), mdat);
-      expect(inspectMp4(buf, size, LIMITS), `${w}x${h}`).toEqual({ ok: false, reason: 'too_large' });
+      expect(inspectMp4(buf, size, LIMITS), `${w}x${h}`).toEqual({
+        ok: false,
+        reason: 'too_large',
+        size: `${w}x${h}`,
+      });
     }
   });
 

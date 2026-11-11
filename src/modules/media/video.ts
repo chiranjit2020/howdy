@@ -10,6 +10,7 @@ import {
   VIDEO_LIFETIME_DAYS,
   VIDEO_MAX_BYTES,
   VIDEO_MAX_SECONDS,
+  VIDEO_LONG_SIDE_PX,
   VIDEO_SHORT_SIDE_PX,
   VIDEO_TYPE,
   VIDEOS_PER_DAY,
@@ -45,9 +46,9 @@ const LIFETIME_MS = VIDEO_LIFETIME_DAYS * 24 * 3600 * 1000;
 
 const LIMITS = {
   maxSeconds: VIDEO_MAX_SECONDS,
-  // Encoders may round up to a multiple of 16; a 16:9 720p is 1280 on its long side.
+  // The phone fits the picture inside 720 × 1280; encoders may round up to a multiple of 16.
   maxShortSide: VIDEO_SHORT_SIDE_PX + 16,
-  maxLongSide: Math.ceil((VIDEO_SHORT_SIDE_PX * 16) / 9) + 32,
+  maxLongSide: VIDEO_LONG_SIDE_PX + 32,
 };
 
 /** What the writer is told, per problem. Calm and specific; none of it blames them. */
@@ -138,7 +139,11 @@ export async function completeCardVideo(
   if (!head) return reject('We did not receive your video. Please try again.');
   const verdict = inspectMp4(head, size, LIMITS);
   if (!verdict.ok) {
-    log.info({ event: 'video.refused', reason: verdict.reason });
+    log.info({
+      event: 'video.refused',
+      reason: verdict.reason,
+      ...(verdict.size ? { size: verdict.size } : {}),
+    });
     return reject(PROBLEM[verdict.reason]);
   }
 

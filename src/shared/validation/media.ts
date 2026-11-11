@@ -52,6 +52,8 @@ export const VIDEO_MAX_SECONDS = 30;
 export const VIDEO_MAX_BYTES = 20 * 1024 * 1024;
 /** The short side of the converted video, in pixels (720p). Never enlarged. */
 export const VIDEO_SHORT_SIDE_PX = 720;
+/** The long side, at most (a 16:9 720p). Tall clips (screen recordings, 20:9) are fitted inside 720 × 1280, not cut. */
+export const VIDEO_LONG_SIDE_PX = 1280;
 /** Target bitrates, in bits per second: ~2 Mbps picture, 96 kbps sound. */
 export const VIDEO_BITRATE = 2_000_000;
 export const VIDEO_AUDIO_BITRATE = 96_000;

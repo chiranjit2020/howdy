@@ -15,7 +15,8 @@
 
 export type Mp4Verdict =
   | { ok: true; durationMs: number; width: number; height: number; hasAudio: boolean }
-  | { ok: false; reason: Mp4Problem };
+  /** `size` (e.g. "720x1600") only with too_large, for the log. */
+  | { ok: false; reason: Mp4Problem; size?: string };
 
 export type Mp4Problem =
   /** Not an MP4 at all, or a damaged one. */
@@ -156,6 +157,7 @@ export function inspectMp4(head: Buffer, totalSize: number, limits: Mp4Limits): 
   if (durationMs > limits.maxSeconds * 1000 + 500) return { ok: false, reason: 'too_long' };
   const short = Math.min(video.width, video.height);
   const long = Math.max(video.width, video.height);
-  if (short > limits.maxShortSide || long > limits.maxLongSide) return { ok: false, reason: 'too_large' };
+  if (short > limits.maxShortSide || long > limits.maxLongSide)
+    return { ok: false, reason: 'too_large', size: `${video.width}x${video.height}` };
   return { ok: true, durationMs, width: video.width, height: video.height, hasAudio };
 }
