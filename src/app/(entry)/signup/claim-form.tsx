@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useRef, useState, type FormEvent } from 'react';
 import { emailCodeSchema, emailSchema, signUpSchema } from '@/shared/validation/auth';
+import { suggestEmail } from '@/shared/email-suggest';
 import { LEGAL_FACTS } from '@/shared/legal';
 import { LIMITS } from '@/shared/limits';
 import { postJson } from '@/ui/auth/api';
@@ -68,13 +69,22 @@ export function ClaimForm({
     const r = emailSchema.safeParse(value);
     return r.success ? undefined : r.error.issues[0]?.message;
   };
+  // "Did you mean name@gmail.com?" (2026-11-12): offered when you leave the box, gone as soon as you type again. Only a
+  // suggestion: the address as typed can always be used.
+  const [emailSuggestion, setEmailSuggestion] = useState<string | null>(null);
   const checkEmail = () => {
-    if (values.email.trim()) setErrors((e) => ({ ...e, email: emailError(values.email) }));
+    if (!values.email.trim()) return;
+    const problem = emailError(values.email);
+    setErrors((e) => ({ ...e, email: problem }));
+    setEmailSuggestion(problem ? null : suggestEmail(values.email));
   };
-  const onEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
+  const applyEmail = (value: string) => {
     setValues((v) => ({ ...v, email: value, ...(handleEdited ? {} : { handle: suggestHandle(value) }) }));
     if (errors.email && !emailError(value)) setErrors(({ email: _fixed, ...rest }) => rest);
+  };
+  const onEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEmailSuggestion(null);
+    applyEmail(e.target.value);
   };
 
   // What the username box says under itself: the live check, unless submitting already put an error there.
@@ -292,7 +302,31 @@ export function ClaimForm({
         onChange={onEmailChange}
         onBlur={checkEmail}
         error={errors.email}
+        hint={
+          emailSuggestion && !errors.email ? (
+            <>
+              Did you mean{' '}
+              <Button
+                variant="link"
+                size="sm"
+                className="-mx-1 align-baseline font-semibold"
+                onClick={() => {
+                  applyEmail(emailSuggestion);
+                  setEmailSuggestion(null);
+                }}
+              >
+                {emailSuggestion}
+              </Button>
+              ?
+            </>
+          ) : undefined
+        }
       />
+      {/* What a screen reader hears when a suggestion appears. Always there (a live region must exist before it
+          speaks) but out of the layout, so no empty gap sits under the email box. */}
+      <p role="status" className="sr-only">
+        {emailSuggestion && !errors.email ? `Did you mean ${emailSuggestion}?` : ''}
+      </p>
       <PasswordInput
         look="entry"
         label="Password"
