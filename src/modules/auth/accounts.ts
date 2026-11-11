@@ -12,6 +12,7 @@ import { nameFromHandle } from '@/shared/names';
 import { passwordMatchesIdentity, IDENTITY_PASSWORD_MESSAGE } from '@/shared/validation/auth';
 import { audit } from './audit';
 import { BREACHED_PASSWORD_MESSAGE, isBreachedPassword } from './breached';
+import { DISPOSABLE_EMAIL_MESSAGE, isDisposableEmail } from './disposable-email';
 import { assertHuman } from './turnstile';
 import { recordAcceptance } from './legal';
 import { closeAccount, deletionDate, isHandleHeld, keepAccount } from './deletion';
@@ -120,6 +121,11 @@ export async function signUp(
 ): Promise<void> {
   await enforceRateLimit(`auth:signup:ip:${ctx.ip}`, RATE.signupIp);
   await enforceRateLimit(`auth:signup:email:${keyDigest(input.email)}`, RATE.signupEmail);
+  // Throwaway inboxes are how one person makes many accounts. Decided by the domain alone, so the answer says nothing
+  // about whether this address has an account.
+  if (isDisposableEmail(input.email)) {
+    throw new AppError('VALIDATION_FAILED', { fields: { email: DISPOSABLE_EMAIL_MESSAGE } });
+  }
   // The bot check, after the limits (a flood never reaches Cloudflare) and before any work on the account.
   await assertHuman(input.turnstileToken, ctx);
 
