@@ -125,8 +125,9 @@ export default async function HomePage() {
                 isOwner: false,
                 canPost: true,
                 canAddPhoto: true,
-                // A video only when your own wall is friends-only (ADR-064); the server checks again.
-                canAddVideo: ranch.fenceVisibility === 'posse',
+                // A video only when your own wall is friends-only (ADR-064); the server checks again. The team account's
+                // wall is always public whatever its setting says (effectiveVisibility), so it never gets the button.
+                canAddVideo: ranch.fenceVisibility === 'posse' && !ranch.verified,
                 review: false,
               }}
             />
