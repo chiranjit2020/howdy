@@ -28,7 +28,7 @@ import {
   CloseIcon,
   CommentIcon,
   PinIcon,
-  PlayIcon,
+  PlayFillIcon,
   ReplyIcon,
   SendIcon,
   VideoIcon,
@@ -180,6 +180,24 @@ function videoStatus(v: { stage: VideoStage | null; trimmed?: boolean }): string
   return v.trimmed ? `Ready · first ${VIDEO_MAX_SECONDS} s kept` : 'Ready';
 }
 
+/**
+ * The play mark on a video (2026-11-11): a header-blue disc with a Sunflower triangle, no ring. The triangle sits a
+ * touch right of centre, which is where the eye expects it.
+ */
+function VideoPlayBadge({ size }: { size: 'md' | 'lg' }) {
+  return (
+    <span
+      aria-hidden
+      className={cn(
+        'flex items-center justify-center rounded-full bg-header shadow-clay',
+        size === 'lg' ? 'size-16' : 'size-12',
+      )}
+    >
+      <PlayFillIcon className={cn('translate-x-0.5 text-primary', size === 'lg' ? 'size-8' : 'size-6')} />
+    </span>
+  );
+}
+
 const RING_R = 22;
 const RING_C = 2 * Math.PI * RING_R;
 
@@ -230,7 +248,7 @@ function VideoPreview({
         ) : (
           <>
             <div aria-hidden className="absolute inset-0 flex items-center justify-center">
-              <PlayIcon className="size-12 rounded-full bg-scrim text-on-scrim" />
+              <VideoPlayBadge size="md" />
             </div>
             {video.durationMs ? (
               <span className="absolute right-2 bottom-2 rounded-full bg-scrim px-2 py-0.5 text-metadata text-on-scrim">
@@ -850,7 +868,7 @@ export function PostVideo({ video, label }: { video: PostVideoData; label: strin
             className={cn('block w-full', tall ? 'h-full object-cover' : 'h-auto')}
           />
           <span className="absolute inset-0 flex items-center justify-center">
-            <PlayIcon className="size-16 rounded-full bg-scrim text-on-scrim" />
+            <VideoPlayBadge size="lg" />
           </span>
           <span className="absolute right-2 bottom-2 rounded-full bg-scrim px-2 py-0.5 text-metadata text-on-scrim">
             {clock(video.durationMs)}

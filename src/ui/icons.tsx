@@ -33,6 +33,7 @@ import {
   PiPauseCircle,
   PiPencilSimple,
   PiPlayCircle,
+  PiPlayFill,
   PiPlus,
   PiPushPin,
   PiShield,
@@ -103,6 +104,8 @@ export const PlusIcon = go(PiPlus);
 // A group's pinned notice.
 export const PinIcon = go(PiPushPin);
 export const PlayIcon = go(PiPlayCircle);
+/** A solid play triangle (the video play badge: Sunflower on header blue). */
+export const PlayFillIcon = go(PiPlayFill);
 // Add or change a photo.
 export const CameraIcon = go(PiCamera);
 // Add a video to a post (ADR-064).
