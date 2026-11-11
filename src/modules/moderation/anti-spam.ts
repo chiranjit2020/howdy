@@ -21,7 +21,9 @@ export const NEW_ACCOUNT_RATE = {
   card: rule(15, 86_400),
   reply: rule(40, 86_400),
   reaction: rule(150, 86_400),
-  palRequest: rule(8, 86_400),
+  // 20 since 2026-11-12 (was 8): Home suggests 10 people at a time, so a real newcomer adding friends hit 8 on day one.
+  // It now equals everyone's daily limit (relationships RATE.request), so in practice the 50-waiting cap is what binds.
+  palRequest: rule(20, 86_400),
   whisper: rule(200, 86_400),
   townHallCreate: rule(1, 86_400),
   townHallInvite: rule(15, 86_400),

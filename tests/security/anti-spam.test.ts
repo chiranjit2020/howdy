@@ -24,8 +24,8 @@ const as = (p: { cookie: string }) => ({ cookie: p.cookie });
 /** A brand-new account (created just now). */
 const newcomer = (tag: string) => signedInUser(kit, uniqueUser(tag));
 /** An account old enough to be past its first week. */
-async function regular(tag: string): Promise<P> {
-  const p = await signedInUser(kit, uniqueUser(tag));
+async function regular(tag: string, opts: { ip?: string } = {}): Promise<P> {
+  const p = await signedInUser(kit, uniqueUser(tag), opts);
   await q("update users set created_at = now() - interval '30 days' where handle = $1", [p.handle]);
   return p;
 }
@@ -68,7 +68,8 @@ describe('new accounts have tighter daily budgets', () => {
   it('Friend requests', async () => {
     const fresh = await newcomer('fresh');
     for (let i = 0; i < NEW_ACCOUNT_RATE.palRequest.limit; i++) {
-      const other = await regular(`target${i}`);
+      // Each from its own address: 21 sign-ups from one would hit the sign-up limit (10 an hour) first.
+      const other = await regular(`target${i}`, { ip: `203.0.113.${i + 1}` });
       expect((await doAct(other.handle, 'request', as(fresh))).status).toBe(200);
     }
     const last = await regular('last');

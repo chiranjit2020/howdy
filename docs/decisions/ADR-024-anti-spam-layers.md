@@ -14,7 +14,7 @@ Decisions taken with you (2026-09-29): **new-account limits**, **link safety** a
 ## Decisions
 
 1. **First-week budgets, on top of everyone's limits.** An account under 7 days old has an extra daily budget per action:
-   15 Post Cards, 40 replies, 150 reactions, 8 Pal requests, 200 Whispers, 1 Town Hall, 15 Town Hall invites
+   15 Post Cards, 40 replies, 150 reactions, 20 Pal requests (8 until 2026-11-12), 200 Whispers, 1 Town Hall, 15 Town Hall invites
    (`NEW_ACCOUNT_RATE`). These are generous for a real person's first week and far too small for a spam run. They lift
    by themselves on day 8. Like every per-person limit, each one is spent **before** anything is looked up (lesson 5),
    so running out says nothing about whether a call sign exists. Tested with a made-up call sign.

@@ -109,14 +109,18 @@ export async function signUpUser(kit: TestKit, u = uniqueUser(), opts: CallOpts 
 }
 
 /** Sign up and confirm the email, returning credentials. */
-export async function verifiedUser(kit: TestKit, u = uniqueUser()) {
-  const created = await signUpUser(kit, u);
+export async function verifiedUser(kit: TestKit, u = uniqueUser(), opts: CallOpts = {}) {
+  const created = await signUpUser(kit, u, opts);
   if (created.response.status !== 202) throw new Error(`signup failed: ${created.response.text}`);
   const mail = kit.mailer.lastTo(u.email);
   if (!mail) throw new Error('no verification mail');
-  const v = await call(authHandlers.verifyEmail, 'POST', '/api/auth/verify-email', {
-    token: tokenFrom(mail.text),
-  });
+  const v = await call(
+    authHandlers.verifyEmail,
+    'POST',
+    '/api/auth/verify-email',
+    { token: tokenFrom(mail.text) },
+    opts,
+  );
   if (v.status !== 200) throw new Error(`verify failed: ${v.text}`);
   return u;
 }
@@ -134,7 +138,7 @@ export async function loginAs(u: { email: string; password: string }, opts: Call
 
 /** Sign up, verify and log in in one go. */
 export async function signedInUser(kit: TestKit, u = uniqueUser(), opts: CallOpts = {}) {
-  await verifiedUser(kit, u);
+  await verifiedUser(kit, u, opts);
   const l = await loginAs(u, opts);
   if (!l.cookie) throw new Error(`login failed: ${l.text}`);
   return { ...u, cookie: l.cookie };
