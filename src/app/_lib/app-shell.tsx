@@ -19,7 +19,49 @@ import { liveChannelFor } from '@/platform/live-ping';
 import { LiveRefresh } from '@/ui/live/live-refresh';
 import { LiveProvider } from '@/ui/live/use-live-ring';
 import { PwaBoot } from '@/ui/pwa/pwa-boot';
-import { AppShell } from '@/ui/shell/app-shell';
+import { AppShell, NO_COUNTS, type ShellCounts } from '@/ui/shell/app-shell';
+import { Streamed } from '@/ui/shell/streamed';
+
+/**
+ * The counts beside the menu, the bell's number and Free to talk. Never rejects: a count that cannot be read is zero, so
+ * a hiccup never takes the page down (the frame already went out without them).
+ */
+async function shellCounts(userId: string, moderator: boolean): Promise<ShellCounts> {
+  const [unread, unreadWhispers, townHallInvites, friendRequests, visits, lit, mine, standing] =
+    await Promise.all([
+      unreadCount(userId).catch(() => 0),
+      unreadThreads(userId).catch(() => 0),
+      countMyInvites(userId).catch(() => 0),
+      // Friend requests waiting for me, from people who are still active (what the Friends page lists).
+      incomingRequesterIds(userId)
+        .then(async (ids) => (await getCards(ids)).size)
+        .catch(() => 0),
+      newVisits(userId).catch(() => 0),
+      // Free to talk (Porch Lights, ADR-032): the friends whose light is on for me, and my own.
+      litPals(userId).catch(() => []),
+      myLight(userId).catch(() => null),
+      // Only staff can be admins, so everyone else skips the lookup.
+      moderator
+        ? adminStanding(userId).catch(() => 'not_admin' as const)
+        : Promise.resolve('not_admin' as const),
+    ]);
+  await attachPortraits(
+    userId,
+    lit.map((l) => l.pal),
+  ).catch(() => undefined);
+  return {
+    unread,
+    unreadWhispers,
+    townHallInvites,
+    friendRequests,
+    newVisits: visits,
+    freeToTalk: {
+      lit: lit.map((l) => ({ ...l.pal, note: l.note, untilLabel: clockOf(l.until) })),
+      mine: mine ? { audience: mine.audience, note: mine.note, untilLabel: clockOf(mine.until) } : null,
+    },
+    admin: standing !== 'not_admin',
+  };
+}
 
 /**
  * Works out who is looking and what the shell needs to show for them: their name and avatar tint, and the counts beside
@@ -55,41 +97,27 @@ export async function AppFrame({
       </>
     );
   }
-  const [unread, unreadWhispers, invites, requests, visits, ranch, photo, pending, moderator, lit, mine] =
-    await Promise.all([
-      unreadCount(user.id).catch(() => 0),
-      unreadThreads(user.id).catch(() => 0),
-      countMyInvites(user.id).catch(() => 0),
-      // Friend requests waiting for me, from people who are still active (what the Friends page lists).
-      incomingRequesterIds(user.id)
-        .then(async (ids) => (await getCards(ids)).size)
-        .catch(() => 0),
-      newVisits(user.id).catch(() => 0),
-      getOwnRanch(user.id).catch(() => null),
-      getPortraitVersion(user.id, { userId: user.id }).catch(() => null),
-      // Best-effort like the rest: if the check itself fails, let the person in rather than take every page down.
-      askToAgree ? pendingAcceptances(user.id).catch(() => []) : Promise.resolve([]),
-      isModerator(user.id).catch(() => false),
-      // Free to talk (Porch Lights, ADR-032): the friends whose light is on for me, and my own.
-      litPals(user.id).catch(() => []),
-      myLight(user.id).catch(() => null),
-    ]);
+  // Only what shapes the frame is waited for: your name and picture, the Terms check (it may send you elsewhere) and
+  // whether the Moderation link is there. The counts (below) are started now but NOT waited for: the frame and the page
+  // go out at once and the badges stream in (2026-11-12; waiting for all of them cost live Home ~2 s before its first byte).
+  const [ranch, photo, pending, moderator] = await Promise.all([
+    getOwnRanch(user.id).catch(() => null),
+    getPortraitVersion(user.id, { userId: user.id }).catch(() => null),
+    // Best-effort like the rest: if the check itself fails, let the person in rather than take every page down.
+    askToAgree ? pendingAcceptances(user.id).catch(() => []) : Promise.resolve([]),
+    isModerator(user.id).catch(() => false),
+  ]);
   if (pending.length > 0) redirect('/agree');
-  await attachPortraits(
-    user.id,
-    lit.map((l) => l.pal),
-  );
-  const freeToTalk = {
-    lit: lit.map((l) => ({ ...l.pal, note: l.note, untilLabel: clockOf(l.until) })),
-    mine: mine ? { audience: mine.audience, note: mine.note, untilLabel: clockOf(mine.until) } : null,
-  };
-  // Only staff can be admins, so everyone else skips the extra lookup.
-  const admin = moderator && (await adminStanding(user.id).catch(() => 'not_admin' as const)) !== 'not_admin';
+  const counts = shellCounts(user.id, moderator).catch(() => NO_COUNTS);
   return (
     <LiveProvider channel={liveChannelFor(user.id)}>
       {/* New notification or message: the counts beside the menu (and whatever the page draws) catch up by themselves. */}
       <LiveRefresh />
-      <PwaBoot signedIn unread={unread} vapidKey={pushPublicKey()} />
+      {/* Waits for the unread count (it sets the app icon's number), so it starts once the counts are in. */}
+      <Streamed
+        value={counts}
+        render={(c) => <PwaBoot signedIn unread={c.unread} vapidKey={pushPublicKey()} />}
+      />
       <AppShell
         me={{
           handle: user.handle,
@@ -97,14 +125,8 @@ export async function AppFrame({
           portraitTint: ranch?.portraitTint,
           portraitUrl: photo ? portraitUrl(user.handle, photo) : null,
         }}
-        unread={unread}
-        unreadWhispers={unreadWhispers}
-        friendRequests={requests}
-        newVisits={visits}
-        townHallInvites={invites}
-        freeToTalk={freeToTalk}
         moderator={moderator}
-        admin={admin}
+        live={counts}
       >
         {children}
       </AppShell>
