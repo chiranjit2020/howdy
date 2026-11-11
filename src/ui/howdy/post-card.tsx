@@ -25,12 +25,12 @@ import { Img } from '../art/img';
 import { cn } from '../cn';
 import {
   CameraIcon,
+  CloseIcon,
   CommentIcon,
   PinIcon,
   PlayIcon,
   ReplyIcon,
   SendIcon,
-  SpinnerIcon,
   VideoIcon,
 } from '../icons';
 import { Avatar } from '../primitives/avatar';
@@ -180,6 +180,81 @@ function videoStatus(v: { stage: VideoStage | null; trimmed?: boolean }): string
   return v.trimmed ? `Ready · first ${VIDEO_MAX_SECONDS} s kept` : 'Ready';
 }
 
+const RING_R = 22;
+const RING_C = 2 * Math.PI * RING_R;
+
+/**
+ * A chosen video in the post box (ADR-064, design A of 2026-11-11): the poster frame, dimmed under a sunflower ring that
+ * fills with the percentage while it is on its way; once ready, a play mark and its length. The round × stops the upload
+ * or removes the video. The ring is SVG attributes, not inline styles (the CSP refuses style="" in server HTML).
+ */
+function VideoPreview({
+  video,
+  onRemove,
+}: {
+  video: { poster?: string; stage: VideoStage | null; trimmed?: boolean; durationMs?: number };
+  onRemove: () => void;
+}) {
+  const pct = video.stage ? videoPercent(video.stage) : 100;
+  return (
+    <div className="flex flex-col items-start gap-1 self-start">
+      <div className="relative overflow-hidden rounded-card-inset">
+        {video.poster ? (
+          // eslint-disable-next-line @next/next/no-img-element -- a blob: preview of the poster frame
+          <img
+            src={video.poster}
+            alt="The first moments of the video you chose"
+            className="max-h-48 object-cover"
+          />
+        ) : (
+          <div className="h-36 w-64 bg-surface-sunken" />
+        )}
+        {video.stage ? (
+          <div aria-hidden className="absolute inset-0 flex items-center justify-center bg-scrim/45">
+            <svg width="64" height="64" viewBox="0 0 64 64" className="-rotate-90">
+              <circle cx="32" cy="32" r={RING_R} fill="none" strokeWidth="5" className="stroke-on-scrim/30" />
+              <circle
+                cx="32"
+                cy="32"
+                r={RING_R}
+                fill="none"
+                strokeWidth="5"
+                strokeLinecap="round"
+                strokeDasharray={RING_C}
+                strokeDashoffset={RING_C * (1 - pct / 100)}
+                className="stroke-primary transition-[stroke-dashoffset] duration-200"
+              />
+            </svg>
+            <span className="absolute text-caption font-semibold text-on-scrim">{pct}%</span>
+          </div>
+        ) : (
+          <>
+            <div aria-hidden className="absolute inset-0 flex items-center justify-center">
+              <PlayIcon className="size-12 rounded-full bg-scrim text-on-scrim" />
+            </div>
+            {video.durationMs ? (
+              <span className="absolute right-2 bottom-2 rounded-full bg-scrim px-2 py-0.5 text-metadata text-on-scrim">
+                {clock(video.durationMs)}
+              </span>
+            ) : null}
+          </>
+        )}
+        <button
+          type="button"
+          onClick={onRemove}
+          aria-label={video.stage ? 'Stop uploading the video' : 'Remove the video'}
+          className="absolute top-2 right-2 flex size-8 items-center justify-center rounded-full bg-scrim text-on-scrim focus-visible:outline-2 focus-visible:outline-focus"
+        >
+          <CloseIcon className="size-4" />
+        </button>
+      </div>
+      <p aria-live="polite" className="text-metadata text-text-secondary">
+        {videoStatus(video)}
+      </p>
+    </div>
+  );
+}
+
 /**
  * Composer for a Post Card (500), a reply (280) or a Town Hall post (280). Limits come from LIMITS; the server is the authority. A card composer
  * given `onPhoto` also offers one photo (ADR-031): it uploads as soon as it is chosen, shows a local preview, and its id
@@ -199,7 +274,12 @@ export function PostCardComposer({
   /** Upload a chosen photo; only offered when given (the server decides who may add one). */
   onPhoto?: (file: File) => Promise<PhotoUpload>;
   /** Prepare and upload a chosen video (ADR-064); only offered when given (friends-only walls). */
-  onVideo?: (file: File, onStage: (s: VideoStage) => void, signal: AbortSignal) => Promise<VideoUpload>;
+  onVideo?: (
+    file: File,
+    onStage: (s: VideoStage) => void,
+    signal: AbortSignal,
+    onPoster: (poster: File) => void,
+  ) => Promise<VideoUpload>;
   disabled?: boolean;
   /** Something before the box, outside the form (Home: your Story button when no friend has a Story). */
   lead?: ReactNode;
@@ -213,7 +293,8 @@ export function PostCardComposer({
   const [photoError, setPhotoError] = useState<string | undefined>();
   // A chosen video (ADR-064): its poster as a preview, where it is on its way, and its id once the server has it.
   const [video, setVideo] = useState<
-    { poster?: string; stage: VideoStage | null; id?: string; trimmed?: boolean } | undefined
+    | { poster?: string; stage: VideoStage | null; id?: string; trimmed?: boolean; durationMs?: number }
+    | undefined
   >();
   const videoJob = useRef<AbortController | null>(null);
   const uploading =
@@ -298,16 +379,22 @@ export function PostCardComposer({
         if (!job.signal.aborted) setVideo((v) => (v ? { ...v, stage } : v));
       },
       job.signal,
+      // The poster frame shows under the ring as soon as the phone has made it.
+      (poster) => {
+        if (!job.signal.aborted)
+          setVideo((v) => (v && !v.poster ? { ...v, poster: URL.createObjectURL(poster) } : v));
+      },
     );
     if (job.signal.aborted) return; // removed meanwhile
     videoJob.current = null;
     if (res.ok) {
-      setVideo({
-        poster: URL.createObjectURL(res.poster),
+      setVideo((v) => ({
+        poster: v?.poster ?? URL.createObjectURL(res.poster),
         stage: null,
         id: res.mediaId,
         trimmed: res.trimmed,
-      });
+        durationMs: res.durationMs,
+      }));
     } else {
       setVideo(undefined);
       setPhotoError(res.message);
@@ -438,35 +525,7 @@ export function PostCardComposer({
           </Button>
         </div>
       )}
-      {video && (
-        <div className="relative flex flex-col items-start gap-1 self-start">
-          <div className="relative overflow-hidden rounded-card-inset">
-            {video.poster ? (
-              // eslint-disable-next-line @next/next/no-img-element -- a blob: preview of the poster frame
-              <img
-                src={video.poster}
-                alt="The first moments of the video you chose"
-                className="max-h-40 object-contain"
-              />
-            ) : (
-              <div className="flex h-24 w-40 items-center justify-center bg-surface-sunken">
-                {!video.stage && <VideoIcon className="size-6 text-text-muted" />}
-              </div>
-            )}
-            {video.stage && (
-              <div aria-hidden className="absolute inset-0 flex items-center justify-center bg-scrim/40">
-                <SpinnerIcon className="size-8 animate-spin-slow text-on-scrim" />
-              </div>
-            )}
-          </div>
-          <p aria-live="polite" className="text-metadata text-text-secondary">
-            {videoStatus(video)}
-          </p>
-          <Button type="button" variant="ghost" size="sm" onClick={dropVideo} aria-label="Remove the video">
-            Remove video
-          </Button>
-        </div>
-      )}
+      {video && <VideoPreview video={video} onRemove={dropVideo} />}
       {open && (
         <div className="flex flex-wrap items-center justify-between gap-2">
           {!hasMedia && (onPhoto || onVideo) ? (

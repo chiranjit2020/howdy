@@ -61,6 +61,8 @@ export async function prepareVideo(
   chosen: File,
   onProgress: (fraction: number) => void,
   signal?: AbortSignal,
+  /** Called with the poster frame as soon as it exists (before the slow part), so the page can show it. */
+  onPoster?: (poster: File) => void,
 ): Promise<PrepareResult> {
   if (!mayPrepareVideo()) return { ok: false, message: UNSUPPORTED };
   const mb = await import('mediabunny');
@@ -97,6 +99,8 @@ export async function prepareVideo(
     const posterBlob = frame ? await canvasToJpeg(frame.canvas) : null;
     if (!posterBlob) return { ok: false, message: UNREADABLE };
     if (signal?.aborted) return { ok: false, message: 'Stopped.' };
+    const posterFile = new File([posterBlob], 'poster.jpg', { type: 'image/jpeg' });
+    onPoster?.(posterFile);
 
     const output = new mb.Output({
       format: new mb.Mp4OutputFormat({ fastStart: 'in-memory' }),
@@ -146,7 +150,7 @@ export async function prepareVideo(
     return {
       ok: true,
       file: new File([buffer], 'video.mp4', { type: VIDEO_TYPE }),
-      poster: new File([posterBlob], 'poster.jpg', { type: 'image/jpeg' }),
+      poster: posterFile,
       width,
       height,
       durationMs: Math.round(end * 1000),

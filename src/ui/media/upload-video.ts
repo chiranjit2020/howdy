@@ -43,7 +43,15 @@ function putWithProgress(
 }
 
 export type VideoUpload =
-  | { ok: true; mediaId: string; trimmed: boolean; poster: File; width: number; height: number }
+  | {
+      ok: true;
+      mediaId: string;
+      trimmed: boolean;
+      poster: File;
+      width: number;
+      height: number;
+      durationMs: number;
+    }
   | { ok: false; message: string };
 
 /**
@@ -52,15 +60,21 @@ export type VideoUpload =
  *   2. send the poster like any card photo (it is re-encoded and goes through the photo check)
  *   3. ask for a signed URL, send the MP4 straight to storage
  *   4. ask the server to finish: it checks the file's header and keeps the video for 3 days
- * `onStage` follows along; `signal` stops it.
+ * `onStage` follows along; `signal` stops it; `onPoster` gets the poster frame as soon as the phone has made it.
  */
 export async function uploadVideo(
   chosen: File,
   onStage: (s: VideoStage) => void,
   signal?: AbortSignal,
+  onPoster?: (poster: File) => void,
 ): Promise<VideoUpload> {
   onStage({ step: 'preparing', fraction: 0 });
-  const prepared = await prepareVideo(chosen, (fraction) => onStage({ step: 'preparing', fraction }), signal);
+  const prepared = await prepareVideo(
+    chosen,
+    (fraction) => onStage({ step: 'preparing', fraction }),
+    signal,
+    onPoster,
+  );
   if (!prepared.ok) return prepared;
   if (signal?.aborted) return { ok: false, message: 'Stopped.' };
 
@@ -104,5 +118,6 @@ export async function uploadVideo(
     poster: prepared.poster,
     width: prepared.width,
     height: prepared.height,
+    durationMs: prepared.durationMs,
   };
 }
