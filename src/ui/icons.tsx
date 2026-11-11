@@ -17,6 +17,10 @@ import {
   PiCheckCircle,
   PiClock,
   PiDeviceMobile,
+  PiDotsThreeVertical,
+  PiDownloadSimple,
+  PiExport,
+  PiList,
   PiDotsThreeBold,
   PiEye,
   PiEyeSlash,
@@ -116,6 +120,13 @@ export const SendIcon = go(PiPaperPlaneRight);
 // The chosen one in a set (a Describe word).
 export const CheckIcon = go(PiCheck);
 export const DevicesIcon = go(PiDeviceMobile);
+// "Install Howdy" (Home's Get the app bar).
+export const DownloadIcon = go(PiDownloadSimple);
+// The browser's own buttons, drawn in install hints so they match what is on the screen: iPhone's Share (a box with an
+// arrow up), Chrome's menu (⋮), Samsung Internet's menu (☰).
+export const ShareIosIcon = go(PiExport);
+export const BrowserMenuIcon = go(PiDotsThreeVertical);
+export const BrowserMenuBarsIcon = go(PiList);
 export const SignOutIcon = go(PiSignOut);
 // Send feedback about Howdy (ADR-059).
 export const FeedbackIcon = go(PiMegaphone);

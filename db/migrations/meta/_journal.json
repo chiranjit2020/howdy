@@ -414,6 +414,13 @@
       "when": 1794344513544,
       "tag": "0058_card_videos",
       "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "7",
+      "when": 1794385306230,
+      "tag": "0059_app_installed_at",
+      "breakpoints": true
     }
   ]
 }

@@ -18,6 +18,7 @@ export {
 } from './retention';
 export { dueDeletions, eraseAccount, purgeFreedHandles } from './deletion';
 export { acceptCurrentTerms, pendingAcceptances } from './legal';
+export { hasInstalledApp, markAppInstalled } from './app-install';
 export { accountExport, verifyForExport } from './export';
 export { hasTwoStep, twoStepSummary } from './two-step';
 export { turnstileSiteKey } from './turnstile';

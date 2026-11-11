@@ -1,6 +1,8 @@
+import { cookies, headers } from 'next/headers';
 import { attachPortraits, withCards } from '@/app/_lib/social';
 import { FenceSection } from '@/app/profile/[handle]/fence-section';
-import { requireUser } from '@/modules/auth';
+import { hasInstalledApp, requireUser } from '@/modules/auth';
+import { GET_APP_COMPACT_COOKIE, isPhoneAgent } from '@/ui/pwa/install-steps';
 import { myCapsules } from '@/modules/capsules';
 import { listFriendsFeed } from '@/modules/fence';
 import { getPortraitVersion } from '@/modules/media';
@@ -16,6 +18,7 @@ import { portraitUrl } from '@/shared/portrait';
 import { getEnv } from '@/platform/config/env';
 import { liveChannelFor } from '@/platform/live-ping';
 import { ChatDockProvider } from './chat-dock';
+import { GetAppBar } from './get-app-bar';
 import { HomeRail, WhatsNew } from './home-rail';
 import { MemoriesCard } from './memories-card';
 import { StoriesStrip } from './stories-strip';
@@ -31,32 +34,53 @@ export const metadata = { title: 'Home' };
  */
 export default async function HomePage() {
   const user = await requireUser();
+  // "Get the Howdy app" (top of Home, phones only; slim after "Not now"): decided here so the page never jumps.
+  const [head, jar] = await Promise.all([headers(), cookies()]);
+  const ua = head.get('user-agent') ?? '';
+  const mayOfferApp = isPhoneAgent(ua);
+  const slimApp = jar.has(GET_APP_COMPACT_COOKIE);
   // Independent lookups, asked for together rather than one after another. Everything but your own profile is
   // best-effort: Home never fails because one part could not be read.
-  const [ranch, photo, lists, news, memories, ring, feed, lit, mine, threads, capsules, suggestions] =
-    await Promise.all([
-      getOwnRanch(user.id),
-      getPortraitVersion(user.id, { userId: user.id }).catch(() => null),
-      // For the announcement below: whether this person has muted the Howdy team.
-      listMyRelationships(user.id).then((r) => withCards(r, user.id)),
-      getTeamAnnouncement().catch(() => null),
-      memoriesToday(user.id).catch(() => null),
-      // Stories (ADR-047).
-      storyRing(user.id).catch(() => []),
-      listFriendsFeed(user.id, { rateKey: user.id }).catch(() => null),
-      // The right panel: friends who switched Free to talk on, and the latest conversations.
-      litPals(user.id).catch(() => []),
-      myLight(user.id).catch(() => null),
-      listThreads(user.id)
-        .then((t) => t.slice(0, 5))
-        .catch(() => null),
-      // Time Capsules coming to me (never their words), with the page's own rules for whose still count.
-      myCapsules(user.id)
-        .then((c) => c.coming)
-        .catch(() => null),
-      // "Friends you may know" (ADR-029; on Home since ADR-061): a row of small cards before the posts.
-      palSuggestions(user.id).catch(() => []),
-    ]);
+  const [
+    ranch,
+    photo,
+    lists,
+    news,
+    memories,
+    ring,
+    feed,
+    lit,
+    mine,
+    threads,
+    capsules,
+    suggestions,
+    installed,
+  ] = await Promise.all([
+    getOwnRanch(user.id),
+    getPortraitVersion(user.id, { userId: user.id }).catch(() => null),
+    // For the announcement below: whether this person has muted the Howdy team.
+    listMyRelationships(user.id).then((r) => withCards(r, user.id)),
+    getTeamAnnouncement().catch(() => null),
+    memoriesToday(user.id).catch(() => null),
+    // Stories (ADR-047).
+    storyRing(user.id).catch(() => []),
+    listFriendsFeed(user.id, { rateKey: user.id }).catch(() => null),
+    // The right panel: friends who switched Free to talk on, and the latest conversations.
+    litPals(user.id).catch(() => []),
+    myLight(user.id).catch(() => null),
+    listThreads(user.id)
+      .then((t) => t.slice(0, 5))
+      .catch(() => null),
+    // Time Capsules coming to me (never their words), with the page's own rules for whose still count.
+    myCapsules(user.id)
+      .then((c) => c.coming)
+      .catch(() => null),
+    // "Friends you may know" (ADR-029; on Home since ADR-061): a row of small cards before the posts.
+    palSuggestions(user.id).catch(() => []),
+    // Only asked on a phone; when it cannot be read, the bar stays away.
+    mayOfferApp ? hasInstalledApp(user.id).catch(() => true) : true,
+  ]);
+  const offerApp = mayOfferApp && !installed;
   // One look-up for every photo on the page, whoever it belongs to.
   await attachPortraits(user.id, [
     ...ring.map((r) => r.person),
@@ -99,6 +123,7 @@ export default async function HomePage() {
         <main id="main" className="mx-auto flex w-full max-w-2xl min-w-0 flex-col gap-4">
           {/* The page's name for screen readers and the outline; on screen the sidebar already says where you are. */}
           <h1 className="sr-only">Home</h1>
+          {offerApp && <GetAppBar ua={ua} compact={slimApp} />}
           {storiesRow && stories('row')}
           {/* Below xl there is no right panel: the team's note and On this day come before the feed instead. */}
           {announcement && (

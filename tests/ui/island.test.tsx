@@ -4,7 +4,8 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DynamicIsland } from '@/ui/island/island';
 import { dismissActivity, resetIsland, showActivity } from '@/ui/island/store';
-import { INSTALL_STEPS, installBrowser } from '@/ui/pwa/install-island';
+import { GetAppBar } from '@/app/(app)/home/get-app-bar';
+import { chromeIntentUrl, installAction, installBrowser, isPhoneAgent, osOf } from '@/ui/pwa/install-steps';
 import { axeViolations } from './setup';
 
 afterEach(() => act(() => resetIsland()));
@@ -19,6 +20,8 @@ const UA = {
     'Mozilla/5.0 (Linux; Android 14; Pixel 7; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/129.0 Mobile Safari/537.36 Instagram 350.0',
   iphone:
     'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1',
+  iphoneInstagram:
+    'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 Instagram 350.0',
 };
 
 describe('which install steps a browser gets', () => {
@@ -31,7 +34,6 @@ describe('which install steps a browser gets', () => {
     expect(installBrowser(UA.firefox, 'android', false)).toBe('firefox');
     expect(installBrowser(UA.instagram, 'android', false)).toBe('in-app');
     expect(installBrowser(UA.iphone, 'ios', false)).toBe('ios');
-    for (const steps of Object.values(INSTALL_STEPS)) expect(steps.length).toBeGreaterThan(0);
   });
 });
 
@@ -78,5 +80,82 @@ describe('the Dynamic Island', () => {
     await user.click(screen.getByRole('button', { name: 'Dismiss: Get the Howdy app' }));
     expect(onDismiss).toHaveBeenCalledOnce();
     expect(screen.queryByRole('region', { name: 'Howdy island' })).not.toBeInTheDocument();
+  });
+});
+
+describe('Home’s “Get the Howdy app” bar (replaced the island’s pop-up)', () => {
+  afterEach(() => {
+    document.cookie = 'howdy_get_app_compact=; Max-Age=0; Path=/';
+  });
+
+  it('each browser gets one thing to do, never a numbered list', () => {
+    const act_ = (ua: string, offer = false) => installAction(installBrowser(ua, osOf(ua), offer), osOf(ua));
+    expect(act_(UA.chromeAndroid, true)).toBe('install');
+    expect(act_(UA.chromeAndroid)).toBe('install');
+    expect(act_(UA.iphone)).toBe('home-screen');
+    expect(act_(UA.instagram)).toBe('open-chrome');
+    expect(act_(UA.iphoneInstagram)).toBe('none');
+    expect(chromeIntentUrl('https://howdy.example/home?x=1')).toBe(
+      'intent://howdy.example/home?x=1#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=https%3A%2F%2Fhowdy.example%2Fhome%3Fx%3D1;end',
+    );
+  });
+
+  it('iPhone: “Add to Home Screen”, and a tap shows the one line with the Share icon', async () => {
+    const user = userEvent.setup();
+    const { container } = render(<GetAppBar ua={UA.iphone} />);
+    expect(screen.getByRole('heading', { name: 'Get the Howdy app' })).toBeInTheDocument();
+    expect(screen.getByRole('status')).toBeEmptyDOMElement();
+    await user.click(screen.getByRole('button', { name: 'Add to Home Screen' }));
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'Tap Share in your browser’s bar, then Add to Home Screen.',
+    );
+    expect(screen.queryByRole('listitem')).not.toBeInTheDocument();
+    expect(await axeViolations(container)).toEqual([]);
+  });
+
+  it('Instagram on iPhone: no button that cannot work, just the line to open Safari', () => {
+    render(<GetAppBar ua={UA.iphoneInstagram} />);
+    expect(screen.queryByRole('button', { name: /Install|Add to Home|Open in/ })).not.toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent('open this page in Safari');
+  });
+
+  it('Instagram on Android: “Open in Chrome”', () => {
+    render(<GetAppBar ua={UA.instagram} />);
+    expect(screen.getByRole('button', { name: 'Open in Chrome' })).toBeInTheDocument();
+  });
+
+  it('“Not now” shrinks it to one slim line that stays (what is missed + Install), and remembers that', async () => {
+    const user = userEvent.setup();
+    const { container } = render(<GetAppBar ua={UA.chromeAndroid} />);
+    await user.click(screen.getByRole('button', { name: 'Not now' }));
+    expect(screen.queryByRole('heading', { name: 'Get the Howdy app' })).not.toBeInTheDocument();
+    const slim = screen.getByRole('region', { name: 'Get the Howdy app' });
+    expect(slim).toHaveTextContent('You’re missing message notifications.');
+    expect(screen.queryByRole('button', { name: 'Not now' })).not.toBeInTheDocument(); // nothing more to wave away
+    expect(screen.getByRole('button', { name: 'Install' })).toHaveFocus();
+    expect(document.cookie).toContain('howdy_get_app_compact=1');
+    expect(await axeViolations(container)).toEqual([]);
+  });
+
+  it('slim from the first paint once chosen; on iPhone its Install shows the Share hint', async () => {
+    const user = userEvent.setup();
+    render(<GetAppBar ua={UA.iphone} compact />);
+    expect(screen.queryByRole('heading', { name: 'Get the Howdy app' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Install' })).not.toHaveFocus(); // focus moves only after a tap
+    await user.click(screen.getByRole('button', { name: 'Install' }));
+    expect(screen.getByRole('status')).toHaveTextContent('Tap Share in your browser’s bar');
+  });
+
+  it('goes away as soon as the browser says Howdy was installed', () => {
+    render(<GetAppBar ua={UA.chromeAndroid} />);
+    act(() => void window.dispatchEvent(new Event('appinstalled')));
+    expect(screen.queryByRole('heading', { name: 'Get the Howdy app' })).not.toBeInTheDocument();
+  });
+
+  it('only phones get it', () => {
+    expect(isPhoneAgent(UA.iphone)).toBe(true);
+    expect(isPhoneAgent(UA.samsung)).toBe(true);
+    expect(isPhoneAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/129.0 Safari/537.36')).toBe(false);
+    expect(isPhoneAgent(null)).toBe(false);
   });
 });

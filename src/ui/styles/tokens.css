@@ -142,6 +142,11 @@
    * out on white without an outline. The sparks that burst from it stay brand Sunflower, like the logo's.
    */
   --color-star: #f2b100;
+  /*
+   * The edge of a raised Sunflower button (Home's "Install Howdy", 2026-11-11, the user's ask: "a bit 3D"): Sunflower
+   * in shadow, so the button reads as a key standing on the card. Decoration only, never behind words.
+   */
+  --color-highlight-edge: #c99a00;
   /* The top of the given Star's gradient: light Sunflower, so it looks lit from above. */
   --color-star-light: #ffe177;
   /* The top bar (TRIAL, 2026-11-08): a bright sky blue behind the white-and-yellow logo. Same in both themes. */

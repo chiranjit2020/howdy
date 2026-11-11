@@ -1,0 +1,1 @@
+ALTER TABLE "users" ADD COLUMN "app_installed_at" timestamp with time zone;

@@ -36,6 +36,11 @@ export const users = pgTable(
      * it for good; signing in before then can keep it (ADR-027).
      */
     deletionRequestedAt: tstz('deletion_requested_at'),
+    /**
+     * The first time this person opened Howdy as the installed app (home-screen icon). Home's "Get the Howdy app" bar
+     * goes away for good once set; iPhone never tells a web page it was installed, so this is the only reliable sign.
+     */
+    appInstalledAt: tstz('app_installed_at'),
     createdAt: tstz('created_at').notNull().defaultNow(),
     updatedAt: tstz('updated_at').notNull().defaultNow(),
   },
