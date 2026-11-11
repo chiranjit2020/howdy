@@ -19,8 +19,9 @@ const LOGO_HEIGHT = {
 
 // `onColour`: the white wordmark with the yellow speech bubble and sparks, for the blue top bar (it vanishes on white).
 const ART = {
-  default: { src: '/brand/howdy-wordmark.png', width: 728, height: 224 },
-  onColour: { src: '/brand/howdy-logo-sparks.png', width: 658, height: 224 },
+  // WebP (2026-11-12): the sparks PNG was 74 KB, the top bar's heaviest picture on every page; the WebP is 23 KB.
+  default: { src: '/brand/howdy-wordmark.webp', width: 728, height: 224 },
+  onColour: { src: '/brand/howdy-logo-sparks.webp', width: 658, height: 224 },
 } as const;
 
 /** The Howdy wordmark (the brand artwork). Links to the Gate unless told otherwise (signed-in pages point it at Home). */

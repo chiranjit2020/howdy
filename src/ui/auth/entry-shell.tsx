@@ -25,7 +25,7 @@ export function EntryLogo() {
       className="inline-flex min-h-11 items-center self-center no-underline hover:no-underline"
     >
       <Img
-        src="/brand/howdy-wordmark.png"
+        src="/brand/howdy-wordmark.webp"
         width={728}
         height={224}
         alt="Howdy"

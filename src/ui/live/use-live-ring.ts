@@ -17,6 +17,31 @@ interface Bell {
 const BellContext = createContext<Bell | null>(null);
 
 /**
+ * Resolves once the page has loaded and the browser has a quiet moment (at most 5 s after load), or at the person's
+ * first tap or key press, whichever comes first.
+ */
+function whenSettled(): Promise<void> {
+  return new Promise((resolve) => {
+    const events = ['pointerdown', 'keydown'] as const;
+    let done = false;
+    const go = () => {
+      if (done) return;
+      done = true;
+      events.forEach((e) => window.removeEventListener(e, go, true));
+      window.removeEventListener('load', idle);
+      resolve();
+    };
+    const idle = () => {
+      if ('requestIdleCallback' in window) window.requestIdleCallback(go, { timeout: 5000 });
+      else setTimeout(go, 2000);
+    };
+    events.forEach((e) => window.addEventListener(e, go, { capture: true, once: true, passive: true }));
+    if (document.readyState === 'complete') idle();
+    else window.addEventListener('load', idle, { once: true });
+  });
+}
+
+/**
  * Open one connection to my own Ably channel and tell every listener when it rings. The ring says only "something new":
  * what is new is always fetched from Howdy's own API. Ably's library is loaded only when a channel is given (instant
  * updates set up). Any failure just leaves pages checking by themselves, as they would without Ably.
@@ -36,6 +61,11 @@ function useBellConnection(channel: string | undefined): Bell {
     let close: (() => void) | undefined;
     void (async () => {
       try {
+        // Ably's library is ~200 KB of script: parsing it while the page is still drawing cost a slow phone over a second
+        // of frozen screen (Lighthouse, 2026-11-12). The bell can wait until the page is up and the phone is idle, or
+        // until the first tap; pages check by themselves meanwhile, so nothing is missed.
+        await whenSettled();
+        if (closed) return;
         const Ably = await import('ably');
         if (closed) return;
         const client = new Ably.Realtime({
