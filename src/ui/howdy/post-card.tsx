@@ -181,8 +181,9 @@ function videoStatus(v: { stage: VideoStage | null; trimmed?: boolean }): string
 }
 
 /**
- * The play mark on a video (2026-11-11): a header-blue disc with a Sunflower triangle, no ring. The triangle sits a
- * touch right of centre, which is where the eye expects it.
+ * The play mark on a video (2026-11-11): a header-blue disc with a Sunflower triangle, no ring. The triangle is
+ * moved a little left: Phosphor's glyph already sits right in its box (≈2 px at this size), which looked off-centre;
+ * this leaves it just right of exact centre, which reads as centred.
  */
 function VideoPlayBadge({ size }: { size: 'md' | 'lg' }) {
   return (
@@ -190,10 +191,15 @@ function VideoPlayBadge({ size }: { size: 'md' | 'lg' }) {
       aria-hidden
       className={cn(
         'flex items-center justify-center rounded-full bg-header shadow-clay',
-        size === 'lg' ? 'size-16' : 'size-12',
+        size === 'lg' ? 'size-14' : 'size-10',
       )}
     >
-      <PlayFillIcon className={cn('translate-x-0.5 text-primary', size === 'lg' ? 'size-8' : 'size-6')} />
+      <PlayFillIcon
+        className={cn(
+          'text-primary',
+          size === 'lg' ? 'size-7 -translate-x-[1.5px]' : 'size-5 -translate-x-px',
+        )}
+      />
     </span>
   );
 }
