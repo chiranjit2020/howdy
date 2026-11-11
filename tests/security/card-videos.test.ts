@@ -21,9 +21,10 @@ import { fenceOf, flagCard, nail, scrape } from '../helpers/fence';
 import { freshStore, inspect, jpeg, sendToStorage } from '../helpers/media';
 import { actOnReport, makeRole, queue } from '../helpers/moderation';
 import { fakeMp4, type FakeMp4 } from '../helpers/mp4';
-import { doAct, q } from '../helpers/social';
+import { listFriendsFeed } from '@/modules/fence';
+import { doAct, q, userId } from '../helpers/social';
 
-/** ADR-064: 30-second videos on posts — friends-only walls, checked headers, short-lived links, gone after 3 days. */
+/** ADR-064: 30-second videos on posts — for the writer's friends, checked headers, short-lived links, gone after 3 days. */
 
 let kit: TestKit;
 let storage: Awaited<ReturnType<typeof freshStore>>;
@@ -201,15 +202,46 @@ describe('posting a video on a friends-only wall', () => {
   });
 });
 
-describe('videos are for friends only', () => {
-  it('not on a wall every member can read: not offered, refused, and no card is made', async () => {
+describe("videos are for the writer's friends, on any wall and on Home", () => {
+  it('on a wall every member can read: posted; a friend watches (also on Home); a stranger reads only the words', async () => {
     const me = await person('me');
+    const pal = await person('pal');
+    const stranger = await person('stranger');
     await everyMember(me);
-    expect((await fenceOf(me.handle, as(me))).data.canAddVideo).toBe(false);
-    const before = (await q('select count(*)::int n from post_cards')).rows[0].n;
-    const r = await nail(me.handle, { body: 'public', videoId: await videoOf(me) }, as(me));
-    expect(r.status).toBe(403);
-    expect((await q('select count(*)::int n from post_cards')).rows[0].n).toBe(before);
+    await pals(me, pal);
+    expect((await fenceOf(me.handle, as(me))).data.canAddVideo).toBe(true);
+    const r = await nail(me.handle, { body: 'for friends', videoId: await videoOf(me) }, as(me));
+    expect(r.status).toBe(201);
+    const card = r.data.card!;
+    expect(card.video).toMatchObject({ state: 'ready' });
+
+    const palSees = (await fenceOf(me.handle, as(pal))).data.cards!.find((c) => c.id === card.id)!;
+    expect(palSees.video).toMatchObject({ state: 'ready' });
+    expect((await watch(card.id, as(pal))).status).toBe(302);
+    const home = await listFriendsFeed(await userId(pal.handle), { rateKey: pal.handle });
+    expect(home.cards.find((c) => c.id === card.id)?.video).toMatchObject({ state: 'ready' });
+
+    const strangerSees = (await fenceOf(me.handle, as(stranger))).data.cards!.find((c) => c.id === card.id)!;
+    expect(strangerSees.body).toBe('for friends');
+    expect(strangerSees.video).toEqual({ state: 'friends' });
+    expect(JSON.stringify(strangerSees)).not.toContain('/video');
+    expect((await watch(card.id, as(stranger))).status).toBe(404);
+    expect((await poster(card.id, as(stranger))).status).toBe(404);
+    expect((await watch(card.id)).status).toBe(401);
+  });
+
+  it("on someone else's wall, the owner's other friends see words only unless they are the writer's friends", async () => {
+    const owner = await person('owner');
+    const writer = await person('writer');
+    const ownersPal = await person('ownerspal');
+    await pals(owner, writer);
+    await pals(owner, ownersPal);
+    const card = (await nail(owner.handle, { body: 'hi', videoId: await videoOf(writer) }, as(writer))).data
+      .card!;
+    const seen = (await fenceOf(owner.handle, as(ownersPal))).data.cards!.find((c) => c.id === card.id)!;
+    expect(seen.video).toEqual({ state: 'friends' });
+    expect((await watch(card.id, as(ownersPal))).status).toBe(404);
+    expect((await watch(card.id, as(owner))).status).toBe(302);
   });
 
   it('a friend can watch; a stranger and a signed-out visitor cannot', async () => {
@@ -225,16 +257,17 @@ describe('videos are for friends only', () => {
     expect((await watch(card.id)).status).toBe(401);
   });
 
-  it('a wall opened up later stops showing and serving its videos', async () => {
+  it('someone who stops being a friend stops seeing and getting the video', async () => {
     const me = await person('me');
     const pal = await person('pal');
-    await friendsOnly(me);
+    await everyMember(me);
     await pals(me, pal);
     const card = (await nail(me.handle, { body: 'v', videoId: await videoOf(me) }, as(me))).data.card!;
-    await everyMember(me);
+    expect((await watch(card.id, as(pal))).status).toBe(302);
+    expect((await doAct(me.handle, 'leave', as(pal))).status).toBeLessThan(300);
     expect((await watch(card.id, as(pal))).status).toBe(404);
     const seen = (await fenceOf(me.handle, as(pal))).data.cards!.find((c) => c.id === card.id)!;
-    expect(seen.video).toBeNull();
+    expect(seen.video).toEqual({ state: 'friends' });
   });
 });
 

@@ -9,7 +9,6 @@ export {
   cardForReport,
   cardPhotoFor,
   cardVideoFor,
-  videosAllowedOn,
   editCard,
   getFenceCard,
   listFence,

@@ -23,7 +23,16 @@ import type { ReactionKind } from '@/shared/validation/fence';
 import type { PortraitTint } from '@/shared/validation/profile';
 import { Img } from '../art/img';
 import { cn } from '../cn';
-import { CameraIcon, CommentIcon, PinIcon, PlayIcon, ReplyIcon, SendIcon, VideoIcon } from '../icons';
+import {
+  CameraIcon,
+  CommentIcon,
+  PinIcon,
+  PlayIcon,
+  ReplyIcon,
+  SendIcon,
+  SpinnerIcon,
+  VideoIcon,
+} from '../icons';
 import { Avatar } from '../primitives/avatar';
 import { PhotoViewer } from '../primitives/dialog';
 import { Button, buttonClasses } from '../primitives/button';
@@ -165,16 +174,10 @@ const COMPOSER = {
   },
 } as const;
 
-/** The line under a chosen video: where it is on its way, then what will be posted. */
+/** The line under a chosen video: one word while it is on its way (the spinner says the rest), then "Ready". */
 function videoStatus(v: { stage: VideoStage | null; trimmed?: boolean }): string {
-  if (v.stage?.step === 'preparing') {
-    return `Preparing your video… ${Math.round(v.stage.fraction * 100)}% (it’s made smaller on your phone, so keep this page open)`;
-  }
-  if (v.stage?.step === 'uploading') return 'Uploading…';
-  if (v.stage?.step === 'checking') return 'Almost done…';
-  return v.trimmed
-    ? `Ready. Only the first ${VIDEO_MAX_SECONDS} seconds are kept. Friends can watch it for ${VIDEO_LIFETIME_DAYS} days.`
-    : `Ready. Friends can watch it for ${VIDEO_LIFETIME_DAYS} days.`;
+  if (v.stage) return 'Uploading…';
+  return v.trimmed ? `Ready · first ${VIDEO_MAX_SECONDS} s kept` : 'Ready';
 }
 
 /**
@@ -437,18 +440,25 @@ export function PostCardComposer({
       )}
       {video && (
         <div className="relative flex flex-col items-start gap-1 self-start">
-          {video.poster ? (
-            // eslint-disable-next-line @next/next/no-img-element -- a blob: preview of the poster frame
-            <img
-              src={video.poster}
-              alt="The first moments of the video you chose"
-              className="max-h-40 rounded-card-inset object-contain"
-            />
-          ) : (
-            <div className="flex h-24 w-40 items-center justify-center rounded-card-inset bg-surface-sunken">
-              <VideoIcon className="size-6 text-text-muted" />
-            </div>
-          )}
+          <div className="relative overflow-hidden rounded-card-inset">
+            {video.poster ? (
+              // eslint-disable-next-line @next/next/no-img-element -- a blob: preview of the poster frame
+              <img
+                src={video.poster}
+                alt="The first moments of the video you chose"
+                className="max-h-40 object-contain"
+              />
+            ) : (
+              <div className="flex h-24 w-40 items-center justify-center bg-surface-sunken">
+                {!video.stage && <VideoIcon className="size-6 text-text-muted" />}
+              </div>
+            )}
+            {video.stage && (
+              <div aria-hidden className="absolute inset-0 flex items-center justify-center bg-scrim/40">
+                <SpinnerIcon className="size-8 animate-spin-slow text-on-scrim" />
+              </div>
+            )}
+          </div>
           <p aria-live="polite" className="text-metadata text-text-secondary">
             {videoStatus(video)}
           </p>
@@ -679,7 +689,9 @@ export type PostVideoData =
       durationMs: number;
       expiresAt: Date | string;
     }
-  | { state: 'expired' };
+  | { state: 'expired' }
+  /** Not the writer's friend: the words show, the video does not. */
+  | { state: 'friends' };
 
 /** "0:12". */
 const clock = (ms: number) => {
@@ -711,6 +723,13 @@ export function PostVideo({ video, label }: { video: PostVideoData; label: strin
   const retried = useRef(false);
   const resumeAt = useRef(0);
 
+  if (video.state === 'friends') {
+    return (
+      <p className="flex items-center gap-2 rounded-card-inset-sm bg-surface-sunken px-3 py-4 text-caption text-text-secondary sm:rounded-card-inset">
+        <VideoIcon className="size-4 shrink-0" /> A video for their friends.
+      </p>
+    );
+  }
   if (video.state === 'expired') {
     return (
       <p className="rounded-card-inset-sm bg-surface-sunken px-3 py-4 text-caption text-text-secondary sm:rounded-card-inset">

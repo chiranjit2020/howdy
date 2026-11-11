@@ -45,10 +45,14 @@ watching is free because R2 does not charge for bandwidth) and the Neon database
      a broken player. The words of the post, its stars and replies stay.
 
    The post shows "Video · 2 days left" so the expiry is never a surprise.
-8. **Friends only to begin with.** Videos can be posted only where the audience is friends (not public walls or open
-   groups) until there is a way to scan video for abuse material. Every video has "Report"; a report hides the video
-   at once until a moderator looks. (Security backlog: CSAM scanning is still open, and there is no free tool for
-   video.)
+8. **Friends only.** Each video is watched only by its writer's friends (and the writer), wherever it is posted: on
+   their Home and on any wall. Anyone else who can read the post sees its words and "A video for their friends.";
+   the video link and the poster are refused to them. Every video has "Report"; a report hides the video at once until
+   a moderator looks. (Security backlog: CSAM scanning is still open, and there is no free tool for video.)
+
+   *Changed 2026-11-11, after launch:* this first said videos could be posted only on walls set to "My friends only".
+   The owner said videos must show on Home, and people will not change their whole wall's setting to post one clip,
+   so the audience moved from the wall to the video itself. Strangers still never see an unchecked video.
 9. **3 videos a day per person**, through the existing rate limiter, so one person cannot fill the free 10 GB.
 10. **Stored in the existing `media` table, not a new one** (changed while building): kind `card_video`, with new
     columns `duration_ms`, `poster_key`, `expires_at` and a new status `expired` (migration 0058, additive only). The
