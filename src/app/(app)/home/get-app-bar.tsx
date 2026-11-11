@@ -5,7 +5,7 @@ import { Img } from '@/ui/art/img';
 import { cn } from '@/ui/cn';
 import { BrowserMenuBarsIcon, BrowserMenuIcon, DownloadIcon, ShareIosIcon } from '@/ui/icons';
 import { Button } from '@/ui/primitives';
-import { canPromptInstall, onInstallChange, promptInstall } from '@/ui/pwa/pwa';
+import { canPromptInstall, installedOnThisDevice, onInstallChange, promptInstall } from '@/ui/pwa/pwa';
 import {
   ACTION_LABEL,
   chromeIntentUrl,
@@ -97,7 +97,13 @@ export function GetAppBar({ ua, compact: startCompact = false }: { ua: string; c
   useEffect(() => {
     const off = () => setGone(true);
     window.addEventListener('appinstalled', off);
-    return () => window.removeEventListener('appinstalled', off);
+    // Already installed on this phone (Android Chrome can tell): step aside — Chrome will not offer it again.
+    let live = true;
+    void installedOnThisDevice().then((yes) => live && yes && setGone(true));
+    return () => {
+      live = false;
+      window.removeEventListener('appinstalled', off);
+    };
   }, []);
   useEffect(() => {
     if (compact && shrunkByTap.current) slimButton.current?.focus();

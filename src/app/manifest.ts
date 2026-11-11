@@ -19,6 +19,13 @@ export default function manifest(): MetadataRoute.Manifest {
     background_color: '#0187df',
     theme_color: '#0187df',
     categories: ['social'],
+    // Howdy names ITSELF as its related app, so a Chrome tab can ask whether Howdy is already installed on this phone
+    // (navigator.getInstalledRelatedApps, ui/pwa/pwa.ts): if it is, Home's "Get the Howdy app" bar goes away instead
+    // of offering an install Chrome will not make (found on a Poco phone, 2026-11-11). Never preferred over the site.
+    related_applications: [
+      { platform: 'webapp', url: `${process.env.APP_URL ?? 'http://localhost:3000'}/manifest.webmanifest` },
+    ],
+    prefer_related_applications: false,
     // "any": the bubble on a TRANSPARENT background (2026-11-08). The old blue-square icon showed a faint outline on
     // the splash when the phone drew its blue a shade off the background's. Maskable (the home-screen icon) keeps its
     // blue, as Android fills the whole shape with it, with the bubble inside the middle 80% so no crop cuts it.

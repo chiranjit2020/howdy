@@ -1,11 +1,11 @@
 // @vitest-environment jsdom
-import { act, render, screen } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DynamicIsland } from '@/ui/island/island';
 import { dismissActivity, resetIsland, showActivity } from '@/ui/island/store';
 import { GetAppBar } from '@/app/(app)/home/get-app-bar';
-import { canPromptInstall, captureInstallPrompt } from '@/ui/pwa/pwa';
+import { canPromptInstall, captureInstallPrompt, installedOnThisDevice } from '@/ui/pwa/pwa';
 import { chromeIntentUrl, installAction, installBrowser, isPhoneAgent, osOf } from '@/ui/pwa/install-steps';
 import { axeViolations } from './setup';
 
@@ -195,5 +195,29 @@ describe('the install offer, caught before the app runs (RootLayout’s catcher)
     });
     expect(canPromptInstall()).toBe(true);
     off();
+  });
+});
+
+describe('already installed on this phone (Android Chrome’s getInstalledRelatedApps)', () => {
+  type N = Navigator & { getInstalledRelatedApps?: () => Promise<{ platform: string }[]> };
+  afterEach(() => {
+    delete (navigator as N).getInstalledRelatedApps;
+  });
+
+  it('the bar steps aside: Chrome would not offer to install it again', async () => {
+    (navigator as N).getInstalledRelatedApps = async () => [{ platform: 'webapp' }];
+    render(<GetAppBar ua={UA.pocoChrome} />);
+    await waitFor(() =>
+      expect(screen.queryByRole('region', { name: 'Get the Howdy app' })).not.toBeInTheDocument(),
+    );
+  });
+
+  it('not installed, or a browser that cannot tell: the bar stays', async () => {
+    (navigator as N).getInstalledRelatedApps = async () => [];
+    render(<GetAppBar ua={UA.pocoChrome} />);
+    expect(await installedOnThisDevice()).toBe(false);
+    expect(screen.getByRole('region', { name: 'Get the Howdy app' })).toBeInTheDocument();
+    delete (navigator as N).getInstalledRelatedApps;
+    expect(await installedOnThisDevice()).toBe(false);
   });
 });

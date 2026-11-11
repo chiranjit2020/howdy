@@ -5,6 +5,7 @@ import { DynamicIsland } from '../island/island';
 import { ChimesIsland } from './chimes-island';
 import {
   captureInstallPrompt,
+  installedOnThisDevice,
   isInstalled,
   registerServiceWorker,
   resyncPush,
@@ -51,11 +52,13 @@ export function PwaBoot({
     void registerServiceWorker().then(() => (signedIn ? resyncPush() : undefined));
   }, [signedIn]);
 
-  // Opened as the installed app, or just installed from this browser: tell the account once per device, so Home's
-  // "Get the Howdy app" bar goes away everywhere (iPhone never tells a web page it was added to the Home Screen).
+  // Opened as the installed app, just installed from this browser, or (Android Chrome) found already installed on this
+  // phone: tell the account once per device, so Home's "Get the Howdy app" bar goes away everywhere (iPhone never
+  // tells a web page it was added to the Home Screen).
   useEffect(() => {
     if (!signedIn) return;
     if (isInstalled()) rememberInstall();
+    else void installedOnThisDevice().then((yes) => yes && rememberInstall());
     window.addEventListener('appinstalled', rememberInstall);
     return () => window.removeEventListener('appinstalled', rememberInstall);
   }, [signedIn]);

@@ -52,6 +52,23 @@ export function isInstalled(): boolean {
   );
 }
 
+/**
+ * In a browser tab: is Howdy already installed on this phone? Android Chrome answers through the manifest's
+ * `related_applications` (Howdy lists itself); everywhere else the answer is "can't tell", so false. Never throws.
+ * Chrome will not offer to install an app that is already installed, so this is how the bar knows to step aside.
+ */
+export async function installedOnThisDevice(): Promise<boolean> {
+  const nav = navigator as Navigator & {
+    getInstalledRelatedApps?: () => Promise<{ platform: string; url?: string }[]>;
+  };
+  if (!nav.getInstalledRelatedApps) return false;
+  try {
+    return (await nav.getInstalledRelatedApps()).some((a) => a.platform === 'webapp');
+  } catch {
+    return false;
+  }
+}
+
 export type Platform = 'ios' | 'android' | 'other';
 export function platform(): Platform {
   const ua = navigator.userAgent;
