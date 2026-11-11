@@ -17,7 +17,7 @@ export function AuthSplit({ children }: { children: ReactNode }) {
         aria-label="About Howdy"
         className="hidden bg-header lg:flex lg:flex-col lg:justify-center lg:gap-8 lg:px-12 lg:py-10 xl:px-16"
       >
-        <HowdyLogo tone="onColour" size="hero" className="-ml-1 self-start" />
+        <HowdyLogo tone="onColour" size="hero" priority className="-ml-1 self-start" />
         <h2 className="max-w-[15ch] text-display text-balance text-on-header">
           Say howdy to the people you know.
         </h2>

@@ -63,7 +63,7 @@ export function EntryFooter() {
 export function EntryBand({ className }: { className?: string }) {
   return (
     <div className={cn('flex h-20 items-center justify-center bg-header', className)}>
-      <HowdyLogo tone="onColour" size="band" />
+      <HowdyLogo tone="onColour" size="band" priority />
     </div>
   );
 }

@@ -29,11 +29,17 @@ export function HowdyLogo({
   size = 'sm',
   href = '/gate',
   tone = 'default',
+  priority = false,
   className,
 }: {
   size?: keyof typeof LOGO_HEIGHT;
   href?: string;
   tone?: keyof typeof ART;
+  /**
+   * The page's main picture (the sign-in pages): fetched before anything else. Not in the app's top bar, where the
+   * feed's first photo should come first.
+   */
+  priority?: boolean;
   className?: string;
 }) {
   const art = ART[tone];
@@ -49,6 +55,7 @@ export function HowdyLogo({
         height={art.height}
         alt="Howdy"
         loading="eager"
+        {...(priority ? { fetchPriority: 'high' as const } : {})}
         className={cn('w-auto', LOGO_HEIGHT[size])}
       />
     </Link>
