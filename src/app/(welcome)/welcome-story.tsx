@@ -180,12 +180,17 @@ function HeroArt() {
       className="relative mx-auto w-full max-w-[17rem] sm:max-w-[26rem] lg:max-w-[30rem]"
     >
       <div className="absolute inset-x-[8%] top-[6%] aspect-square rounded-pill bg-highlight/35" />
+      {/* The page's main picture: fetched first, and at the size the screen needs (2026-11-12: a phone was downloading
+          the full 947 px, 127 KB, to show it 272 px wide; the 480 px copy is 32 KB). The widths match the box above. */}
       <Img
         src="/illustrations/welcome-hero.webp"
+        srcSet="/illustrations/welcome-hero-480.webp 480w, /illustrations/welcome-hero-720.webp 720w, /illustrations/welcome-hero.webp 947w"
+        sizes="(min-width: 1024px) 30rem, (min-width: 640px) 26rem, 17rem"
         width={947}
         height={1100}
         alt=""
         loading="eager"
+        fetchPriority="high"
         className="relative h-auto w-full"
       />
     </div>
