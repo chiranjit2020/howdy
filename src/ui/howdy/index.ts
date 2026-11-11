@@ -7,6 +7,7 @@ export {
   PostEditForm,
   PostVideo,
   POST_LIST,
+  firstPictureIndex,
   type PostVideoData,
   type PostCardProps,
   type PostCardAuthor,

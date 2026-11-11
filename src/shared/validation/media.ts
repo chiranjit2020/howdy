@@ -38,6 +38,8 @@ export const coverCompleteSchema = portraitCompleteSchema;
 
 /** A photo on a Post Card (ADR-031): the same accepted types and size as a Portrait, kept within this box, never enlarged. */
 export const CARD_PHOTO_MAX_PX = 1280;
+/** The widest a card photo is sent for the feed (a phone shows it ~370 px wide); the full one opens on a tap. */
+export const FEED_PHOTO_PX = 720;
 export const cardPhotoUploadSchema = portraitUploadSchema;
 export const cardPhotoCompleteSchema = portraitCompleteSchema;
 

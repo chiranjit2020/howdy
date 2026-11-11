@@ -226,7 +226,7 @@ describe('PostCard', () => {
     expect(screen.queryByRole('button', { name: 'More reactions' })).not.toBeInTheDocument();
 
     rerender(card({ onReact, myReaction: 'laugh' })); // an older kind still shows as your Star
-    const mine = screen.getByRole('button', { name: 'Star, 3' });
+    const mine = screen.getByRole('button', { name: 'Star, You and 2 others' });
     expect(mine).toHaveAttribute('aria-pressed', 'true');
     expect(mine).toHaveTextContent('You and 2 others'); // once given, you see you are part of it
     await user.click(mine);

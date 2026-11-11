@@ -21,7 +21,9 @@ export const GET = route(async ({ req, params }) => {
   const mediaId = await hallPostPhotoFor(user.id, (await params).id ?? '');
   if (!mediaId) throw new AppError('NOT_FOUND');
 
-  const etag = `"${mediaId}"`;
+  // `?size=feed`: the smaller copy the feed shows; the full photo opens on a tap.
+  const size = new URL(req.url).searchParams.get('size') === 'feed' ? 'feed' : 'full';
+  const etag = size === 'feed' ? `"${mediaId}-feed"` : `"${mediaId}"`;
   const headers = new Headers({
     ETag: etag,
     'Cache-Control': 'private, no-cache',
@@ -29,7 +31,7 @@ export const GET = route(async ({ req, params }) => {
     'Cross-Origin-Resource-Policy': 'same-origin',
   });
   if (req.headers.get('if-none-match') === etag) return new Response(null, { status: 304, headers });
-  const bytes = await readCardPhoto(mediaId, { userId: user.id });
+  const bytes = await readCardPhoto(mediaId, { userId: user.id }, { size });
   if (!bytes) throw new AppError('NOT_FOUND');
   headers.set('Content-Type', 'image/webp');
   headers.set('Content-Length', String(bytes.length));

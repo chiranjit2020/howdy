@@ -6,7 +6,14 @@ import { dayOf, longDay } from '@/shared/calendar';
 import type { ReactionKind } from '@/shared/validation/fence';
 import { apiRequest, postJson } from '@/ui/auth/api';
 import { FormMessage } from '@/ui/auth/form-parts';
-import { POST_LIST, PostCard, PostCardComposer, PostCardReply, type PostCardAuthor } from '@/ui/howdy';
+import {
+  firstPictureIndex,
+  POST_LIST,
+  PostCard,
+  PostCardComposer,
+  PostCardReply,
+  type PostCardAuthor,
+} from '@/ui/howdy';
 import { FoldedText } from '@/ui/howdy/folded-text';
 import { ReportDialog } from '@/ui/howdy/report-dialog';
 import type { RsvpAnswer } from '@/shared/validation/town-halls';
@@ -336,10 +343,11 @@ export function FeedSection({
           />
         ) : (
           <ol className={POST_LIST}>
-            {(pinned ? [pinned, ...posts] : posts).map((p) => (
+            {(pinned ? [pinned, ...posts] : posts).map((p, i, list) => (
               <li key={p.id}>
                 <PostCard
                   noun="Post"
+                  priority={i === firstPictureIndex(list)}
                   author={authorOf(p.author)}
                   // An event's name is its words when it has no details: shown once, in the event.
                   // A poll's words are its question, shown in the poll itself.

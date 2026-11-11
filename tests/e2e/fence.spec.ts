@@ -68,7 +68,7 @@ test.describe('The wall in a real browser (production build, real CSP)', () => {
     await expect(star).toHaveAttribute('aria-pressed', 'false');
     await star.click();
     await expect(star).toHaveAttribute('aria-pressed', 'true');
-    await expect(owners.getByRole('button', { name: 'Star, 1' })).toBeVisible();
+    await expect(owners.getByRole('button', { name: 'Star, You' })).toBeVisible();
     await owners.getByRole('button', { name: 'Reply', exact: true }).click();
     await expect(b.page.getByLabel('Write a reply')).toBeFocused();
     await b.page.getByLabel('Write a reply').fill('Nice ranch!');

@@ -9,7 +9,11 @@ import { photoChecker } from '@/platform/photo-check';
 import { enforceRateLimit } from '@/platform/rate-limit';
 import { getObjectStore, type UploadTarget } from '@/platform/storage';
 import { PORTRAIT_MAX_BYTES, type PortraitType } from '@/shared/validation/media';
-import { previewForCheck, processCardPhoto, processCover, processPortrait } from './image';
+import { feedCopyOf, previewForCheck, processCardPhoto, processCover, processPortrait } from './image';
+
+/** Where a card photo's smaller feed copy is kept: beside the original, so it is found (and removed) from its key. */
+// `cards/<id>.webp` -> `cards/<id>-feed.webp` (an object key may have only one extension).
+const feedCopyKey = (objectKey: string) => objectKey.replace(/(\.[a-z0-9]{1,5})?$/, '-feed.webp');
 
 const rule = (limit: number, windowSec: number) => ({ limit, windowSec });
 export const RATE = {
@@ -61,6 +65,8 @@ export async function destroy(
     try {
       await store().delete(row.objectKey);
       if (row.posterKey) await store().delete(row.posterKey);
+      // A card photo's feed copy, if one was ever made (deleting a key that is not there is not an error).
+      await store().delete(feedCopyKey(row.objectKey));
       await getDb()
         .delete(media)
         .where(and(eq(media.id, row.id), inArray(media.status, statuses)));
@@ -391,7 +397,11 @@ export async function completeCardPhoto(
  * The bytes of a card photo. This does NOT decide who may look: the caller has already applied the card's own rules
  * (fence.cardPhotoFor) and passes the id it got from there.
  */
-export async function readCardPhoto(mediaId: string, viewer: PhotoViewer): Promise<Buffer | null> {
+export async function readCardPhoto(
+  mediaId: string,
+  viewer: PhotoViewer,
+  opts: { size?: 'full' | 'feed' } = {},
+): Promise<Buffer | null> {
   const [row] = await getDb()
     .select({ objectKey: media.objectKey })
     .from(media)
@@ -400,7 +410,24 @@ export async function readCardPhoto(mediaId: string, viewer: PhotoViewer): Promi
     )
     .limit(1);
   if (!row) return null;
-  return store().get(row.objectKey, SERVE_MAX_BYTES);
+  if (opts.size !== 'feed') return store().get(row.objectKey, SERVE_MAX_BYTES);
+  // The feed's smaller copy is made the first time someone asks for it and kept beside the original (so photos posted
+  // before it existed need no backfill). destroy() removes it with the original.
+  const key = feedCopyKey(row.objectKey);
+  const kept = await store().get(key, SERVE_MAX_BYTES);
+  if (kept) return kept;
+  const full = await store().get(row.objectKey, SERVE_MAX_BYTES);
+  if (!full) return null;
+  const copy = await feedCopyOf(full).catch((cause) => {
+    log.warn({ event: 'media.feed_copy_failed', mediaId, cause: String(cause) });
+    return null;
+  });
+  if (!copy) return full;
+  // Saving it is best-effort: the copy is still served now, and made again next time.
+  await store()
+    .put(key, copy, 'image/webp')
+    .catch((cause) => log.warn({ event: 'media.feed_copy_store_failed', mediaId, cause: String(cause) }));
+  return copy;
 }
 
 /**

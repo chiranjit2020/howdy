@@ -50,8 +50,13 @@ async function photoOf(p: P, bytes?: Buffer): Promise<string> {
   expect(done.status).toBe(200);
   return start.data.mediaId as string;
 }
-async function seePhoto(cardId: string, opts: { cookie?: string; headers?: Record<string, string> } = {}) {
-  const res = await photoRoute(request('GET', `/api/cards/${cardId}/photo`, undefined, opts), {
+async function seePhoto(
+  cardId: string,
+  opts: { cookie?: string; headers?: Record<string, string>; feed?: boolean } = {},
+) {
+  const { feed, ...rest } = opts;
+  const path = `/api/cards/${cardId}/photo${feed ? '?size=feed' : ''}`;
+  const res = await photoRoute(request('GET', path, undefined, rest), {
     params: Promise.resolve({ id: cardId }),
   });
   return { status: res.status, bytes: Buffer.from(await res.arrayBuffer()), etag: res.headers.get('etag') };
@@ -230,6 +235,45 @@ describe('who sees the photo: exactly who sees the card', () => {
     expect((await seePhoto(card, { ...as(viewer), headers: { 'if-none-match': first.etag! } })).status).toBe(
       404,
     );
+  });
+});
+
+describe("the feed's smaller copy", () => {
+  it('is at most 720 px wide, made once and kept, under the same rules, and deleted with the photo', async () => {
+    const owner = await person('owner');
+    const viewer = await person('viewer');
+    const id = await photoOf(owner, await jpeg(2400, 1600));
+    const card = (await nail(owner.handle, { body: 'big', photoId: id }, as(owner))).data.card!.id;
+
+    const full = await seePhoto(card, as(viewer));
+    const small = await seePhoto(card, { ...as(viewer), feed: true });
+    expect(small.status).toBe(200);
+    expect((await inspect(small.bytes)).width).toBe(720);
+    expect(small.bytes.length).toBeLessThan(full.bytes.length);
+    // Its own ETag, so a browser never mixes the two sizes up; a 304 still re-checks the rules first.
+    expect(small.etag).not.toBe(full.etag);
+    expect(
+      (await seePhoto(card, { ...as(viewer), feed: true, headers: { 'if-none-match': small.etag! } })).status,
+    ).toBe(304);
+    expect(await storage.files()).toHaveLength(2); // the original and its copy, kept for next time
+
+    await doAct(viewer.handle, 'block', as(owner));
+    expect((await seePhoto(card, { ...as(viewer), feed: true })).status).toBe(404);
+
+    await q('delete from post_cards where id = $1', [card]);
+    await q("update media set created_at = now() - interval '2 hours' where id = $1", [id]);
+    expect(await purgeDetachedCardPhotos()).toEqual({ cardPhotosRemoved: 1 });
+    expect(await storage.files()).toEqual([]);
+  });
+
+  it('a photo already that small is sent as it is, and no copy is stored', async () => {
+    const me = await person('me');
+    const card = (
+      await nail(me.handle, { body: 'small', photoId: await photoOf(me, await jpeg(600, 400)) }, as(me))
+    ).data.card!.id;
+    const small = await seePhoto(card, { ...as(me), feed: true });
+    expect((await inspect(small.bytes)).width).toBe(600);
+    expect(await storage.files()).toHaveLength(1);
   });
 });
 

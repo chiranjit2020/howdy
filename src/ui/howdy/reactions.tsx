@@ -136,7 +136,8 @@ export function StarButton({
     <button
       type="button"
       aria-pressed={given}
-      aria-label={`Star${total > 0 ? `, ${total}` : ''}`}
+      // The name holds the words on the button ("You and 1 other"), so a screen reader says what the eye reads.
+      aria-label={given ? `Star, ${withYou(total)}` : `Star${total > 0 ? `, ${total}` : ''}`}
       title={given ? 'Take back your Star' : 'Give a Star'}
       onClick={() => onReact(given ? null : STAR_KIND)}
       className={cn(

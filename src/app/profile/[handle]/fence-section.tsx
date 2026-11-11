@@ -6,7 +6,14 @@ import type { AuthorRef, CardView, FencePage, ReplyView } from '@/modules/fence'
 import type { ReactionKind } from '@/shared/validation/fence';
 import { apiRequest, postJson } from '@/ui/auth/api';
 import { FormMessage } from '@/ui/auth/form-parts';
-import { Fence, PostCard, PostCardComposer, PostCardReply, PostEditForm } from '@/ui/howdy';
+import {
+  Fence,
+  firstPictureIndex,
+  PostCard,
+  PostCardComposer,
+  PostCardReply,
+  PostEditForm,
+} from '@/ui/howdy';
 import { Button, ConfirmationDialog, Dropdown, IconButton, useToast } from '@/ui/primitives';
 import { ReportDialog } from '@/ui/howdy/report-dialog';
 import { MoreIcon } from '@/ui/icons';
@@ -281,6 +288,8 @@ export function FenceSection({
       </div>
     ) : undefined;
 
+  const firstPicture = firstPictureIndex(cards);
+
   return (
     <>
       {/* In the feed, "Share something with friends" comes first and the "What’s Going On?" heading sits over the posts it names;
@@ -303,9 +312,10 @@ export function FenceSection({
                 : 'The wall is quiet for now.'
         }
       >
-        {cards.map((c) => (
+        {cards.map((c, i) => (
           <PostCard
             key={c.id}
+            priority={i === firstPicture}
             author={{
               name: c.author.displayName,
               handle: c.author.handle,

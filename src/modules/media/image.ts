@@ -4,6 +4,7 @@ import {
   CARD_PHOTO_MAX_PX,
   COVER_HEIGHT_PX,
   COVER_WIDTH_PX,
+  FEED_PHOTO_PX,
   PORTRAIT_SIZE_PX,
 } from '@/shared/validation/media';
 
@@ -79,6 +80,18 @@ export async function previewForCheck(processed: Buffer): Promise<Buffer> {
     .resize(512, 512, { fit: 'inside', withoutEnlargement: true })
     .jpeg({ quality: 80 })
     .toBuffer();
+}
+
+/**
+ * The feed's copy of a card photo: at most FEED_PHOTO_PX wide, so a phone downloads a third of the bytes (a post is
+ * 370 px wide on a phone; tapping it still opens the full photo). Made from our own stored WebP, never from an upload.
+ * Null when the photo is already that small: the original is then served as it is.
+ */
+export async function feedCopyOf(stored: Buffer): Promise<Buffer | null> {
+  const img = sharp(stored, { limitInputPixels: MAX_INPUT_PIXELS, failOn: 'error', animated: false });
+  const { width } = await img.metadata();
+  if (!width || width <= FEED_PHOTO_PX) return null;
+  return img.resize({ width: FEED_PHOTO_PX, withoutEnlargement: true }).webp({ quality: 75 }).toBuffer();
 }
 
 /**

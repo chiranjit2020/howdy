@@ -716,6 +716,19 @@ export interface PostCardProps {
   edited?: boolean;
   /** Shown in place of the words while the writer edits them (a <PostEditForm />). */
   editor?: ReactNode;
+  /**
+   * The first post with a photo or video near the top of the page: its picture loads at once and ahead of the rest
+   * (it is usually the biggest thing on the first screen). Every other picture waits until it scrolls near.
+   */
+  priority?: boolean;
+}
+
+/**
+ * Which post in a list gets `priority`: the first with a photo or a playable video among the top three (lower down,
+ * it is off the first screen anyway). -1 when none.
+ */
+export function firstPictureIndex(posts: { photo?: unknown; video?: PostVideoData | null }[]): number {
+  return posts.slice(0, 3).findIndex((p) => !!p.photo || p.video?.state === 'ready');
 }
 
 /** The list posts go in: each post its own card, 10 px apart (the user's call: merged posts hid who wrote what). */
@@ -728,8 +741,18 @@ const TALLEST = 5 / 4;
  * A post's photo, the way big feeds show them: always the post's full width; landscape and square whole; anything taller
  * than 4:5 cropped from the centre to 4:5 so one photo never fills the screen. A tap shows the whole photo.
  */
-function PostPhoto({ photo, alt }: { photo: { url: string; width: number; height: number }; alt: string }) {
+function PostPhoto({
+  photo,
+  alt,
+  priority = false,
+}: {
+  photo: { url: string; width: number; height: number };
+  alt: string;
+  priority?: boolean;
+}) {
   const [open, setOpen] = useState(false);
+  // The feed gets the smaller copy (FEED_PHOTO_PX wide); the whole photo, full size, opens on a tap.
+  const feedSrc = `${photo.url}${photo.url.includes('?') ? '&' : '?'}size=feed`;
   const tall = photo.height / photo.width > TALLEST;
   return (
     <>
@@ -742,10 +765,12 @@ function PostPhoto({ photo, alt }: { photo: { url: string; width: number; height
         className="block w-full cursor-zoom-in overflow-hidden rounded-card-inset-sm sm:rounded-card-inset"
       >
         <Img
-          src={photo.url}
+          src={feedSrc}
           width={photo.width}
           height={photo.height}
           alt=""
+          // The first post's photo is usually the biggest thing on the screen: ask for it at once, first in line.
+          {...(priority ? { loading: 'eager', fetchPriority: 'high' } : {})}
           className={cn('block w-full', tall ? 'aspect-[4/5] object-cover' : 'h-auto')}
         />
       </button>
@@ -799,7 +824,16 @@ function timeLeft(expiresAt: Date | string): string {
  * which plays with sound, never loops, and streams from storage (it starts after the first few KB and jumps by asking
  * for just the bytes it needs). Same size rules as a photo: full width, nothing taller than 4:5.
  */
-export function PostVideo({ video, label }: { video: PostVideoData; label: string }) {
+export function PostVideo({
+  video,
+  label,
+  priority = false,
+}: {
+  video: PostVideoData;
+  label: string;
+  /** The first post on the page: its poster loads at once (see PostPhoto). */
+  priority?: boolean;
+}) {
   const [playing, setPlaying] = useState(false);
   // The link to the file works for 10 minutes. Paused longer and then played on, the player asks the page again once.
   const [src, setSrc] = useState<string | null>(null);
@@ -871,6 +905,9 @@ export function PostVideo({ video, label }: { video: PostVideoData; label: strin
             width={video.width}
             height={video.height}
             alt=""
+            // Like a photo: the first post's poster at once and first in line, the rest only as they scroll near.
+            {...(priority ? { loading: 'eager', fetchPriority: 'high' } : { loading: 'lazy' })}
+            decoding="async"
             className={cn('block w-full', tall ? 'h-full object-cover' : 'h-auto')}
           />
           <span className="absolute inset-0 flex items-center justify-center">
@@ -924,6 +961,7 @@ export function PostCard({
   startOpen = false,
   edited = false,
   editor,
+  priority = false,
 }: PostCardProps) {
   const [open, setOpen] = useState(startOpen);
   const wantsFocus = useRef(false);
@@ -1025,9 +1063,12 @@ export function PostCard({
             <PostPhoto
               photo={photo}
               alt={`Photo on this ${noun === 'Post' ? 'post' : 'card'} from ${author.name}`}
+              priority={priority}
             />
           )}
-          {video && <PostVideo video={video} label={`Video on this post from ${author.name}`} />}
+          {video && (
+            <PostVideo video={video} label={`Video on this post from ${author.name}`} priority={priority} />
+          )}
           {notice && <p className="text-caption font-semibold text-text-secondary">{notice}</p>}
         </div>
 
