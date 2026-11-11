@@ -310,12 +310,26 @@ describe('the server checks what arrived, whatever the page claims', () => {
     expect(r.done!.status).toBe(422);
   });
 
-  it('three finished videos a day; the fourth is refused', async () => {
+  it('three posted videos a day; the fourth is refused, at upload and at posting', async () => {
     const me = await person('me');
+    // Uploaded but never posted (e.g. the post failed): not one of the three.
     for (let i = 0; i < 3; i++) await videoOf(me);
+    for (let i = 0; i < 3; i++)
+      expect((await nail(me.handle, { body: `v${i}`, videoId: await videoOf(me) }, as(me))).status).toBe(201);
     const fourth = await upload(me);
     expect(fourth.done!.status).toBe(422);
     expect(fourth.done!.data.error?.message).toContain('3 videos a day');
+  });
+
+  it('finished uploads saved up earlier cannot all be posted past the three', async () => {
+    const me = await person('me');
+    const saved = [];
+    for (let i = 0; i < 4; i++) saved.push(await videoOf(me));
+    for (let i = 0; i < 3; i++)
+      expect((await nail(me.handle, { body: `v${i}`, videoId: saved[i] }, as(me))).status).toBe(201);
+    const r = await nail(me.handle, { body: 'v3', videoId: saved[3] }, as(me));
+    expect(r.status).toBe(422);
+    expect(r.data.error?.message).toContain('3 videos a day');
   });
 });
 

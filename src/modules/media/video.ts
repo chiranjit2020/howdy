@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { media } from '@db/schema';
-import { and, count, eq, gt, inArray, isNull, lte, sql } from 'drizzle-orm';
+import { and, count, eq, gt, inArray, isNotNull, isNull, lte, sql } from 'drizzle-orm';
 import { getDb } from '@/platform/db';
 import { AppError } from '@/platform/errors';
 import { logger } from '@/platform/logger';
@@ -84,7 +84,11 @@ export async function startCardVideoUpload(
 }
 
 /** Finished videos a person posted (or got ready) in the last 24 hours. */
-async function videosToday(userId: string): Promise<number> {
+/**
+ * Videos this person put on a post in the last 24 hours. Only ones ON a post count: a video that finished uploading
+ * but was never posted (the post failed, or they removed it) is not one of the day's three.
+ */
+export async function videosPostedToday(userId: string): Promise<number> {
   const [row] = await getDb()
     .select({ n: count() })
     .from(media)
@@ -93,6 +97,7 @@ async function videosToday(userId: string): Promise<number> {
         eq(media.ownerId, userId),
         eq(media.kind, 'card_video'),
         inArray(media.status, ['ready', 'expired']),
+        isNotNull(media.cardId),
         // Finished = expires 3 days later; finished within 24 hours = expires more than 2 days from now.
         gt(media.expiresAt, new Date(Date.now() + LIFETIME_MS - 24 * 3600 * 1000)),
       ),
@@ -129,7 +134,7 @@ export async function completeCardVideo(
     throw new AppError('VALIDATION_FAILED', { message, fields: { file: message } });
   };
 
-  if ((await videosToday(userId)) >= VIDEOS_PER_DAY)
+  if ((await videosPostedToday(userId)) >= VIDEOS_PER_DAY)
     return reject(`You can post ${VIDEOS_PER_DAY} videos a day. Try again tomorrow.`);
 
   const size = await store().size(pending.objectKey);

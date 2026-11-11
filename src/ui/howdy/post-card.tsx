@@ -40,7 +40,7 @@ import { IconButton } from '../primitives/icon-button';
 import { Input, Textarea } from '../primitives/field';
 import { FormMessage } from '../auth/form-parts';
 import type { PhotoUpload } from '../media/upload-photo';
-import type { VideoStage, VideoUpload } from '../media/upload-video';
+import { videoPercent, type VideoStage, type VideoUpload } from '../media/upload-video';
 import { VIDEO_LIFETIME_DAYS, VIDEO_MAX_SECONDS } from '@/shared/validation/media';
 import { RelativeTime } from './time';
 import { NameBadge } from './verified-badge';
@@ -174,9 +174,9 @@ const COMPOSER = {
   },
 } as const;
 
-/** The line under a chosen video: one word while it is on its way (the spinner says the rest), then "Ready". */
+/** The line under a chosen video: "Uploading… 42%" while it is on its way, then "Ready". */
 function videoStatus(v: { stage: VideoStage | null; trimmed?: boolean }): string {
-  if (v.stage) return 'Uploading…';
+  if (v.stage) return `Uploading… ${videoPercent(v.stage)}%`;
   return v.trimmed ? `Ready · first ${VIDEO_MAX_SECONDS} s kept` : 'Ready';
 }
 

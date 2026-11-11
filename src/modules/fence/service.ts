@@ -17,6 +17,7 @@ import {
   hiddenAuthors,
   posseMembersAmong,
 } from '@/modules/relationships';
+import { VIDEO_LIFETIME_DAYS, VIDEOS_PER_DAY } from '@/shared/validation/media';
 import { getDb } from '@/platform/db';
 import { AppError } from '@/platform/errors';
 import { emit } from '@/platform/events';
@@ -816,6 +817,28 @@ async function statusFor(
 }
 
 /** Nail a Post Card on the Fence of the person with call sign `handle`. */
+/**
+ * Videos this person put on a post in the last 24 hours (ADR-064). The media module counts the same way when an upload
+ * finishes (videosPostedToday); fence may not import media, so the query lives in both. Finished = expires 3 days later,
+ * so finished within 24 hours = expires more than 2 days from now.
+ */
+async function videosPostedToday(userId: string): Promise<number> {
+  const since = new Date(Date.now() + (VIDEO_LIFETIME_DAYS - 1) * 24 * 3600 * 1000);
+  const [row] = await getDb()
+    .select({ n: count() })
+    .from(media)
+    .where(
+      and(
+        eq(media.ownerId, userId),
+        eq(media.kind, 'card_video'),
+        inArray(media.status, ['ready', 'expired']),
+        sql`${media.cardId} is not null`,
+        gt(media.expiresAt, since),
+      ),
+    );
+  return row?.n ?? 0;
+}
+
 /** A photo can be nailed only while it is younger than this (the clean-up job takes unattached ones at 60 minutes). */
 const PHOTO_ATTACH_WINDOW_MS = 55 * 60_000;
 
@@ -856,6 +879,11 @@ export async function postCard(
     throw new AppError('FORBIDDEN', {
       message: 'Only their friends can add a video to a post on this wall.',
     });
+  }
+  // The day's three are counted when a video goes on a post (a finished upload that was never posted is not one).
+  if (videoId && (await videosPostedToday(userId)) >= VIDEOS_PER_DAY) {
+    const message = `You can post ${VIDEOS_PER_DAY} videos a day. Try again tomorrow.`;
+    throw new AppError('VALIDATION_FAILED', { message, fields: { video: message } });
   }
   const status = await statusFor(actor, 'card', fence, ctx, userId);
   const row = await getDb().transaction(async (tx) => {
