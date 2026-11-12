@@ -23,7 +23,7 @@ test.describe('Welcome page (production build, real CSP)', () => {
       const problems = await watchProblems(page);
       await page.goto('/welcome');
       await pageReady(page);
-      await expect(page.getByRole('heading', { level: 1 })).toContainText('Stay close');
+      await expect(page.getByRole('heading', { level: 1 })).toContainText('Your groups deserve better');
       await expect(page.getByRole('heading', { name: /works today/ })).toBeVisible();
       await expect(page.getByRole('heading', { name: /what comes next/ })).toBeVisible();
       expect(await axeViolations(page)).toEqual([]);

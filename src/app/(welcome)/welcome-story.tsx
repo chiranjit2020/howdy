@@ -3,7 +3,9 @@ import type { ComponentType, ReactNode } from 'react';
 import type { IconBaseProps } from 'react-icons';
 import {
   PiBell,
-  PiBellSlash,
+  PiPhoneSlash,
+  PiPushPin,
+  PiUserCheck,
   PiProhibit,
   PiProhibitInset,
   PiChatsCircle,
@@ -14,7 +16,6 @@ import {
   PiHouse,
   PiHourglass,
   PiCamera,
-  PiClock,
   PiKey,
   PiScales,
   PiNote,
@@ -42,6 +43,11 @@ type Icon = ComponentType<IconBaseProps>;
 // Every line here is checked against the app (2026-11-09). Keep it true: change it in the same commit as the feature.
 const FEATURES: { icon: Icon; name: string; text: string }[] = [
   {
+    icon: PiBuildings,
+    name: 'Groups',
+    text: 'For your batch, society, family or team: a pinned notice, events with a time and place, polls and photos. Ask-to-join and Deputies keep it tidy.',
+  },
+  {
     icon: PiUser,
     name: 'Your profile',
     text: 'Your photo, a cover, a short bio and the details you choose to share, each with its own audience.',
@@ -54,7 +60,7 @@ const FEATURES: { icon: Icon; name: string; text: string }[] = [
   {
     icon: PiHouse,
     name: 'Home',
-    text: 'Posts from your friends and the people you follow, newest first, with Stories on top and friends you may know.',
+    text: 'Posts from your friends and the people you follow, newest first with no algorithm, plus Stories on top and friends you may know.',
   },
   {
     icon: PiNote,
@@ -72,21 +78,16 @@ const FEATURES: { icon: Icon; name: string; text: string }[] = [
     name: 'Free to talk',
     text: 'Let your friends know you’re free for a while, so they know it’s a good time to message.',
   },
-  {
-    icon: PiBuildings,
-    name: 'Groups',
-    text: 'For your batch, family, society or team: posts with photos, events, polls and a pinned notice.',
-  },
   { icon: PiEye, name: 'Profile visitors', text: 'See who stopped by your profile, or browse privately.' },
   {
     icon: PiQuotes,
     name: 'Testimonials & Describe',
-    text: 'Kind words friends write, shown once you approve them, and the words friends pick for you.',
+    text: 'Like a slam book: kind words friends write, shown once you approve them, and the words friends pick for you.',
   },
   {
     icon: PiHourglass,
     name: 'Time Capsules',
-    text: 'A message for yourself or a friend that opens on the day you choose.',
+    text: 'A message for yourself or a friend that opens on the day you choose: a birthday, results day, the next reunion.',
   },
   {
     icon: PiBell,
@@ -236,21 +237,21 @@ export function WelcomeStory({ invite }: { invite?: { code: string; invitedBy?: 
                 ? invite.invitedBy
                   ? `${invite.invitedBy} invited you to Howdy`
                   : 'You’re invited to Howdy'
-                : 'Social media for people you actually know'}
+                : 'For your family, friends, batch and society'}
             </p>
-            <h1 className="font-display text-[clamp(2.6rem,1.6rem+4.6vw,4.75rem)] leading-[1.02] font-semibold tracking-tight text-text-primary">
-              Stay close
-              <br />
-              {/* Two-tone: ink, then the top bar's blue (3.8:1 on white, fine at this size). */}
-              <span className="text-header">to your people.</span>
+            {/* The USP (2026-11-12): one place for your batch/society/family, and Howdy never asks for a phone number. */}
+            <h1 className="font-display text-[clamp(2.25rem,1.5rem+3vw,3.5rem)] leading-[1.05] font-semibold tracking-tight text-text-primary">
+              Your groups deserve better.{' '}
+              {/* Two-tone: ink, then the top bar's blue (3.8:1 on white, fine at this size). Kept whole, never split. */}
+              <span className="whitespace-nowrap text-header">Meet Howdy.</span>
             </h1>
             <p className="max-w-xl text-title font-normal text-text-secondary">
-              Share posts, Stories and messages with your friends, family and batch. No algorithm, no ads, and
-              no strangers in your inbox.
+              A simpler, more private place to chat, share moments, plan events and keep everyone together.{' '}
+              <strong className="font-semibold text-text-primary">Your phone number stays private.</strong>
             </p>
             <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
               <Link href={join} className={cn(buttonClasses({ size: 'lg' }), 'hover:no-underline')}>
-                Sign up — it’s free
+                Join Howdy — it’s free
               </Link>
               <a href="#tour" className={buttonClasses({ variant: 'secondary', size: 'lg' })}>
                 See how it works
@@ -265,24 +266,24 @@ export function WelcomeStory({ invite }: { invite?: { code: string; invitedBy?: 
 
         {/* Why it is different. */}
         <div className="bg-primary-soft">
-          <Section kicker="Why Howdy" title="Social media, minus the parts that wear you out.">
+          <Section kicker="Why Howdy" title="Everything the group chat should have been.">
             <ul className="grid gap-4 sm:grid-cols-3">
               {(
                 [
                   [
-                    PiClock,
-                    'Newest first, nothing ranked',
-                    'Home shows posts from your friends and the people you follow, in the order they were shared. No algorithm, no suggested posts, nothing autoplays.',
+                    PiPhoneSlash,
+                    'Your number stays yours',
+                    'Howdy never asks for your phone number. In a group of 300, people see your name and username, nothing more.',
                   ],
                   [
-                    PiUsers,
-                    'Real people, not crowds',
-                    'Friends are friends both ways, and only friends can message you. You can still follow people you look up to.',
+                    PiPushPin,
+                    'Notices that stay on top',
+                    'Pin the one thing everyone has to read. Events and polls live in the group too, not under 400 good-morning messages.',
                   ],
                   [
-                    PiBellSlash,
-                    'Quiet by design',
-                    'Saying no is never announced, blocks never show, and read receipts are your choice.',
+                    PiUserCheck,
+                    'You decide who’s in',
+                    'Approve each new member, pick Deputies to help, and remove spammers quietly. Nobody is told who said no.',
                   ],
                 ] as const
               ).map(([WhyIcon, name, text]) => (
@@ -389,8 +390,7 @@ export function WelcomeStory({ invite }: { invite?: { code: string; invitedBy?: 
                 Pull up a chair.
               </h2>
               <p className="max-w-md text-heading text-on-header">
-                Howdy is free, small on purpose, and better with your people in it. Claim your username before
-                someone else does.
+                Howdy is free and small on purpose. Bring your batch over: one link invites everyone.
               </p>
               <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
                 <Link href={join} className={cn(buttonClasses({ size: 'lg' }), 'hover:no-underline')}>
