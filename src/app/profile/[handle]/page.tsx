@@ -192,6 +192,7 @@ export default async function RanchPage({ params }: { params: Promise<{ handle: 
           const header = (
             <div className="clay overflow-hidden">
               <RanchCover
+                priority
                 preset={ranch.coverPreset}
                 photoUrl={cover ? coverUrl(ranch.handle, cover) : null}
                 {...(isOwner

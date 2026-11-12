@@ -21,18 +21,31 @@ export function RanchCover({
   preset = 'porch',
   photoUrl,
   action,
+  priority = false,
   className,
 }: {
   preset?: CoverPreset;
   photoUrl?: string | null | undefined;
   action?: ReactNode;
+  /**
+   * The top of a profile page: the cover photo is the biggest thing on screen there, so it is fetched straight away and
+   * first (lazy, the browser waited ~1 s to even ask for it). Not in the Change cover preview.
+   */
+  priority?: boolean;
   className?: string;
 }) {
   return (
     <div className={cn('relative h-40 overflow-hidden sm:h-52', className)}>
       <div aria-hidden="true" className="absolute inset-0">
         {photoUrl ? (
-          <Img src={photoUrl} alt="" width={1600} height={560} className="size-full object-cover" />
+          <Img
+            src={photoUrl}
+            alt=""
+            width={1600}
+            height={560}
+            {...(priority ? { loading: 'eager' as const, fetchPriority: 'high' as const } : {})}
+            className="size-full object-cover"
+          />
         ) : preset === 'porch' ? (
           <PorchScene />
         ) : (
