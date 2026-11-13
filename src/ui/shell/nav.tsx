@@ -131,13 +131,14 @@ export function ShellSidebarNav({ items }: { items: ShellNavItem[] }) {
 }
 
 /**
- * The phone tab bar, in order: Home, Friends, Groups, Messages, and your photo (Profile). Groups got a tab on 2026-11-14
- * (the user's call: groups were hidden in the Profile sheet and nobody found them). Create is gone (2026-11-08).
- * Notifications are the bell in the top bar, with their count; everything else (Visitors, Buy or wait, Settings, staff
- * pages, Free to talk, Time Capsules, Devices, Sign out) is in the Profile sheet. The sidebar lists everything on wide screens.
+ * The phone tab bar, in order: Home, Groups, Friends, Messages, and your photo ("Me"). The user's order and name
+ * (2026-11-14): groups got a tab next to Home because they were hidden in the sheet and nobody found them, and "Profile"
+ * became "Me" (the sheet holds more than the profile). Create is gone (2026-11-08). Notifications are the bell in the
+ * top bar, with their count; everything else (Visitors, Buy or wait, Settings, staff pages, Free to talk, Time Capsules,
+ * Devices, Sign out) is in the Me sheet. The sidebar lists everything on wide screens.
  */
-const PHONE_TABS = ['home', 'posse', 'town-halls', 'whispers'] as const;
-/** In the Profile sheet: every page that is neither a tab nor the bell, nor your own profile (the sheet's first row). */
+const PHONE_TABS = ['home', 'town-halls', 'posse', 'whispers'] as const;
+/** In the Me sheet: every page that is neither a tab nor the bell, nor your own profile (the sheet's first row). */
 const IN_TABS: ShellNavKey[] = [...PHONE_TABS, 'chimes', 'ranch'];
 /** The phone tabs' own icons: outline, and filled while current (Phosphor; see icons.tsx). */
 const TAB_ICON: Record<(typeof PHONE_TABS)[number], [ReactNode, ReactNode]> = {
@@ -155,7 +156,7 @@ export function ShellBottomNav({
 }: {
   items: ShellNavItem[];
   me: ShellMe;
-  /** Phones reach Free to talk in the Profile sheet (wide screens have the pill in the top bar). */
+  /** Phones reach Free to talk in the Me sheet (wide screens have the pill in the top bar). */
   freeToTalk?: FreeToTalkState | undefined;
 }) {
   const pathname = usePathname();
@@ -186,11 +187,11 @@ export function ShellBottomNav({
     rest.some((it) => isCurrent(pathname, it.href));
   const tabs: NavItem[] = [
     ...tab('home'),
-    ...tab('posse'),
     ...tab('town-halls'),
+    ...tab('posse'),
     ...tab('whispers'),
     {
-      label: 'Profile',
+      label: 'Me',
       // Your photo; on your own pages it gets a black ring (the photo cannot "fill" like the other icons).
       icon: (
         <span

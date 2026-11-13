@@ -13,7 +13,7 @@ import { FreeDot, FreeToTalkDialog, freeToTalkSummary, type FreeToTalkState } fr
 import type { ShellNavKey } from './nav';
 
 /**
- * One row of the Profile sheet (the user's design, 2026-11-10): a 40 px grey tile with its icon, the words, then a
+ * One row of the Me sheet (the user's design, 2026-11-10): a 40 px grey tile with its icon, the words, then a
  * count if there is one and a chevron. App-sized (14 px words, 44 px rows: the touch minimum) so every row, staff
  * pages included, fits on one phone screen without scrolling.
  */
@@ -69,7 +69,7 @@ export interface YouLink {
 }
 
 /**
- * Your photo in the phone's tab bar (Profile) opens this, in groups split by dashed lines: your profile; Free to talk;
+ * Your photo in the phone's tab bar ("Me") opens this, in groups split by dashed lines: your profile; Free to talk;
  * Visitors and Groups; the staff pages (staff only); Settings, Time Capsules and Devices; Send feedback; Sign out.
  */
 export function YouSheet({
@@ -119,7 +119,7 @@ export function YouSheet({
       {freeToTalk && (
         <FreeToTalkDialog state={freeToTalk} open={talkOpen} onClose={() => setTalkOpen(false)} />
       )}
-      <Drawer side="bottom" open={open} onClose={onClose} title="Profile">
+      <Drawer side="bottom" open={open} onClose={onClose} title="Me">
         <div className="-mx-2 -mt-2 flex flex-col">
           <Link href={`/profile/${me.handle}`} onClick={onClose} className={cn(ROW, 'mb-1 py-1')}>
             <Avatar name={me.displayName} src={me.portraitUrl} tint={me.portraitTint} size="md" />

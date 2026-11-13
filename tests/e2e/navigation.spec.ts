@@ -41,7 +41,7 @@ async function person(browser: Browser, tag: string, opts: Parameters<typeof new
 
 const PHONE = { hasTouch: true, isMobile: true, viewport: { width: 320, height: 700 } };
 
-test('on a 320 px phone, the Profile sheet reaches every page that is not a tab — Moderation too, for staff', async ({
+test('on a 320 px phone, the Me sheet reaches every page that is not a tab — Moderation too, for staff', async ({
   browser,
 }) => {
   const me = await person(browser, 'navphone', PHONE);
@@ -59,8 +59,8 @@ test('on a 320 px phone, the Profile sheet reaches every page that is not a tab 
     await me.page.goto('/home');
     await pageReady(me.page);
     expect(await horizontalOverflow(me.page)).toBe(0);
-    await bar.getByRole('button', { name: /^Profile/ }).click();
-    const sheet = me.page.getByRole('dialog', { name: 'Profile' });
+    await bar.getByRole('button', { name: /^Me\b/ }).click();
+    const sheet = me.page.getByRole('dialog', { name: 'Me' });
     await expect(sheet).toBeVisible();
     if (label === 'Visitors') {
       expect(await axeViolations(me.page)).toEqual([]);
@@ -73,6 +73,8 @@ test('on a 320 px phone, the Profile sheet reaches every page that is not a tab 
   await me.page.goto('/home');
   await pageReady(me.page);
   await expect(bar.getByRole('listitem')).toHaveCount(5);
+  // The user's order and names (2026-11-14): Home, Groups, Friends, Messages, Me.
+  await expect(bar.getByRole('listitem')).toHaveText([/^Home/, /^Groups/, /^Friends/, /^Messages/, /Me$/]);
   await expect(bar.getByRole('button', { name: 'Create' })).toHaveCount(0);
   expect(await smallTargets(me.page)).toEqual([]);
   await bar.getByRole('link', { name: /^Groups/ }).click();
@@ -80,8 +82,8 @@ test('on a 320 px phone, the Profile sheet reaches every page that is not a tab 
   await me.page.goto('/home');
   await pageReady(me.page);
   // The sheet ends with Sign out: on a phone that is where people look for it.
-  await bar.getByRole('button', { name: /^Profile/ }).click();
-  await me.page.getByRole('dialog', { name: 'Profile' }).getByRole('button', { name: 'Sign out' }).click();
+  await bar.getByRole('button', { name: /^Me\b/ }).click();
+  await me.page.getByRole('dialog', { name: 'Me' }).getByRole('button', { name: 'Sign out' }).click();
   await expect(me.page).toHaveURL(/\/gate$/);
   await me.page.goto('/home');
   await expect(me.page).toHaveURL(/\/login$/);
@@ -89,7 +91,7 @@ test('on a 320 px phone, the Profile sheet reaches every page that is not a tab 
   await me.ctx.close();
 });
 
-test('the Profile sheet shows every row at once on a common phone, staff rows included: no scrolling', async ({
+test('the Me sheet shows every row at once on a common phone, staff rows included: no scrolling', async ({
   browser,
 }) => {
   // 360×740: a common Android screen once the browser's own bars are taken off (2026-11-10, the user's ask).
@@ -97,11 +99,8 @@ test('the Profile sheet shows every row at once on a common phone, staff rows in
   await makeStaff(db, me.handle);
   await me.page.goto('/home');
   await pageReady(me.page);
-  await me.page
-    .getByRole('navigation', { name: 'Primary' })
-    .getByRole('button', { name: /^Profile/ })
-    .click();
-  const sheet = me.page.getByRole('dialog', { name: 'Profile' });
+  await me.page.getByRole('navigation', { name: 'Primary' }).getByRole('button', { name: /^Me\b/ }).click();
+  const sheet = me.page.getByRole('dialog', { name: 'Me' });
   await expect(sheet.getByRole('link', { name: /^Moderation/ })).toBeVisible();
   await expect(sheet.getByRole('button', { name: 'Sign out' })).toBeInViewport();
   expect(await sheet.evaluate((el) => el.scrollHeight - el.clientHeight)).toBeLessThanOrEqual(0);
@@ -114,7 +113,7 @@ test('on a desktop the sidebar has them, and there is no phone tab bar', async (
   await me.page.goto('/home');
   await pageReady(me.page);
   // The phone tab bar (and its Profile button) is hidden on wide screens.
-  await expect(me.page.getByRole('button', { name: /^Profile/ })).toBeHidden();
+  await expect(me.page.getByRole('button', { name: /^Me\b/ })).toBeHidden();
   const sidebar = me.page.getByRole('navigation', { name: 'Primary' }).first();
   for (const label of ['Visitors', 'Settings', 'Groups', 'Buy or wait']) {
     await expect(sidebar.getByRole('link', { name: new RegExp(`^${label}`) })).toBeVisible();
