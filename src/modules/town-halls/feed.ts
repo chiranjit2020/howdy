@@ -1,5 +1,7 @@
 import {
   media,
+  townHallAskAnswers,
+  townHallAsks,
   townHallEvents,
   townHallMembers,
   townHallPollOptions,
@@ -30,9 +32,13 @@ import {
 import { leadingMention } from '@/shared/mentions';
 import type { PortraitTint } from '@/shared/validation/profile';
 import {
+  ASK_OUTCOMES,
+  ASK_VERDICTS,
   HALL_FEED_MAX_PAGE_SIZE,
   HALL_FEED_PAGE_SIZE,
   RSVP_ANSWERS,
+  type AskOutcome,
+  type AskVerdict,
   type RsvpAnswer,
 } from '@/shared/validation/town-halls';
 import { activeRole, isStaff, outranks, rolesIn, type HallRole } from './roles';
@@ -56,6 +62,8 @@ export const FEED_RATE = {
   reply: rule(60, 3600),
   react: rule(200, 3600),
   manage: rule(120, 3600),
+  /** "Buy or wait?" rings every member (ADR-065), so a person may ask only a few a day. */
+  ask: rule(3, 24 * 3600),
 } as const;
 
 /** A photo can be posted only while it is younger than this (the clean-up job takes unattached ones at 60 minutes). */
@@ -145,6 +153,34 @@ export interface HallPollView {
   canClose: boolean;
 }
 
+/** One member's answer to a "Buy or wait?" (ADR-065). */
+export interface HallAskAnswer {
+  author: HallAuthor;
+  verdict: AskVerdict;
+  reason: string;
+  mine: boolean;
+}
+
+/** A "Buy or wait?" as one member sees it (ADR-065). Its words (why the asker wants it) are the post's body. */
+export interface HallAskView {
+  item: string;
+  priceRupees: number;
+  alternative: string | null;
+  /** The asker's one update, if they added it. */
+  note: string | null;
+  /** What the asker decided; answers are closed once set. */
+  outcome: AskOutcome | null;
+  counts: Record<AskVerdict, number>;
+  /** Every answer from a current member this viewer has not hidden, oldest first. */
+  answers: HallAskAnswer[];
+  /** My own answer, if any. */
+  mine: { verdict: AskVerdict; reason: string } | null;
+  /** May I answer (a member who is not the asker, on a published, undecided question)? */
+  canAnswer: boolean;
+  /** Am I the asker? (Then I may add my one update and say what I decided.) */
+  isAsker: boolean;
+}
+
 export interface HallPostView {
   id: string;
   body: string;
@@ -160,6 +196,8 @@ export interface HallPostView {
   event: HallEventView | null;
   /** When this post is a poll (ADR-057): its options and counts. */
   poll: HallPollView | null;
+  /** When this post is a "Buy or wait?" (ADR-065). */
+  ask: HallAskView | null;
   /** Its photo (ADR-046), when it has one this viewer may see. */
   photo: HallPhoto | null;
   /** Set when this post is a Time Capsule that opened (ADR-043): when its words were sealed. */
@@ -276,7 +314,7 @@ async function hydrate(
   if (rows.length === 0) return [];
   const db = getDb();
   const ids = rows.map((r) => r.id);
-  const [counts, mine, replyRows, photos, events, polls] = await Promise.all([
+  const [counts, mine, replyRows, photos, events, polls, asks] = await Promise.all([
     db
       .select({ postId: townHallReactions.postId, kind: townHallReactions.kind, n: count() })
       .from(townHallReactions)
@@ -301,6 +339,7 @@ async function hydrate(
     photosOn(viewerId, ids),
     eventsOn(viewerId, hall.id, rows),
     pollsOn(viewerId, hall, rows),
+    asksOn(viewerId, hall, rows),
   ]);
 
   const replyAuthorIds = replyRows.map((r) => r.authorId);
@@ -358,6 +397,7 @@ async function hydrate(
         canPin: published && isStaff(hall.myRole),
         event: events.get(row.id) ?? null,
         poll: polls.get(row.id) ?? null,
+        ask: asks.get(row.id) ?? null,
         photo: photos.get(row.id) ?? null,
         capsuleSealedAt: row.capsuleSealedAt,
         reactions: reactionsByPost.get(row.id) ?? emptyReactions(),
@@ -522,6 +562,8 @@ export async function createPost(
   event?: { title: string; startsAt: Date; place?: string | undefined },
   /** Makes the post a poll (ADR-057): its options, written with it in the same transaction. */
   poll?: { options: string[] },
+  /** Makes the post a "Buy or wait?" (ADR-065), written with it in the same transaction. */
+  ask?: { item: string; priceRupees: number; alternative?: string | undefined },
 ): Promise<HallPostView> {
   // Spent before the Town Hall is looked up: the same limit trips whether it exists, is hidden or is made up.
   await enforceRateLimit(`townhalls:post:${userId}`, FEED_RATE.post);
@@ -549,6 +591,14 @@ export async function createPost(
       await tx
         .insert(townHallPollOptions)
         .values(poll.options.map((label, position) => ({ postId: post!.id, position, label })));
+    }
+    if (ask) {
+      await tx.insert(townHallAsks).values({
+        postId: post!.id,
+        item: ask.item,
+        priceRupees: ask.priceRupees,
+        alternative: ask.alternative ?? null,
+      });
     }
     if (photoId) {
       // Only MY finished photo, on no card and no other post yet, and young enough that the clean-up cannot take it.
@@ -988,6 +1038,7 @@ export const peopleOn = (posts: HallPostView[]): HallAuthor[] =>
   posts.flatMap((p) => [
     p.author,
     ...p.replies.map((r) => r.author),
+    ...(p.ask ? p.ask.answers.map((a) => a.author) : []),
     ...(p.event?.answers ? RSVP_ANSWERS.flatMap((a) => p.event!.answers![a]) : []),
   ]);
 
@@ -1106,4 +1157,208 @@ export async function closePoll(userId: string, postId: string): Promise<void> {
       .limit(1);
     if (!exists) throw new AppError('NOT_FOUND');
   }
+}
+
+// ─── "Buy or wait?" (ADR-065) ────────────────────────────────────────────────────────────────────────────────────────
+
+const isVerdict = (v: string): v is AskVerdict => (ASK_VERDICTS as readonly string[]).includes(v);
+const isOutcome = (v: string | null): v is AskOutcome =>
+  v !== null && (ASK_OUTCOMES as readonly string[]).includes(v);
+
+/**
+ * The "Buy or wait?" questions among these posts, as this viewer sees them. Answers count only from people who are still
+ * active members (decided now), and named answers leave out anyone the viewer has hidden or who is no longer active.
+ */
+async function asksOn(viewerId: string, hall: Hall, rows: PostRow[]): Promise<Map<string, HallAskView>> {
+  const out = new Map<string, HallAskView>();
+  const ids = rows.map((r) => r.id);
+  if (ids.length === 0) return out;
+  const db = getDb();
+  const asks = await db.select().from(townHallAsks).where(inArray(townHallAsks.postId, ids));
+  if (asks.length === 0) return out;
+  const answers = await db
+    .select({
+      postId: townHallAskAnswers.postId,
+      userId: townHallAskAnswers.userId,
+      verdict: townHallAskAnswers.verdict,
+      reason: townHallAskAnswers.reason,
+    })
+    .from(townHallAskAnswers)
+    .innerJoin(
+      townHallMembers,
+      and(
+        eq(townHallMembers.townHallId, hall.id),
+        eq(townHallMembers.userId, townHallAskAnswers.userId),
+        eq(townHallMembers.status, 'active'),
+      ),
+    )
+    .where(
+      inArray(
+        townHallAskAnswers.postId,
+        asks.map((a) => a.postId),
+      ),
+    )
+    .orderBy(asc(townHallAskAnswers.answeredAt));
+  const people = [...new Set(answers.map((a) => a.userId))];
+  const [cards, hidden] = people.length
+    ? await Promise.all([getCards(people), hiddenAuthors(viewerId, people)])
+    : [new Map<string, PersonCard>(), new Set<string>()];
+  const byId = new Map(rows.map((r) => [r.id, r]));
+  for (const a of asks) {
+    const row = byId.get(a.postId)!;
+    const outcome = isOutcome(a.outcome) ? a.outcome : null;
+    const view: HallAskView = {
+      item: a.item,
+      priceRupees: a.priceRupees,
+      alternative: a.alternative,
+      note: a.note,
+      outcome,
+      counts: { buy: 0, wait: 0 },
+      answers: [],
+      mine: null,
+      canAnswer: row.authorId !== viewerId && row.status === 'published' && outcome === null,
+      isAsker: row.authorId === viewerId,
+    };
+    for (const ans of answers) {
+      if (ans.postId !== a.postId || !isVerdict(ans.verdict)) continue;
+      const card = cards.get(ans.userId);
+      if (!card) continue; // no longer active: their answer does not count
+      view.counts[ans.verdict] += 1;
+      const mineHere = ans.userId === viewerId;
+      if (mineHere) view.mine = { verdict: ans.verdict, reason: ans.reason };
+      if (!hidden.has(ans.userId)) {
+        view.answers.push({
+          author: toAuthor(card),
+          verdict: ans.verdict,
+          reason: ans.reason,
+          mine: mineHere,
+        });
+      }
+    }
+    out.set(a.postId, view);
+  }
+  return out;
+}
+
+/**
+ * Ask the group "Buy or wait?" (ADR-065). Any active member, a few a day (it rings every member). Follows every rule a
+ * post does (limits, holding, the photo pipeline); a held one rings nobody.
+ */
+export async function createAsk(
+  userId: string,
+  townHallId: string,
+  input: {
+    item: string;
+    price: number;
+    why: string;
+    alternative?: string | undefined;
+    photoId?: string | undefined;
+  },
+): Promise<HallPostView> {
+  await enforceRateLimit(`townhalls:ask:${userId}`, FEED_RATE.ask);
+  const view = await createPost(userId, townHallId, input.why, input.photoId, undefined, undefined, {
+    item: input.item,
+    priceRupees: input.price,
+    alternative: input.alternative,
+  });
+  const [row] = await getDb()
+    .select({ status: townHallPosts.status, townHallId: townHallPosts.townHallId })
+    .from(townHallPosts)
+    .where(eq(townHallPosts.id, view.id))
+    .limit(1);
+  if (row?.status === 'published') {
+    emit({ type: 'hall.ask_created', postId: view.id, townHallId: row.townHallId, authorId: userId });
+  }
+  return view;
+}
+
+/** The question and the post it is on, for someone who may see it; null otherwise. */
+async function loadAsk(userId: string, postId: string) {
+  const found = await loadPost(userId, postId);
+  if (!found) return null;
+  const [ask] = await getDb().select().from(townHallAsks).where(eq(townHallAsks.postId, postId)).limit(1);
+  return ask ? { ...found, ask } : null;
+}
+
+/** The question as this viewer sees it now, after a change (what the routes send back). */
+async function askViewOf(userId: string, found: { post: PostRow; hall: Hall }): Promise<HallAskView> {
+  const view = (await asksOn(userId, found.hall, [found.post])).get(found.post.id);
+  if (!view) throw new AppError('NOT_FOUND');
+  return view;
+}
+
+/**
+ * Answer "Buy or wait?": buy or wait with a reason, or `null` to take the answer back. Active members who may see the
+ * post, not the asker, while it is undecided. Anyone else, or a post that is not a question, gets the same 404. Only a
+ * first answer rings the asker (a changed one is not news).
+ */
+export async function answerAsk(
+  userId: string,
+  postId: string,
+  answer: { verdict: AskVerdict; reason: string } | null,
+): Promise<HallAskView> {
+  await enforceRateLimit(`townhalls:ask-answer:${userId}`, FEED_RATE.react);
+  await enforceNewAccountLimit(userId, 'reply');
+  const found = await loadAsk(userId, postId);
+  if (!found || found.post.status !== 'published') throw new AppError('NOT_FOUND');
+  if (answer === null) {
+    await getDb()
+      .delete(townHallAskAnswers)
+      .where(and(eq(townHallAskAnswers.postId, postId), eq(townHallAskAnswers.userId, userId)));
+    return askViewOf(userId, found);
+  }
+  if (found.post.authorId === userId) {
+    throw new AppError('BAD_REQUEST', { message: 'This is your own question. Your group answers it.' });
+  }
+  if (found.ask.outcome !== null) {
+    throw new AppError('BAD_REQUEST', { message: 'They have already decided, so answers are closed.' });
+  }
+  const db = getDb();
+  const made = await db
+    .insert(townHallAskAnswers)
+    .values({ postId, userId, verdict: answer.verdict, reason: answer.reason, answeredAt: new Date() })
+    .onConflictDoNothing()
+    .returning({ postId: townHallAskAnswers.postId });
+  if (made.length === 0) {
+    await db
+      .update(townHallAskAnswers)
+      .set({ verdict: answer.verdict, reason: answer.reason, answeredAt: new Date() })
+      .where(and(eq(townHallAskAnswers.postId, postId), eq(townHallAskAnswers.userId, userId)));
+    return askViewOf(userId, found);
+  }
+  emit({ type: 'hall.ask_answered', postId, postAuthorId: found.post.authorId, actorId: userId });
+  return askViewOf(userId, found);
+}
+
+/**
+ * The asker's ONE update (to answer what the group asked). Not a chat: a second one is refused. The asker only; anyone
+ * else gets the same 404 as a question that is not there.
+ */
+export async function noteAsk(userId: string, postId: string, note: string): Promise<HallAskView> {
+  await enforceRateLimit(`townhalls:feed-manage:${userId}`, FEED_RATE.manage);
+  const found = await loadAsk(userId, postId);
+  if (!found || found.post.authorId !== userId) throw new AppError('NOT_FOUND');
+  const done = await getDb()
+    .update(townHallAsks)
+    .set({ note, notedAt: new Date() })
+    .where(and(eq(townHallAsks.postId, postId), isNull(townHallAsks.note)))
+    .returning({ postId: townHallAsks.postId });
+  if (done.length === 0)
+    throw new AppError('CONFLICT', { message: 'You have already added your one update.' });
+  return askViewOf(userId, found);
+}
+
+/**
+ * Say what you decided: bought it, waiting, or skipped it. Answers close. The asker may change it later (waiting, then
+ * bought); anyone else gets the same 404 as a question that is not there.
+ */
+export async function decideAsk(userId: string, postId: string, outcome: AskOutcome): Promise<HallAskView> {
+  await enforceRateLimit(`townhalls:feed-manage:${userId}`, FEED_RATE.manage);
+  const found = await loadAsk(userId, postId);
+  if (!found || found.post.authorId !== userId) throw new AppError('NOT_FOUND');
+  await getDb()
+    .update(townHallAsks)
+    .set({ outcome, decidedAt: new Date() })
+    .where(eq(townHallAsks.postId, postId));
+  return askViewOf(userId, found);
 }

@@ -171,6 +171,59 @@ export type CreatePollInput = z.infer<typeof createPollSchema>;
 /** Vote for one option (its id), or `null` to take the vote back. */
 export const pollVoteSchema = z.object({ optionId: z.uuid().nullable() });
 
+/**
+ * "Buy or wait?" (ADR-065): what the asker wants (`item`), its price in whole rupees, why (`why`, the post's words), an
+ * optional alternative and an optional photo. Every word gets a post's screening (no links, no disguising characters).
+ */
+export const createAskSchema = z.object({
+  item: clean(LIMITS.ASK_ITEM_MAX, 'Say what you want to buy.', 'The item').pipe(
+    z.string().min(2, 'At least 2 characters.'),
+  ),
+  price: z.coerce
+    .number({ error: 'Give the price in rupees.' })
+    .int('Give a whole number of rupees.')
+    .min(1, 'Give the price in rupees.')
+    .max(LIMITS.ASK_PRICE_MAX, 'That price is too high for Howdy.'),
+  why: clean(LIMITS.TOWNHALL_POST_MAX, 'Say why you want it.', 'Your reason').pipe(
+    z.string().min(3, 'At least 3 characters.'),
+  ),
+  alternative: z.preprocess(
+    blankToUndefined,
+    clean(LIMITS.ASK_ALTERNATIVE_MAX, 'Say what else you could do.', 'The alternative').optional(),
+  ),
+  photoId: z.uuid().optional(),
+});
+export type CreateAskInput = z.infer<typeof createAskSchema>;
+
+export const ASK_VERDICTS = ['buy', 'wait'] as const;
+export type AskVerdict = (typeof ASK_VERDICTS)[number];
+export const ASK_OUTCOMES = ['bought', 'waiting', 'skipped'] as const;
+export type AskOutcome = (typeof ASK_OUTCOMES)[number];
+
+/** An answer: buy or wait, with a short reason (required: a bare vote helps nobody). `{verdict: null}` takes it back. */
+export const askAnswerSchema = z
+  .object({
+    verdict: z.enum(ASK_VERDICTS).nullable(),
+    reason: z.preprocess(
+      blankToUndefined,
+      clean(LIMITS.ASK_REASON_MAX, 'Say why, in a few words.', 'Your reason')
+        .pipe(z.string().min(2, 'Say why, in a few words.'))
+        .optional(),
+    ),
+  })
+  .refine((a) => a.verdict === null || a.reason !== undefined, {
+    message: 'Say why, in a few words.',
+    path: ['reason'],
+  });
+export type AskAnswerInput = z.infer<typeof askAnswerSchema>;
+
+/** The asker's one update (answers a question the group raised). */
+export const askNoteSchema = z.object({
+  note: clean(LIMITS.TOWNHALL_POST_MAX, 'Write your update.', 'An update'),
+});
+/** What the asker decided. */
+export const askDecideSchema = z.object({ outcome: z.enum(ASK_OUTCOMES) });
+
 export const hallReplySchema = postReplySchema;
 export const hallReactionSchema = yoSchema;
 export const hallActionSchema = z.object({ action: z.enum(['approve']) });

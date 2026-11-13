@@ -23,6 +23,11 @@ export const LIMITS = {
   POLL_OPTION_MAX: 60,
   POLL_OPTIONS_MIN: 2,
   POLL_OPTIONS_MAX: 4,
+  /** "Buy or wait?" (ADR-065): the item's name, its price in rupees, the alternative, a reason with an answer. */
+  ASK_ITEM_MAX: 80,
+  ASK_PRICE_MAX: 10_000_000,
+  ASK_ALTERNATIVE_MAX: 140,
+  ASK_REASON_MAX: 140,
   HANDLE_MIN: 3,
   HANDLE_MAX: 24,
 } as const;

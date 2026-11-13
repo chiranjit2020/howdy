@@ -36,8 +36,12 @@ export type {
   TownHallSummary,
 } from './service';
 export {
+  answerAsk,
   answerEvent,
   closePoll,
+  createAsk,
+  decideAsk,
+  noteAsk,
   approvePost,
   approveReply,
   createPost,
@@ -57,6 +61,8 @@ export {
   FEED_RATE,
 } from './feed';
 export type {
+  HallAskAnswer,
+  HallAskView,
   HallAuthor,
   HallEventView,
   HallPollView,

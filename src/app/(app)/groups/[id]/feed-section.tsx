@@ -1,7 +1,7 @@
 'use client';
 
 import { useId, useState } from 'react';
-import type { HallFeedPage, HallPostView, HallReplyView, HeldItems } from '@/modules/town-halls';
+import type { HallAskView, HallFeedPage, HallPostView, HallReplyView, HeldItems } from '@/modules/town-halls';
 import { dayOf, longDay } from '@/shared/calendar';
 import type { ReactionKind } from '@/shared/validation/fence';
 import { apiRequest, postJson } from '@/ui/auth/api';
@@ -16,7 +16,8 @@ import {
 } from '@/ui/howdy';
 import { FoldedText } from '@/ui/howdy/folded-text';
 import { ReportDialog } from '@/ui/howdy/report-dialog';
-import type { RsvpAnswer } from '@/shared/validation/town-halls';
+import type { AskOutcome, AskVerdict, RsvpAnswer } from '@/shared/validation/town-halls';
+import { AskBlock, NewAsk } from './ask-block';
 import { EventBlock, type WireEvent } from './event-block';
 import { NewEvent } from './new-event';
 import { NewPoll, PollBlock } from './poll-block';
@@ -210,6 +211,34 @@ export function FeedSection({
     }
   }
 
+  /**
+   * A "Buy or wait?" action (ADR-065): answer, take back, add the one update, or decide. The server sends the question
+   * back as it now stands, so the names and counts shown are always its own.
+   */
+  async function askAction(p: WirePost, path: string, body: unknown, done?: string): Promise<boolean> {
+    setError(undefined);
+    setAnswering(p.id);
+    const res = await postJson<{ ask: HallAskView }>(`/api/hall-posts/${p.id}/${path}`, body);
+    setAnswering(undefined);
+    if (res.ok && res.data) {
+      const ask = res.data.ask;
+      patchPost(p.id, (x) => ({ ...x, ask }));
+      if (done) toast({ title: done, tone: 'success' });
+      return true;
+    }
+    setError(
+      res.error?.fields?.reason ??
+        res.error?.fields?.note ??
+        res.error?.message ??
+        'That did not go through.',
+    );
+    return false;
+  }
+  const answerAsk = (p: WirePost, a: { verdict: AskVerdict; reason: string } | null) =>
+    askAction(p, 'answer', a ?? { verdict: null }, a ? 'Answer sent.' : 'Answer taken back.');
+  const noteAsk = (p: WirePost, note: string) => askAction(p, 'ask-note', { note }, 'Update posted.');
+  const decideAsk = (p: WirePost, outcome: AskOutcome) => askAction(p, 'decide', { outcome }, 'Saved.');
+
   async function closePoll(p: WirePost) {
     setError(undefined);
     const res = await postJson(`/api/hall-posts/${p.id}/close-poll`, {});
@@ -308,8 +337,12 @@ export function FeedSection({
       {isOwner && initialHeld && <HeldTray initial={initialHeld} onApproved={refreshNewest} />}
 
       <section aria-labelledby={headingId} className="flex flex-col gap-4">
-        <div className="flex items-center gap-3">
-          <h2 id={headingId} className="min-w-0 flex-1 font-display text-heading text-text-primary">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+          {/* On a phone the heading takes its own line and the three buttons sit under it. */}
+          <h2
+            id={headingId}
+            className="min-w-0 basis-full font-display text-heading text-text-primary sm:flex-1 sm:basis-0"
+          >
             The feed
           </h2>
           <NewEvent<WirePost>
@@ -324,6 +357,13 @@ export function FeedSection({
             onPosted={(made) => {
               setPosts((all) => [made, ...all]);
               toast({ title: 'Poll posted.', tone: 'success' });
+            }}
+          />
+          <NewAsk<WirePost>
+            townHallId={townHallId}
+            onPosted={(made) => {
+              setPosts((all) => [made, ...all]);
+              toast({ title: 'Asked. Your group will hear about it.', tone: 'success' });
             }}
           />
         </div>
@@ -350,8 +390,9 @@ export function FeedSection({
                   priority={i === firstPictureIndex(list)}
                   author={authorOf(p.author)}
                   // An event's name is its words when it has no details: shown once, in the event.
-                  // A poll's words are its question, shown in the poll itself.
-                  body={p.poll || (p.event && p.body === p.event.title) ? '' : p.body}
+                  // A poll's words are its question, shown in the poll itself; a "Buy or wait?"'s are its why,
+                  // shown under the item.
+                  body={p.poll || p.ask || (p.event && p.body === p.event.title) ? '' : p.body}
                   createdAt={p.createdAt}
                   photo={p.photo}
                   {...(p.poll
@@ -363,6 +404,20 @@ export function FeedSection({
                             busy={answering === p.id}
                             onVote={(o) => vote(p, o)}
                             onClose={() => void closePoll(p)}
+                          />
+                        ),
+                      }
+                    : {})}
+                  {...(p.ask
+                    ? {
+                        attachment: (
+                          <AskBlock
+                            ask={p.ask}
+                            why={p.body}
+                            busy={answering === p.id}
+                            onAnswer={(a) => answerAsk(p, a)}
+                            onNote={(n) => noteAsk(p, n)}
+                            onDecide={(o) => decideAsk(p, o)}
                           />
                         ),
                       }

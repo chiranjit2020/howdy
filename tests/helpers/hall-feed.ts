@@ -9,6 +9,10 @@ import { POST as rsvpRoute } from '@/app/api/hall-posts/[id]/rsvp/route';
 import { POST as voteRoute } from '@/app/api/hall-posts/[id]/vote/route';
 import { POST as closePollRoute } from '@/app/api/hall-posts/[id]/close-poll/route';
 import { POST as pollRoute } from '@/app/api/town-halls/[id]/polls/route';
+import { POST as askRoute } from '@/app/api/town-halls/[id]/asks/route';
+import { POST as answerRoute } from '@/app/api/hall-posts/[id]/answer/route';
+import { POST as askNoteRoute } from '@/app/api/hall-posts/[id]/ask-note/route';
+import { POST as decideRoute } from '@/app/api/hall-posts/[id]/decide/route';
 import { POST as eventRoute } from '@/app/api/town-halls/[id]/events/route';
 import { DELETE as removeReplyRoute } from '@/app/api/hall-replies/[id]/route';
 import { POST as approveReplyRoute } from '@/app/api/hall-replies/[id]/approve/route';
@@ -42,6 +46,8 @@ export interface HallPost {
     closed: boolean;
     canClose: boolean;
   } | null;
+  /** ADR-065: when the post is a "Buy or wait?". */
+  ask?: HallAsk | null;
   /** ADR-056: when the post is an event. */
   event?: {
     title: string;
@@ -58,7 +64,20 @@ export interface HallPost {
   /** ADR-046: the post's photo, when there is one this viewer may see. */
   photo?: { url: string; width: number; height: number } | null;
 }
+export interface HallAsk {
+  item: string;
+  priceRupees: number;
+  alternative: string | null;
+  note: string | null;
+  outcome: 'bought' | 'waiting' | 'skipped' | null;
+  counts: { buy: number; wait: number };
+  answers: { author: { handle: string }; verdict: 'buy' | 'wait'; reason: string; mine: boolean }[];
+  mine: { verdict: 'buy' | 'wait'; reason: string } | null;
+  canAnswer: boolean;
+  isAsker: boolean;
+}
 type Wire = {
+  ask?: HallAsk;
   /** The pinned notice, first page only. */
   pinned?: HallPost | null;
   posts?: HallPost[];
@@ -121,3 +140,11 @@ export const approveReply = (id: string, opts: Opts = {}) =>
   send(approveReplyRoute, 'POST', `/api/hall-replies/${enc(id)}/approve`, id, {}, opts);
 export const reportPost = (id: string, body: unknown, opts: Opts = {}) =>
   send(reportPostRoute, 'POST', `/api/reports/hall-post/${enc(id)}`, id, body, opts);
+export const createAsk = (hallId: string, body: unknown, opts: Opts = {}) =>
+  send(askRoute, 'POST', `/api/town-halls/${enc(hallId)}/asks`, hallId, body, opts);
+export const answerAsk = (postId: string, body: unknown, opts: Opts = {}) =>
+  send(answerRoute, 'POST', `/api/hall-posts/${enc(postId)}/answer`, postId, body, opts);
+export const noteAsk = (postId: string, note: unknown, opts: Opts = {}) =>
+  send(askNoteRoute, 'POST', `/api/hall-posts/${enc(postId)}/ask-note`, postId, { note }, opts);
+export const decideAsk = (postId: string, outcome: unknown, opts: Opts = {}) =>
+  send(decideRoute, 'POST', `/api/hall-posts/${enc(postId)}/decide`, postId, { outcome }, opts);

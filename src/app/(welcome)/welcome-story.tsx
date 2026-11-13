@@ -45,7 +45,7 @@ const FEATURES: { icon: Icon; name: string; text: string }[] = [
   {
     icon: PiBuildings,
     name: 'Groups',
-    text: 'For your batch, society, family or team: a pinned notice, events with a time and place, polls and photos. Ask-to-join and Deputies keep it tidy.',
+    text: 'For your batch, society, family or team: a pinned notice, events with a time and place, polls and photos. Thinking of buying something? Ask “Buy or wait?” and your group answers, each with a reason. Ask-to-join and Deputies keep it tidy.',
   },
   {
     icon: PiUser,

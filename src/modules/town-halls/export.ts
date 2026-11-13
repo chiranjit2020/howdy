@@ -1,5 +1,7 @@
 import {
   media,
+  townHallAskAnswers,
+  townHallAsks,
   townHallMembers,
   townHallEvents,
   townHallPollOptions,
@@ -36,6 +38,14 @@ export interface HallExport {
     event: { title: string; startsAt: Date; place: string | null } | null;
     /** When the post is a poll (ADR-057): its options, in order. Its question is the post's words. */
     pollOptions: string[] | null;
+    /** When the post is a "Buy or wait?" (ADR-065). Why I wanted it is the post's words. */
+    ask: {
+      item: string;
+      priceRupees: number;
+      alternative: string | null;
+      note: string | null;
+      outcome: string | null;
+    } | null;
   }[];
   replies: { body: string; postedAt: Date }[];
   reactions: { kind: string; givenAt: Date }[];
@@ -43,6 +53,8 @@ export interface HallExport {
   eventAnswers: { event: string; answer: string; answeredAt: Date }[];
   /** My votes in polls: the question and the option I chose. */
   pollVotes: { question: string; option: string; votedAt: Date }[];
+  /** My answers to others' "Buy or wait?": the item, buy or wait, and my reason. */
+  askAnswers: { item: string; verdict: string; reason: string; answeredAt: Date }[];
 }
 
 export async function townHallsExport(userId: string): Promise<HallExport[]> {
@@ -64,7 +76,7 @@ export async function townHallsExport(userId: string): Promise<HallExport[]> {
   if (halls.length === 0) return [];
   const ids = halls.map((h) => h.id);
 
-  const [posts, replies, reactions, answers, options, votes] = await Promise.all([
+  const [posts, replies, reactions, answers, options, votes, askAnswers] = await Promise.all([
     db
       .select({
         id: townHallPosts.id,
@@ -75,6 +87,11 @@ export async function townHallsExport(userId: string): Promise<HallExport[]> {
         eventTitle: townHallEvents.title,
         eventStartsAt: townHallEvents.startsAt,
         eventPlace: townHallEvents.place,
+        askItem: townHallAsks.item,
+        askPrice: townHallAsks.priceRupees,
+        askAlternative: townHallAsks.alternative,
+        askNote: townHallAsks.note,
+        askOutcome: townHallAsks.outcome,
       })
       .from(townHallPosts)
       .leftJoin(
@@ -82,6 +99,7 @@ export async function townHallsExport(userId: string): Promise<HallExport[]> {
         and(eq(media.hallPostId, townHallPosts.id), eq(media.kind, 'card_photo'), eq(media.status, 'ready')),
       )
       .leftJoin(townHallEvents, eq(townHallEvents.postId, townHallPosts.id))
+      .leftJoin(townHallAsks, eq(townHallAsks.postId, townHallPosts.id))
       .where(and(eq(townHallPosts.authorId, userId), inArray(townHallPosts.townHallId, ids)))
       .orderBy(asc(townHallPosts.createdAt))
       .limit(EXPORT_CAP),
@@ -140,6 +158,20 @@ export async function townHallsExport(userId: string): Promise<HallExport[]> {
       .where(and(eq(townHallPollVotes.userId, userId), inArray(townHallPosts.townHallId, ids)))
       .orderBy(asc(townHallPollVotes.votedAt))
       .limit(EXPORT_CAP),
+    db
+      .select({
+        hallId: townHallPosts.townHallId,
+        item: townHallAsks.item,
+        verdict: townHallAskAnswers.verdict,
+        reason: townHallAskAnswers.reason,
+        answeredAt: townHallAskAnswers.answeredAt,
+      })
+      .from(townHallAskAnswers)
+      .innerJoin(townHallAsks, eq(townHallAsks.postId, townHallAskAnswers.postId))
+      .innerJoin(townHallPosts, eq(townHallPosts.id, townHallAskAnswers.postId))
+      .where(and(eq(townHallAskAnswers.userId, userId), inArray(townHallPosts.townHallId, ids)))
+      .orderBy(asc(townHallAskAnswers.answeredAt))
+      .limit(EXPORT_CAP),
   ]);
 
   return halls.map((h) => ({
@@ -161,6 +193,16 @@ export async function townHallsExport(userId: string): Promise<HallExport[]> {
         pollOptions: options.some((o) => o.postId === p.id)
           ? options.filter((o) => o.postId === p.id).map((o) => o.label)
           : null,
+        ask:
+          p.askItem !== null && p.askPrice !== null
+            ? {
+                item: p.askItem,
+                priceRupees: p.askPrice,
+                alternative: p.askAlternative,
+                note: p.askNote,
+                outcome: p.askOutcome,
+              }
+            : null,
       })),
     replies: replies.filter((r) => r.hallId === h.id).map((r) => ({ body: r.body, postedAt: r.createdAt })),
     reactions: reactions
@@ -172,5 +214,8 @@ export async function townHallsExport(userId: string): Promise<HallExport[]> {
     pollVotes: votes
       .filter((v) => v.hallId === h.id)
       .map((v) => ({ question: v.question, option: v.option, votedAt: v.votedAt })),
+    askAnswers: askAnswers
+      .filter((a) => a.hallId === h.id)
+      .map((a) => ({ item: a.item, verdict: a.verdict, reason: a.reason, answeredAt: a.answeredAt })),
   }));
 }

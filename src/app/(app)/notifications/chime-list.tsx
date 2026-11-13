@@ -35,6 +35,8 @@ const ITEM: Record<ChimeType, ItemType> = {
   capsule_opened: 'CAPSULE_OPENED',
   hall_reply_created: 'POST_CARD_REPLIED',
   hall_reaction_given: 'YO_DROPPED',
+  hall_ask_created: 'POST_CARD_CREATED',
+  hall_ask_answered: 'POST_CARD_REPLIED',
   townhall_join_requested: 'TOWNHALL_INVITED',
   townhall_request_approved: 'TOWNHALL_ACCEPTED',
   townhall_made_deputy: 'TOWNHALL_ACCEPTED',

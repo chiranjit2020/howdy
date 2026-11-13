@@ -309,3 +309,64 @@ export const townHallPollVotes = pgTable(
     index('town_hall_poll_votes_option_idx').on(t.optionId),
   ],
 );
+
+/**
+ * "Buy or wait?" (ADR-065): a group post that asks the group whether to buy something. The post's words are why the
+ * asker wants it; here are the item, its price in whole rupees, an optional alternative ("or I could…"), the asker's ONE
+ * update (not a chat), and what they decided. Once decided, answers close. Deleting the post deletes it and every answer.
+ */
+export const townHallAsks = pgTable(
+  'town_hall_asks',
+  {
+    postId: uuid('post_id')
+      .primaryKey()
+      .references(() => townHallPosts.id, { onDelete: 'cascade' }),
+    item: text('item').notNull(),
+    priceRupees: integer('price_rupees').notNull(),
+    alternative: text('alternative'),
+    note: text('note'),
+    notedAt: tstz('noted_at'),
+    outcome: text('outcome'),
+    decidedAt: tstz('decided_at'),
+  },
+  (t) => [
+    check('town_hall_asks_item_len', sql`char_length(${t.item}) between 2 and 80`),
+    check('town_hall_asks_price', sql`${t.priceRupees} between 1 and 10000000`),
+    check(
+      'town_hall_asks_alternative_len',
+      sql`${t.alternative} is null or char_length(${t.alternative}) between 1 and 140`,
+    ),
+    check('town_hall_asks_note_len', sql`${t.note} is null or char_length(${t.note}) between 1 and 280`),
+    check(
+      'town_hall_asks_outcome',
+      sql`${t.outcome} is null or ${t.outcome} in ('bought', 'waiting', 'skipped')`,
+    ),
+    check('town_hall_asks_decided_at', sql`(${t.outcome} is null) = (${t.decidedAt} is null)`),
+  ],
+);
+
+/**
+ * One member's answer to a "Buy or wait?": buy or wait, always with a short reason (the reason is the point). One per
+ * person per question, changeable or taken back until the asker decides. Members see who said what — it is advice
+ * among people who know each other — but only from current active members they have not hidden.
+ */
+export const townHallAskAnswers = pgTable(
+  'town_hall_ask_answers',
+  {
+    postId: uuid('post_id')
+      .notNull()
+      .references(() => townHallAsks.postId, { onDelete: 'cascade' }),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    verdict: text('verdict').notNull(),
+    reason: text('reason').notNull(),
+    answeredAt: tstz('answered_at').notNull().defaultNow(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.postId, t.userId] }),
+    index('town_hall_ask_answers_user_idx').on(t.userId),
+    check('town_hall_ask_answers_verdict', sql`${t.verdict} in ('buy', 'wait')`),
+    check('town_hall_ask_answers_reason_len', sql`char_length(${t.reason}) between 2 and 140`),
+  ],
+);

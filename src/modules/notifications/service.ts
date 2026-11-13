@@ -6,7 +6,7 @@ import {
   townHallMembers,
   townHallPosts,
 } from '@db/schema';
-import { and, desc, eq, inArray, isNotNull, isNull, lt, lte, or, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, isNotNull, isNull, lt, lte, ne, or, sql } from 'drizzle-orm';
 import { canFence } from '@/modules/authz';
 import { getCards, getFenceResources, type PersonCard } from '@/modules/profiles';
 import { pushTo } from '@/modules/push';
@@ -63,6 +63,8 @@ export type ChimeType =
   | 'capsule_opened'
   | 'hall_reply_created'
   | 'hall_reaction_given'
+  | 'hall_ask_created'
+  | 'hall_ask_answered'
   | 'story_reacted';
 
 const CATEGORY: Record<ChimeType, ChimeCategory> = {
@@ -87,8 +89,13 @@ const CATEGORY: Record<ChimeType, ChimeCategory> = {
   capsule_opened: 'capsules',
   hall_reply_created: 'townhalls',
   hall_reaction_given: 'townhalls',
+  hall_ask_created: 'townhalls',
+  hall_ask_answered: 'townhalls',
   story_reacted: 'yo',
 };
+
+/** At most this many members are rung about one "Buy or wait?" (ADR-065), the longest-standing first. */
+const ASK_RING_CAP = 300;
 
 /** Chimes the recipient needs in order to act (the owner decides what waits), so a restricted writer still rings them. */
 const ACTIONABLE: ReadonlySet<ChimeType> = new Set(['card_waiting', 'reply_waiting', 'tribute_waiting']);
@@ -296,6 +303,30 @@ export async function handleEvent(event: DomainEvent): Promise<void> {
     }
     case 'hall.reaction_given':
       return deliver(event.postAuthorId, event.actorId, 'hall_reaction_given', null, {
+        hallPostId: event.postId,
+      });
+    case 'hall.ask_created': {
+      // "Buy or wait?" (ADR-065) is the one group post that rings every member: it asks them something, and asking is
+      // limited to a few a day per person. Each delivery still applies every rule (block, mute, prefs, still a member).
+      const members = await getDb()
+        .select({ id: townHallMembers.userId })
+        .from(townHallMembers)
+        .where(
+          and(
+            eq(townHallMembers.townHallId, event.townHallId),
+            eq(townHallMembers.status, 'active'),
+            ne(townHallMembers.userId, event.authorId),
+          ),
+        )
+        .orderBy(asc(townHallMembers.createdAt))
+        .limit(ASK_RING_CAP);
+      for (const m of members) {
+        await deliver(m.id, event.authorId, 'hall_ask_created', null, { hallPostId: event.postId });
+      }
+      return;
+    }
+    case 'hall.ask_answered':
+      return deliver(event.postAuthorId, event.actorId, 'hall_ask_answered', null, {
         hallPostId: event.postId,
       });
     case 'story.reacted':
@@ -513,6 +544,10 @@ function describe(userId: string, s: Shown, myHandle: string): { text: string; h
         text: `${name} reacted to your post in a group.`,
         href: `/groups/${s.row.townHallId}`,
       };
+    case 'hall_ask_created':
+      return { text: `${name} asks your group: buy it or wait?`, href: `/groups/${s.row.townHallId}` };
+    case 'hall_ask_answered':
+      return { text: `${name} answered your "Buy or wait?"`, href: `/groups/${s.row.townHallId}` };
     case 'story_reacted':
       return { text: `${name} reacted to your Story.`, href: '/home' };
   }

@@ -60,6 +60,10 @@ export type DomainEvent =
       mentionedId?: string | undefined;
     }
   | { type: 'hall.reaction_given'; postId: string; postAuthorId: string; actorId: string }
+  /** A published "Buy or wait?" (ADR-065): every active member hears (capped). Held ones emit nothing. */
+  | { type: 'hall.ask_created'; postId: string; townHallId: string; authorId: string }
+  /** A first answer to a "Buy or wait?" (a changed one emits nothing); only the asker hears. */
+  | { type: 'hall.ask_answered'; postId: string; postAuthorId: string; actorId: string }
   /** The photo check held an uploaded photo for a moderator (ADR-039); only its owner sees it meanwhile. */
   | {
       type: 'photo.held';
