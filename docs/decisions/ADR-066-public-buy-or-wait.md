@@ -28,9 +28,12 @@ asked for it to go public, and for groups themselves to be easier to find.
    asker, notifies nobody, and is deleted after 30 days. Questions can be flagged (report subject `ask`), and moderators
    get "Remove question" (`remove_ask`). Links are refused in every field. There are no photos on public questions in
    v1, because strangers' photos are more moderation work.
-6. **Emoji answers.** Buy is 🛒 and Wait is ⏳, shown as two pill buttons with their counts, like upvote and downvote.
-   The chosen one jumps when tapped (`animate-ask-pop`), and its count ticks into place (`animate-ask-tick`). The
-   global reduce-motion rule turns both off. A reason is still required.
+6. **Big icon buttons for the answers.** Buy is a cart and Wait is a countdown clock (Phosphor icons; the hourglass
+   is already Time Capsules'). They are two half-width 56 px pills with their counts, like upvote and downvote. Icons
+   are outlined until chosen and filled after; a chosen Buy fills sunflower and a chosen Wait navy, matching the tally
+   bar, and the unchosen ones have a black outline. The chosen one jumps when tapped (`animate-ask-pop`), and its count
+   ticks into place (`animate-ask-tick`). The global reduce-motion rule turns both off. A reason is still required.
+   The first version used emoji; the user turned that down the same day ("not emoji, more prominent").
 7. **Groups promoted.** Home has a "Your groups" card: your groups, or "Start or find a group" if you have none. It sits
    above the feed on narrow screens and in the right panel on wide ones. The phone tab bar is now **Home, Friends,
    Groups, Messages, your photo**, and Buy or wait moved into the Profile sheet in Groups' old place. Home also has a
