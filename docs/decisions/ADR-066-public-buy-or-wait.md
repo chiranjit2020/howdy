@@ -35,8 +35,8 @@ asked for it to go public, and for groups themselves to be easier to find.
    ticks into place (`animate-ask-tick`). The global reduce-motion rule turns both off. A reason is still required.
    The first version used emoji; the user turned that down the same day ("not emoji, more prominent").
 7. **Groups promoted.** Home has a "Your groups" card: your groups, or "Start or find a group" if you have none. It sits
-   above the feed on narrow screens and in the right panel on wide ones. The phone tab bar is now **Home, Friends,
-   Groups, Messages, your photo**, and Buy or wait moved into the Profile sheet in Groups' old place. Home also has a
+   above the feed on narrow screens and in the right panel on wide ones. The phone tab bar is now **Home, Groups,
+   Friends, Messages, Me** (your photo; the sheet it opens is titled "Me", was "Profile"), and Buy or wait moved into the Profile sheet in Groups' old place. Home also has a
    "Buy or wait?" card with the newest questions you can answer and an Ask button, and the sidebar lists "Buy or wait?".
 
 ## Consequences
