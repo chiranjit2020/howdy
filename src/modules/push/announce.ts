@@ -107,3 +107,25 @@ export async function sendAnnouncement(
   logger.info({ event: 'announce.sent', id: a.id, people: reached, devices, candidates: people.length });
   return { status: 'sent', people: reached, devices };
 }
+
+/** Is this person on the Howdy team (an active admin)? Only they may preview an announcement. */
+export async function isTeamMember(userId: string): Promise<boolean> {
+  const [row] = await getDb()
+    .select({ id: users.id })
+    .from(users)
+    .where(and(eq(users.id, userId), eq(users.role, 'admin'), eq(users.status, 'active')))
+    .limit(1);
+  return row !== undefined;
+}
+
+/**
+ * Send the announcement to ONE team member's own devices, to see it on a phone before it goes out (2026-11-14, the
+ * user's ask). It never touches the send-once mark, so the real send still happens. Returns how many devices it reached
+ * (0 = notifications are not on for this account on any device it is signed in on).
+ */
+export async function previewAnnouncement(a: Announcement, userId: string, badge: number): Promise<number> {
+  return pushTo(userId, { ...a.payload, tag: `${a.payload.tag}:preview`, badge });
+}
+
+/** Has this announcement not gone past its window yet (so the team may still preview it)? */
+export const announcementPending = (a: Announcement, now: Date = new Date()): boolean => now <= a.notAfter;

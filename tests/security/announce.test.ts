@@ -1,7 +1,14 @@
 import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { POST as subscribeRoute } from '@/app/api/push/route';
 import { GET as announceRoute } from '@/app/api/jobs/announce/route';
-import { setPushSender, sendAnnouncement, type Announcement, type PushTarget } from '@/modules/push';
+import { POST as previewRoute } from '@/app/api/admin/announce-preview/route';
+import {
+  BUY_OR_WAIT_ANNOUNCEMENT,
+  setPushSender,
+  sendAnnouncement,
+  type Announcement,
+  type PushTarget,
+} from '@/modules/push';
 import { hiddenAuthors } from '@/modules/relationships';
 import { getPool } from '@/platform/db';
 import type { PushPayload } from '@/shared/validation/push';
@@ -87,6 +94,26 @@ describe('the announcement', () => {
     await doAct(blocked.handle, 'block', as(team));
     expect(await sendAnnouncement(make(), hooks, at)).toMatchObject({ status: 'sent', people: 1 });
     expect(sent).toHaveLength(1);
+  });
+
+  it('a team member can preview it on their own devices only; it does not use up the real send', async () => {
+    const team = await person('team');
+    const other = await person('other');
+    expect((await subscribe(team)).status).toBe(200);
+    expect((await subscribe(other)).status).toBe(200);
+    // Not on the team: the same 404 as a missing page, and nothing sent.
+    expect((await call(previewRoute, 'POST', '/api/admin/announce-preview', {}, as(other))).status).toBe(404);
+    expect(sent).toEqual([]);
+    await q("update users set role = 'admin' where handle = $1", [team.handle]);
+    const res = await call(previewRoute, 'POST', '/api/admin/announce-preview', {}, as(team));
+    expect(res.status).toBe(200);
+    expect(sent).toHaveLength(1);
+    expect(sent[0]!.payload).toMatchObject({ url: '/buy-or-wait' });
+    expect(sent[0]!.payload.body).toMatch(/^New: Buy or wait\?/);
+    // The real announcement still goes out afterwards.
+    sent = [];
+    const real = { ...make(), payload: BUY_OR_WAIT_ANNOUNCEMENT.payload };
+    expect(await sendAnnouncement(real, hooks, at)).toMatchObject({ status: 'sent', people: 2 });
   });
 
   it('the job needs the cron secret', async () => {
