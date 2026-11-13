@@ -54,6 +54,10 @@ import {
   PiVideoCamera,
   PiBuildingsFill,
   PiShoppingBag,
+  PiShoppingCart,
+  PiShoppingCartFill,
+  PiClockCountdown,
+  PiClockCountdownFill,
 } from 'react-icons/pi';
 
 type IconProps = Omit<ComponentProps<'svg'>, 'children'>;
@@ -101,6 +105,11 @@ export const UserIcon = go(PiUser);
 export const GroupIcon = go(PiBuildings);
 // Buy or wait? (ADR-066): a shopping bag.
 export const BuyOrWaitIcon = go(PiShoppingBag);
+// Its two answers: a cart (buy) and a countdown clock (wait; the hourglass is Time Capsules'). Filled when chosen.
+export const BuyIcon = go(PiShoppingCart);
+export const BuyFillIcon = go(PiShoppingCartFill);
+export const WaitIcon = go(PiClockCountdown);
+export const WaitFillIcon = go(PiClockCountdownFill);
 export const SettingsIcon = go(PiGear);
 // Time Capsules: words sealed until a day comes.
 export const CapsuleIcon = go(PiHourglass);

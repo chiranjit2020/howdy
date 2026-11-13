@@ -3,7 +3,8 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { AskView } from '@/modules/asks';
-import { NewAsk, rupees } from '@/ui/howdy/buy-or-wait';
+import { NewAsk, rupees, VerdictMark } from '@/ui/howdy/buy-or-wait';
+import { BuyOrWaitIcon } from '@/ui/icons';
 import { buttonClasses, useToast } from '@/ui/primitives';
 import { cn } from '@/ui/cn';
 
@@ -20,7 +21,8 @@ export function BuyOrWaitCard({ asks, groups }: { asks: WireAsk[]; groups: { id:
     <section aria-labelledby="buy-or-wait-heading" className="clay flex flex-col gap-3 p-4">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
         <h2 id="buy-or-wait-heading" className="min-w-0 flex-1 text-title font-semibold text-text-primary">
-          <span aria-hidden="true">🛒 </span>Buy or wait?
+          <BuyOrWaitIcon aria-hidden="true" className="mr-1.5 inline size-6 align-[-0.2em]" />
+          Buy or wait?
         </h2>
         <NewAsk<unknown, WireAsk>
           groups={groups}
@@ -53,7 +55,8 @@ export function BuyOrWaitCard({ asks, groups }: { asks: WireAsk[]; groups: { id:
                   </span>
                 </span>
                 <span className="shrink-0 text-caption text-text-secondary tabular-nums">
-                  🛒 {a.counts.buy} · ⏳ {a.counts.wait}
+                  <VerdictMark verdict="buy" /> {a.counts.buy} · <VerdictMark verdict="wait" />{' '}
+                  {a.counts.wait}
                 </span>
               </Link>
             </li>

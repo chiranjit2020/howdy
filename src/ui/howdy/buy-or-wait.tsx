@@ -12,6 +12,7 @@ import {
 import { postJson } from '../auth/api';
 import { FormMessage } from '../auth/form-parts';
 import { cn } from '../cn';
+import { BuyFillIcon, BuyIcon, WaitFillIcon, WaitIcon } from '../icons';
 import { uploadPhoto } from '../media/upload-photo';
 import { Button, Chip, Input, Modal, Radio, Select, Textarea } from '../primitives';
 import { FoldedText } from './folded-text';
@@ -43,11 +44,32 @@ export interface AskCore {
 /** "₹12,499" — Indian digit grouping, whole rupees. */
 export const rupees = (n: number) => `₹${new Intl.NumberFormat('en-IN').format(n)}`;
 
-/** The two answers, as emoji buttons (2026-11-14, the user's ask: "like upvote and downvote"). */
-const VERDICT: Record<AskVerdict, { emoji: string; label: string }> = {
-  buy: { emoji: '🛒', label: 'Buy' },
-  wait: { emoji: '⏳', label: 'Wait' },
+/**
+ * The two answers (2026-11-14, the user's asks: "like upvote and downvote", then "not emoji, more prominent"): Phosphor
+ * icons, outline until chosen and filled after, as on the tab bar. Buy is sunflower, Wait navy, matching the tally bar.
+ */
+const VERDICT: Record<
+  AskVerdict,
+  { label: string; icon: typeof BuyIcon; iconOn: typeof BuyIcon; on: string }
+> = {
+  buy: { label: 'Buy', icon: BuyIcon, iconOn: BuyFillIcon, on: 'bg-primary text-on-primary' },
+  wait: { label: 'Wait', icon: WaitIcon, iconOn: WaitFillIcon, on: 'bg-accent text-on-accent' },
 };
+
+/** A small verdict mark for lists (who said what): the filled icon in its colour's ink. */
+export function VerdictMark({ verdict, className }: { verdict: AskVerdict; className?: string }) {
+  const Icon = VERDICT[verdict].iconOn;
+  return (
+    <Icon
+      aria-hidden="true"
+      className={cn(
+        'inline size-4 align-[-0.125em]',
+        verdict === 'buy' ? 'text-text-primary' : 'text-accent',
+        className,
+      )}
+    />
+  );
+}
 const OUTCOME_LABEL: Record<AskOutcome, string> = {
   bought: 'Bought it',
   waiting: 'Still waiting',
@@ -85,9 +107,9 @@ const BAR = [
 ] as const;
 
 /**
- * Buy and Wait side by side, each with its count, like upvote and downvote. Tapping one makes its emoji jump and
- * opens the reason box (a reason is required). The chosen one stays filled in sunflower. Motion follows the phone's
- * "reduce motion" setting (tokens.css turns every animation off then).
+ * Buy and Wait: two big half-width buttons, each with its count, like upvote and downvote. Tapping one makes its icon
+ * jump and opens the reason box (a reason is required). The chosen one fills (Buy sunflower, Wait navy). Motion follows
+ * the phone's "reduce motion" setting (tokens.css turns every animation off then).
  */
 function VerdictButtons({
   counts,
@@ -105,20 +127,21 @@ function VerdictButtons({
 }) {
   const [burst, setBurst] = useState<{ v: AskVerdict; n: number } | null>(null);
   return (
-    <div role="group" aria-label="Buy or wait" className="flex gap-2">
+    <div role="group" aria-label="Buy or wait" className="grid grid-cols-2 gap-3">
       {(['buy', 'wait'] as const).map((v) => {
         const on = chosen === v;
+        const Icon = on ? VERDICT[v].iconOn : VERDICT[v].icon;
         const inner = (
           <>
             <span
               key={burst?.v === v ? burst.n : 0}
               aria-hidden="true"
-              className={cn('inline-block text-icon leading-none', burst?.v === v && 'animate-ask-pop')}
+              className={cn('inline-flex', burst?.v === v && 'animate-ask-pop')}
             >
-              {VERDICT[v].emoji}
+              <Icon className="size-7" />
             </span>
-            <span className="font-semibold">{VERDICT[v].label}</span>
-            <span className="overflow-hidden tabular-nums">
+            <span className="text-title font-semibold">{VERDICT[v].label}</span>
+            <span className="overflow-hidden text-body tabular-nums opacity-80">
               <span key={counts[v]} className="inline-block animate-ask-tick">
                 {counts[v]}
               </span>
@@ -126,10 +149,10 @@ function VerdictButtons({
           </>
         );
         const look = cn(
-          'inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-pill px-4 text-caption no-underline transition-colors sm:flex-none',
+          'inline-flex min-h-14 items-center justify-center gap-2.5 rounded-pill px-4 no-underline shadow-clay-sm transition-[background-color,transform] active:scale-95 hover:no-underline',
           on
-            ? 'bg-primary text-on-primary shadow-clay-sm'
-            : 'bg-surface text-text-primary ring-1 ring-border hover:bg-surface-sunken',
+            ? VERDICT[v].on
+            : 'border-2 border-text-primary bg-surface text-text-primary hover:bg-surface-sunken',
         );
         return href ? (
           <Link key={v} href={href} className={look} aria-label={`${VERDICT[v].label} (${counts[v]})`}>
@@ -315,7 +338,7 @@ export function AskBlock({
         <ul aria-label="Answers" className="flex flex-col gap-1.5 border-t border-border pt-2">
           {others.map((a) => (
             <li key={a.author.handle} className="text-caption break-words text-text-secondary">
-              <span aria-hidden="true">{VERDICT[a.verdict].emoji} </span>
+              <VerdictMark verdict={a.verdict} />{' '}
               <span className="font-semibold text-text-primary">{a.mine ? 'You' : a.author.displayName}</span>
               {' · '}
               <span className="font-semibold text-text-primary">{VERDICT[a.verdict].label}</span>: {a.reason}
