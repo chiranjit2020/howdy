@@ -77,6 +77,12 @@ const SUBJECT: Record<
     gone: 'The post has already been removed.',
     remove: { action: 'remove_hall_post', label: 'Remove post' },
   },
+  ask: {
+    label: 'Buy or wait?',
+    said: 'The reported question said:',
+    gone: 'The question has already been removed.',
+    remove: { action: 'remove_ask', label: 'Remove question' },
+  },
 };
 
 const LENGTH_LABEL: Record<SuspensionLength, string> = {

@@ -9,6 +9,8 @@ import { getPortraitVersion } from '@/modules/media';
 import { litPals, myLight } from '@/modules/lights';
 import { memoriesToday } from '@/modules/memories';
 import { getOwnRanch, getTeamAnnouncement } from '@/modules/profiles';
+import { listAsks } from '@/modules/asks';
+import { listMine } from '@/modules/town-halls';
 import { listMyRelationships } from '@/modules/relationships';
 import { storyRing } from '@/modules/stories';
 import { palSuggestions } from '@/modules/suggestions';
@@ -20,6 +22,8 @@ import { liveChannelFor } from '@/platform/live-ping';
 import { ChatDockProvider } from './chat-dock';
 import { GetAppBar } from './get-app-bar';
 import { HomeRail, WhatsNew } from './home-rail';
+import { BuyOrWaitCard } from './buy-or-wait-card';
+import { GroupsCard } from './groups-card';
 import { MemoriesCard } from './memories-card';
 import { StoriesStrip } from './stories-strip';
 import { SuggestionStrip } from './suggestion-strip';
@@ -55,6 +59,8 @@ export default async function HomePage() {
     capsules,
     suggestions,
     installed,
+    openAsks,
+    myGroups,
   ] = await Promise.all([
     getOwnRanch(user.id),
     getPortraitVersion(user.id, { userId: user.id }).catch(() => null),
@@ -79,7 +85,14 @@ export default async function HomePage() {
     palSuggestions(user.id).catch(() => []),
     // Only asked on a phone; when it cannot be read, the bar stays away.
     mayOfferApp ? hasInstalledApp(user.id).catch(() => true) : true,
+    // "Buy or wait?" (ADR-066): the newest questions I can still answer, for the Home card.
+    listAsks(user.id, 'all', { limit: 12 })
+      .then((p) => p.asks.filter((a) => a.canAnswer && !a.mine).slice(0, 3))
+      .catch(() => []),
+    // "Your groups" (2026-11-14): groups get a card on Home, not only a menu item.
+    listMine(user.id).catch(() => []),
   ]);
+  const groupLinks = myGroups.map((g) => ({ id: g.id, name: g.name, requestsWaiting: g.requestsWaiting }));
   const offerApp = mayOfferApp && !installed;
   // One look-up for every photo on the page, whoever it belongs to.
   await attachPortraits(user.id, [
@@ -136,6 +149,10 @@ export default async function HomePage() {
               <MemoriesCard memories={today} handle={user.handle} />
             </div>
           )}
+          <BuyOrWaitCard asks={openAsks} groups={groupLinks} />
+          <div className="xl:hidden">
+            <GroupsCard groups={groupLinks} headingId="groups-heading" />
+          </div>
           {feed ? (
             <FenceSection
               feed
@@ -167,6 +184,7 @@ export default async function HomePage() {
           aria-label="Your circle"
           className="sticky top-18 -mx-2 hidden max-h-[calc(100dvh-5.5rem)] flex-col gap-4 overflow-y-auto px-2 pb-2 xl:flex [&>*]:shrink-0"
         >
+          <GroupsCard groups={groupLinks} headingId="groups-heading-rail" />
           <HomeRail
             free={free}
             threads={threads}

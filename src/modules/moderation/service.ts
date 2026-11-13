@@ -10,6 +10,7 @@ import {
   townHallPosts,
   townHalls,
   users,
+  asks,
 } from '@db/schema';
 import { and, asc, count, desc, eq, inArray, isNull, lte, sql } from 'drizzle-orm';
 import { decodeCursor, encodeCursor, type Cursor } from '@/platform/cursor';
@@ -51,6 +52,8 @@ export type ReportAbout =
   | { subject: 'whisper'; messageId: string; evidence: string }
   | { subject: 'town_hall'; townHallId: string; evidence: string }
   | { subject: 'hall_post'; hallPostId: string; evidence: string }
+  /** A public "Buy or wait?" (ADR-066), with the item, price and words as evidence. */
+  | { subject: 'ask'; askId: string; evidence: string }
   /** A Story's photo (ADR-047): the exact photo, with the caption as evidence. Moderators see and can remove it. */
   | { subject: 'card_photo'; mediaId: string; evidence: string };
 
@@ -85,6 +88,7 @@ export async function createReport(
       messageId: about?.subject === 'whisper' ? about.messageId : null,
       townHallId: about?.subject === 'town_hall' ? about.townHallId : null,
       hallPostId: about?.subject === 'hall_post' ? about.hallPostId : null,
+      askId: about?.subject === 'ask' ? about.askId : null,
     })
     .onConflictDoNothing();
 }
@@ -178,7 +182,8 @@ export type ModerationAuditEvent =
   | 'town_hall_removed'
   | 'portrait_removed'
   | 'card_photo_removed'
-  | 'hall_post_removed';
+  | 'hall_post_removed'
+  | 'ask_removed';
 
 /** Append to the shared security audit trail (`audit_log`). `moderatorId` is the actor; everything else is `meta`. */
 async function auditModAction(
@@ -275,6 +280,7 @@ interface Row {
   messageId: string | null;
   townHallId: string | null;
   hallPostId: string | null;
+  askId: string | null;
   status: string;
   reviewedBy: string | null;
   reviewedAt: Date | null;
@@ -411,6 +417,8 @@ async function stillThere(rows: Row[]): Promise<Set<string>> {
       : [],
   ]);
   const alive = new Set([...cards, ...msgs, ...halls, ...photos, ...hallPosts].map((x) => x.id));
+  // A question's pointer is cleared when it is deleted (SET NULL), so a pointer that is still set is still there.
+  for (const r of rows) if (r.askId) alive.add(r.askId);
   const pointer = (r: Row) =>
     ({
       card: r.cardId,
@@ -419,6 +427,7 @@ async function stillThere(rows: Row[]): Promise<Set<string>> {
       portrait: r.mediaId,
       card_photo: r.mediaId,
       hall_post: r.hallPostId,
+      ask: r.askId,
       person: null,
     })[r.subject as ReportSubject] ?? null;
   return new Set(
@@ -561,7 +570,7 @@ export async function removeReportedCard(moderatorId: string, reportId: string):
 /** The report must be about this kind of thing, and still point at it; otherwise 400 with a plain reason. */
 function pointerFor(
   row: Row,
-  subject: 'whisper' | 'town_hall' | 'portrait' | 'card_photo' | 'hall_post',
+  subject: 'whisper' | 'town_hall' | 'portrait' | 'card_photo' | 'hall_post' | 'ask',
 ): string {
   const id = {
     whisper: row.messageId,
@@ -569,6 +578,7 @@ function pointerFor(
     portrait: row.mediaId,
     card_photo: row.mediaId,
     hall_post: row.hallPostId,
+    ask: row.askId,
   }[subject];
   const what = {
     whisper: 'a message',
@@ -576,6 +586,7 @@ function pointerFor(
     portrait: 'a photo',
     card_photo: 'a photo',
     hall_post: 'a post',
+    ask: 'a question',
   }[subject];
   if (row.subject !== subject)
     throw new AppError('BAD_REQUEST', { message: `This report is not about ${what}.` });
@@ -617,6 +628,17 @@ export async function removeReportedHallPost(moderatorId: string, reportId: stri
     await tx.delete(townHallPosts).where(eq(townHallPosts.id, hallPostId));
   });
   await auditModAction('hall_post_removed', moderatorId, { reportId, hallPostId });
+}
+
+/** Take down the public "Buy or wait?" a report is about (its answers go with it), and close the report. */
+export async function removeReportedAsk(moderatorId: string, reportId: string): Promise<void> {
+  const row = await reportToActOn(moderatorId, reportId);
+  const askId = pointerFor(row, 'ask');
+  await getDb().transaction(async (tx) => {
+    await closeReport(tx, moderatorId, reportId, 'actioned');
+    await tx.delete(asks).where(eq(asks.id, askId));
+  });
+  await auditModAction('ask_removed', moderatorId, { reportId, askId });
 }
 
 /**

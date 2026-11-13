@@ -17,7 +17,7 @@ import {
 import { FoldedText } from '@/ui/howdy/folded-text';
 import { ReportDialog } from '@/ui/howdy/report-dialog';
 import type { AskOutcome, AskVerdict, RsvpAnswer } from '@/shared/validation/town-halls';
-import { AskBlock, NewAsk } from './ask-block';
+import { AskBlock, NewAsk } from '@/ui/howdy/buy-or-wait';
 import { EventBlock, type WireEvent } from './event-block';
 import { NewEvent } from './new-event';
 import { NewPoll, PollBlock } from './poll-block';
@@ -69,11 +69,14 @@ const authorOf = (a: HallPostView['author']): PostCardAuthor => ({
  */
 export function FeedSection({
   townHallId,
+  townHallName,
   isOwner,
   initial,
   initialHeld,
 }: {
   townHallId: string;
+  /** For the "Buy or wait?" dialog's group choice. */
+  townHallName: string;
   isOwner: boolean;
   initial: InitialFeed;
   initialHeld: InitialHeld | null;
@@ -359,11 +362,15 @@ export function FeedSection({
               toast({ title: 'Poll posted.', tone: 'success' });
             }}
           />
-          <NewAsk<WirePost>
-            townHallId={townHallId}
+          {/* Asked here, it goes to this group unless the asker picks friends or everyone instead (ADR-066). */}
+          <NewAsk<WirePost, unknown>
+            groups={[{ id: townHallId, name: townHallName }]}
+            initialTarget={{ groupId: townHallId }}
             onPosted={(made) => {
-              setPosts((all) => [made, ...all]);
-              toast({ title: 'Asked. Your group will hear about it.', tone: 'success' });
+              if (made.kind === 'group') {
+                setPosts((all) => [made.post, ...all]);
+                toast({ title: 'Asked. Your group will hear about it.', tone: 'success' });
+              } else toast({ title: 'Asked. It is on the Buy or wait page.', tone: 'success' });
             }}
           />
         </div>

@@ -16,6 +16,7 @@ export {
   purgeClosedReports,
   reinstateAccount,
   removeReportedCard,
+  removeReportedAsk,
   removeReportedHallPost,
   removeReportedPortrait,
   removeReportedCardPhoto,

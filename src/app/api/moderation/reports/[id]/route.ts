@@ -3,6 +3,7 @@ import { releaseCardVideo, releaseHeldPhoto, retireCardPhoto, retirePortrait } f
 import {
   dismissReport,
   removeReportedCard,
+  removeReportedAsk,
   removeReportedHallPost,
   removeReportedCardPhoto,
   removeReportedPortrait,
@@ -48,6 +49,9 @@ export const POST = route(async ({ req, params }) => {
       break;
     case 'remove_hall_post':
       await removeReportedHallPost(user.id, id);
+      break;
+    case 'remove_ask':
+      await removeReportedAsk(user.id, id);
       break;
     case 'dismiss':
       // A photo the photo check held is released when its report is dismissed (ADR-039); so is a reported card's

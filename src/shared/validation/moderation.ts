@@ -69,6 +69,7 @@ export const REPORT_SUBJECTS = [
   'whisper',
   'town_hall',
   'hall_post',
+  'ask',
 ] as const;
 export type ReportSubject = (typeof REPORT_SUBJECTS)[number];
 
@@ -81,6 +82,7 @@ export const REPORT_ACTIONS = [
   'remove_whisper',
   'remove_town_hall',
   'remove_hall_post',
+  'remove_ask',
   'suspend',
 ] as const;
 export type ReportAction = (typeof REPORT_ACTIONS)[number];
@@ -95,6 +97,7 @@ export const reportActionSchema = z.discriminatedUnion('action', [
       'remove_whisper',
       'remove_town_hall',
       'remove_hall_post',
+      'remove_ask',
     ]),
   }),
   z.object({

@@ -64,6 +64,10 @@ export type DomainEvent =
   | { type: 'hall.ask_created'; postId: string; townHallId: string; authorId: string }
   /** A first answer to a "Buy or wait?" (a changed one emits nothing); only the asker hears. */
   | { type: 'hall.ask_answered'; postId: string; postAuthorId: string; actorId: string }
+  /** A published public "Buy or wait?" (ADR-066): the asker's friends hear (capped). Held ones emit nothing. */
+  | { type: 'ask.created'; askId: string; authorId: string }
+  /** A first answer to a public "Buy or wait?"; only the asker hears. */
+  | { type: 'ask.answered'; askId: string; askAuthorId: string; actorId: string }
   /** The photo check held an uploaded photo for a moderator (ADR-039); only its owner sees it meanwhile. */
   | {
       type: 'photo.held';

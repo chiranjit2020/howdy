@@ -25,6 +25,7 @@ import {
   PiQuotes,
   PiShieldCheck,
   PiVideoCamera,
+  PiShoppingBag,
 } from 'react-icons/pi';
 import { Img } from '@/ui/art/img';
 import { cn } from '@/ui/cn';
@@ -45,7 +46,12 @@ const FEATURES: { icon: Icon; name: string; text: string }[] = [
   {
     icon: PiBuildings,
     name: 'Groups',
-    text: 'For your batch, society, family or team: a pinned notice, events with a time and place, polls and photos. Thinking of buying something? Ask “Buy or wait?” and your group answers, each with a reason. Ask-to-join and Deputies keep it tidy.',
+    text: 'For your batch, society, family or team: a pinned notice, events with a time and place, polls and photos. Ask-to-join and Deputies keep it tidy.',
+  },
+  {
+    icon: PiShoppingBag,
+    name: 'Buy or wait?',
+    text: 'Thinking of buying something? Ask your friends, a group or everyone on Howdy. They answer Buy or Wait, each with a reason, and you decide. Share the link on WhatsApp for more answers.',
   },
   {
     icon: PiUser,

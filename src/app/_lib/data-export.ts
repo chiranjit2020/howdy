@@ -9,6 +9,7 @@ import { moderationExport } from '@/modules/moderation';
 import { getPrefs } from '@/modules/notifications';
 import { getCards, getOwnRanch, myDetails, type PersonCard } from '@/modules/profiles';
 import { hiddenAuthors, listMyRelationships, type PersonRef } from '@/modules/relationships';
+import { asksExport } from '@/modules/asks';
 import { townHallsExport } from '@/modules/town-halls';
 import { listTracks } from '@/modules/tracks';
 import { tributesExport } from '@/modules/tributes';
@@ -59,10 +60,11 @@ export async function buildDataExport(userId: string, now: Date = new Date()): P
       moderationExport(userId),
     ]);
   // My Stories that are still up (ADR-047): they last 12 hours, so that is all there is. And my personal details.
-  const [myStories, details, feedbackSent] = await Promise.all([
+  const [myStories, details, feedbackSent, buyOrWait] = await Promise.all([
     storiesExport(userId, now),
     myDetails(userId),
     myFeedback(userId),
+    asksExport(userId),
   ]);
 
   // Everyone this file could name, checked once: active accounts only, and nobody hidden from me.
@@ -292,7 +294,27 @@ export async function buildDataExport(userId: string, now: Date = new Date()): P
       myPosts: h.posts.map((p) => ({ words: p.body, at: iso(p.postedAt), photo: cardPhoto(p.photoId) })),
       myReplies: h.replies.map((r) => ({ words: r.body, at: iso(r.postedAt) })),
       myReactions: h.reactions.map((r) => ({ reaction: r.kind, at: iso(r.givenAt) })),
+      // "Buy or wait?" in the group (ADR-065): my questions, and my answers to others'.
+      myBuyOrWaitQuestions: h.posts.flatMap((p) =>
+        p.ask ? [{ ...p.ask, whyIWantedIt: p.body, at: iso(p.postedAt) }] : [],
+      ),
+      myBuyOrWaitAnswers: h.askAnswers.map((a) => ({
+        item: a.item,
+        answer: a.verdict,
+        reason: a.reason,
+        at: iso(a.answeredAt),
+      })),
     })),
+    // Public "Buy or wait?" (ADR-066): questions I asked my friends or everyone, and my answers to others'.
+    buyOrWait: {
+      myQuestions: buyOrWait.questions.map((q) => ({ ...q, askedAt: iso(q.askedAt) })),
+      myAnswers: buyOrWait.answers.map((a) => ({
+        item: a.item,
+        answer: a.verdict,
+        reason: a.reason,
+        at: iso(a.answeredAt),
+      })),
+    },
     // Feedback I sent about Howdy (ADR-059).
     feedbackISent: feedbackSent.map((f) => ({
       kind: f.kind,

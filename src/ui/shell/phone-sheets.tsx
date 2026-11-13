@@ -108,9 +108,9 @@ export function YouSheet({
     </Link>
   );
   const settings = links.find((l) => l.key === 'workshop');
-  // Visitors and Groups, then the staff pages: each group only when it has something in it.
+  // Visitors and Buy or wait, then the staff pages: each group only when it has something in it.
   const groups = [
-    links.filter((l) => l.key === 'tracks' || l.key === 'town-halls'),
+    links.filter((l) => l.key === 'tracks' || l.key === 'buy-or-wait'),
     links.filter((l) => l.key === 'moderation' || l.key === 'security'),
   ].filter((g) => g.length > 0);
 

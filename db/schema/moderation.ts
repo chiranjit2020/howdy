@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm';
 import { check, index, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
+import { asks } from './asks';
 import { users } from './auth';
 import { postCards } from './fence';
 import { media } from './media';
@@ -22,7 +23,7 @@ export const reports = pgTable(
     reporterId: uuid('reporter_id').references(() => users.id, { onDelete: 'set null' }),
     targetUserId: uuid('target_user_id').references(() => users.id, { onDelete: 'set null' }),
     reason: text('reason').notNull(),
-    /** person | card | portrait | card_photo | whisper | town_hall | hall_post. */
+    /** person | card | portrait | card_photo | whisper | town_hall | hall_post | ask. */
     subject: text('subject').notNull().default('person'),
     /** member (someone filed it) | photo_check (the automatic photo check held a photo, ADR-039; no reporter). */
     source: text('source').notNull().default('member'),
@@ -37,6 +38,8 @@ export const reports = pgTable(
     townHallId: uuid('town_hall_id').references(() => townHalls.id, { onDelete: 'set null' }),
     /** A post in a Town Hall's feed (ADR-033). */
     hallPostId: uuid('hall_post_id').references(() => townHallPosts.id, { onDelete: 'set null' }),
+    /** A public "Buy or wait?" (ADR-066). */
+    askId: uuid('ask_id').references(() => asks.id, { onDelete: 'set null' }),
     status: text('status').notNull().default('open'),
     /** Who last changed the status, and when. Full history of moderator actions lives in `audit_log`. */
     reviewedBy: uuid('reviewed_by').references(() => users.id, { onDelete: 'set null' }),
@@ -53,7 +56,7 @@ export const reports = pgTable(
     check('reports_evidence_len', sql`${t.evidenceText} is null or char_length(${t.evidenceText}) <= 600`),
     check(
       'reports_subject_check',
-      sql`${t.subject} in ('person', 'card', 'portrait', 'card_photo', 'whisper', 'town_hall', 'hall_post')`,
+      sql`${t.subject} in ('person', 'card', 'portrait', 'card_photo', 'whisper', 'town_hall', 'hall_post', 'ask')`,
     ),
     check('reports_source_check', sql`${t.source} in ('member', 'photo_check')`),
     check(

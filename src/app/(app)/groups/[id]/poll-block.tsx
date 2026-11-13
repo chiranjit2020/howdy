@@ -13,7 +13,7 @@ import { Button, Input, Modal } from '@/ui/primitives';
  * Result bars in 5% steps, written out whole so Tailwind sees every class (the CSP forbids inline styles, so a bar
  * cannot be given a computed width).
  */
-export const BAR = [
+const BAR = [
   'w-0',
   'w-[5%]',
   'w-[10%]',

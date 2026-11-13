@@ -1,0 +1,48 @@
+# ADR-066 — "Buy or wait?" for friends and everyone, and groups up front
+
+Status: accepted (2026-11-14). Extends ADR-065 (group questions).
+
+## Why
+
+Groups are almost silent. A question that only a quiet group can see has little chance of getting answers. The user
+asked for it to go public, and for groups themselves to be easier to find.
+
+## Decisions
+
+1. **The asker picks the audience every time:** *My friends*, *Everyone on Howdy*, or *one of my groups*. Group
+   questions stay group posts (ADR-065). Friends and Everyone questions live in their own `asks` and `ask_answers`
+   tables and have their own page, `/buy-or-wait`.
+2. **Who sees a question is decided every time it is read.** The asker always does. Nobody else sees a held one. A
+   viewer never sees questions from someone hidden from them (block or mute, either way) or from an inactive account.
+   *Everyone* questions are open to anyone signed in. *Friends* questions are open to current friends only: someone who
+   stops being a friend stops seeing it. Anyone who may not see a question gets the same 404 as one that does not exist.
+3. **Share link.** `/buy-or-wait/[id]` opens an *Everyone* question for anyone, signed out too. There the Buy and Wait
+   buttons lead to sign-up, with "Help {name} decide" and Join / Log in. The page is `noindex`, because names and
+   answers are on it. People who answer are told who will see their name ("Anyone who opens this question sees your
+   name and answer").
+4. **Notifications.** A new question (either audience) notifies the asker's friends (`ask_created`, at most 300). A
+   first answer notifies the asker (`ask_answered`). Both go through the usual read-time filter, so they vanish if the
+   question is no longer visible. They use the existing Wall posts / Replies notification switches.
+5. **Limits and safety.** Each person can ask 3 questions a day, counting group and public questions together. New
+   accounts have the same limits as for a post. The post hold rule (ADR-024) applies: a held question looks asked to its
+   asker, notifies nobody, and is deleted after 30 days. Questions can be flagged (report subject `ask`), and moderators
+   get "Remove question" (`remove_ask`). Links are refused in every field. There are no photos on public questions in
+   v1, because strangers' photos are more moderation work.
+6. **Emoji answers.** Buy is 🛒 and Wait is ⏳, shown as two pill buttons with their counts, like upvote and downvote.
+   The chosen one jumps when tapped (`animate-ask-pop`), and its count ticks into place (`animate-ask-tick`). The
+   global reduce-motion rule turns both off. A reason is still required.
+7. **Groups promoted.** Home has a "Your groups" card: your groups, or "Start or find a group" if you have none. It sits
+   above the feed on narrow screens and in the right panel on wide ones. The phone tab bar is now **Home, Friends,
+   Groups, Messages, your photo**, and Buy or wait moved into the Profile sheet in Groups' old place. Home also has a
+   "Buy or wait?" card with the newest questions you can answer and an Ask button, and the sidebar lists "Buy or wait?".
+
+## Consequences
+
+- Migration `0061_public_asks`. It adds `asks` and `ask_answers`, `notifications.ask_id` (with its own check and
+  unique index; the person-shaped unique index now also needs `ask_id is null`, and the bump upsert matches it), and
+  `reports.ask_id` plus subject `ask`.
+- "Download my data" adds `buyOrWait` (my questions and answers) and, per group, `myBuyOrWaitQuestions` and
+  `myBuyOrWaitAnswers`.
+- The daily clean-up job also deletes stale held questions.
+- Signed-out answering after sign-up does not return you to the question yet: sign-up has no "next" parameter.
+- Tests: `tests/security/public-asks.test.ts` (with a mutation check on the friends-only rule), and the e2e specs.

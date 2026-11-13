@@ -52,6 +52,8 @@ import {
   PiX,
   PiXCircle,
   PiVideoCamera,
+  PiBuildingsFill,
+  PiShoppingBag,
 } from 'react-icons/pi';
 
 type IconProps = Omit<ComponentProps<'svg'>, 'children'>;
@@ -97,6 +99,8 @@ export const BackIcon = go(PiArrowLeft);
 export const UserIcon = go(PiUser);
 // Groups: a building, so it never reads like Friends' two people.
 export const GroupIcon = go(PiBuildings);
+// Buy or wait? (ADR-066): a shopping bag.
+export const BuyOrWaitIcon = go(PiShoppingBag);
 export const SettingsIcon = go(PiGear);
 // Time Capsules: words sealed until a day comes.
 export const CapsuleIcon = go(PiHourglass);
@@ -154,3 +158,5 @@ export const TabFriendsIcon = go(PiUsers);
 export const TabFriendsFillIcon = go(PiUsersFill);
 export const TabMessagesIcon = go(PiChatsCircle);
 export const TabMessagesFillIcon = go(PiChatsCircleFill);
+export const TabGroupsIcon = go(PiBuildings);
+export const TabGroupsFillIcon = go(PiBuildingsFill);

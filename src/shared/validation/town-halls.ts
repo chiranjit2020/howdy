@@ -195,6 +195,26 @@ export const createAskSchema = z.object({
 });
 export type CreateAskInput = z.infer<typeof createAskSchema>;
 
+/**
+ * Who a public "Buy or wait?" is for (ADR-066): my friends, or everyone on Howdy (its link also opens signed out).
+ * Group questions are asked in the group (`createAskSchema`).
+ */
+export const ASK_AUDIENCES = ['friends', 'everyone'] as const;
+export type AskAudience = (typeof ASK_AUDIENCES)[number];
+/** A public question: the same fields as a group one, without a photo (v1), plus who it is for. */
+export const createPublicAskSchema = createAskSchema
+  .omit({ photoId: true })
+  .extend({ audience: z.enum(ASK_AUDIENCES) });
+export type CreatePublicAskInput = z.infer<typeof createPublicAskSchema>;
+
+/** Which questions the Buy or wait page lists: everyone's and my friends' (`all`), my friends' only, or mine. */
+export const ASK_LISTS = ['all', 'friends', 'mine'] as const;
+export type AskList = (typeof ASK_LISTS)[number];
+export const askListQuerySchema = z.object({
+  show: z.enum(ASK_LISTS).default('all'),
+  cursor: cursorParamSchema.optional(),
+});
+
 export const ASK_VERDICTS = ['buy', 'wait'] as const;
 export type AskVerdict = (typeof ASK_VERDICTS)[number];
 export const ASK_OUTCOMES = ['bought', 'waiting', 'skipped'] as const;

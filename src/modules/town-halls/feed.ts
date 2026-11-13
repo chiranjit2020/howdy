@@ -15,6 +15,7 @@ import {
   users,
 } from '@db/schema';
 import { and, asc, count, desc, eq, gt, inArray, isNull, lt, ne, or, sql } from 'drizzle-orm';
+import { ASK_RATE, askDailyKey } from '@/modules/asks';
 import { enforceNewAccountLimit, shouldHoldForOthers } from '@/modules/moderation';
 import { getCards, type PersonCard } from '@/modules/profiles';
 import { hiddenAuthors } from '@/modules/relationships';
@@ -62,8 +63,6 @@ export const FEED_RATE = {
   reply: rule(60, 3600),
   react: rule(200, 3600),
   manage: rule(120, 3600),
-  /** "Buy or wait?" rings every member (ADR-065), so a person may ask only a few a day. */
-  ask: rule(3, 24 * 3600),
 } as const;
 
 /** A photo can be posted only while it is younger than this (the clean-up job takes unattached ones at 60 minutes). */
@@ -1255,7 +1254,8 @@ export async function createAsk(
     photoId?: string | undefined;
   },
 ): Promise<HallPostView> {
-  await enforceRateLimit(`townhalls:ask:${userId}`, FEED_RATE.ask);
+  // Three a day per person, shared with public questions (ADR-066).
+  await enforceRateLimit(askDailyKey(userId), ASK_RATE.daily);
   const view = await createPost(userId, townHallId, input.why, input.photoId, undefined, undefined, {
     item: input.item,
     priceRupees: input.price,

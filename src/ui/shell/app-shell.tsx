@@ -118,6 +118,8 @@ export function AppShell({
           // Notifications have the bell in the top bar, with their count, so no menu item of their own.
           // Sidebar-only on wide screens; on a phone these are in the tab bar's You sheet.
           { key: 'town-halls', href: '/groups', label: 'Groups', badge: townHallInvites },
+          // Buy or wait? (ADR-066): on a phone it is in the Profile sheet, and on Home as a card.
+          { key: 'buy-or-wait', href: '/buy-or-wait', label: 'Buy or wait?' },
           ...(moderator ? [{ key: 'moderation', href: '/moderation', label: 'Moderation' } as const] : []),
           ...(admin ? [{ key: 'security', href: '/admin/security', label: 'Security Center' } as const] : []),
           // Always last.

@@ -226,6 +226,7 @@ export function TownHallDetailView({
               panel: initialFeed ? (
                 <FeedSection
                   townHallId={townHall.id}
+                  townHallName={townHall.name}
                   isOwner={staff}
                   initial={initialFeed}
                   initialHeld={initialHeld}

@@ -50,7 +50,7 @@ test('on a 320 px phone, the Profile sheet reaches every page that is not a tab 
   const bar = me.page.getByRole('navigation', { name: 'Primary' });
   const pages: [string, RegExp][] = [
     ['Visitors', /\/visitors$/],
-    ['Groups', /\/groups$/],
+    ['Buy or wait', /\/buy-or-wait$/],
     ['Time Capsules', /\/capsules$/],
     ['Moderation', /\/moderation$/],
     ['Settings', /\/settings$/],
@@ -69,11 +69,16 @@ test('on a 320 px phone, the Profile sheet reaches every page that is not a tab 
     await sheet.getByRole('link', { name: new RegExp(`^${label}`) }).click();
     await expect(me.page).toHaveURL(url);
   }
-  // There is no Create tab any more (2026-11-08): four tabs.
+  // No Create tab (2026-11-08); Groups got a tab (2026-11-14): five tabs, still no sideways scroll at 320 px.
   await me.page.goto('/home');
   await pageReady(me.page);
-  await expect(bar.getByRole('listitem')).toHaveCount(4);
+  await expect(bar.getByRole('listitem')).toHaveCount(5);
   await expect(bar.getByRole('button', { name: 'Create' })).toHaveCount(0);
+  expect(await smallTargets(me.page)).toEqual([]);
+  await bar.getByRole('link', { name: /^Groups/ }).click();
+  await expect(me.page).toHaveURL(/\/groups$/);
+  await me.page.goto('/home');
+  await pageReady(me.page);
   // The sheet ends with Sign out: on a phone that is where people look for it.
   await bar.getByRole('button', { name: /^Profile/ }).click();
   await me.page.getByRole('dialog', { name: 'Profile' }).getByRole('button', { name: 'Sign out' }).click();
@@ -111,7 +116,7 @@ test('on a desktop the sidebar has them, and there is no phone tab bar', async (
   // The phone tab bar (and its Profile button) is hidden on wide screens.
   await expect(me.page.getByRole('button', { name: /^Profile/ })).toBeHidden();
   const sidebar = me.page.getByRole('navigation', { name: 'Primary' }).first();
-  for (const label of ['Visitors', 'Settings', 'Groups']) {
+  for (const label of ['Visitors', 'Settings', 'Groups', 'Buy or wait']) {
     await expect(sidebar.getByRole('link', { name: new RegExp(`^${label}`) })).toBeVisible();
   }
   // Settings is always the last item.

@@ -4,6 +4,7 @@ import {
   purgeOldAuditLog,
   purgeUnconfirmedAccounts,
 } from '@/modules/auth';
+import { purgeStaleHeldAsks } from '@/modules/asks';
 import { openDue } from '@/modules/capsules';
 import { purgeDeletedAccounts } from './account-deletion';
 import { purgeOldFeedback } from '@/modules/feedback';
@@ -40,6 +41,8 @@ export async function runAllPurges() {
   const waiting = await purgeStaleWaiting();
   // Town Hall posts and replies held for an owner who never answered (ADR-033), on the same 30 days.
   const hallHeld = await purgeStaleHeld();
+  // Public "Buy or wait?" questions held for 30 days that only their asker could see (ADR-066).
+  const heldAsks = await purgeStaleHeldAsks();
   // Town Hall join requests that ran out (declined or never answered) after 30 days (ADR-041).
   const hallRequests = await purgeExpiredRequests();
   const chimes = await purgeOldChimes();
@@ -78,6 +81,7 @@ export async function runAllPurges() {
     ...storyRows,
     waiting,
     hallHeld,
+    heldAsks,
     hallRequests,
     ...chimes,
     whispers,

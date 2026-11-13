@@ -6,6 +6,7 @@ import { useState, type ReactNode } from 'react';
 import { cn } from '../cn';
 import {
   BellIcon,
+  BuyOrWaitIcon,
   GroupIcon,
   HomeIcon,
   SettingsIcon,
@@ -13,6 +14,8 @@ import {
   ShieldIcon,
   TabFriendsFillIcon,
   TabFriendsIcon,
+  TabGroupsFillIcon,
+  TabGroupsIcon,
   TabHomeFillIcon,
   TabHomeIcon,
   TabMessagesFillIcon,
@@ -37,6 +40,7 @@ export type ShellNavKey =
   | 'chimes'
   | 'workshop'
   | 'town-halls'
+  | 'buy-or-wait'
   | 'moderation'
   | 'security';
 
@@ -60,6 +64,7 @@ const ICON: Record<ShellNavKey, ReactNode> = {
   chimes: <BellIcon />,
   workshop: <SettingsIcon />,
   'town-halls': <GroupIcon />,
+  'buy-or-wait': <BuyOrWaitIcon />,
   moderation: <ShieldIcon />,
   // No icon of its own yet: the Security Center shares Moderation's.
   security: <ShieldCheckIcon />,
@@ -126,18 +131,19 @@ export function ShellSidebarNav({ items }: { items: ShellNavItem[] }) {
 }
 
 /**
- * The phone tab bar, in order: Home, Friends, Messages, and your photo (Profile). Create is gone (2026-11-08: almost
- * nobody used it; posts and Stories start from Home's "Share something with friends", Time Capsules from the Profile sheet).
- * Notifications are the bell in the top bar, with their count; everything else (Visitors, Groups, Settings, staff pages,
- * Free to talk, Time Capsules, Devices, Sign out) is in the Profile sheet. The sidebar still lists everything on wide screens.
+ * The phone tab bar, in order: Home, Friends, Groups, Messages, and your photo (Profile). Groups got a tab on 2026-11-14
+ * (the user's call: groups were hidden in the Profile sheet and nobody found them). Create is gone (2026-11-08).
+ * Notifications are the bell in the top bar, with their count; everything else (Visitors, Buy or wait, Settings, staff
+ * pages, Free to talk, Time Capsules, Devices, Sign out) is in the Profile sheet. The sidebar lists everything on wide screens.
  */
-const PHONE_TABS = ['home', 'posse', 'whispers'] as const;
+const PHONE_TABS = ['home', 'posse', 'town-halls', 'whispers'] as const;
 /** In the Profile sheet: every page that is neither a tab nor the bell, nor your own profile (the sheet's first row). */
 const IN_TABS: ShellNavKey[] = [...PHONE_TABS, 'chimes', 'ranch'];
 /** The phone tabs' own icons: outline, and filled while current (Phosphor; see icons.tsx). */
 const TAB_ICON: Record<(typeof PHONE_TABS)[number], [ReactNode, ReactNode]> = {
   home: [<TabHomeIcon key="o" />, <TabHomeFillIcon key="f" />],
   posse: [<TabFriendsIcon key="o" />, <TabFriendsFillIcon key="f" />],
+  'town-halls': [<TabGroupsIcon key="o" />, <TabGroupsFillIcon key="f" />],
   whispers: [<TabMessagesIcon key="o" />, <TabMessagesFillIcon key="f" />],
 };
 
@@ -181,6 +187,7 @@ export function ShellBottomNav({
   const tabs: NavItem[] = [
     ...tab('home'),
     ...tab('posse'),
+    ...tab('town-halls'),
     ...tab('whispers'),
     {
       label: 'Profile',
