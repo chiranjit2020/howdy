@@ -175,7 +175,7 @@ describe('AppShell', () => {
     expect(panel.queryByRole('button', { name: 'Sign out everywhere…' })).not.toBeInTheDocument();
     // Phones: the pages that are not tabs are in the Profile sheet, opened from your photo in the tab bar (CSS hides the bar
     // from md up), which says when one has news (Visitors is in there, with 4 new).
-    expect(screen.getByRole('button', { name: /Profile.*4 new/ })).toHaveAttribute('aria-haspopup', 'dialog');
+    expect(screen.getByRole('button', { name: /^Me\b.*4 new/ })).toHaveAttribute('aria-haspopup', 'dialog');
   });
   it('signed out: only a way in, and no handle-based links', () => {
     render(

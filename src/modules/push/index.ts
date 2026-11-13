@@ -13,3 +13,5 @@ export {
   unsubscribe,
 } from './service';
 export type { PushSender, PushTarget } from './service';
+export { BUY_OR_WAIT_ANNOUNCEMENT, sendAnnouncement } from './announce';
+export type { AnnounceResult, Announcement } from './announce';

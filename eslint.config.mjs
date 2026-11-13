@@ -43,10 +43,13 @@ const MODULE_DEPENDENCIES = {
   moderation: [],
   // moderation: the anti-spam checks (new-account budgets, holding for review). It depends on nothing.
   fence: ['authz', 'profiles', 'relationships', 'moderation'],
-  notifications: ['authz', 'profiles', 'relationships', 'push'],
+  notifications: ['authz', 'profiles', 'relationships', 'push', 'asks'],
   // Town Halls: names, who is hidden from whom (the feed, ADR-033), and the anti-spam checks. Only Tributes and Marks
   // depend on it, to ask whether two people are neighbours (ADR-044).
-  'town-halls': ['moderation', 'profiles', 'relationships'],
+  // Since ADR-066 also asks: group and public "Buy or wait?" share one daily limit.
+  'town-halls': ['moderation', 'profiles', 'relationships', 'asks'],
+  // Public "Buy or wait?" (ADR-066): names, who is a friend and who is hidden, and the anti-spam checks.
+  asks: ['moderation', 'profiles', 'relationships'],
   // Tributes and Marks: the Porch policy, names, the relationship, and whether two people are neighbours (ADR-044).
   tributes: ['authz', 'profiles', 'relationships', 'town-halls'],
   marks: ['authz', 'profiles', 'relationships', 'town-halls'],
