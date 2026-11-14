@@ -20,8 +20,11 @@ export function BuyOrWaitCard({ asks, groups }: { asks: WireAsk[]; groups: { id:
   return (
     <section aria-labelledby="buy-or-wait-heading" className="clay flex flex-col gap-3 p-4">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-        <h2 id="buy-or-wait-heading" className="min-w-0 flex-1 text-title font-semibold text-text-primary">
-          <BuyOrWaitIcon aria-hidden="true" className="mr-1.5 inline size-6 align-[-0.2em]" />
+        <h2
+          id="buy-or-wait-heading"
+          className="flex min-w-0 flex-1 items-center gap-2 text-title font-semibold text-text-primary"
+        >
+          <BuyOrWaitIcon aria-hidden="true" className="size-6 shrink-0" />
           Buy or wait?
         </h2>
         <NewAsk<unknown, WireAsk>
