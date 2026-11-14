@@ -425,7 +425,7 @@ const AUDIENCE_TEXT: Record<AskAudience, { label: string; hint: string }> = {
 
 /**
  * The "Buy or wait?" dialog: what, the price, why, what else you could do, and who to ask (my friends, everyone on
- * Howdy, or one of my groups). A photo goes with group questions only (for now). Three a day, wherever you ask.
+ * Howdy, or one of my groups), with a photo if they like. Three a day, wherever you ask.
  */
 export function NewAsk<G, P>({
   groups,
@@ -496,7 +496,11 @@ export function NewAsk<G, P>({
       else setError(res.error?.message ?? 'That did not work. Try again.');
       return;
     }
-    const res = await postJson<{ ask: P }>('/api/asks', { ...common, audience: target });
+    const res = await postJson<{ ask: P }>('/api/asks', {
+      ...common,
+      audience: target,
+      ...(photo ? { photoId: photo.id } : {}),
+    });
     setBusy(false);
     if (res.ok && res.data) {
       onPosted({ kind: 'public', ask: res.data.ask });
@@ -589,43 +593,41 @@ export function NewAsk<G, P>({
             placeholder="e.g. Keep using my old earphones"
             error={errors.alternative}
           />
-          {groupId && (
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-              <input
-                ref={fileRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                className="sr-only"
-                tabIndex={-1}
-                aria-hidden="true"
-                onChange={(e) => {
-                  void pickPhoto(e.target.files?.[0]);
-                  e.target.value = '';
-                }}
-              />
-              {photo ? (
-                <>
-                  <span className="min-w-0 text-caption break-all text-text-secondary">
-                    Photo: {photo.name}
-                  </span>
-                  <Button type="button" variant="link" size="sm" onClick={() => setPhoto(null)}>
-                    Remove photo
-                  </Button>
-                </>
-              ) : (
-                <Button
-                  type="button"
-                  variant="link"
-                  size="sm"
-                  loading={uploading}
-                  onClick={() => fileRef.current?.click()}
-                >
-                  Add a photo
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="sr-only"
+              tabIndex={-1}
+              aria-hidden="true"
+              onChange={(e) => {
+                void pickPhoto(e.target.files?.[0]);
+                e.target.value = '';
+              }}
+            />
+            {photo ? (
+              <>
+                <span className="min-w-0 text-caption break-all text-text-secondary">
+                  Photo: {photo.name}
+                </span>
+                <Button type="button" variant="link" size="sm" onClick={() => setPhoto(null)}>
+                  Remove photo
                 </Button>
-              )}
-              {errors.photo && <FormMessage tone="error">{errors.photo}</FormMessage>}
-            </div>
-          )}
+              </>
+            ) : (
+              <Button
+                type="button"
+                variant="link"
+                size="sm"
+                loading={uploading}
+                onClick={() => fileRef.current?.click()}
+              >
+                Add a photo
+              </Button>
+            )}
+            {errors.photo && <FormMessage tone="error">{errors.photo}</FormMessage>}
+          </div>
           <Button
             type="submit"
             loading={busy}

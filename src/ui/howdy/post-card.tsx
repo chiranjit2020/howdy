@@ -741,7 +741,7 @@ const TALLEST = 5 / 4;
  * A post's photo, the way big feeds show them: always the post's full width; landscape and square whole; anything taller
  * than 4:5 cropped from the centre to 4:5 so one photo never fills the screen. A tap shows the whole photo.
  */
-function PostPhoto({
+export function PostPhoto({
   photo,
   alt,
   priority = false,

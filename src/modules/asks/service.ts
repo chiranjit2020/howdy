@@ -1,5 +1,5 @@
-import { askAnswers, asks } from '@db/schema';
-import { and, asc, desc, eq, inArray, lt, or, sql, type SQL } from 'drizzle-orm';
+import { askAnswers, asks, media } from '@db/schema';
+import { and, asc, desc, eq, gt, inArray, isNull, lt, or, sql, type SQL } from 'drizzle-orm';
 import { enforceNewAccountLimit, shouldHoldForOthers } from '@/modules/moderation';
 import { getCards, type PersonCard } from '@/modules/profiles';
 import { friendIdsOf, hiddenAuthors, posseMembersAmong } from '@/modules/relationships';
@@ -61,6 +61,13 @@ export interface AskAnswerView {
   mine: boolean;
 }
 
+/** A question's photo (ADR-066), served by /api/asks/{id}/photo to exactly who may see the question. */
+export interface AskPhoto {
+  url: string;
+  width: number;
+  height: number;
+}
+
 /** A public question as one viewer sees it. The same core as a group question, so one card shows both. */
 export interface AskView {
   id: string;
@@ -70,6 +77,8 @@ export interface AskView {
   priceRupees: number;
   why: string;
   alternative: string | null;
+  /** The asker's photo of the thing, if any (one held by the photo check is shown to its asker only). */
+  photo: AskPhoto | null;
   note: string | null;
   outcome: AskOutcome | null;
   counts: Record<AskVerdict, number>;
@@ -95,6 +104,34 @@ const toAuthor = (p: PersonCard): AskAuthor => ({
   verified: p.verified,
   trusted: p.trusted,
 });
+/** A photo held by the photo check (ADR-039) is shown only to the person who posted it. */
+const photoShownTo = (viewerId: string | null) =>
+  viewerId ? or(eq(media.held, false), eq(media.ownerId, viewerId)) : eq(media.held, false);
+/** A waiting photo is attached only this soon after upload, so the hourly clean-up cannot take it mid-post. */
+const PHOTO_ATTACH_WINDOW_MS = 55 * 60_000;
+
+/** The live photos on these questions that this viewer may see, by question id. */
+async function photosOn(viewerId: string | null, askIds: string[]): Promise<Map<string, AskPhoto>> {
+  if (askIds.length === 0) return new Map();
+  const rows = await getDb()
+    .select({ id: media.id, askId: media.askId, width: media.width, height: media.height })
+    .from(media)
+    .where(
+      and(
+        inArray(media.askId, askIds),
+        eq(media.kind, 'card_photo'),
+        eq(media.status, 'ready'),
+        photoShownTo(viewerId),
+      ),
+    );
+  return new Map(
+    rows.map((r) => [
+      r.askId!,
+      { url: `/api/asks/${r.askId}/photo?v=${r.id}`, width: r.width ?? 0, height: r.height ?? 0 },
+    ]),
+  );
+}
+
 const isVerdict = (v: string): v is AskVerdict => (ASK_VERDICTS as readonly string[]).includes(v);
 const isOutcome = (v: string | null): v is AskOutcome =>
   v !== null && (ASK_OUTCOMES as readonly string[]).includes(v);
@@ -143,9 +180,13 @@ async function hydrate(
     )
     .orderBy(asc(askAnswers.answeredAt));
   const people = [...new Set(answers.map((a) => a.userId))];
-  const [cards, hidden] = await Promise.all([
+  const [cards, hidden, photos] = await Promise.all([
     getCards(people),
     viewerId ? hiddenAuthors(viewerId, people) : Promise.resolve(new Set<string>()),
+    photosOn(
+      viewerId,
+      rows.map((r) => r.id),
+    ),
   ]);
   return rows.map((r) => {
     const outcome = isOutcome(r.outcome) ? r.outcome : null;
@@ -157,6 +198,7 @@ async function hydrate(
       priceRupees: r.priceRupees,
       why: r.why,
       alternative: r.alternative,
+      photo: photos.get(r.id) ?? null,
       note: r.note,
       outcome,
       counts: { buy: 0, wait: 0 },
@@ -258,21 +300,50 @@ export async function createPublicAsk(userId: string, input: CreatePublicAskInpu
   await enforceRateLimit(askDailyKey(userId), ASK_RATE.daily);
   await enforceNewAccountLimit(userId, 'card');
   const status = (await shouldHoldForOthers(userId)) ? 'held' : 'published';
-  const [row] = await getDb()
-    .insert(asks)
-    .values({
-      authorId: userId,
-      audience: input.audience,
-      item: input.item,
-      priceRupees: input.price,
-      why: input.why,
-      alternative: input.alternative ?? null,
-      status,
-      createdAt: new Date(), // whole milliseconds, so cursors compare exactly
-    })
-    .returning();
-  if (status === 'published') emit({ type: 'ask.created', askId: row!.id, authorId: userId });
-  const [view] = await hydrate(userId, [row!], await getCards([userId]));
+  const row = await getDb().transaction(async (tx) => {
+    const [made] = await tx
+      .insert(asks)
+      .values({
+        authorId: userId,
+        audience: input.audience,
+        item: input.item,
+        priceRupees: input.price,
+        why: input.why,
+        alternative: input.alternative ?? null,
+        status,
+        createdAt: new Date(), // whole milliseconds, so cursors compare exactly
+      })
+      .returning();
+    if (input.photoId) {
+      // Only MY finished photo, on nothing else yet, and young enough that the clean-up cannot take it.
+      const attached = await tx
+        .update(media)
+        .set({ askId: made!.id, updatedAt: sql`now()` })
+        .where(
+          and(
+            eq(media.id, input.photoId),
+            eq(media.ownerId, userId),
+            eq(media.kind, 'card_photo'),
+            eq(media.status, 'ready'),
+            isNull(media.cardId),
+            isNull(media.hallPostId),
+            isNull(media.storyId),
+            isNull(media.askId),
+            gt(media.createdAt, new Date(Date.now() - PHOTO_ATTACH_WINDOW_MS)),
+          ),
+        )
+        .returning({ id: media.id });
+      if (attached.length === 0) {
+        throw new AppError('VALIDATION_FAILED', {
+          message: 'That photo is no longer available. Add it again.',
+          fields: { photo: 'That photo is no longer available. Add it again.' },
+        });
+      }
+    }
+    return made!;
+  });
+  if (status === 'published') emit({ type: 'ask.created', askId: row.id, authorId: userId });
+  const [view] = await hydrate(userId, [row], await getCards([userId]));
   if (!view) throw new AppError('INTERNAL');
   return view;
 }
@@ -366,6 +437,28 @@ export async function decidePublicAsk(userId: string, askId: string, outcome: As
 export async function removePublicAsk(userId: string, askId: string): Promise<void> {
   await ownRow(userId, askId);
   await getDb().delete(asks).where(eq(asks.id, askId));
+}
+
+/**
+ * The photo on a question, for exactly who may see the question (signed out: `everyone` questions only), and not one
+ * held by the photo check unless it is theirs. Missing, hidden and "no photo" are all null.
+ */
+export async function askPhotoFor(viewerId: string | null, askId: string): Promise<string | null> {
+  const row = await loadVisible(viewerId, askId);
+  if (!row) return null;
+  const [photo] = await getDb()
+    .select({ id: media.id })
+    .from(media)
+    .where(
+      and(
+        eq(media.askId, row.id),
+        eq(media.kind, 'card_photo'),
+        eq(media.status, 'ready'),
+        photoShownTo(viewerId),
+      ),
+    )
+    .limit(1);
+  return photo?.id ?? null;
 }
 
 /** A question the reader may see, in the shape a report needs. Null otherwise. */

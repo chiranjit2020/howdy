@@ -26,8 +26,11 @@ asked for it to go public, and for groups themselves to be easier to find.
 5. **Limits and safety.** Each person can ask 3 questions a day, counting group and public questions together. New
    accounts have the same limits as for a post. The post hold rule (ADR-024) applies: a held question looks asked to its
    asker, notifies nobody, and is deleted after 30 days. Questions can be flagged (report subject `ask`), and moderators
-   get "Remove question" (`remove_ask`). Links are refused in every field. There are no photos on public questions in
-   v1, because strangers' photos are more moderation work.
+   get "Remove question" (`remove_ask`). Links are refused in every field. **Photos (added 2026-11-14, the user's ask):**
+   one photo per public question too (`media.ask_id`, migration 0062), the asker's own fresh upload only. It goes
+   through the photo check like any card photo (a held one is shown to its asker only), is served by
+   `/api/asks/{id}/photo` to exactly who may see the question (signed out too for `everyone`), and is cleaned up when
+   the question goes. v1 left photos out because strangers' photos are more moderation work; the photo check covers it.
 6. **Big icon buttons for the answers.** Buy is a cart and Wait is a countdown clock (Phosphor icons; the hourglass
    is already Time Capsules'). They are two half-width 56 px pills with their counts, like upvote and downvote. Icons
    are outlined until chosen and filled after; a chosen Buy fills sunflower and a chosen Wait navy, matching the tally

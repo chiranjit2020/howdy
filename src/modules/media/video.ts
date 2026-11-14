@@ -165,6 +165,7 @@ export async function completeCardVideo(
         isNull(media.cardId),
         isNull(media.hallPostId),
         isNull(media.storyId),
+        isNull(media.askId),
       ),
     )
     .limit(1);

@@ -435,6 +435,13 @@
       "when": 1794597576421,
       "tag": "0061_public_asks",
       "breakpoints": true
+    },
+    {
+      "idx": 62,
+      "version": "7",
+      "when": 1794624549750,
+      "tag": "0062_ask_photos",
+      "breakpoints": true
     }
   ]
 }

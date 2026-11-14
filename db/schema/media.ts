@@ -11,6 +11,7 @@ import {
   uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
+import { asks } from './asks';
 import { users } from './auth';
 import { postCards } from './fence';
 import { stories } from './stories';
@@ -52,6 +53,8 @@ export const media = pgTable(
     hallPostId: uuid('hall_post_id').references(() => townHallPosts.id, { onDelete: 'set null' }),
     /** The Story a `card_photo` belongs to instead (ADR-047). SET NULL when the Story goes (12 hours, or taken down). */
     storyId: uuid('story_id').references(() => stories.id, { onDelete: 'set null' }),
+    /** The public "Buy or wait?" question a `card_photo` belongs to instead (ADR-066). SET NULL when the question goes. */
+    askId: uuid('ask_id').references(() => asks.id, { onDelete: 'set null' }),
     status: text('status').notNull().default('pending'),
     /** Where the bytes are in storage. Random; never derived from the owner or the file name. */
     objectKey: text('object_key').notNull().unique(),
@@ -87,8 +90,9 @@ export const media = pgTable(
     ),
     check('media_hall_post_only_for_card_photos', sql`${t.hallPostId} is null or ${t.kind} = 'card_photo'`),
     check('media_story_only_for_card_photos', sql`${t.storyId} is null or ${t.kind} = 'card_photo'`),
-    // One photo, one place: a card, a Town Hall post or a Story — never two of them.
-    check('media_one_home', sql`num_nonnulls(${t.cardId}, ${t.hallPostId}, ${t.storyId}) <= 1`),
+    check('media_ask_only_for_card_photos', sql`${t.askId} is null or ${t.kind} = 'card_photo'`),
+    // One photo, one place: a card, a Town Hall post, a Story or a question — never two of them.
+    check('media_one_home', sql`num_nonnulls(${t.cardId}, ${t.hallPostId}, ${t.storyId}, ${t.askId}) <= 1`),
     // expired: a card video past its 3 days (ADR-064). Its files are gone; the row stays while its card does, so the
     // post can say "This video has expired" rather than look as if it never had one.
     check('media_status_check', sql`${t.status} in ('pending', 'ready', 'retired', 'expired')`),
@@ -109,6 +113,10 @@ export const media = pgTable(
     uniqueIndex('media_one_per_story_idx')
       .on(t.storyId)
       .where(sql`${t.storyId} is not null`),
+    // One photo per question.
+    uniqueIndex('media_one_per_ask_idx')
+      .on(t.askId)
+      .where(sql`${t.askId} is not null`),
     index('media_owner_idx').on(t.ownerId),
     // The retention job looks for stale pending rows and for retired ones.
     index('media_status_created_idx').on(t.status, t.createdAt),

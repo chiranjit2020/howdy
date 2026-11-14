@@ -3,6 +3,7 @@ export {
   answerPublicAsk,
   askDailyKey,
   askForReport,
+  askPhotoFor,
   asksExport,
   createPublicAsk,
   decidePublicAsk,
@@ -15,4 +16,4 @@ export {
   visibleAskIds,
   ASK_RATE,
 } from './service';
-export type { AskAnswerView, AskAuthor, AskPage, AskView } from './service';
+export type { AskAnswerView, AskAuthor, AskPage, AskPhoto, AskView } from './service';

@@ -7,6 +7,7 @@ import type { AskOutcome, AskVerdict } from '@/shared/validation/town-halls';
 import { apiRequest, postJson } from '@/ui/auth/api';
 import { FormMessage } from '@/ui/auth/form-parts';
 import { AskBlock } from '@/ui/howdy/buy-or-wait';
+import { PostPhoto } from '@/ui/howdy/post-card';
 import { ReportDialog } from '@/ui/howdy/report-dialog';
 import { RelativeTime } from '@/ui/howdy/time';
 import { MoreIcon } from '@/ui/icons';
@@ -24,12 +25,15 @@ export function AskCard({
   signedIn = true,
   onRemoved,
   linkToPage = true,
+  priority = false,
 }: {
   initial: WireAsk;
   signedIn?: boolean;
   onRemoved?: (id: string) => void;
   /** In a list, the time links to the question's own page (its share link). */
   linkToPage?: boolean;
+  /** Its photo is the first big picture on the page: load it at once. */
+  priority?: boolean;
 }) {
   const toast = useToast();
   const [ask, setAsk] = useState(initial);
@@ -138,6 +142,7 @@ export function AskCard({
         )}
       </header>
 
+      {ask.photo && <PostPhoto photo={ask.photo} alt={`Photo of ${ask.item}`} priority={priority} />}
       <AskBlock
         ask={ask}
         why={ask.why}

@@ -182,6 +182,7 @@ export async function postStory(
           isNull(media.cardId),
           isNull(media.hallPostId),
           isNull(media.storyId),
+          isNull(media.askId),
           gt(media.createdAt, new Date(Date.now() - PHOTO_ATTACH_WINDOW_MS)),
         ),
       )

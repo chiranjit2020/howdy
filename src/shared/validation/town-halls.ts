@@ -202,9 +202,7 @@ export type CreateAskInput = z.infer<typeof createAskSchema>;
 export const ASK_AUDIENCES = ['friends', 'everyone'] as const;
 export type AskAudience = (typeof ASK_AUDIENCES)[number];
 /** A public question: the same fields as a group one, without a photo (v1), plus who it is for. */
-export const createPublicAskSchema = createAskSchema
-  .omit({ photoId: true })
-  .extend({ audience: z.enum(ASK_AUDIENCES) });
+export const createPublicAskSchema = createAskSchema.extend({ audience: z.enum(ASK_AUDIENCES) });
 export type CreatePublicAskInput = z.infer<typeof createPublicAskSchema>;
 
 /** Which questions the Buy or wait page lists: everyone's and my friends' (`all`), my friends' only, or mine. */

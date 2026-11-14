@@ -907,6 +907,7 @@ export async function postCard(
             // Not already posted in a Town Hall (ADR-046) or a Story (ADR-047): one photo, one place.
             isNull(media.hallPostId),
             isNull(media.storyId),
+            isNull(media.askId),
             gt(media.createdAt, new Date(Date.now() - PHOTO_ATTACH_WINDOW_MS)),
           ),
         )
