@@ -291,6 +291,39 @@ export async function listAsks(
   };
 }
 
+/** How many of a person's questions their profile shows (newest first). */
+export const PROFILE_ASKS = 3;
+
+/**
+ * One person's newest questions, for their profile wall: the ones this viewer may see (signed out: `everyone` only;
+ * their friends: `friends` too; themselves: all, held ones included). Hidden or inactive askers show none.
+ */
+export async function asksBy(
+  viewerId: string | null,
+  authorId: string,
+  rateKey: string,
+  limit: number = PROFILE_ASKS,
+): Promise<AskView[]> {
+  await enforceRateLimit(`asks:read:${rateKey}`, ASK_RATE.read);
+  const own = viewerId === authorId;
+  const friend = !own && viewerId !== null && (await posseMembersAmong(viewerId, [authorId])).has(authorId);
+  const raw = await getDb()
+    .select()
+    .from(asks)
+    .where(
+      and(
+        eq(asks.authorId, authorId),
+        own
+          ? undefined
+          : and(eq(asks.status, 'published'), friend ? undefined : eq(asks.audience, 'everyone')),
+      ),
+    )
+    .orderBy(desc(asks.createdAt), desc(asks.id))
+    .limit(limit);
+  const { rows, authors } = await visibleRows(viewerId, raw);
+  return hydrate(viewerId, rows, authors);
+}
+
 /**
  * Ask a public question. Three a day per person (shared with group questions), the new-account limits of a post, and
  * the post hold rule (ADR-024): a held question looks asked to its asker and rings nobody. A published one rings the

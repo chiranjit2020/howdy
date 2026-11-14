@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
+import { asksBy } from '@/modules/asks';
 import { getCurrentUser } from '@/modules/auth';
 import type { Actor } from '@/modules/authz';
 import { listFence, listWaiting } from '@/modules/fence';
@@ -17,6 +18,7 @@ import {
 import { getRelationshipView, listMyRelationships, profileCountsOf } from '@/modules/relationships';
 import { listTributes, listWaitingTributes } from '@/modules/tributes';
 import { recheckTrust } from '@/modules/trust';
+import { withAskPortraits } from '@/app/_lib/asks';
 import { attachPortraits, withCards } from '@/app/_lib/social';
 import { getEnv } from '@/platform/config/env';
 import { AppError } from '@/platform/errors';
@@ -25,6 +27,7 @@ import { clockOf } from '@/shared/calendar';
 import { coverUrl, portraitUrl } from '@/shared/portrait';
 import { MARK_LABEL, RanchCover, RanchHeader } from '@/ui/howdy';
 import { buttonClasses, ClayCard, EmptyState } from '@/ui/primitives';
+import { AsksSection } from './asks-section';
 import { DescribePicker } from './describe-picker';
 import { ProfileIntro } from './profile-intro';
 import { EditCover } from './edit-cover';
@@ -114,6 +117,7 @@ export default async function RanchPage({ params }: { params: Promise<{ handle: 
     trust,
     mine,
     counts,
+    { value: questions },
   ] = await Promise.all([
     // A signed-in visitor also sees how they relate to this person (and can act on it). The photo is offered only to
     // signed-in viewers (the picture itself needs a session), and only on a Porch they may open, which this page has
@@ -164,7 +168,15 @@ export default async function RanchPage({ params }: { params: Promise<{ handle: 
       const ownerId = isOwner && user ? user.id : (await resolveHandle(r.handle))?.userId;
       return ownerId ? await profileCountsOf(ownerId) : null;
     })().catch(() => null),
+    // Their newest "Buy or wait?" questions this viewer may see (each by its own audience), above the wall.
+    unlessRateLimited(
+      (async () => {
+        const ownerId = isOwner && user ? user.id : (await resolveHandle(r.handle))?.userId;
+        return ownerId ? asksBy(user?.id ?? null, ownerId, rateKey) : [];
+      })(),
+    ),
   ]);
+  if (questions?.length) await withAskPortraits(user?.id, questions);
   // Photos for everyone on the Fence whom this viewer may see (initials for the rest).
   await attachPortraits(
     user?.id,
@@ -277,6 +289,15 @@ export default async function RanchPage({ params }: { params: Promise<{ handle: 
                   ),
                 }
               : {})}
+          />
+        )}
+
+        {questions && questions.length > 0 && (
+          <AsksSection
+            initial={questions}
+            ownerName={ranch.displayName}
+            isOwner={isOwner}
+            signedIn={Boolean(user)}
           />
         )}
 
