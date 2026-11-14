@@ -18,7 +18,7 @@ export function BuyOrWaitCard({ asks, groups }: { asks: WireAsk[]; groups: { id:
   const router = useRouter();
   const toast = useToast();
   return (
-    <section aria-labelledby="buy-or-wait-heading" className="clay flex flex-col gap-3 p-4">
+    <section aria-labelledby="buy-or-wait-heading" className="spotlight flex flex-col gap-3 p-4">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
         <h2
           id="buy-or-wait-heading"

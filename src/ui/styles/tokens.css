@@ -623,6 +623,43 @@
 }
 
 /*
+ * A card that asks to be noticed (Home's "Buy or wait?", 2026-11-14, the user's ask): the clay card with a 2px edge where
+ * a Sunflower-to-blue streak travels round and round the border. Two backgrounds do it: the surface fills the inside
+ * (padding-box), a turning conic gradient shows only through the transparent border (border-box). The angle is a
+ * registered property so the browser can animate it; where it cannot, the edge is a still gradient. Less motion asked
+ * for: the global rule stops it, a still edge stays.
+ */
+@property --spotlight-angle {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+@utility spotlight {
+  border-radius: var(--radius-card);
+  border: 2px solid transparent;
+  box-shadow: var(--shadow-clay);
+  background:
+    linear-gradient(var(--color-surface), var(--color-surface)) padding-box,
+    conic-gradient(
+        from var(--spotlight-angle),
+        var(--color-border) 0deg,
+        var(--color-border) 200deg,
+        var(--color-primary) 250deg,
+        var(--color-primary) 290deg,
+        var(--color-header) 300deg,
+        var(--color-header) 335deg,
+        var(--color-border) 360deg
+      )
+      border-box;
+  animation: spotlight-turn 3.5s linear infinite;
+}
+@keyframes spotlight-turn {
+  to {
+    --spotlight-angle: 360deg;
+  }
+}
+
+/*
  * A real tick for a checked checkbox (the box itself turns Sunflower). The stroke is the on-primary colour (Royal
  * Violet #2b3278, the same in both themes), drawn as an SVG so it is a check mark at every size, not a slash.
  */
