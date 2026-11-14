@@ -7,6 +7,7 @@ import { getCurrentUser } from '@/modules/auth';
 import { getEnv } from '@/platform/config/env';
 import { clientIp } from '@/platform/http/client-ip';
 import { cn } from '@/ui/cn';
+import { PageFrame } from '@/ui/howdy/page-frame';
 import { buttonClasses, ClayCard } from '@/ui/primitives';
 import { AskCard } from '../ask-card';
 
@@ -25,34 +26,42 @@ export default async function AskPage({ params }: { params: Promise<{ id: string
   const ask = await getAsk(user?.id ?? null, id, rateKey);
   if (!ask) notFound();
   await withAskPortraits(user?.id, [ask]);
-  return (
-    <main id="main" className="mx-auto flex w-full max-w-2xl min-w-0 flex-col gap-4 py-4">
-      <h1 className="sr-only">Buy or wait: {ask.item}</h1>
-      <AskCard initial={ask} signedIn={user !== null} linkToPage={false} />
-      {user ? (
+  const heading = <h1 className="sr-only">Buy or wait: {ask.item}</h1>;
+  // Signed in: the same frame as Home (the empty right column keeps the question where every other page's content is;
+  // centred in the space beside the sidebar it sat off to the right). Signed out there is no sidebar: centred.
+  if (user) {
+    return (
+      <PageFrame>
+        {heading}
+        <AskCard initial={ask} signedIn linkToPage={false} />
         <Link
           href="/buy-or-wait"
           className={cn(buttonClasses({ variant: 'link', size: 'sm' }), 'self-start')}
         >
           See more questions
         </Link>
-      ) : (
-        <ClayCard className="flex flex-col gap-3">
-          <h2 className="text-title text-text-primary">Help {ask.author.displayName} decide</h2>
-          <p className="text-caption text-text-secondary">
-            Join Howdy to answer Buy or Wait, and ask about the next thing you’re thinking of buying. Free,
-            and no phone number needed.
-          </p>
-          <div className="flex flex-wrap gap-2">
-            <Link href="/signup" className={buttonClasses({ size: 'sm' })}>
-              Join Howdy
-            </Link>
-            <Link href="/login" className={buttonClasses({ size: 'sm', variant: 'secondary' })}>
-              Log in
-            </Link>
-          </div>
-        </ClayCard>
-      )}
+      </PageFrame>
+    );
+  }
+  return (
+    <main id="main" className="mx-auto flex w-full max-w-2xl min-w-0 flex-col gap-4 py-4">
+      {heading}
+      <AskCard initial={ask} signedIn={false} linkToPage={false} />
+      <ClayCard className="flex flex-col gap-3">
+        <h2 className="text-title text-text-primary">Help {ask.author.displayName} decide</h2>
+        <p className="text-caption text-text-secondary">
+          Join Howdy to answer Buy or Wait, and ask about the next thing you’re thinking of buying. Free, and
+          no phone number needed.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <Link href="/signup" className={buttonClasses({ size: 'sm' })}>
+            Join Howdy
+          </Link>
+          <Link href="/login" className={buttonClasses({ size: 'sm', variant: 'secondary' })}>
+            Log in
+          </Link>
+        </div>
+      </ClayCard>
     </main>
   );
 }
