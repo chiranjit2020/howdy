@@ -507,7 +507,8 @@ export function NewAsk<G, P>({
 
   return (
     <>
-      <Button size="sm" variant={triggerVariant} onClick={() => setOpen(true)}>
+      {/* min-w: a one-word label ("Ask") on a 44px-tall phone pill would otherwise be a circle. */}
+      <Button size="sm" variant={triggerVariant} className="min-w-20" onClick={() => setOpen(true)}>
         {trigger}
       </Button>
       <Modal open={open} onClose={() => setOpen(false)} title="Buy or wait?">
