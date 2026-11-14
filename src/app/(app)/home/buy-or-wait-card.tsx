@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { AskView } from '@/modules/asks';
 import { NewAsk, rupees, VerdictMark } from '@/ui/howdy/buy-or-wait';
+import { Img } from '@/ui/art/img';
 import { BuyOrWaitIcon } from '@/ui/icons';
 import { buttonClasses, useToast } from '@/ui/primitives';
 import { cn } from '@/ui/cn';
@@ -51,6 +52,23 @@ export function BuyOrWaitCard({ asks, groups }: { asks: WireAsk[]; groups: { id:
                 href={`/buy-or-wait/${a.id}`}
                 className="flex min-h-11 items-center gap-3 py-2 text-text-primary no-underline hover:no-underline"
               >
+                {/* The asker's photo, so the thing itself catches the eye; the bag when there is none. */}
+                {a.photo ? (
+                  <Img
+                    src={`${a.photo.url}&size=feed`}
+                    width={56}
+                    height={56}
+                    alt=""
+                    className="size-14 shrink-0 rounded-card-inset-sm bg-surface-sunken object-cover"
+                  />
+                ) : (
+                  <span
+                    aria-hidden="true"
+                    className="grid size-14 shrink-0 place-items-center rounded-card-inset-sm bg-surface-sunken"
+                  >
+                    <BuyOrWaitIcon className="size-6 text-text-secondary" />
+                  </span>
+                )}
                 <span className="min-w-0 flex-1">
                   <span className="block truncate font-semibold">{a.item}</span>
                   <span className="block truncate text-metadata text-text-muted">
