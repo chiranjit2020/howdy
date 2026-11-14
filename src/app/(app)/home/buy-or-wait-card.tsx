@@ -30,7 +30,7 @@ export function BuyOrWaitCard({ asks, groups }: { asks: WireAsk[]; groups: { id:
         <NewAsk<unknown, WireAsk>
           groups={groups}
           initialTarget="everyone"
-          trigger="Ask"
+          trigger="Ask a question"
           triggerVariant="primary"
           onPosted={(made) => {
             toast({ title: 'Asked. People will start answering.', tone: 'success' });
